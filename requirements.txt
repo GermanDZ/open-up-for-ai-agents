@@ -1,0 +1,5 @@
+beautifulsoup4==4.12.3
+lxml==5.1.0
+html2text==2024.2.26
+PyYAML==6.0.1
+Pillow>=12.0.0
