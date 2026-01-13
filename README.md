@@ -13,11 +13,13 @@ This template organizes documentation into two distinct areas:
 
 **Start here**: [AGENTS.md](AGENTS.md) → [docs-eng-process/README.md](docs-eng-process/README.md)
 
-The complete agent workflow is documented in [docs-eng-process/agent-workflow.md](docs-eng-process/agent-workflow.md).
+- **Running agents via CLI**: See [RUNNING-AGENTS.md](RUNNING-AGENTS.md) for instructions on using Cursor CLI or Claude Code to execute tasks following the OpenUP process.
+- **Complete agent workflow**: The full operating procedures are documented in [docs-eng-process/agent-workflow.md](docs-eng-process/agent-workflow.md).
 
 ### For Project Initialization
 
-See [docs-eng-process/getting-started.md](docs-eng-process/getting-started.md) for how to initialize a new project from this template.
+- **Agent-driven initialization**: See [docs-eng-process/init-prompts.md](docs-eng-process/init-prompts.md) for copy/paste prompts that guide an AI agent through a two-run setup (technical preparation + Vision Q&A). This is the recommended approach for new projects.
+- **Manual initialization**: See [docs-eng-process/getting-started.md](docs-eng-process/getting-started.md) for step-by-step manual setup instructions.
 
 ---
 

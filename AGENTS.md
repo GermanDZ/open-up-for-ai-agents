@@ -7,6 +7,8 @@ This repository uses a structured engineering process for AI agents. **Start her
 For detailed workflow and SOPs, see:
 - [docs-eng-process/agent-workflow.md](docs-eng-process/agent-workflow.md) - Complete agent operating procedures
 
+**Project initialization prompts**: [docs-eng-process/init-prompts.md](docs-eng-process/init-prompts.md) - Copy/paste prompts to initialize a new project
+
 ---
 
 **Note**: This file exists for tool compatibility. The authoritative process documentation lives in `docs-eng-process/`.

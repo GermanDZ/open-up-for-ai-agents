@@ -2,6 +2,14 @@
 
 This guide explains how to initialize a new project from this template.
 
+## Prefer to Have an Agent Do This?
+
+If you want an AI agent to handle the technical setup and initial scaffolding, see [init-prompts.md](init-prompts.md) for copy/paste prompts that guide the agent through a two-run initialization process (setup + Vision Q&A). This is the recommended approach for new projects.
+
+## Manual Initialization
+
+If you prefer to initialize manually, follow the steps below.
+
 ## Initial Setup
 
 ### 1. Copy Essential Templates

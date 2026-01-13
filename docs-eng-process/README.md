@@ -6,7 +6,9 @@
 
 1. **Read this file first** - understand the process structure
 2. **Read [agent-workflow.md](agent-workflow.md)** - detailed operating procedures
-3. **Read [getting-started.md](getting-started.md)** - how to initialize a new project
+3. **Initialize a new project**:
+   - **Agent-driven**: Use [init-prompts.md](init-prompts.md) for copy/paste prompts (recommended)
+   - **Manual**: Follow [getting-started.md](getting-started.md) for step-by-step setup
 
 ## Process Structure
 
