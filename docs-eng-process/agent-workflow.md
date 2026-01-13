@@ -102,6 +102,7 @@ Each task must be planned before execution:
 
 - All changes made during a task must be committed in **at least one atomic commit**
 - If a task is split into multiple steps, each step may be a separate commit (still atomic per step)
+- **MANDATORY**: When confirming a task is finished, you MUST commit all changes to git before stopping. Do not leave uncommitted changes.
 
 ### Role Switching
 
