@@ -60,20 +60,31 @@ You have my explicit permission to CREATE and UPDATE the following state docs du
 …and to create any docs/* files required by getting-started.md.
 
 Goal of this run:
-1) Technical preparation: create the docs structure and copy templates into place.
+1) **Create branch (if needed)**: Before starting any work, follow [Start-of-Run SOP Step 4](agent-workflow.md#start-of-run-sop) from docs-eng-process/agent-workflow.md:
+   - Detect trunk branch (origin/HEAD → main → master → current)
+   - If on trunk, **MANDATORY** - create a new branch before starting work (e.g., `feature/init-project-setup`)
+   - If not on trunk, continue on current branch
+   - Record branch name for traceability
+2) Technical preparation: create the docs structure and copy templates into place.
    - Copy `docs-eng-process/templates/vision.md` to `docs/vision.md`
    - Copy `docs-eng-process/templates/risk-list.md` to `docs/risk-list.md`
    - Create the required directory structure (docs/phases/inception/)
-2) Minimal customization: use the project information provided above to fill in:
+3) Minimal customization: use the project information provided above to fill in:
    - project_name in docs/project-status.md
    - Basic project description in docs/vision.md (with TODO markers for unknown sections)
    - Target users in docs/vision.md if provided
    Use reasonable placeholders if optional info is not provided.
-3) Stop after setup and present:
+4) Stop after setup and present:
    - a short project summary (name + description + current phase/iteration_goal)
    - what files were created
    - the next steps for the human
    - the exact Prompt B (from docs-eng-process/init-prompts.md) to run next for Vision Q&A
+
+**MANDATORY**: Before stopping, commit all changes to git. Follow the [End-of-Run SOP](agent-workflow.md#end-of-run-sop) from docs-eng-process/agent-workflow.md:
+   - Stage all changes: `git add -A`
+   - Create commit: `git commit -m "Initialize project: <project-name>"`
+   - Verify no uncommitted changes: `git status --porcelain` must be empty
+   - Do NOT stop until all changes are committed
 
 Required outputs to create (no more, unless strictly required by the process):
 - docs/vision.md - Copy from `docs-eng-process/templates/vision.md` and fill with the minimal info above + TODO markers for unknown sections
@@ -113,6 +124,11 @@ Follow docs-eng-process/agent-workflow.md start-of-run SOP:
 1) Read docs/project-status.md to establish context (phase, iteration, iteration_goal)
 2) Read docs/roadmap.md and select the "Fill Vision document (guided Q&A)" task
 3) Verify the task aligns with current phase + iteration goals
+4) **Create branch (if needed)**: Follow [Start-of-Run SOP Step 4](agent-workflow.md#start-of-run-sop):
+   - Detect trunk branch (origin/HEAD → main → master → current)
+   - If on trunk, **MANDATORY** - create a new branch before starting work (e.g., `feature/vision-qa`)
+   - If not on trunk, continue on current branch
+   - Record branch name for traceability
 
 Then:
 - Ask the minimum set of questions needed to complete docs/vision.md
@@ -121,6 +137,13 @@ Then:
 - Stop when the vision doc is "good enough for Inception" (core sections filled; TODOs are acceptable for less critical sections)
 
 You have permission to update docs/vision.md and docs/roadmap.md (mark the task as in-progress, then completed when done).
+
+**MANDATORY**: Before stopping, commit all changes to git. Follow the [End-of-Run SOP](agent-workflow.md#end-of-run-sop) from docs-eng-process/agent-workflow.md:
+   - Stage all changes: `git add -A`
+   - Create commit: `git commit -m "Complete Vision document Q&A"`
+   - Verify no uncommitted changes: `git status --porcelain` must be empty
+   - Create traceability logs with commit SHA
+   - Do NOT stop until all changes are committed and logs are created
 
 Do NOT proceed to other roadmap tasks in this run. Focus only on completing the Vision document.
 ```

@@ -11,7 +11,8 @@
 5. [Branching SOP](#branching-sop)
 6. [Docs Update SOP](#docs-update-sop)
 7. [Traceability Logging SOP](#traceability-logging-sop)
-8. [Project Status Definition](#project-status-definition)
+8. [End-of-Run SOP](#end-of-run-sop)
+9. [Project Status Definition](#project-status-definition)
 
 ---
 
@@ -78,6 +79,33 @@ If the task doesn't fit:
 - Request user approval or defer to backlog
 - Do not proceed without explicit approval
 
+### Step 4: Create Branch (if needed)
+
+**MANDATORY**: Before starting any work, ensure you are on an appropriate branch. Never work directly on trunk.
+
+1. **Detect trunk branch** using this algorithm:
+   - Prefer `origin/HEAD` if present locally
+   - Else fall back to `main`
+   - Else fall back to `master`
+   - Else use current branch
+
+2. **Check current branch**:
+   - If `current branch == trunk`: **MANDATORY** - Create a new branch for the work before proceeding
+   - If `current branch != trunk`: Continue on current branch (no new branch needed)
+
+3. **If creating a new branch**:
+   - Use descriptive branch name following project conventions (typically `feature/`, `fix/`, `refactor/`, etc.)
+   - Include task ID or brief description in branch name (e.g., `feature/T-001-login-endpoint`)
+   - Create branch: `git checkout -b <branch-name>`
+
+4. **Record branch information**:
+   - Note the branch name and trunk detection result for inclusion in traceability logs
+   - Always record what was detected as trunk in the run log
+
+**CRITICAL**: Do not proceed to Role-Based Execution until you are on a non-trunk branch (or have created a new branch if on trunk). All work must happen on a feature branch, never directly on trunk.
+
+**See [Branching SOP](#branching-sop) for detailed branch naming conventions and rules.**
+
 ---
 
 ## Role-Based Execution SOP
@@ -117,9 +145,15 @@ Each task must be planned before execution:
 
 ### Commit Policy Per Task
 
+**⚠️ CRITICAL**: Committing changes is not optional - it is a mandatory requirement for task completion.
+
 - All changes made during a task must be committed in **at least one atomic commit**
 - If a task is split into multiple steps, each step may be a separate commit (still atomic per step)
 - **MANDATORY**: When confirming a task is finished, you MUST commit all changes to git before stopping. Do not leave uncommitted changes.
+- **MANDATORY**: Uncommitted changes mean the task is NOT complete. Task execution history is only persisted when changes are committed.
+- **MANDATORY**: Before declaring a task finished, verify with `git status --porcelain` that no uncommitted changes exist.
+
+**See [End-of-Run SOP](#end-of-run-sop) for the complete mandatory procedure that must be followed before stopping.**
 
 ### Role Switching
 
@@ -277,6 +311,8 @@ When processing an answered input request:
 
 ## Branching SOP
 
+**Note**: This procedure is executed as part of [Start-of-Run SOP](#start-of-run-sop) Step 4, which happens **before any work begins**. Branch creation is mandatory if you are on trunk.
+
 ### Trunk Detection
 
 Detect trunk branch (varies per repo) using this algorithm:
@@ -290,12 +326,18 @@ Detect trunk branch (varies per repo) using this algorithm:
 
 ### Branch Creation Rules
 
-- **If current branch == trunk**: Create a new branch for the work
+- **If current branch == trunk**: **MANDATORY** - Create a new branch for the work before starting any work
 - **If current branch != trunk**: Do **not** create a new branch; work on current branch
+
+**CRITICAL**: Branch creation happens BEFORE Role-Based Execution begins. Never start working before ensuring you are on an appropriate branch.
 
 ### Branch Naming
 
 Follow project conventions (typically `feature/`, `fix/`, `refactor/`, etc.)
+
+- Include task ID or brief description when possible (e.g., `feature/T-001-login-endpoint`)
+- Use descriptive names that indicate the work being done
+- Keep branch names concise but informative
 
 ---
 
@@ -316,6 +358,8 @@ Always update `/docs` artifacts to reflect work done:
 
 **Always write run logs** for every agent execution.
 
+**⚠️ MANDATORY PREREQUISITE**: Commits must exist before creating logs. The `commits` field in logs must reference actual commit SHAs that exist in the git repository. Do not create logs until all changes are committed (see [End-of-Run SOP](#end-of-run-sop) Step 1).
+
 ### Markdown Log
 
 Create: `docs/agent-logs/YYYY/MM/DD/<timestamp>-<agent>-<branch>.md`
@@ -324,6 +368,7 @@ Include:
 - Run metadata (branch, trunk, timestamps)
 - Roles assumed and any role switches
 - Tasks performed (one per primary-role task boundary)
+- **Commit SHAs**: List all commits created during this run
 - Consulting-role usage within tasks
 - Key decisions/assumptions + links to relevant docs
 - Initial instructions/prompt (verbatim)
@@ -366,6 +411,89 @@ Append to: `docs/agent-logs/agent-runs.jsonl`
 **Required fields**:
 - `run_id`, `agent`, `branch`, `trunk`, `start`, `end`, `phase`, `iteration_goals`, `prompt_hash`, `md_log_path`, `tasks`
 - `tasks[]`: `role`, `objective`, `start`, `end`, `commits`, `docs_updated`, `consulting_roles`
+
+**MANDATORY**: The `commits` field must contain actual commit SHAs that exist in the repository. 
+
+**Validation before logging**:
+1. Verify commits exist: `git log --oneline` should show the commits you plan to reference
+2. Verify no uncommitted changes: `git status --porcelain` should be empty
+3. Only after both checks pass, create the logs with commit SHAs
+
+**If no commits exist**: Do not create logs. Return to [End-of-Run SOP](#end-of-run-sop) Step 1 to commit changes first.
+
+**See [End-of-Run SOP](#end-of-run-sop) for the complete mandatory procedure that must be followed before creating logs.**
+
+---
+
+## End-of-Run SOP
+
+**⚠️ MANDATORY: Every agent run MUST complete these steps before stopping. A task is NOT complete until all steps are finished.**
+
+**Every agent run MUST end with these steps in order:**
+
+### Step 1: Commit All Changes
+
+**REQUIRED**: All changes made during the task must be committed to git before proceeding.
+
+1. **Stage all changes**: `git add -A` (or selectively stage specific files)
+2. **Create commit**: `git commit -m "<descriptive commit message>"`
+   - Include task ID/description in the commit message
+   - Make the commit message descriptive of what was accomplished
+3. **Verify commit exists**: `git log -1 --oneline` to confirm the commit was created
+4. **Record commit SHA**: Note the commit SHA for inclusion in traceability logs
+
+**CRITICAL**: If there are any uncommitted changes, the task is NOT complete. Do NOT proceed to the next step until `git status --porcelain` shows no changes.
+
+### Step 2: Verify No Uncommitted Changes
+
+**REQUIRED**: Verify that all changes are committed:
+
+- Run `git status --porcelain`
+- If any output is shown, there are uncommitted changes - return to Step 1
+- Only proceed when `git status --porcelain` returns empty (no output)
+
+**MANDATORY**: You MUST NOT declare a task finished or stop the run if there are uncommitted changes. Uncommitted changes mean the task execution history is not persisted.
+
+### Step 3: Create Traceability Logs
+
+**REQUIRED**: Create both markdown and JSONL logs (see [Traceability Logging SOP](#traceability-logging-sop)):
+
+1. Create markdown log at `docs/agent-logs/YYYY/MM/DD/<timestamp>-<agent>-<branch>.md`
+2. Append JSONL entry to `docs/agent-logs/agent-runs.jsonl`
+3. **Include commit SHAs**: The `commits` field in the JSONL must contain the actual commit SHAs from Step 1
+4. Verify the logs reference the commits that were just created
+
+### Step 4: Update Documentation
+
+**REQUIRED**: Update project documentation to reflect completed work:
+
+- Update phase notes in `docs/phases/{phase}/notes.md`
+- If permission was granted: update `docs/project-status.md` (Active Work Items table, `last_updated`, `updated_by`)
+- If permission was granted: update `docs/roadmap.md` (mark task as completed)
+- Create/update decision records if architectural decisions were made
+
+### Step 5: Final Verification
+
+Before stopping, verify:
+
+- [ ] All changes are committed (Step 1 complete)
+- [ ] No uncommitted changes exist (Step 2 verified)
+- [ ] Traceability logs created with commit SHAs (Step 3 complete)
+- [ ] Documentation updated (Step 4 complete)
+- [ ] Task is marked as complete in roadmap (if permission granted)
+
+**ONLY after all steps are complete**: Inform the user that the task is finished and stop. Do not proceed to additional tasks in this run.
+
+### Failure to Complete End-of-Run SOP
+
+If an agent stops without completing the End-of-Run SOP:
+
+- The task execution history is lost (not persisted in git)
+- Traceability is broken (logs may reference non-existent commits)
+- The task should be considered incomplete
+- Future agents will not have a complete history of work performed
+
+**Therefore, completing the End-of-Run SOP is not optional - it is a mandatory requirement for task completion.**
 
 ---
 
