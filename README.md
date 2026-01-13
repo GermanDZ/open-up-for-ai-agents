@@ -1,6 +1,29 @@
-# OpenUP HTML to Markdown Converter
+# OpenUP Project Template
 
-A Python-based converter that transforms Eclipse Process Framework (EPF) OpenUP HTML documentation into a clean, well-structured Markdown knowledge base with AI-agent-friendly indexing.
+This repository is a **project template** that provides a structured engineering process based on OpenUP (Open Unified Process) for AI-agent-driven development.
+
+## Template Structure
+
+This template organizes documentation into two distinct areas:
+
+- **`docs-eng-process/`** - Strict engineering process and agent workflows. This directory contains the authoritative process documentation that AI agents must follow. **Do not modify files in `docs-eng-process/` during project tasks.**
+- **`docs/`** - Project-specific artifacts only (no instructions). This directory contains project planning, tracking, decisions, and deliverables. Created and expanded during development.
+
+### For AI Agents
+
+**Start here**: [AGENTS.md](AGENTS.md) → [docs-eng-process/README.md](docs-eng-process/README.md)
+
+The complete agent workflow is documented in [docs-eng-process/agent-workflow.md](docs-eng-process/agent-workflow.md).
+
+### For Project Initialization
+
+See [docs-eng-process/getting-started.md](docs-eng-process/getting-started.md) for how to initialize a new project from this template.
+
+---
+
+## OpenUP HTML to Markdown Converter
+
+This repository also includes a Python-based converter that transforms Eclipse Process Framework (EPF) OpenUP HTML documentation into a clean, well-structured Markdown knowledge base with AI-agent-friendly indexing.
 
 ## Features
 
@@ -91,25 +114,29 @@ The converter runs 7 phases automatically:
 
 ```
 open-up-for-ai-agents/
-├── converter/              # Core conversion modules
-│   ├── config.py          # Configuration and path mappings
-│   ├── parser.py          # HTML parsing and metadata extraction
-│   ├── path_mapper.py     # Path transformation logic
+├── AGENTS.md              # Entrypoint for AI agents (thin pointer)
+├── docs-eng-process/       # Engineering process (strict, do not modify during project tasks)
+│   ├── README.md          # Canonical agent entrypoint
+│   ├── agent-workflow.md  # Complete agent operating procedures
+│   ├── how-to-work.md     # Minimal orientation
+│   ├── getting-started.md # Project initialization guide
+│   ├── templates/         # Document templates (from OpenUP KB)
+│   └── openup-knowledge-base/  # Vendored OpenUP knowledge base
+├── docs/                   # Project-specific artifacts (created during development)
+│   ├── .gitkeep          # Placeholder (docs created as needed)
+│   ├── project-status.md # Current project state (created during development)
+│   ├── roadmap.md        # Prioritized work items (created during development)
+│   └── phases/           # Phase-specific docs (created during development)
+├── converter/             # Core conversion modules (for KB generation)
+│   ├── config.py         # Configuration and path mappings
+│   ├── parser.py         # HTML parsing and metadata extraction
+│   ├── path_mapper.py    # Path transformation logic
 │   └── markdown_converter.py  # HTML to Markdown conversion
 ├── scripts/
-│   └── convert.py         # Main conversion script (single entry point)
+│   └── convert.py        # Main conversion script (single entry point)
 ├── requirements.txt       # Python dependencies
-├── .tmp/
-│   └── openup/           # Source HTML files (not in repo)
-└── openup-knowledge-base/ # Generated output (not in repo)
-    ├── manifest.json     # AI-friendly index
-    ├── images/           # Converted images
-    ├── core/             # Core roles, disciplines, concepts
-    ├── practice-management/   # Management practices
-    ├── practice-technical/    # Technical practices
-    ├── practice-general/      # General practices
-    ├── guides/           # Supporting materials
-    └── process/          # Delivery processes
+├── .tmp/                  # Archive/ignored (source HTML files)
+└── openup-knowledge-base/ # Source KB (vendored into docs-eng-process/)
 ```
 
 ## Output Structure
