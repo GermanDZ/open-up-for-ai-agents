@@ -81,7 +81,7 @@ If the task doesn't fit:
 
 ### Step 4: Create Branch (if needed)
 
-**MANDATORY**: Before starting any work, ensure you are on an appropriate branch. Never work directly on trunk.
+**MANDATORY**: Before starting any work, ensure you are on an appropriate branch. Never work directly on trunk. New tasks must start on a clean branch (either trunk or a branch that has been merged to trunk).
 
 1. **Detect trunk branch** using this algorithm:
    - Prefer `origin/HEAD` if present locally
@@ -89,11 +89,16 @@ If the task doesn't fit:
    - Else fall back to `master`
    - Else use current branch
 
-2. **Check current branch**:
-   - If `current branch == trunk`: **MANDATORY** - Create a new branch for the work before proceeding
-   - If `current branch != trunk`: Continue on current branch (no new branch needed)
+2. **Check branch lifecycle** (see [Branching SOP](#branching-sop) for details):
+   - If `current branch == trunk`: Proceed to step 3 to create a new branch
+   - If `current branch != trunk`: Check for unmerged commits using `git log <trunk>..HEAD --oneline`
+     - **If unmerged commits exist**: 
+       - **If origin is configured**: Create pull request and wait for user confirmation that PR is merged
+       - **If origin is not configured**: Ask user to confirm merge to trunk before proceeding
+       - **Do NOT proceed** with new task until branch is merged or user explicitly overrides
+     - **If no unmerged commits or after merge/PR confirmation**: Proceed to step 3 to create a new branch
 
-3. **If creating a new branch**:
+3. **Create a new branch for the new task**:
    - Use descriptive branch name following project conventions (typically `feature/`, `fix/`, `refactor/`, etc.)
    - Include task ID or brief description in branch name (e.g., `feature/T-001-login-endpoint`)
    - Create branch: `git checkout -b <branch-name>`
@@ -101,10 +106,11 @@ If the task doesn't fit:
 4. **Record branch information**:
    - Note the branch name and trunk detection result for inclusion in traceability logs
    - Always record what was detected as trunk in the run log
+   - Record any merge/PR actions taken during branch lifecycle check
 
-**CRITICAL**: Do not proceed to Role-Based Execution until you are on a non-trunk branch (or have created a new branch if on trunk). All work must happen on a feature branch, never directly on trunk.
+**CRITICAL**: Do not proceed to Role-Based Execution until you are on a non-trunk branch that has been merged to trunk (or is trunk itself, from which you've created a new branch). All work must happen on a feature branch, never directly on trunk.
 
-**See [Branching SOP](#branching-sop) for detailed branch naming conventions and rules.**
+**See [Branching SOP](#branching-sop) for detailed branch lifecycle management, naming conventions, and rules.**
 
 ---
 
@@ -311,7 +317,7 @@ When processing an answered input request:
 
 ## Branching SOP
 
-**Note**: This procedure is executed as part of [Start-of-Run SOP](#start-of-run-sop) Step 4, which happens **before any work begins**. Branch creation is mandatory if you are on trunk.
+**Note**: This procedure is executed as part of [Start-of-Run SOP](#start-of-run-sop) Step 4, which happens **before any work begins**. Branch creation is mandatory if you are on trunk, and branches with unmerged commits must be merged to trunk before starting new tasks.
 
 ### Trunk Detection
 
@@ -324,12 +330,43 @@ Detect trunk branch (varies per repo) using this algorithm:
 
 **Always record what was detected** as trunk in the run log.
 
+### Branch Lifecycle Check
+
+**MANDATORY**: Before starting a new task, check if the current branch has unmerged commits. New tasks must start on a clean branch (either trunk or a branch that has been merged to trunk).
+
+1. **If current branch == trunk**: Proceed to [Branch Creation Rules](#branch-creation-rules) to create a new branch for the work.
+
+2. **If current branch != trunk**: Check for unmerged commits:
+   - Run: `git log <trunk>..HEAD --oneline` to detect commits not in trunk
+   - If commits exist (output is non-empty):
+     - **If origin remote is configured** (`git remote get-url origin` succeeds):
+       - Inform user: "Current branch has unmerged commits. Creating pull request..."
+       - Push branch to origin: `git push -u origin <current-branch>`
+       - Create pull request (using platform-specific tooling if available, e.g., `gh pr create` for GitHub, `glab mr create` for GitLab)
+       - Wait for user confirmation: "PR has been merged to trunk" or "PR is ready for review"
+       - **Do NOT proceed** with new task until PR is merged or user explicitly confirms to continue
+     - **If origin remote is not configured**:
+       - Ask user: "Current branch has unmerged commits. Merge to trunk before continuing? (yes/no)"
+       - If user confirms "yes":
+         - Switch to trunk: `git checkout <trunk>`
+         - Merge branch: `git merge <previous-branch>`
+         - Delete merged branch: `git branch -d <previous-branch>`
+         - Proceed to create new branch for new task
+       - If user confirms "no" or does not approve:
+         - Stop and wait for user to handle merge manually
+         - **Do NOT proceed** with new task until merge is complete
+   - If no commits exist (output is empty) or after merge/PR confirmation:
+     - Proceed to [Branch Creation Rules](#branch-creation-rules) to create a new branch for the new task
+
+**CRITICAL**: Do not start a new task on a branch that has unmerged commits. This ensures clean branch history and prevents work from being lost.
+
 ### Branch Creation Rules
 
 - **If current branch == trunk**: **MANDATORY** - Create a new branch for the work before starting any work
-- **If current branch != trunk**: Do **not** create a new branch; work on current branch
+- **If current branch != trunk AND has been merged to trunk** (no unmerged commits): **MANDATORY** - Create a new branch for the new task
+- **If current branch != trunk AND has unmerged commits**: **BLOCKED** - Handle merge/PR first (see [Branch Lifecycle Check](#branch-lifecycle-check))
 
-**CRITICAL**: Branch creation happens BEFORE Role-Based Execution begins. Never start working before ensuring you are on an appropriate branch.
+**CRITICAL**: Branch creation happens BEFORE Role-Based Execution begins. Never start working before ensuring you are on an appropriate branch that has been merged to trunk (or is trunk itself).
 
 ### Branch Naming
 
