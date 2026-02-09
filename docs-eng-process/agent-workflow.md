@@ -341,9 +341,12 @@ Detect trunk branch (varies per repo) using this algorithm:
    - Run: `git log <trunk>..HEAD --oneline` to detect commits not in trunk
    - If commits exist (output is non-empty):
      - **If origin remote is configured** (`git remote get-url origin` succeeds):
-       - Inform user: "Current branch has unmerged commits. Creating pull request..."
-       - Push branch to origin: `git push -u origin <current-branch>`
-       - Create pull request (using platform-specific tooling if available, e.g., `gh pr create` for GitHub, `glab mr create` for GitLab)
+       - Inform user: "Current branch has unmerged commits. Creating pull request with task context..."
+       - Invoke `/create-pr` skill to create PR with proper description linking to roadmap task context:
+         - Extract task_id from branch name (e.g., `feature/T-001-xyz` → `T-001`)
+         - Generate PR description from `docs/roadmap.md` task entry
+         - Push branch to origin: `git push -u origin <current-branch>`
+         - Create PR using platform-specific tooling (GitHub `gh`, GitLab `glab`)
        - Wait for user confirmation: "PR has been merged to trunk" or "PR is ready for review"
        - **Do NOT proceed** with new task until PR is merged or user explicitly confirms to continue
      - **If origin remote is not configured**:

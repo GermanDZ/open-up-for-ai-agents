@@ -8,6 +8,9 @@ arguments:
   - name: commit_message
     description: Custom commit message (optional, auto-generates if not provided)
     required: false
+  - name: create_pr
+    description: Create a pull request after completing the task (optional, default false)
+    required: false
 ---
 
 # Complete Task
@@ -59,6 +62,28 @@ Create both markdown and JSONL logs (see Traceability Logging SOP):
 - JSONL entry: Append to `docs/agent-logs/agent-runs.jsonl`
 - Include commit SHAs in the logs
 
+### 7. Optionally Create Pull Request
+
+If `$ARGUMENTS[create_pr] == "true"`:
+
+1. **Verify current branch has unmerged commits**:
+   - Run: `git log <trunk>..HEAD --oneline`
+   - Proceed only if unmerged commits exist
+
+2. **Invoke `/create-pr` skill**:
+   - Pass `task_id: $ARGUMENTS[task_id]`
+   - Let the skill auto-detect branch and generate description
+
+3. **Inform user of result**:
+   - If PR created successfully: Provide PR URL
+   - If PR creation failed: Explain error and provide next steps
+   - If no unmerged commits: Inform user that PR is not needed
+
+Example usage:
+```
+/complete-task task_id: T-005 create_pr: true
+```
+
 ## Output
 
 Returns a summary of:
@@ -66,6 +91,7 @@ Returns a summary of:
 - Commit SHA
 - Files changed
 - Log locations
+- PR URL (if create_pr was true)
 
 ## References
 

@@ -33,6 +33,15 @@
             "prompt": "Commit successful. Consider updating docs/project-status.md Active Work Items table if this commit completes a task."
           }
         ]
+      },
+      {
+        "matcher": "Bash(git push*)",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Branch pushed to remote. Consider creating a pull request with task context using /create-pr to link this work to the roadmap task. This ensures proper traceability and review."
+          }
+        ]
       }
     ],
     "Stop": [
@@ -40,7 +49,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "Before stopping, verify: 1) All changes committed, 2) Traceability logs created, 3) docs/ updated. If phase completion criteria are met, notify user that phase review is needed."
+            "prompt": "Before stopping, verify: 1) All changes committed, 2) Traceability logs created, 3) docs/ updated. If current branch has unmerged commits and origin is configured, consider creating a pull request using /create-pr to link work to roadmap task. If phase completion criteria are met, notify user that phase review is needed."
           }
         ]
       }

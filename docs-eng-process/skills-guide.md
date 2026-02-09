@@ -259,10 +259,12 @@ Mark a task as complete, update roadmap, commit changes, and prepare logs.
 **Arguments**:
 - `task_id` (required): Task ID (e.g., T-001)
 - `commit_message` (optional): Custom commit message
+- `create_pr` (optional): Create a pull request after completing the task (default false)
 
-**Example**:
+**Examples**:
 ```
 /complete-task task_id: T-003
+/complete-task task_id: T-003 create_pr: true
 ```
 
 **What it does**:
@@ -272,10 +274,46 @@ Mark a task as complete, update roadmap, commit changes, and prepare logs.
 4. Updates roadmap
 5. Updates project status
 6. Creates traceability logs
+7. Optionally creates pull request (if `create_pr: true`)
 
-**Output**: Task completed, commit SHA, files changed, log locations
+**Output**: Task completed, commit SHA, files changed, log locations, PR URL (if applicable)
 
 **IMPORTANT**: Must be called AFTER all changes are committed.
+
+### /create-pr
+
+Create a pull request with proper description linking to roadmap task context.
+
+**Arguments**:
+- `task_id` (optional): Task ID from roadmap (e.g., T-001). Auto-detected from branch name if not provided.
+- `branch` (optional): Branch to create PR from. Uses current branch if not provided.
+- `title` (optional): Custom PR title. Auto-generated from task if not provided.
+- `base` (optional): Base branch to merge into. Auto-detected if not provided.
+
+**Examples**:
+```
+/create-pr task_id: T-005
+/create-pr task_id: T-005 base: develop
+/create-pr
+```
+
+**What it does**:
+1. Detects current branch and checks for unmerged commits
+2. Detects platform (GitHub `gh`, GitLab `glab`, or generic)
+3. Extracts task_id from branch name or uses provided argument
+4. Parses `docs/roadmap.md` to get task description, priority, status
+5. Generates structured PR description using template
+6. Pushes branch and creates PR with task context
+7. Handles errors gracefully (no remote, CLI not installed, etc.)
+
+**Output**: PR URL, branch name, task context linked, files changed, commits included
+
+**Error Handling**:
+- No unmerged commits: Informs user branch is up to date
+- No remote configured: Prompts user to add remote
+- CLI not installed: Provides installation instructions
+- No task_id found: Proceeds with generic PR description
+- Roadmap not found: Proceeds without task context
 
 ### /request-input
 
@@ -370,6 +408,7 @@ Create an OpenUP agent team for feature implementation.
 | Planning iteration | `/create-iteration-plan` |
 | Starting iteration | `/start-iteration` |
 | Finishing task | `/complete-task` |
+| Creating pull request | `/create-pr` |
 | Need stakeholder input | `/request-input` |
 | Phase nearly complete | `/phase-review` |
 | Ending agent run | `/log-run` |

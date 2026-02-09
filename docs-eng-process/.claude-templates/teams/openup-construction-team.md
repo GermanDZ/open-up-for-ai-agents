@@ -73,6 +73,10 @@ Each iteration:
 4. **Tester** validates fixes and updates test results
 5. **Architect** (if needed) provides technical guidance
 6. **Analyst** (if needed) clarifies requirements
+7. **Team Lead** ensures PR is created after task completion:
+   - Use `/complete-task task_id: T-XXX create_pr: true` to complete task and create PR
+   - Or use `/create-pr task_id: T-XXX` to create PR manually
+   - Verify PR description includes task context from roadmap
 
 ## Task Assignment Guidelines
 
@@ -80,6 +84,7 @@ Each iteration:
 - **Testing and quality** → tester
 - **Technical guidance** → architect
 - **Requirements clarification** → analyst
+- **PR creation and coordination** → Team Lead (developer)
 
 ## Collaboration Patterns
 

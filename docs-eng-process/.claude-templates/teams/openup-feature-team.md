@@ -64,6 +64,12 @@ Implement a new feature from requirements through design, implementation, and te
    - Create user documentation if needed
    - Update architecture and design docs
 
+7. **Pull Request**
+   - Team Lead (developer) ensures PR is created with proper task context
+   - Use `/complete-task task_id: T-XXX create_pr: true` to complete task and create PR
+   - Or use `/create-pr task_id: T-XXX` to create PR manually
+   - Verify PR description links to roadmap task and includes context
+
 ## Creating This Team
 
 To create an OpenUP Feature team, use this prompt:
@@ -90,6 +96,7 @@ Finally, the tester should validate the feature meets requirements.
 - **Implementation** → developer
 - **Testing** → tester
 - **Documentation** → All (based on artifact type)
+- **PR creation and coordination** → Team Lead (developer)
 
 ## Collaboration Patterns
 

@@ -84,3 +84,12 @@ When assigning tasks to teammates:
 - **Developer ↔ Tester**: Test coverage, bug fixing, TDD
 - **All ↔ Project Manager**: Status updates, planning, blockers
 - **Tester ↔ Analyst**: Acceptance criteria, requirements validation
+
+## Pull Request Workflow
+
+After task completion, the team lead (typically project-manager or phase lead) ensures:
+1. PR is created with proper task context linking to roadmap
+2. Use `/complete-task task_id: T-XXX create_pr: true` to complete task and create PR
+3. Or use `/create-pr task_id: T-XXX` to create PR manually
+4. Verify PR description includes task context, changes summary, and testing checklist
+5. All teammates review PR before merge
