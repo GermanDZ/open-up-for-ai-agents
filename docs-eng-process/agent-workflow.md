@@ -13,6 +13,7 @@
 7. [Traceability Logging SOP](#traceability-logging-sop)
 8. [End-of-Run SOP](#end-of-run-sop)
 9. [Project Status Definition](#project-status-definition)
+10. [Skills and Teams Integration](#skills-and-teams-integration)
 
 ---
 
@@ -654,8 +655,102 @@ Any additional context agents or team members should know.
 
 ---
 
+## Skills and Teams Integration
+
+OpenUP workflow procedures integrate with Claude Code's Skills and Agent Teams capabilities for automation and collaboration.
+
+### Skills
+
+Skills encapsulate common workflow operations. Use skills to automate repetitive tasks:
+
+**Workflow Skills** (automate SOP steps):
+- `/start-iteration` - Automates Start-of-Run SOP for iteration initialization
+- `/complete-task` - Automates End-of-Run SOP for task completion
+- `/request-input` - Automates Asynchronous Input SOP
+- `/phase-review` - Checks phase completion criteria
+- `/log-run` - Automates Traceability Logging SOP
+
+**Phase Skills** (guide phase-specific work):
+- `/inception` - Guides Inception phase activities
+- `/elaboration` - Guides Elaboration phase activities
+- `/construction` - Guides Construction phase activities
+- `/transition` - Guides Transition phase activities
+
+**Artifact Skills** (create work products):
+- `/create-vision` - Creates vision document
+- `/create-use-case` - Creates use case specification
+- `/create-architecture-notebook` - Creates architecture documentation
+- `/create-risk-list` - Creates risk assessment
+- `/create-iteration-plan` - Creates iteration plan
+- `/create-test-plan` - Creates test cases and scripts
+
+See [Skills Guide](skills-guide.md) for complete skill documentation.
+
+### Agent Teams
+
+Agent Teams enable role-based collaboration. Teams automatically follow role-based instructions and the SOPs defined in this document:
+
+**Available Roles**:
+- **analyst** - Requirements, stakeholder communication
+- **architect** - Architecture design, technical decisions
+- **developer** - Implementation, unit testing
+- **project-manager** - Planning, coordination
+- **tester** - Test planning, execution
+
+**Team Configurations**:
+- **Phase teams**: Inception, Elaboration, Construction, Transition
+- **Task teams**: Feature, Investigation, Planning, Full Team
+
+See [Teams Guide](teams-guide.md) for complete team documentation.
+
+### Using Skills with Teams
+
+Skills and teams work together. Example workflows:
+
+**Iteration Start with Team**:
+```
+/start-iteration goal: "Implement user authentication"
+Create an OpenUP agent team for construction phase.
+```
+
+**Feature Implementation with Team**:
+```
+Create an OpenUP feature team.
+/complete-task task_id: T-005
+/log-run
+```
+
+**Phase Review with Team**:
+```
+/phase-review
+Create an OpenUP team for phase review preparation.
+```
+
+### Skills that Reference SOPs
+
+| Skill | References SOP |
+|-------|----------------|
+| `/start-iteration` | Start-of-Run SOP |
+| `/complete-task` | End-of-Run SOP, Traceability Logging SOP |
+| `/request-input` | Asynchronous Input SOP |
+| `/log-run` | Traceability Logging SOP, End-of-Run SOP |
+
+### Quality Hooks
+
+Optional quality enforcement hooks can be configured in `.claude/settings.json`:
+
+- **Pre-commit**: Verifies required documentation exists
+- **Post-edit**: Prompts for documentation updates
+- **Stop**: Verifies completion criteria before stopping
+
+Example configuration: `docs-eng-process/.claude-templates/settings.json.example`
+
+---
+
 ## Additional Resources
 
 - [How to Work](how-to-work.md) - Minimal orientation
 - [Getting Started](getting-started.md) - Project initialization guide
 - [OpenUP Knowledge Base](openup-knowledge-base/) - Complete process reference
+- [Skills Guide](skills-guide.md) - Skills documentation
+- [Teams Guide](teams-guide.md) - Teams documentation
