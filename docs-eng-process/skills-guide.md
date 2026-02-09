@@ -229,7 +229,75 @@ Create a use case specification from template.
 - [ ] Basic flow is documented
 - [ ] Alternative flows are identified
 
-**See Also**: `openup-create-vision`, `openup-create-test-plan`, `openup-elaboration`
+**See Also**: `openup-create-vision`, `openup-detail-use-case`, `openup-create-test-plan`, `openup-elaboration`
+
+### /openup-detail-use-case
+
+Transform a high-level use case into detailed scenarios with test cases.
+
+**Purpose**: Add detailed scenarios, Gherkin acceptance criteria, and test case generation
+
+**When to Use**:
+- A high-level use case exists but lacks detailed scenarios
+- Need to document happy paths, alternative flows, and error cases
+- Ready to create Gherkin acceptance criteria for automation
+- Preparing to generate test cases from use cases
+
+**When NOT to Use**:
+- The use case doesn't exist (use `/openup-create-use-case` first)
+- The use case is already fully detailed with scenarios
+- Just need to create a new use case from scratch
+
+**Arguments**:
+- `use_case_name` (required): Name of the use case to detail
+- `generate_tests` (optional): Generate test cases from scenarios (true/false)
+
+**Example**:
+```
+/openup-detail-use-case use_case_name: "user-login" generate_tests: true
+```
+
+**Success Criteria**:
+- [ ] Use case is updated with detailed scenarios
+- [ ] Happy path, alternative paths, and error paths are documented
+- [ ] Gherkin acceptance criteria are written for each scenario
+- [ ] Test cases are generated (if generate_tests=true)
+
+**See Also**: `openup-create-use-case`, `openup-create-test-plan`, `openup-elaboration`
+
+### /openup-shared-vision
+
+Create shared technical vision for team alignment.
+
+**Purpose**: Document technical objectives, IN/OUT scope, and key technical decisions
+
+**When to Use**:
+- Vision document exists but needs technical elaboration
+- Need to define IN/OUT scope clearly
+- Starting Elaboration phase and need technical alignment
+- Team members have different understanding of technical direction
+
+**When NOT to Use**:
+- No vision document exists (use `/openup-create-vision` first)
+- In late Construction or Transition phases
+- Only need architecture details
+
+**Arguments**:
+- `technical_objectives` (optional): Key technical objectives to address
+- `scope_focus` (optional): Focus area for IN/OUT scope definition
+
+**Example**:
+```
+/openup-shared-vision technical_objectives: "scalability, security" scope_focus: "user authentication"
+```
+
+**Success Criteria**:
+- [ ] Technical objectives are clearly documented
+- [ ] IN/OUT scope is well-defined
+- [ ] Technical assumptions and constraints are listed
+- [ ] Key technical decisions have rationale
+
+**See Also**: `openup-create-vision`, `openup-create-architecture-notebook`, `openup-elaboration`
 
 ### /openup-create-architecture-notebook
 
@@ -351,6 +419,48 @@ Generate test cases and scripts from use cases and requirements.
 - [ ] Expected results are defined
 
 **See Also**: `openup-create-use-case`, `openup-construction`, `openup-phase-review`
+
+### /openup-create-documentation
+
+Generate human-readable documentation from code and artifacts.
+
+**Purpose**: Create user guides, API references, troubleshooting guides, and tutorials
+
+**When to Use**:
+- Feature implementation is complete and needs user documentation
+- Creating API reference for external or internal developers
+- Documenting common issues and solutions
+- Creating tutorial content for onboarding
+
+**When NOT to Use**:
+- Feature is still under active development
+- Design is likely to change significantly
+- Documentation already exists and just needs updates
+
+**Multi-file Structure**:
+- `SKILL.md` - Main entry point
+- `user-guide.md` - User guide generation process
+- `api-reference.md` - API reference generation process
+- `troubleshooting.md` - Troubleshooting guide generation
+- `tutorial.md` - Tutorial creation process
+
+**Arguments**:
+- `doc_type` (required): Type (user-guide, api-reference, troubleshooting, tutorial)
+- `feature` (required): Feature or component to document
+- `output_path` (optional): Output path for documentation
+
+**Example**:
+```
+/openup-create-documentation doc_type: user-guide feature: user-authentication
+```
+
+**Success Criteria**:
+- [ ] Documentation file is created at the specified location
+- [ ] Content is accurate based on use cases and code
+- [ ] Examples are clear and tested
+- [ ] Structure follows the appropriate template
+
+**See Also**: `openup-create-use-case`, `openup-detail-use-case`, `openup-transition`
 
 ## Workflow Skills
 
@@ -567,6 +677,115 @@ Create traceability logs for the current agent run.
 
 **See Also**: `openup-complete-task`, `openup-start-iteration`
 
+### /openup-assess-completeness
+
+Lightweight readiness assessment before task completion or phase transition.
+
+**Purpose**: Verify all required work is complete before moving forward
+
+**When to Use**:
+- About to complete a task and want to verify readiness
+- Approaching end of iteration and need to assess completion
+- Considering phase transition and need to verify criteria
+- Preparing for code review or handoff
+
+**When NOT to Use**:
+- Mid-iteration and just checking progress
+- Need detailed quality assessment
+- Looking for code review feedback
+
+**Arguments**:
+- `scope` (optional): Assessment scope (task, iteration, phase)
+- `strict` (optional): Fail on any missing items (true/false)
+
+**Example**:
+```
+/openup-assess-completeness scope: iteration strict: true
+```
+
+**Success Criteria**:
+- [ ] All required checks are performed
+- [ ] Readiness report is generated
+- [ ] Missing items are identified (if any)
+- [ ] Pass/fail status is clear
+
+**See Also**: `openup-complete-task`, `openup-retrospective`, `openup-phase-review`
+
+### /openup-retrospective
+
+Generate iteration retrospective with feedback and action items.
+
+**Purpose**: Capture what went well, what to improve, and action items for continuous improvement
+
+**When to Use**:
+- Completing an iteration
+- Need to capture lessons learned
+- Preparing for next iteration planning
+- Implementing continuous improvement
+
+**When NOT to Use**:
+- Mid-iteration and just checking progress
+- Iteration hasn't started yet
+- Looking for project status update
+
+**Arguments**:
+- `iteration_number` (optional): Iteration to review (defaults to current)
+- `include_metrics` (optional): Include git metrics (true/false)
+
+**Example**:
+```
+/openup-retrospective include_metrics: true
+```
+
+**Success Criteria**:
+- [ ] Retrospective document is created
+- [ ] What went well is documented
+- [ ] What to improve is identified
+- [ ] Action items are defined with owners
+- [ ] Metrics are included (if requested)
+
+**See Also**: `openup-start-iteration`, `openup-complete-task`, `openup-assess-completeness`
+
+### /openup-tdd-workflow
+
+Guide Test-Driven Development cycle adapted for AI agents.
+
+**Purpose**: Follow red-green-refactor TDD cycle for feature implementation
+
+**When to Use**:
+- Starting feature implementation
+- Practicing test-driven development
+- Need to ensure test coverage for new code
+- Implementing complex logic that benefits from test-first approach
+
+**When NOT to Use**:
+- Adding tests after implementation is complete
+- Doing simple bug fixes or trivial changes
+- Exploratory coding or prototyping
+
+**Multi-file Structure**:
+- `SKILL.md` - Main entry point
+- `red-phase.md` - Write failing test
+- `green-phase.md` - Implement to make test pass
+- `refactor-phase.md` - Improve code quality
+
+**Arguments**:
+- `phase` (optional): TDD phase (red, green, refactor, full)
+- `feature` (required): Feature or component to implement
+
+**Example**:
+```
+/openup-tdd-workflow feature: user-authentication phase: red
+```
+
+**Success Criteria**:
+- [ ] Test is written first (RED phase)
+- [ ] Implementation makes test pass (GREEN phase)
+- [ ] Code is refactored while tests pass (REFACTOR phase)
+- [ ] All tests still pass
+
+**See Also**: `openup-create-test-plan`, `openup-complete-task`, `openup-detail-use-case`
+
 ## Executable Scripts
 
 OpenUP skills include executable Python scripts for common operations:
@@ -633,6 +852,11 @@ Create an OpenUP agent team for feature implementation.
 | Phase nearly complete | `/openup-phase-review` |
 | Ending agent run | `/openup-log-run` |
 | Testing needed | `/openup-create-test-plan` |
+| Detailing use cases | `/openup-detail-use-case` |
+| Creating documentation | `/openup-create-documentation` |
+| Assessing readiness | `/openup-assess-completeness` |
+| End of iteration | `/openup-retrospective` |
+| Test-driven development | `/openup-tdd-workflow` |
 
 ## References
 
