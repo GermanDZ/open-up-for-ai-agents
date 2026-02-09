@@ -195,6 +195,23 @@ else
     warn "Git not found. Skipping git initialization."
 fi
 
+# Setup agent teams (optional)
+echo ""
+echo "Setting up Claude Code agent teams..."
+if [ -f "$TEMPLATE_ROOT/scripts/setup-agent-teams.sh" ]; then
+    # Copy the setup script to the new project
+    cp "$TEMPLATE_ROOT/scripts/setup-agent-teams.sh" "$PROJECT_PATH/scripts/" || warn "Failed to copy setup-agent-teams.sh"
+
+    # Run the setup script in the new project
+    cd "$PROJECT_PATH" || error_exit "Failed to change to project directory"
+    bash scripts/setup-agent-teams.sh || warn "Agent team setup had issues, but continuing..."
+    cd - >/dev/null 2>&1 || true
+
+    success "Agent team templates installed"
+else
+    warn "setup-agent-teams.sh not found in template, skipping agent team setup"
+fi
+
 # Print success message
 echo ""
 success "✅ Project '$PROJECT_NAME' initialized at $PROJECT_PATH"
@@ -204,6 +221,10 @@ echo "1. cd $PROJECT_PATH"
 echo "2. Review docs-eng-process/init-prompts.md"
 echo "3. Copy Prompt A and run it with your AI agent"
 echo "4. After setup completes, run Prompt B for Vision Q&A"
+echo ""
+echo "Agent teams are configured! To use them:"
+echo "  export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1"
+echo "  See .claude/CLAUDE.md for team usage instructions"
 echo ""
 echo "For manual setup, see: docs-eng-process/getting-started.md"
 echo ""

@@ -50,6 +50,47 @@ This repository also includes a Python-based converter that transforms Eclipse P
 
 ## Quick Start
 
+### Creating a New Project
+
+```bash
+# Bootstrap a new project
+./scripts/bootstrap-project.sh my-awesome-project --base-dir ~/projects
+
+# The new project includes:
+# - docs-eng-process/ (engineering process and agent workflows)
+# - docs/ (empty, ready for project artifacts)
+# - .claude/ (agent team configuration, automatically set up)
+```
+
+### Updating Existing Projects
+
+If you have an existing project with an older version of the template:
+
+```bash
+# From your project directory
+curl -s https://raw.githubusercontent.com/GermanDZ/open-up-for-ai-agents/main/scripts/update-openup.sh | bash
+
+# Or with options
+curl -s https://raw.githubusercontent.com/GermanDZ/open-up-for-ai-agents/main/scripts/update-openup.sh | bash -s -- --dry-run
+curl -s https://raw.githubusercontent.com/GermanDZ/open-up-for-ai-agents/main/scripts/update-openup.sh | bash -s -- --backup
+```
+
+See [docs-eng-process/updating.md](docs-eng-process/updating.md) for more details.
+
+### Agent Teams
+
+The template includes pre-configured agent teams based on OpenUP roles:
+
+```bash
+# Enable agent teams
+export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
+
+# Create a team
+# "Create an OpenUP agent team with analyst, architect, developer, and tester"
+```
+
+See [docs-eng-process/agent-teams-setup.md](docs-eng-process/agent-teams-setup.md) for details.
+
 ### Prerequisites
 
 - Python 3.10+
@@ -120,8 +161,15 @@ open-up-for-ai-agents/
 ├── docs-eng-process/       # Engineering process (strict, do not modify during project tasks)
 │   ├── README.md          # Canonical agent entrypoint
 │   ├── agent-workflow.md  # Complete agent operating procedures
+│   ├── agent-teams-setup.md  # Agent teams setup and usage guide
+│   ├── updating.md        # How to update projects from template
 │   ├── how-to-work.md     # Minimal orientation
 │   ├── getting-started.md # Project initialization guide
+│   ├── init-prompts.md    # Copy/paste prompts for agent-driven setup
+│   ├── .claude-templates/ # Agent team templates (installed to .claude/)
+│   │   ├── teammates/     # Individual role instructions
+│   │   ├── teams/         # Team configuration files
+│   │   └── CLAUDE.md      # Main CLAUDE.md template
 │   ├── templates/         # Document templates (from OpenUP KB)
 │   └── openup-knowledge-base/  # Vendored OpenUP knowledge base
 ├── docs/                   # Project-specific artifacts (created during development)
@@ -129,13 +177,18 @@ open-up-for-ai-agents/
 │   ├── project-status.md # Current project state (created during development)
 │   ├── roadmap.md        # Prioritized work items (created during development)
 │   └── phases/           # Phase-specific docs (created during development)
+├── scripts/
+│   ├── bootstrap-project.sh    # Create new project from template
+│   ├── setup-agent-teams.sh    # Install agent team templates
+│   ├── update-from-template.sh # Update existing project from latest template
+│   ├── update-openup.sh        # One-liner update script
+│   ├── convert.py              # OpenUP HTML to Markdown conversion
+│   └── download_openup.sh      # Download OpenUP source files
 ├── converter/             # Core conversion modules (for KB generation)
 │   ├── config.py         # Configuration and path mappings
 │   ├── parser.py         # HTML parsing and metadata extraction
 │   ├── path_mapper.py    # Path transformation logic
 │   └── markdown_converter.py  # HTML to Markdown conversion
-├── scripts/
-│   └── convert.py        # Main conversion script (single entry point)
 ├── requirements.txt       # Python dependencies
 ├── .tmp/                  # Archive/ignored (source HTML files)
 └── openup-knowledge-base/ # Source KB (vendored into docs-eng-process/)

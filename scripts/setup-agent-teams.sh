@@ -1,0 +1,211 @@
+#!/bin/bash
+# setup-agent-teams.sh - Set up Claude Code agent teams in the host project
+
+set -e  # Exit on error
+
+# Colors for output
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Detect project root (directory containing this script)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+# Function to print error and exit
+error_exit() {
+    echo -e "${RED}Error: $1${NC}" >&2
+    exit 1
+}
+
+# Function to print warning
+warn() {
+    echo -e "${YELLOW}Warning: $1${NC}" >&2
+}
+
+# Function to print success
+success() {
+    echo -e "${GREEN}$1${NC}"
+}
+
+# Function to print info
+info() {
+    echo -e "${BLUE}$1${NC}"
+}
+
+# Function to show usage
+show_usage() {
+    cat << EOF
+Usage: $0 [OPTIONS]
+
+Set up Claude Code agent teams for the current project.
+
+This script copies agent team templates (teammate instructions, team configs,
+and CLAUDE.md) to the project's .claude directory.
+
+Options:
+  -h, --help           Show this help message
+  --force              Overwrite existing .claude files
+  --dry-run            Show what would be done without making changes
+
+Examples:
+  $0
+  $0 --force
+  $0 --dry-run
+
+EOF
+}
+
+# Parse command-line arguments
+FORCE=false
+DRY_RUN=false
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --force)
+            FORCE=true
+            shift
+            ;;
+        --dry-run)
+            DRY_RUN=true
+            shift
+            ;;
+        -h|--help)
+            show_usage
+            exit 0
+            ;;
+        *)
+            error_exit "Unknown option: $1. Use --help for usage information."
+            ;;
+    esac
+done
+
+# Template locations
+TEMPLATES_DIR="$PROJECT_ROOT/docs-eng-process/.claude-templates"
+CLAUDE_DIR="$PROJECT_ROOT/.claude"
+
+# Check if templates directory exists
+if [ ! -d "$TEMPLATES_DIR" ]; then
+    error_exit "Templates directory not found: $TEMPLATES_DIR"
+fi
+
+# Check if CLAUDE.md template exists
+CLAUDE_TEMPLATE="$TEMPLATES_DIR/CLAUDE.md"
+if [ ! -f "$CLAUDE_TEMPLATE" ]; then
+    error_exit "CLAUDE.md template not found: $CLAUDE_TEMPLATE"
+fi
+
+# Files to copy
+TEAMMATES_DIR="$CLAUDE_DIR/teammates"
+TEAMS_DIR="$CLAUDE_DIR/teams"
+CLAUDE_DEST="$CLAUDE_DIR/CLAUDE.md"
+
+# Function to copy file with backup
+copy_file() {
+    local src="$1"
+    local dest="$2"
+
+    if [ "$DRY_RUN" = true ]; then
+        echo "Would copy: $src -> $dest"
+        if [ -f "$dest" ]; then
+            echo "  (would backup existing: ${dest}.bak)"
+        fi
+        return 0
+    fi
+
+    if [ -f "$dest" ] && [ "$FORCE" = false ]; then
+        warn "File exists, skipping: $dest (use --force to overwrite)"
+        return 0
+    fi
+
+    # Backup existing file
+    if [ -f "$dest" ]; then
+        cp "$dest" "${dest}.bak"
+        info "Backed up: $dest -> ${dest}.bak"
+    fi
+
+    # Create destination directory if needed
+    mkdir -p "$(dirname "$dest")"
+
+    # Copy file
+    cp "$src" "$dest"
+    success "Created: $dest"
+}
+
+# Function to copy directory
+copy_dir() {
+    local src="$1"
+    local dest="$2"
+
+    if [ "$DRY_RUN" = true ]; then
+        echo "Would copy directory: $src -> $dest"
+        return 0
+    fi
+
+    # Create destination directory
+    mkdir -p "$dest"
+
+    # Copy all files
+    for file in "$src"/*; do
+        if [ -f "$file" ]; then
+            local filename="$(basename "$file")"
+            copy_file "$file" "$dest/$filename"
+        fi
+    done
+}
+
+# Main execution
+echo ""
+info "Setting up Claude Code agent teams..."
+echo ""
+
+if [ "$DRY_RUN" = false ]; then
+    # Create .claude directory structure
+    mkdir -p "$TEAMMATES_DIR"
+    mkdir -p "$TEAMS_DIR"
+fi
+
+# Copy teammate instructions
+if [ -d "$TEMPLATES_DIR/teammates" ]; then
+    info "Setting up teammate instructions..."
+    copy_dir "$TEMPLATES_DIR/teammates" "$TEAMMATES_DIR"
+else
+    warn "Teammates template directory not found: $TEMPLATES_DIR/teammates"
+fi
+
+# Copy team configurations
+if [ -d "$TEMPLATES_DIR/teams" ]; then
+    info "Setting up team configurations..."
+    copy_dir "$TEMPLATES_DIR/teams" "$TEAMS_DIR"
+else
+    warn "Teams template directory not found: $TEMPLATES_DIR/teams"
+fi
+
+# Copy CLAUDE.md
+info "Setting up CLAUDE.md..."
+copy_file "$CLAUDE_TEMPLATE" "$CLAUDE_DEST"
+
+# Summary
+echo ""
+success "Agent team setup complete!"
+echo ""
+
+if [ "$DRY_RUN" = true ]; then
+    echo "Dry run completed. No files were modified."
+    echo "Run without --dry-run to apply changes."
+else
+    echo "Created files:"
+    echo "  - .claude/teammates/ (role instructions)"
+    echo "  - .claude/teams/ (team configurations)"
+    echo "  - .claude/CLAUDE.md (agent team instructions)"
+    echo ""
+    echo "Next steps:"
+    echo "1. Enable agent teams: export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1"
+    echo "2. Start Claude Code in this project"
+    echo "3. Create a team: 'Create an OpenUP agent team with [roles]'"
+    echo ""
+    echo "For more information, see .claude/CLAUDE.md"
+fi
+echo ""

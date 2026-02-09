@@ -156,11 +156,17 @@ After both prompts complete:
 
 1. **Review** `docs/vision.md` - ensure it captures your project vision accurately
 2. **Review** `docs/roadmap.md` - verify the prioritized task list aligns with your goals
-3. **Continue with Inception tasks** - use the normal agent workflow:
+3. **Optional: Set up Agent Teams** - If you want to use Claude Code agent teams:
+   - Run `./scripts/setup-agent-teams.sh` (if not already done during bootstrap)
+   - Enable agent teams: `export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`
+   - See [agent-teams-setup.md](agent-teams-setup.md) for usage instructions
+4. **Continue with Inception tasks** - use the normal agent workflow:
    - The agent will read `docs/project-status.md` and `docs/roadmap.md` at start
    - Select the next pending task from the roadmap
    - Follow [agent-workflow.md](agent-workflow.md) procedures
 
 For detailed agent procedures, see [agent-workflow.md](agent-workflow.md).
+
+For agent teams setup and usage, see [agent-teams-setup.md](agent-teams-setup.md).
 
 For manual initialization (without an agent), see [getting-started.md](getting-started.md).
