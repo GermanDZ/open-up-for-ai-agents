@@ -99,18 +99,29 @@ Update an existing project with the latest template changes.
 
 ### update-openup.sh
 
-One-liner update script that can be run from any project directory.
+Convenience wrapper script for running updates. This script is meant to be copied to your project and customized with the path to your local framework clone.
 
 **Usage:**
 ```bash
-curl -s https://raw.githubusercontent.com/GermanDZ/open-up-for-ai-agents/main/scripts/update-openup.sh | bash
+# After copying to your project and customizing
+./scripts/update-openup.sh [OPTIONS]
 ```
 
-**With options:**
+**Setup:**
 ```bash
-curl -s https://raw.githubusercontent.com/GermanDZ/open-up-for-ai-agents/main/scripts/update-openup.sh | bash -s -- --dry-run
-curl -s https://raw.githubusercontent.com/GermanDZ/open-up-for-ai-agents/main/scripts/update-openup.sh | bash -s -- --backup
+# Copy to your project
+cp /path/to/open-up-for-ai-agents/scripts/update-from-template.sh ./scripts/
+
+# Create convenience wrapper
+cat > scripts/update-openup.sh << 'EOF'
+#!/bin/bash
+TEMPLATE_DIR="/path/to/open-up-for-ai-agents"
+bash scripts/update-from-template.sh --template-dir "$TEMPLATE_DIR" "$@"
+EOF
+chmod +x scripts/update-openup.sh
 ```
+
+**Note**: For a one-liner approach, the repository needs to be public. Since this is a private repo, use one of the approaches above.
 
 ## Quick Reference
 
@@ -118,8 +129,8 @@ curl -s https://raw.githubusercontent.com/GermanDZ/open-up-for-ai-agents/main/sc
 |------|--------|
 | Create new project | `bootstrap-project.sh <name>` |
 | Set up agent teams | `setup-agent-teams.sh` |
-| Update from template | `update-from-template.sh` |
-| One-liner update | `curl ... | bash update-openup.sh` |
+| Update from template | `update-from-template.sh --template-dir <path>` |
+| Update (with submodule) | `update-from-template.sh --template-dir .openup-template` |
 
 ## Environment Variables
 

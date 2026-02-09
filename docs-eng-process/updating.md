@@ -8,21 +8,59 @@ When you create a project using the OpenUP framework, the `docs-eng-process` dir
 
 ## Update Methods
 
-### Method 1: Using the Standalone Script (Recommended)
+### Method 1: Using the Framework Copy (Recommended for Private Repos)
 
-From any project directory, run the one-liner update script:
+Since the template repository is private, copy the update script to your project and use it:
 
 ```bash
-curl -s https://raw.githubusercontent.com/GermanDZ/open-up-for-ai-agents/main/scripts/update-openup.sh | bash
+# From your project directory
+# Copy the update script from your local framework clone
+cp /path/to/open-up-for-ai-agents/scripts/update-from-template.sh ./scripts/
+
+# Run it
+./scripts/update-from-template.sh --template-dir /path/to/open-up-for-ai-agents
 ```
 
-With options:
+**Or add this as a git submodule** (recommended):
+
 ```bash
-curl -s https://raw.githubusercontent.com/GermanDZ/open-up-for-ai-agents/main/scripts/update-openup.sh | bash -s -- --dry-run
-curl -s https://raw.githubusercontent.com/GermanDZ/open-up-for-ai-agents/main/scripts/update-openup.sh | bash -s -- --backup
+# In your project, add the framework as a submodule
+git submodule add https://github.com/GermanDZ/open-up-for-ai-agents.git .openup-template
+
+# Then update using the submodule
+./scripts/update-from-template.sh --template-dir .openup-template
 ```
 
-### Method 2: Using the Local Update Script
+**Or use a symlink** (for local development):
+
+```bash
+# In your project, create a symlink to the framework
+ln -s /path/to/open-up-for-ai-agents .openup-template
+
+# Update using the symlink
+./scripts/update-from-template.sh --template-dir .openup-template
+```
+
+### Method 2: Manual Clone and Update
+
+Clone the template to a temporary location and update:
+
+```bash
+# From your project directory
+TEMPLATE_DIR=$(mktemp -d)
+git clone https://github.com/GermanDZ/open-up-for-ai-agents.git $TEMPLATE_DIR
+
+# Or with SSH (if you have access)
+git clone git@github.com:GermanDZ/open-up-for-ai-agents.git $TEMPLATE_DIR
+
+# Run update
+/path/to/open-up-for-ai-agents/scripts/update-from-template.sh --template-dir $TEMPLATE_DIR
+
+# Cleanup
+rm -rf $TEMPLATE_DIR
+```
+
+### Method 3: Using the Local Update Script (If you have the framework locally)
 
 If you have a local copy of the template:
 
@@ -31,7 +69,7 @@ If you have a local copy of the template:
 /path/to/open-up-for-ai-agents/scripts/update-from-template.sh
 ```
 
-### Method 3: Manual Copy
+### Method 4: Manual Copy
 
 For manual control, you can copy files directly:
 
@@ -212,6 +250,82 @@ Recommended update workflow:
    - Verify agent workflow still works
    - Check documentation builds correctly
    - Run any tests
+
+## Alternative: One-Liner for Public Repositories
+
+**Note**: If you make the template repository public, you can use a one-liner:
+
+```bash
+curl -s https://raw.githubusercontent.com/GermanDZ/open-up-for-ai-agents/main/scripts/update-openup.sh | bash
+```
+
+This requires:
+1. The repository to be public
+2. The `update-openup.sh` script to be in the main branch
+
+## Recommended Setup for Private Repos
+
+### Option 1: Git Submodule (Recommended)
+
+Add the framework as a git submodule in your project:
+
+```bash
+# In your project directory
+git submodule add https://github.com/GermanDZ/open-up-for-ai-agents.git .openup-template
+git commit -m "Add OpenUP template as submodule"
+```
+
+Then create a convenience script `scripts/update-openup.sh`:
+
+```bash
+#!/bin/bash
+TEMPLATE_DIR="$(git rev-parse --show-toplevel)/.openup-template"
+bash "$TEMPLATE_DIR/scripts/update-from-template.sh" --template-dir "$TEMPLATE_DIR" "$@"
+```
+
+Now you can simply run:
+```bash
+./scripts/update-openup.sh
+```
+
+To update the submodule itself:
+```bash
+git submodule update --remote .openup-template
+```
+
+### Option 2: Symlink (For Local Development)
+
+Create a symlink to your local framework clone:
+
+```bash
+# In your project directory
+ln -s /path/to/open-up-for-ai-agents .openup-template
+
+# Create update script
+cat > scripts/update-openup.sh << 'EOF'
+#!/bin/bash
+bash .openup-template/scripts/update-from-template.sh --template-dir .openup-template "$@"
+EOF
+chmod +x scripts/update-openup.sh
+```
+
+### Option 3: Copy Script to Each Project
+
+Copy the update script to each project:
+
+```bash
+# In your project directory
+mkdir -p scripts
+cp /path/to/open-up-for-ai-agents/scripts/update-from-template.sh scripts/
+
+# Create convenience wrapper
+cat > scripts/update-openup.sh << 'EOF'
+#!/bin/bash
+TEMPLATE_DIR="/path/to/open-up-for-ai-agents"
+bash scripts/update-from-template.sh --template-dir "$TEMPLATE_DIR" "$@"
+EOF
+chmod +x scripts/update-openup.sh
+```
 
 ## Automating Updates
 

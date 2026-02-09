@@ -64,18 +64,25 @@ This repository also includes a Python-based converter that transforms Eclipse P
 
 ### Updating Existing Projects
 
-If you have an existing project with an older version of the template:
+If you have an existing project with an older version of the template, see [docs-eng-process/updating.md](docs-eng-process/updating.md) for update options.
+
+**Recommended approach**: Add the framework as a git submodule:
 
 ```bash
-# From your project directory
-curl -s https://raw.githubusercontent.com/GermanDZ/open-up-for-ai-agents/main/scripts/update-openup.sh | bash
+# In your project directory
+git submodule add https://github.com/GermanDZ/open-up-for-ai-agents.git .openup-template
 
-# Or with options
-curl -s https://raw.githubusercontent.com/GermanDZ/open-up-for-ai-agents/main/scripts/update-openup.sh | bash -s -- --dry-run
-curl -s https://raw.githubusercontent.com/GermanDZ/open-up-for-ai-agents/main/scripts/update-openup.sh | bash -s -- --backup
+# Create convenience update script
+cat > scripts/update-openup.sh << 'EOF'
+#!/bin/bash
+TEMPLATE_DIR="$(git rev-parse --show-toplevel)/.openup-template"
+bash "$TEMPLATE_DIR/scripts/update-from-template.sh" --template-dir "$TEMPLATE_DIR" "$@"
+EOF
+chmod +x scripts/update-openup.sh
+
+# Run updates
+./scripts/update-openup.sh
 ```
-
-See [docs-eng-process/updating.md](docs-eng-process/updating.md) for more details.
 
 ### Agent Teams
 
