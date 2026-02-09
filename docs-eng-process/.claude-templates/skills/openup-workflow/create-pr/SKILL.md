@@ -1,5 +1,5 @@
 ---
-name: create-pr
+name: openup-create-pr
 description: Create a pull request with proper description linking to roadmap task context
 arguments:
   - name: task_id
@@ -20,7 +20,41 @@ arguments:
 
 This skill creates a pull request with a structured description that links to the roadmap task context, ensuring traceability and proper documentation.
 
-## Process
+## When to Use
+
+Use this skill when:
+- Ready to share changes for review
+- Need to create PR from current branch
+- Want PR description linked to roadmap task
+- Automating PR creation workflow
+- Completing task that needs code review
+
+## When NOT to Use
+
+Do NOT use this skill when:
+- No unmerged commits exist (branch is up to date)
+- Looking to update existing PR (use PR platform directly)
+- Need to push branch without PR (use git directly)
+- Working without remote repository
+
+## Success Criteria
+
+After using this skill, verify:
+- [ ] PR is created with proper title and description
+- [ ] PR links to roadmap task context
+- [ ] PR includes task label for traceability
+- [ ] Branch is pushed to remote
+- [ ] User is notified with PR URL
+
+## Process Summary
+
+1. Detect current state (branch, platform, remote)
+2. Extract task context from roadmap
+3. Detect trunk branch
+4. Generate PR description
+5. Push branch and create PR
+
+## Detailed Steps
 
 ### 1. Detect Current State
 
@@ -125,6 +159,16 @@ Returns a summary of:
 - Files changed
 - Commits included
 
+## Common Errors
+
+| Error | Cause | Solution |
+|-------|-------|----------|
+| No unmerged commits | Branch is up to date with trunk | Inform user no PR needed |
+| No remote configured | Git remote not set up | Add remote with `git remote add origin <url>` |
+| CLI not installed | gh or glab not available | Install CLI (gh: brew install gh) |
+| No task_id found | Branch name doesn't contain task ID | Proceed without task context or provide manually |
+| Roadmap not found | docs/roadmap.md doesn't exist | Proceed without task context, inform user |
+
 ## Error Handling
 
 - **No unmerged commits**: Inform user that current branch is up to date with trunk
@@ -140,3 +184,8 @@ Returns a summary of:
 - Branching SOP: `docs-eng-process/agent-workflow.md`
 - PR Description Template: `docs-eng-process/templates/pr-description.md`
 - Roadmap: `docs/roadmap.md`
+
+## See Also
+
+- [openup-complete-task](../complete-task/SKILL.md) - Complete task and create PR
+- [openup-start-iteration](../start-iteration/SKILL.md) - Start iteration with branch creation

@@ -1,5 +1,5 @@
 ---
-name: phase-review
+name: openup-phase-review
 description: Check phase completion criteria and prepare for phase review
 arguments:
   - name: phase
@@ -10,6 +10,32 @@ arguments:
 # Phase Review
 
 This skill checks phase completion criteria and prepares documentation for a phase review meeting.
+
+## When to Use
+
+Use this skill when:
+- Nearing end of a phase and need to check completion
+- Preparing for phase review meeting with stakeholders
+- Assessing readiness to move to next phase
+- Generating phase summary documentation
+- Need to demonstrate phase accomplishments
+
+## When NOT to Use
+
+Do NOT use this skill when:
+- Just starting a phase (use phase skill instead)
+- Need to complete iteration tasks (use `/openup-complete-task`)
+- Looking for iteration planning (use `/openup-create-iteration-plan`)
+- Phase is clearly not complete (continue work first)
+
+## Success Criteria
+
+After using this skill, verify:
+- [ ] All phase completion criteria are checked
+- [ ] Missing items are clearly identified
+- [ ] Phase review summary is generated
+- [ ] Recommendations for next phase are provided
+- [ ] User knows what decisions are needed
 
 ## Process
 
@@ -86,7 +112,22 @@ Returns:
 - Review summary
 - Recommendations
 
+## Common Errors
+
+| Error | Cause | Solution |
+|-------|-------|----------|
+| Project status not found | docs/project-status.md doesn't exist | Initialize project with phase skill first |
+| Phase not recognized | Invalid phase name provided | Use valid phase: inception, elaboration, construction, transition |
+| Criteria not met | Phase incomplete | Continue work or document exceptions |
+
 ## References
 
 - Phase Milestones: `docs-eng-process/openup-knowledge-base/practice-management/risk_value_lifecycle/guidances/concepts/phase-milestones.md`
 - Agent Workflow: `docs-eng-process/agent-workflow.md`
+
+## See Also
+
+- [openup-inception](../../openup-phases/inception/SKILL.md) - Inception phase details
+- [openup-elaboration](../../openup-phases/elaboration/SKILL.md) - Elaboration phase details
+- [openup-construction](../../openup-phases/construction/SKILL.md) - Construction phase details
+- [openup-transition](../../openup-phases/transition/SKILL.md) - Transition phase details

@@ -1,5 +1,5 @@
 ---
-name: create-use-case
+name: openup-create-use-case
 description: Create a use case specification from template
 arguments:
   - name: use_case_name
@@ -16,6 +16,32 @@ arguments:
 # Create Use Case
 
 This skill creates a use case specification from the OpenUP template.
+
+## When to Use
+
+Use this skill when:
+- Need to document user interactions with the system
+- In Inception or Elaboration phase defining requirements
+- Capturing functional requirements from user perspective
+- Need to specify preconditions, flows, and postconditions
+- Creating test scenarios from requirements
+
+## When NOT to Use
+
+Do NOT use this skill when:
+- Need non-functional requirements (use architecture notebook)
+- Looking for technical specifications (use design documents)
+- Documenting internal system behavior (use technical design)
+- Use case already exists (update existing file)
+
+## Success Criteria
+
+After using this skill, verify:
+- [ ] Use case file exists in `docs/use-cases/`
+- [ ] Use case name and primary actor are defined
+- [ ] Basic flow is documented
+- [ ] Alternative flows are identified
+- [ ] Pre/postconditions are specified
 
 ## Process
 
@@ -58,7 +84,21 @@ Returns:
 - Use case ID (for tracking)
 - Sections filled in
 
+## Common Errors
+
+| Error | Cause | Solution |
+|-------|-------|----------|
+| Template not found | Template path incorrect | Verify `docs-eng-process/templates/use-case-specification.md` exists |
+| Invalid filename | Use case name has invalid characters | Sanitize filename, replace spaces with dashes |
+| Missing actors | Actors not identified | Identify primary and secondary actors from vision/requirements |
+
 ## References
 
 - Use Case Template: `docs-eng-process/templates/use-case-specification.md`
 - Use Case Work Product: `docs-eng-process/openup-knowledge-base/core/common/workproducts/use_case.md`
+
+## See Also
+
+- [openup-create-vision](../create-vision/SKILL.md) - Define project vision first
+- [openup-create-test-plan](../create-test-plan/SKILL.md) - Generate tests from use cases
+- [openup-elaboration](../../openup-phases/elaboration/SKILL.md) - Elaboration phase use case detail

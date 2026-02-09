@@ -1,5 +1,5 @@
 ---
-name: log-run
+name: openup-log-run
 description: Create traceability logs (markdown + JSONL) for the current agent run
 arguments:
   - name: run_id
@@ -12,6 +12,32 @@ arguments:
 This skill creates traceability logs for the current agent run, following the Traceability Logging SOP.
 
 **IMPORTANT**: This skill should only be called AFTER all changes are committed. The logs require actual commit SHAs.
+
+## When to Use
+
+Use this skill when:
+- Completing work that should be logged for traceability
+- Need to document agent activities for audit trail
+- Creating record of work for future reference
+- Completing a task or iteration
+- After committing all changes
+
+## When NOT to Use
+
+Do NOT use this skill when:
+- Changes are not yet committed (commit first)
+- Looking to commit changes (use git directly)
+- Just need to save work without logging (use git)
+- Run is incomplete and will continue
+
+## Success Criteria
+
+After using this skill, verify:
+- [ ] Markdown log exists with all required fields
+- [ ] JSONL entry is valid and appended
+- [ ] Commit SHAs are correctly recorded
+- [ ] Log files are in correct directory structure
+- [ ] All required metadata is included
 
 ## Prerequisites
 
@@ -104,7 +130,21 @@ Returns:
 - List of commits logged
 - Run ID
 
+## Common Errors
+
+| Error | Cause | Solution |
+|-------|-------|----------|
+| Uncommitted changes | Files not committed before logging | Commit changes first with `git add -A && git commit` |
+| Invalid JSONL | JSON format error in entry | Verify JSON syntax before appending |
+| Missing commits | No commits found for run | Verify commits exist and run is complete |
+| Directory not found | docs/agent-logs/ doesn't exist | Create directory structure first |
+
 ## References
 
 - Traceability Logging SOP: `docs-eng-process/agent-workflow.md`
 - End-of-Run SOP: `docs-eng-process/agent-workflow.md`
+
+## See Also
+
+- [openup-complete-task](../complete-task/SKILL.md) - Calls this skill automatically
+- [openup-start-iteration](../start-iteration/SKILL.md) - Logs iteration start

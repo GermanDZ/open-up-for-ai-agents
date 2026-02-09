@@ -1,5 +1,5 @@
 ---
-name: request-input
+name: openup-request-input
 description: Create an input request document for asynchronous stakeholder communication
 arguments:
   - name: title
@@ -22,12 +22,29 @@ This skill creates an input request document for asynchronous stakeholder commun
 
 ## When to Use
 
-Create an input request document when:
+Use this skill when:
 - The question requires stakeholder consultation (not just the current user)
 - Multiple related questions need to be answered together
 - The user explicitly requests async communication
 - The input may take time to gather (e.g., business decisions, approvals)
 - The question could benefit from being shared via email
+
+## When NOT to Use
+
+Do NOT use this skill when:
+- Question can be answered immediately by user (use AskUserQuestion instead)
+- Need real-time interaction (use direct communication)
+- Question is simple and quick to answer (ask directly)
+- Looking for technical solutions (use other skills)
+
+## Success Criteria
+
+After using this skill, verify:
+- [ ] Input request document exists in `docs/input-requests/`
+- [ ] All questions are clearly formatted
+- [ ] Context explains why input is needed
+- [ ] Instructions for filling and resuming are included
+- [ ] User is notified of document location
 
 ## Process
 
@@ -126,7 +143,20 @@ Returns:
 - Number of questions
 - Instructions for the user
 
+## Common Errors
+
+| Error | Cause | Solution |
+|-------|-------|----------|
+| Invalid questions format | JSON array not properly formatted | Verify questions is valid JSON array |
+| Missing context | Context argument not provided | Provide context explaining why input is needed |
+| Directory not found | docs/input-requests/ doesn't exist | Create directory first |
+
 ## References
 
 - Asynchronous Input SOP: `docs-eng-process/agent-workflow.md`
 - Input Request Template: `docs-eng-process/templates/input-request.md`
+
+## See Also
+
+- [openup-start-iteration](../start-iteration/SKILL.md) - Process answered requests when starting iteration
+- [openup-complete-task](../complete-task/SKILL.md) - Check for answered input before completing

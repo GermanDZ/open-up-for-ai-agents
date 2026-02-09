@@ -1,5 +1,5 @@
 ---
-name: create-test-plan
+name: openup-create-test-plan
 description: Generate test cases and test plan from use cases and requirements
 arguments:
   - name: scope
@@ -10,6 +10,32 @@ arguments:
 # Create Test Plan
 
 This skill generates test cases and test documentation from the OpenUP templates.
+
+## When to Use
+
+Use this skill when:
+- Need to create test cases for features or use cases
+- In Elaboration or Construction phase planning tests
+- Starting testing for a new feature
+- Need to document test procedures
+- Creating test scripts for automation
+
+## When NOT to Use
+
+Do NOT use this skill when:
+- Looking to execute tests (use test runner)
+- Need to debug test failures (use debugging tools)
+- Test plan exists and only minor updates needed (edit directly)
+- Looking for test reports (use test reporting)
+
+## Success Criteria
+
+After using this skill, verify:
+- [ ] Test cases exist in `docs/test-cases/`
+- [ ] Test scripts exist in `docs/test-scripts/`
+- [ ] Test coverage includes happy path and edge cases
+- [ ] Expected results are defined
+- [ ] Test procedures are documented
 
 ## Process
 
@@ -65,8 +91,22 @@ Returns:
 - Test coverage summary
 - Any gaps identified
 
+## Common Errors
+
+| Error | Cause | Solution |
+|-------|-------|----------|
+| Template not found | Template path incorrect | Verify `docs-eng-process/templates/test-case.md` and `test-script.md` exist |
+| Insufficient coverage | Only happy path tests | Add edge cases and error conditions |
+| Missing expected results | Test steps without validation | Define expected results for each test step |
+
 ## References
 
 - Test Case Template: `docs-eng-process/templates/test-case.md`
 - Test Script Template: `docs-eng-process/templates/test-script.md`
 - Tester Role: `docs-eng-process/openup-knowledge-base/core/role/roles/tester-5.md`
+
+## See Also
+
+- [openup-create-use-case](../create-use-case/SKILL.md) - Generate tests from use cases
+- [openup-construction](../../openup-phases/construction/SKILL.md) - Construction phase testing
+- [openup-phase-review](../../openup-workflow/phase-review/SKILL.md) - Review test coverage

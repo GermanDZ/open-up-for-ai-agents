@@ -1,5 +1,5 @@
 ---
-name: complete-task
+name: openup-complete-task
 description: Mark a task as complete, update roadmap, commit changes, and prepare traceability logs
 arguments:
   - name: task_id
@@ -17,7 +17,42 @@ arguments:
 
 This skill finalizes a completed task by committing all changes, updating documentation, and preparing traceability logs.
 
-## Process
+## When to Use
+
+Use this skill when:
+- A task implementation is complete and ready to commit
+- All tests pass for the task
+- Documentation has been updated
+- Ready to update roadmap and mark task complete
+- Need to create traceability logs for the work
+
+## When NOT to Use
+
+Do NOT use this skill when:
+- Still implementing the task (finish implementation first)
+- Tests are failing (fix tests first)
+- Just need to commit without updating roadmap (use git directly)
+- Looking to create PR without completing task (use `/openup-create-pr`)
+
+## Success Criteria
+
+After using this skill, verify:
+- [ ] All changes are committed with descriptive message
+- [ ] No uncommitted changes remain
+- [ ] Roadmap is updated to mark task complete
+- [ ] Project status is updated
+- [ ] Traceability logs are created with commit SHAs
+- [ ] PR is created (if create_pr=true)
+
+## Process Summary
+
+1. Verify task completion
+2. Commit all changes
+3. Update documentation
+4. Create traceability logs
+5. Optionally create PR
+
+## Detailed Steps
 
 ### 1. Verify Task Completion
 
@@ -57,7 +92,7 @@ Update `docs/project-status.md`:
 
 ### 6. Create Traceability Logs
 
-Create both markdown and JSONL logs (see Traceability Logging SOP):
+Create both markdown and JSONL logs:
 - Markdown log: `docs/agent-logs/YYYY/MM/DD/<timestamp>-<agent>-<branch>.md`
 - JSONL entry: Append to `docs/agent-logs/agent-runs.jsonl`
 - Include commit SHAs in the logs
@@ -70,7 +105,7 @@ If `$ARGUMENTS[create_pr] == "true"`:
    - Run: `git log <trunk>..HEAD --oneline`
    - Proceed only if unmerged commits exist
 
-2. **Invoke `/create-pr` skill**:
+2. **Invoke `/openup-create-pr` skill**:
    - Pass `task_id: $ARGUMENTS[task_id]`
    - Let the skill auto-detect branch and generate description
 
@@ -81,7 +116,7 @@ If `$ARGUMENTS[create_pr] == "true"`:
 
 Example usage:
 ```
-/complete-task task_id: T-005 create_pr: true
+/openup-complete-task task_id: T-005 create_pr: true
 ```
 
 ## Output
@@ -93,7 +128,22 @@ Returns a summary of:
 - Log locations
 - PR URL (if create_pr was true)
 
+## Common Errors
+
+| Error | Cause | Solution |
+|-------|-------|----------|
+| Uncommitted changes remain | Not all files were staged/committed | Run `git add -A && git commit` |
+| Commit failed | Pre-commit hook or merge conflict | Resolve issue and retry commit |
+| Roadmap task not found | Task ID doesn't exist in roadmap | Verify task ID or update roadmap first |
+| PR creation failed | No unmerged commits or remote issue | Check branch status and remote |
+
 ## References
 
 - Agent Workflow End-of-Run SOP: `docs-eng-process/agent-workflow.md`
 - Traceability Logging SOP: `docs-eng-process/agent-workflow.md`
+
+## See Also
+
+- [openup-create-pr](../create-pr/SKILL.md) - Create pull request separately
+- [openup-log-run](../log-run/SKILL.md) - Traceability logging details
+- [openup-start-iteration](../start-iteration/SKILL.md) - Begin next iteration

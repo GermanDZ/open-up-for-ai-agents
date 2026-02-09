@@ -1,5 +1,5 @@
 ---
-name: create-architecture-notebook
+name: openup-create-architecture-notebook
 description: Generate or update architecture documentation from template
 arguments:
   - name: system_name
@@ -13,6 +13,32 @@ arguments:
 # Create Architecture Notebook
 
 This skill generates or updates an architecture notebook from the OpenUP template.
+
+## When to Use
+
+Use this skill when:
+- Starting Elaboration phase and need to document architecture
+- Making significant architectural decisions
+- Need to document system design and constraints
+- Establishing architecture baseline
+- Reviewing or updating existing architecture
+
+## When NOT to Use
+
+Do NOT use this skill when:
+- In Inception phase before architecture is defined (use `/openup-create-vision`)
+- Need detailed component design (use design documents)
+- Looking for implementation details (use code documentation)
+- Architecture notebook exists and only minor updates needed (edit directly)
+
+## Success Criteria
+
+After using this skill, verify:
+- [ ] Architecture notebook exists at `docs/architecture-notebook.md`
+- [ ] System name and context are defined
+- [ ] Key architectural decisions are documented
+- [ ] Architectural constraints are listed
+- [ ] Quality attributes are specified
 
 ## Process
 
@@ -60,8 +86,22 @@ Returns:
 - List of sections filled in
 - Architectural decisions documented
 
+## Common Errors
+
+| Error | Cause | Solution |
+|-------|-------|----------|
+| Template not found | Template path incorrect | Verify `docs-eng-process/templates/architecture-notebook.md` exists |
+| Insufficient context | Vision/requirements not defined | Create vision document first |
+| Overwriting existing | Architecture notebook already exists | Update existing file instead of creating new |
+
 ## References
 
 - Architecture Notebook Template: `docs-eng-process/templates/architecture-notebook.md`
 - Architecture Notebook Work Product: `docs-eng-process/openup-knowledge-base/practice-technical/evolutionary_arch/base/workproducts/architecture-notebook-6.md`
 - Architect Role: `docs-eng-process/openup-knowledge-base/core/role/roles/architect-6.md`
+
+## See Also
+
+- [openup-elaboration](../../openup-phases/elaboration/SKILL.md) - Elaboration phase guidance
+- [openup-create-vision](../create-vision/SKILL.md) - Define vision before architecture
+- [openup-create-risk-list](../create-risk-list/SKILL.md) - Document technical risks

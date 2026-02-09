@@ -1,5 +1,5 @@
 ---
-name: construction
+name: openup-construction
 description: Initialize and manage Construction phase activities - build the system incrementally
 arguments:
   - name: activity
@@ -10,6 +10,33 @@ arguments:
 # Construction Phase
 
 This skill guides you through the Construction phase of OpenUP - building the system incrementally.
+
+## When to Use
+
+Use this skill when:
+- Elaboration is complete and architecture baseline is established
+- Ready to build the system iteratively
+- Implementing features incrementally
+- Preparing for beta testing
+- Checking if Construction phase is complete
+- Getting guidance on next steps in Construction
+
+## When NOT to Use
+
+Do NOT use this skill when:
+- Architecture is not yet stable (use `/openup-elaboration`)
+- System is ready for deployment (use `/openup-transition`)
+- Need to create specific artifacts (use artifact skills)
+- Looking for iteration planning (use `/openup-create-iteration-plan`)
+
+## Success Criteria
+
+After using this skill, verify:
+- [ ] Phase status is clearly understood (initiated, in-progress, or complete)
+- [ ] Implementation progress is tracked
+- [ ] Test coverage is adequate
+- [ ] Next iteration tasks are identified
+- [ ] Beta readiness is assessed
 
 ## Construction Overview
 
@@ -89,3 +116,10 @@ Each construction iteration should:
 - Construction Phase: `docs-eng-process/openup-knowledge-base/practice-management/risk_value_lifecycle/guidances/concepts/phase-construction.md`
 - Developer Role: `docs-eng-process/openup-knowledge-base/core/role/roles/developer-11.md`
 - Tester Role: `docs-eng-process/openup-knowledge-base/core/role/roles/tester-5.md`
+
+## See Also
+
+- [openup-complete-task](../../openup-workflow/complete-task/SKILL.md) - Mark tasks complete
+- [openup-create-test-plan](../../openup-artifacts/create-test-plan/SKILL.md) - Generate test cases
+- [openup-elaboration](../elaboration/SKILL.md) - Previous phase
+- [openup-transition](../transition/SKILL.md) - Next phase after Construction

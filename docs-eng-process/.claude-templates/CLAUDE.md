@@ -19,45 +19,46 @@ OpenUP provides skills that automate common workflow operations. Skills are invo
 
 Guide you through each OpenUP phase:
 
-- `/inception` - Initialize and manage Inception phase activities
-- `/elaboration` - Initialize and manage Elaboration phase activities
-- `/construction` - Initialize and manage Construction phase activities
-- `/transition` - Initialize and manage Transition phase activities
+- `/openup-inception` - Initialize and manage Inception phase activities
+- `/openup-elaboration` - Initialize and manage Elaboration phase activities
+- `/openup-construction` - Initialize and manage Construction phase activities
+- `/openup-transition` - Initialize and manage Transition phase activities
 
 Example:
 ```
-/inception activity: initiate
+/openup-inception activity: initiate
 ```
 
 ### Artifact Skills
 
 Create OpenUP work products from templates:
 
-- `/create-vision` - Generate vision document
-- `/create-use-case` - Create use case specification
-- `/create-architecture-notebook` - Generate/update architecture documentation
-- `/create-risk-list` - Create or update risk assessment
-- `/create-iteration-plan` - Plan iteration based on current state
-- `/create-test-plan` - Generate test cases and scripts
+- `/openup-create-vision` - Generate vision document
+- `/openup-create-use-case` - Create use case specification
+- `/openup-create-architecture-notebook` - Generate/update architecture documentation
+- `/openup-create-risk-list` - Create or update risk assessment
+- `/openup-create-iteration-plan` - Plan iteration based on current state
+- `/openup-create-test-plan` - Generate test cases and scripts
 
 Example:
 ```
-/create-vision project_name: "MyApp" problem_statement: "Users need a way to..."
+/openup-create-vision project_name: "MyApp" problem_statement: "Users need a way to..."
 ```
 
 ### Workflow Skills
 
 Automate workflow operations:
 
-- `/start-iteration` - Begin new iteration (reads project-status, updates iteration)
-- `/complete-task` - Mark task complete, update roadmap, commit changes
-- `/request-input` - Create input request document for async stakeholder communication
-- `/phase-review` - Check phase completion criteria and prepare for review
-- `/log-run` - Create traceability logs (markdown + JSONL)
+- `/openup-start-iteration` - Begin new iteration (reads project-status, updates iteration)
+- `/openup-complete-task` - Mark task complete, update roadmap, commit changes, optionally create PR
+- `/openup-create-pr` - Create pull request with roadmap task context
+- `/openup-request-input` - Create input request document for async stakeholder communication
+- `/openup-phase-review` - Check phase completion criteria and prepare for review
+- `/openup-log-run` - Create traceability logs (markdown + JSONL)
 
 Example:
 ```
-/start-iteration iteration_number: 2 goal: "Complete user authentication"
+/openup-start-iteration iteration_number: 2 goal: "Complete user authentication"
 ```
 
 See [skills guide](docs-eng-process/skills-guide.md) for complete skill documentation.
@@ -79,10 +80,10 @@ OpenUP supports role-based agent teams. Each teammate represents an OpenUP role 
 ### Team Configurations
 
 #### Phase-Specific Teams
-- `/inception` phase: analyst + project-manager (+ architect as needed)
-- `/elaboration` phase: architect + developer + tester (+ analyst as needed)
-- `/construction` phase: developer + tester (+ architect + analyst as needed)
-- `/transition` phase: tester + project-manager + developer (+ analyst as needed)
+- `/openup-inception` phase: analyst + project-manager (+ architect as needed)
+- `/openup-elaboration` phase: architect + developer + tester (+ analyst as needed)
+- `/openup-construction` phase: developer + tester (+ architect + analyst as needed)
+- `/openup-transition` phase: tester + project-manager + developer (+ analyst as needed)
 
 #### Task-Specific Teams
 
@@ -199,7 +200,7 @@ See `docs-eng-process/.claude-templates/settings.json.example` for hook configur
 ### Starting Inception
 
 ```
-/inception activity: initiate
+/openup-inception activity: initiate
 Create an OpenUP agent team for inception phase. Spawn analyst and project-manager.
 ```
 
@@ -226,13 +227,19 @@ Create an OpenUP investigation team. Spawn architect to analyze, developer to fi
 ### Creating Architecture Documentation
 
 ```
-/create-architecture-notebook system_name: "MyApp" architectural_concerns: "scalability, security"
+/openup-create-architecture-notebook system_name: "MyApp" architectural_concerns: "scalability, security"
+```
+
+### Completing a Task and Creating PR
+
+```
+/openup-complete-task task_id: T-005 create_pr: true
 ```
 
 ### Phase Review
 
 ```
-/phase-review
+/openup-phase-review
 ```
 
 ## Display Modes

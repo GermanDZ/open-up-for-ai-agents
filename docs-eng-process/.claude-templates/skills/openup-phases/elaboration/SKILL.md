@@ -1,5 +1,5 @@
 ---
-name: elaboration
+name: openup-elaboration
 description: Initialize and manage Elaboration phase activities - establish architecture baseline
 arguments:
   - name: activity
@@ -10,6 +10,33 @@ arguments:
 # Elaboration Phase
 
 This skill guides you through the Elaboration phase of OpenUP - establishing the architecture baseline.
+
+## When to Use
+
+Use this skill when:
+- Inception is complete and need to establish architecture baseline
+- Need to design and validate system architecture
+- Resolving high-risk technical elements
+- Implementing architectural prototypes
+- Checking if Elaboration phase is complete
+- Getting guidance on next steps in Elaboration
+
+## When NOT to Use
+
+Do NOT use this skill when:
+- Still defining project vision and scope (use `/openup-inception`)
+- Architecture is stable and ready for incremental build (move to Construction)
+- Need to create specific artifacts (use artifact skills)
+- Looking for iteration planning (use `/openup-create-iteration-plan`)
+
+## Success Criteria
+
+After using this skill, verify:
+- [ ] Phase status is clearly understood (initiated, in-progress, or complete)
+- [ ] Architecture notebook is created or updated
+- [ ] Technical risks are identified and mitigated
+- [ ] Critical use cases are detailed
+- [ ] Next steps are clearly defined
 
 ## Elaboration Overview
 
@@ -81,3 +108,10 @@ For Elaboration phase work, create a team with:
 - Elaboration Phase: `docs-eng-process/openup-knowledge-base/practice-management/risk_value_lifecycle/guidances/concepts/phase-elaboration.md`
 - Architect Role: `docs-eng-process/openup-knowledge-base/core/role/roles/architect-6.md`
 - Architecture Notebook Template: `docs-eng-process/templates/architecture-notebook.md`
+
+## See Also
+
+- [openup-create-architecture-notebook](../../openup-artifacts/create-architecture-notebook/SKILL.md) - Generate architecture documentation
+- [openup-create-use-case](../../openup-artifacts/create-use-case/SKILL.md) - Create detailed use cases
+- [openup-inception](../inception/SKILL.md) - Previous phase
+- [openup-construction](../construction/SKILL.md) - Next phase after Elaboration

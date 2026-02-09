@@ -1,5 +1,5 @@
 ---
-name: create-risk-list
+name: openup-create-risk-list
 description: Create or update risk assessment document from template
 arguments:
   - name: risks
@@ -10,6 +10,32 @@ arguments:
 # Create Risk List
 
 This skill creates or updates a risk list document from the OpenUP template.
+
+## When to Use
+
+Use this skill when:
+- Starting a new project and need to identify risks
+- In Inception phase documenting major risks
+- New risks emerge during project
+- Need to update risk probability or impact
+- Planning risk mitigation strategies
+
+## When NOT to Use
+
+Do NOT use this skill when:
+- Risk list exists and only minor updates needed (edit directly)
+- Looking for issue tracking (use issue tracker)
+- Risks have been realized and are now issues (manage as issues)
+- Need detailed risk analysis (use risk management process)
+
+## Success Criteria
+
+After using this skill, verify:
+- [ ] Risk list exists at `docs/risk-list.md`
+- [ ] Risks are documented with descriptions
+- [ ] Probability and impact are assessed
+- [ ] Mitigation strategies are defined
+- [ ] Risk owners are assigned
 
 ## Process
 
@@ -54,8 +80,22 @@ Returns:
 - Number of risks documented
 - High-priority risks summary
 
+## Common Errors
+
+| Error | Cause | Solution |
+|-------|-------|----------|
+| Template not found | Template path incorrect | Verify `docs-eng-process/templates/risk-list.md` exists |
+| No risks identified | Project context insufficient | Review vision and requirements for potential risks |
+| Missing mitigation | Risks documented without mitigation | Add mitigation strategy for each risk |
+
 ## References
 
 - Risk List Template: `docs-eng-process/templates/risk-list.md`
 - Risk Management: `docs-eng-process/openup-knowledge-base/practice-management/risk_val_lifecycle/`
 - Project Manager Role: `docs-eng-process/openup-knowledge-base/core/role/roles/project-manager-4.md`
+
+## See Also
+
+- [openup-inception](../../openup-phases/inception/SKILL.md) - Inception phase risk identification
+- [openup-create-vision](../create-vision/SKILL.md) - Vision reveals potential risks
+- [openup-create-architecture-notebook](../create-architecture-notebook/SKILL.md) - Technical risk assessment

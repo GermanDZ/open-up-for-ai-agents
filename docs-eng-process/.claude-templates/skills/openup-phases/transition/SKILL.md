@@ -1,5 +1,5 @@
 ---
-name: transition
+name: openup-transition
 description: Initialize and manage Transition phase activities - deploy to users
 arguments:
   - name: activity
@@ -10,6 +10,33 @@ arguments:
 # Transition Phase
 
 This skill guides you through the Transition phase of OpenUP - deploying to users.
+
+## When to Use
+
+Use this skill when:
+- Construction is complete and system is ready for deployment
+- Preparing for beta or production release
+- Conducting final testing and user acceptance
+- Training users and support staff
+- Checking if Transition phase is complete
+- Getting guidance on next steps in Transition
+
+## When NOT to Use
+
+Do NOT use this skill when:
+- Still implementing features (use `/openup-construction`)
+- System is not stable enough for testing (continue Construction)
+- Need to create specific artifacts (use artifact skills)
+- Looking for deployment procedures (use DevOps/ops documentation)
+
+## Success Criteria
+
+After using this skill, verify:
+- [ ] Phase status is clearly understood (initiated, in-progress, or complete)
+- [ ] Deployment readiness is assessed
+- [ ] Support materials are prepared
+- [ ] User acceptance is documented
+- [ ] Release decision is clear
 
 ## Transition Overview
 
@@ -106,3 +133,10 @@ For Transition phase work, create a team with:
 - Transition Phase: `docs-eng-process/openup-knowledge-base/practice-management/risk_value_lifecycle/guidances/concepts/phase-transition.md`
 - Tester Role: `docs-eng-process/openup-knowledge-base/core/role/roles/tester-5.md`
 - Project Manager Role: `docs-eng-process/openup-knowledge-base/core/role/roles/project-manager-4.md`
+
+## See Also
+
+- [openup-phase-review](../../openup-workflow/phase-review/SKILL.md) - Check phase completion
+- [openup-create-test-plan](../../openup-artifacts/create-test-plan/SKILL.md) - Final test planning
+- [openup-construction](../construction/SKILL.md) - Previous phase
+- [openup-log-run](../../openup-workflow/log-run/SKILL.md) - Document deployment

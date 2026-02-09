@@ -1,5 +1,5 @@
 ---
-name: inception
+name: openup-inception
 description: Initialize and manage Inception phase activities - define scope, vision, and feasibility
 arguments:
   - name: activity
@@ -10,6 +10,31 @@ arguments:
 # Inception Phase
 
 This skill guides you through the Inception phase of OpenUP - defining scope, vision, and feasibility.
+
+## When to Use
+
+Use this skill when:
+- Starting a new project and need to define scope and vision
+- Need to identify key stakeholders and risks
+- Preparing to move from idea to validated business case
+- Checking if Inception phase is complete
+- Getting guidance on next steps in Inception
+
+## When NOT to Use
+
+Do NOT use this skill when:
+- Currently in Elaboration, Construction, or Transition phase (use appropriate phase skill)
+- Need to create specific artifacts like vision documents or use cases (use artifact skills)
+- Already have clear vision and architecture baseline (move to Elaboration)
+- Looking for iteration planning (use `/openup-create-iteration-plan`)
+
+## Success Criteria
+
+After using this skill, verify:
+- [ ] Phase status is clearly understood (initiated, in-progress, or complete)
+- [ ] Key artifacts are identified or created (vision, risk list, roadmap)
+- [ ] Next steps are clearly defined
+- [ ] Stakeholders and risks are documented
 
 ## Inception Overview
 
@@ -81,3 +106,10 @@ For Inception phase work, create a team with:
 - Inception Phase: `docs-eng-process/openup-knowledge-base/practice-management/risk_value_lifecycle/guidances/concepts/phase-inception.md`
 - Analyst Role: `docs-eng-process/openup-knowledge-base/core/role/roles/analyst-6.md`
 - Vision Template: `docs-eng-process/templates/vision.md`
+
+## See Also
+
+- [openup-create-vision](../../openup-artifacts/create-vision/SKILL.md) - Generate vision document
+- [openup-create-risk-list](../../openup-artifacts/create-risk-list/SKILL.md) - Create risk assessment
+- [openup-elaboration](../elaboration/SKILL.md) - Next phase after Inception
+- [openup-start-iteration](../../openup-workflow/start-iteration/SKILL.md) - Begin iteration planning
