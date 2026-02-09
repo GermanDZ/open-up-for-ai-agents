@@ -6,11 +6,10 @@ set -e
 
 # Colors
 GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
 NC='\033[0m'
 
 # Configuration
-REPO_URL="${OPENUP_REPO_URL:-https://github.com/GermanDZ/open-up-for-ai-agents.git"
+REPO_URL="${OPENUP_REPO_URL:-https://github.com/GermanDZ/open-up-for-ai-agents.git}"
 BRANCH="${OPENUP_BRANCH:-main}"
 TEMP_DIR="/tmp/openup-update-$$"
 
@@ -29,7 +28,11 @@ echo ""
 
 # Clone the latest template
 echo "Downloading latest template..."
-git clone --depth 1 --branch "$BRANCH" "$REPO_URL" "$TEMP_DIR" 2>/dev/null
+if ! git clone --depth 1 --branch "$BRANCH" "$REPO_URL" "$TEMP_DIR" 2>/dev/null; then
+    echo "Error: Failed to download template"
+    rm -rf "$TEMP_DIR"
+    exit 1
+fi
 
 if [ ! -d "$TEMP_DIR/docs-eng-process" ]; then
     echo "Error: Failed to download template"
@@ -40,10 +43,14 @@ fi
 # Run the update script
 echo ""
 echo "Running update..."
-bash "$TEMP_DIR/scripts/update-from-template.sh" --template-dir "$TEMP_DIR" "$@"
+bash "$TEMP_DIR/scripts/update-from-template.sh" --template-dir "$TEMP_DIR" "$@" || EXIT_CODE=$?
 
 # Cleanup
 rm -rf "$TEMP_DIR"
 
-echo ""
-echo -e "${GREEN}Update complete!${NC}"
+if [ ${EXIT_CODE:-0} -eq 0 ]; then
+    echo ""
+    echo -e "${GREEN}Update complete!${NC}"
+fi
+
+exit ${EXIT_CODE:-0}
