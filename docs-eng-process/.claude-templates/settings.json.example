@@ -1,0 +1,49 @@
+{
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  },
+  "teammateMode": "in-process",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash(git commit*)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -f \"docs/project-status.md\" ] || echo 'Warning: project-status.md missing. Create it to track project state.'"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Check if documentation in docs/ needs updating based on this change. Consider project-status.md, roadmap.md, phase notes, and relevant artifacts."
+          }
+        ]
+      },
+      {
+        "matcher": "Bash(git commit*)",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Commit successful. Consider updating docs/project-status.md Active Work Items table if this commit completes a task."
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Before stopping, verify: 1) All changes committed, 2) Traceability logs created, 3) docs/ updated. If phase completion criteria are met, notify user that phase review is needed."
+          }
+        ]
+      }
+    ]
+  }
+}
