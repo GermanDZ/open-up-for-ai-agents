@@ -144,6 +144,7 @@ Returns a summary of:
 
 ## See Also
 
+- [openup-assess-completeness](../assess-completeness/SKILL.md) - Assess task completeness before marking complete
 - [openup-create-pr](../create-pr/SKILL.md) - Create pull request separately
 - [openup-log-run](../log-run/SKILL.md) - Traceability logging details
 - [openup-start-iteration](../start-iteration/SKILL.md) - Begin next iteration

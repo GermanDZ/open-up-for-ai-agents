@@ -98,4 +98,5 @@ Returns a summary of:
 
 - [openup-create-iteration-plan](../../openup-artifacts/create-iteration-plan/SKILL.md) - Plan iteration before starting
 - [openup-complete-task](../complete-task/SKILL.md) - Complete iteration tasks
+- [openup-retrospective](../retrospective/SKILL.md) - Create retrospective after iteration completes
 - [openup-request-input](../request-input/SKILL.md) - Gather stakeholder input

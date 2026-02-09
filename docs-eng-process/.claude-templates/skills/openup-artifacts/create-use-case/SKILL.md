@@ -100,5 +100,6 @@ Returns:
 ## See Also
 
 - [openup-create-vision](../create-vision/SKILL.md) - Define project vision first
+- [openup-detail-use-case](../detail-use-case/SKILL.md) - Transform high-level use case into detailed scenarios
 - [openup-create-test-plan](../create-test-plan/SKILL.md) - Generate tests from use cases
 - [openup-elaboration](../../openup-phases/elaboration/SKILL.md) - Elaboration phase use case detail
