@@ -11,9 +11,60 @@ OpenUP (Open Unified Process) is a lean, iterative software development methodol
 3. **Construction** - Build the system incrementally
 4. **Transition** - Deploy to users
 
+## OpenUP Skills
+
+OpenUP provides skills that automate common workflow operations. Skills are invoked using the `/` command.
+
+### Phase Skills
+
+Guide you through each OpenUP phase:
+
+- `/inception` - Initialize and manage Inception phase activities
+- `/elaboration` - Initialize and manage Elaboration phase activities
+- `/construction` - Initialize and manage Construction phase activities
+- `/transition` - Initialize and manage Transition phase activities
+
+Example:
+```
+/inception activity: initiate
+```
+
+### Artifact Skills
+
+Create OpenUP work products from templates:
+
+- `/create-vision` - Generate vision document
+- `/create-use-case` - Create use case specification
+- `/create-architecture-notebook` - Generate/update architecture documentation
+- `/create-risk-list` - Create or update risk assessment
+- `/create-iteration-plan` - Plan iteration based on current state
+- `/create-test-plan` - Generate test cases and scripts
+
+Example:
+```
+/create-vision project_name: "MyApp" problem_statement: "Users need a way to..."
+```
+
+### Workflow Skills
+
+Automate workflow operations:
+
+- `/start-iteration` - Begin new iteration (reads project-status, updates iteration)
+- `/complete-task` - Mark task complete, update roadmap, commit changes
+- `/request-input` - Create input request document for async stakeholder communication
+- `/phase-review` - Check phase completion criteria and prepare for review
+- `/log-run` - Create traceability logs (markdown + JSONL)
+
+Example:
+```
+/start-iteration iteration_number: 2 goal: "Complete user authentication"
+```
+
+See [skills guide](docs-eng-process/skills-guide.md) for complete skill documentation.
+
 ## Agent Teams
 
-This project is configured with OpenUP role-based agent teams. Each teammate represents an OpenUP role and follows specific instructions for that role.
+OpenUP supports role-based agent teams. Each teammate represents an OpenUP role and follows specific instructions.
 
 ### Available Roles
 
@@ -27,33 +78,35 @@ This project is configured with OpenUP role-based agent teams. Each teammate rep
 
 ### Team Configurations
 
-#### Full Team (All Roles)
-For comprehensive project work involving all aspects of development:
+#### Phase-Specific Teams
+- `/inception` phase: analyst + project-manager (+ architect as needed)
+- `/elaboration` phase: architect + developer + tester (+ analyst as needed)
+- `/construction` phase: developer + tester (+ architect + analyst as needed)
+- `/transition` phase: tester + project-manager + developer (+ analyst as needed)
 
+#### Task-Specific Teams
+
+**Full Team** (All Roles)
 ```
 Create an OpenUP agent team with all roles: analyst, architect, developer, project-manager, and tester.
 ```
 
-#### Feature Team (Analyst, Architect, Developer, Tester)
-For implementing new features requiring requirements, design, implementation, and testing:
-
+**Feature Team** (Analyst, Architect, Developer, Tester)
 ```
 Create an OpenUP agent team for feature implementation. Spawn analyst for requirements, architect for design, developer for implementation, and tester for validation.
 ```
 
-#### Investigation Team (Architect, Developer, Tester)
-For debugging and technical investigation:
-
+**Investigation Team** (Architect, Developer, Tester)
 ```
 Create an OpenUP agent team to investigate this issue. Spawn architect to analyze the architecture, developer to find root cause, and tester to verify the fix.
 ```
 
-#### Planning Team (Analyst, Project Manager)
-For iteration planning and roadmap updates:
-
+**Planning Team** (Analyst, Project Manager)
 ```
 Create an OpenUP agent team for iteration planning. Spawn analyst to review requirements and project-manager to update the plan.
 ```
+
+See [teams guide](docs-eng-process/teams-guide.md) for complete team documentation.
 
 ## How to Use Agent Teams
 
@@ -65,7 +118,7 @@ Agent teams must be enabled in your environment:
 export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
 ```
 
-Or add to `settings.json`:
+Or add to `.claude/settings.json`:
 ```json
 {
   "env": {
@@ -74,7 +127,11 @@ Or add to `settings.json`:
 }
 ```
 
-### Step 2: Create a Team
+### Step 2: Configure Settings (Optional)
+
+Copy `docs-eng-process/.claude-templates/settings.json.example` to `.claude/settings.json` for quality enforcement hooks.
+
+### Step 3: Create a Team
 
 Ask Claude to create a team with the appropriate roles for your task:
 
@@ -82,14 +139,14 @@ Ask Claude to create a team with the appropriate roles for your task:
 Create an OpenUP agent team with [list of roles] to [describe task].
 ```
 
-### Step 3: Coordinate Work
+### Step 4: Coordinate Work
 
 The team lead will coordinate work across teammates. You can:
 - Message individual teammates directly (Shift+Up/Down in in-process mode)
 - Ask the lead to assign specific tasks to specific roles
 - Monitor progress through the shared task list
 
-### Step 4: Clean Up
+### Step 5: Clean Up
 
 When work is complete, ask the lead to clean up the team:
 
@@ -127,9 +184,26 @@ The team uses these documents to track project state:
 - `docs/risk-list.md` - Project risks
 - `docs/architecture-notebook.md` - Architecture decisions (Elaboration+)
 
+## Quality Hooks
+
+OpenUP includes optional quality enforcement hooks in `.claude/settings.json`:
+
+- **Pre-commit**: Check for required documentation
+- **Post-edit**: Prompt for documentation updates
+- **Stop**: Verify completion criteria before stopping
+
+See `docs-eng-process/.claude-templates/settings.json.example` for hook configuration.
+
 ## Example Workflows
 
-### Starting a New Feature
+### Starting Inception
+
+```
+/inception activity: initiate
+Create an OpenUP agent team for inception phase. Spawn analyst and project-manager.
+```
+
+### Implementing a Feature
 
 ```
 Create an OpenUP agent team to implement the [feature name] feature.
@@ -143,44 +217,22 @@ Spawn:
 The analyst should first create use cases for this feature, then the architect should design it, then the developer should implement it with tests.
 ```
 
-### Architecture Review
+### Debugging an Issue
 
 ```
-Create an OpenUP agent team to review the current architecture.
-
-Spawn:
-- architect: to lead the review and document findings
-- developer: to provide implementation feedback
-- tester: to assess testability implications
-
-The team should review docs/architecture-notebook.md and identify any improvements or concerns.
+Create an OpenUP investigation team. Spawn architect to analyze, developer to find root cause, tester to verify fix.
 ```
 
-### Bug Investigation
+### Creating Architecture Documentation
 
 ```
-Create an OpenUP agent team to investigate [bug description].
-
-Spawn:
-- developer: to analyze the code and find root cause
-- architect: to assess architectural implications
-- tester: to verify the fix and prevent regression
-
-The team should work together to understand, fix, and test the bug.
+/create-architecture-notebook system_name: "MyApp" architectural_concerns: "scalability, security"
 ```
 
-### Iteration Planning
+### Phase Review
 
 ```
-Create an OpenUP agent team for iteration planning.
-
-Spawn:
-- project-manager: to lead the planning session
-- analyst: to review and prioritize requirements
-- architect: to assess technical feasibility
-- developer: to provide effort estimates
-
-The team should review docs/roadmap.md and create docs/iteration-plan.md for the upcoming iteration.
+/phase-review
 ```
 
 ## Display Modes
@@ -199,11 +251,12 @@ Configure in settings.json:
 
 ## Best Practices
 
-1. **Start with the right roles**: Only spawn teammates for roles needed for the task
-2. **Use clear prompts**: Explain what each role should focus on
-3. **Let teammates collaborate**: They can message each other directly
-4. **Monitor progress**: Check in on teammates and redirect if needed
-5. **Clean up when done**: Remove teammates after work is complete
+1. **Use skills for common operations**: Skills automate repetitive tasks and ensure consistency
+2. **Start with the right roles**: Only spawn teammates for roles needed for the task
+3. **Use clear prompts**: Explain what each role should focus on
+4. **Let teammates collaborate**: They can message each other directly
+5. **Monitor progress**: Check in on teammates and redirect if needed
+6. **Clean up when done**: Remove teammates after work is complete
 
 ## Troubleshooting
 
