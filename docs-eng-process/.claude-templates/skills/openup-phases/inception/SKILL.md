@@ -110,6 +110,7 @@ For Inception phase work, create a team with:
 ## See Also
 
 - [openup-create-vision](../../openup-artifacts/create-vision/SKILL.md) - Generate vision document
+- [openup-shared-vision](../../openup-artifacts/shared-vision/SKILL.md) - Create shared technical vision
 - [openup-create-risk-list](../../openup-artifacts/create-risk-list/SKILL.md) - Create risk assessment
 - [openup-elaboration](../elaboration/SKILL.md) - Next phase after Inception
 - [openup-start-iteration](../../openup-workflow/start-iteration/SKILL.md) - Begin iteration planning

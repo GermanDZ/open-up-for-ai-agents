@@ -112,6 +112,8 @@ For Elaboration phase work, create a team with:
 ## See Also
 
 - [openup-create-architecture-notebook](../../openup-artifacts/create-architecture-notebook/SKILL.md) - Generate architecture documentation
+- [openup-shared-vision](../../openup-artifacts/shared-vision/SKILL.md) - Create shared technical vision
 - [openup-create-use-case](../../openup-artifacts/create-use-case/SKILL.md) - Create detailed use cases
+- [openup-detail-use-case](../../openup-artifacts/detail-use-case/SKILL.md) - Detail use cases with scenarios
 - [openup-inception](../inception/SKILL.md) - Previous phase
 - [openup-construction](../construction/SKILL.md) - Next phase after Elaboration
