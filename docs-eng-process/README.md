@@ -4,6 +4,19 @@
 
 ## Quick Start
 
+### For New Users
+
+**📘 Start here:** [USER-GUIDE.md](USER-GUIDE.md) - Complete guide for using OpenUP with Claude Code
+
+- Getting started with new projects
+- Core concepts and common workflows
+- Skills and teams reference
+- Configuration and troubleshooting
+
+**📄 Quick reference:** [QUICK-REFERENCE.md](QUICK-REFERENCE.md) - One-page cheat sheet
+
+### For AI Agents
+
 1. **Read this file first** - understand the process structure
 2. **Read [agent-workflow.md](agent-workflow.md)** - detailed operating procedures
 3. **Initialize a new project**:

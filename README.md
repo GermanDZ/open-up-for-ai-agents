@@ -16,6 +16,21 @@ This template organizes documentation into two distinct areas:
 - **Running agents via CLI**: See [RUNNING-AGENTS.md](RUNNING-AGENTS.md) for instructions on using Cursor CLI or Claude Code to execute tasks following the OpenUP process.
 - **Complete agent workflow**: The full operating procedures are documented in [docs-eng-process/agent-workflow.md](docs-eng-process/agent-workflow.md).
 
+### For Users - Getting Started
+
+**📘 NEW: Comprehensive User Guide**
+
+- **[USER-GUIDE.md](docs-eng-process/USER-GUIDE.md)** - Complete guide for using OpenUP with Claude Code
+  - Getting started with new projects
+  - Core concepts (phases, roles, artifacts)
+  - Common workflows (quick reference + detailed)
+  - Skills and teams reference
+  - Configuration and troubleshooting
+
+- **[QUICK-REFERENCE.md](docs-eng-process/QUICK-REFERENCE.md)** - One-page cheat sheet for essential commands
+
+**Recommended: Start with the [User Guide](docs-eng-process/USER-GUIDE.md)** for a complete introduction to using OpenUP with Claude Code.
+
 ### For Project Initialization
 
 - **Agent-driven initialization**: See [docs-eng-process/init-prompts.md](docs-eng-process/init-prompts.md) for copy/paste prompts that guide an AI agent through a two-run setup (technical preparation + Vision Q&A). This is the recommended approach for new projects.
