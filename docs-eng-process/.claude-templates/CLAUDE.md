@@ -35,10 +35,13 @@ Create OpenUP work products from templates:
 
 - `/openup-create-vision` - Generate vision document
 - `/openup-create-use-case` - Create use case specification
+- `/openup-detail-use-case` - Transform high-level use case into detailed scenarios with test cases
+- `/openup-shared-vision` - Create shared technical vision for team alignment
 - `/openup-create-architecture-notebook` - Generate/update architecture documentation
 - `/openup-create-risk-list` - Create or update risk assessment
 - `/openup-create-iteration-plan` - Plan iteration based on current state
 - `/openup-create-test-plan` - Generate test cases and scripts
+- `/openup-create-documentation` - Generate user guides, API references, troubleshooting, and tutorials
 
 Example:
 ```
@@ -52,6 +55,9 @@ Automate workflow operations:
 - `/openup-start-iteration` - Begin new iteration (reads project-status, updates iteration)
 - `/openup-complete-task` - Mark task complete, update roadmap, commit changes, optionally create PR
 - `/openup-create-pr` - Create pull request with roadmap task context
+- `/openup-assess-completeness` - Lightweight readiness assessment before task completion or phase transition
+- `/openup-retrospective` - Generate iteration retrospective with feedback and action items
+- `/openup-tdd-workflow` - Guide Test-Driven Development cycle adapted for AI agents
 - `/openup-request-input` - Create input request document for async stakeholder communication
 - `/openup-phase-review` - Check phase completion criteria and prepare for review
 - `/openup-log-run` - Create traceability logs (markdown + JSONL)
@@ -228,6 +234,42 @@ Create an OpenUP investigation team. Spawn architect to analyze, developer to fi
 
 ```
 /openup-create-architecture-notebook system_name: "MyApp" architectural_concerns: "scalability, security"
+```
+
+### Creating Shared Technical Vision
+
+```
+/openup-shared-vision technical_objectives: "scalability, security" scope_focus: "user authentication"
+```
+
+### Detailing Use Cases
+
+```
+/openup-detail-use-case use_case_name: "user-login" generate_tests: true
+```
+
+### Creating User Documentation
+
+```
+/openup-create-documentation doc_type: user-guide feature: user-authentication
+```
+
+### Running Iteration Retrospective
+
+```
+/openup-retrospective include_metrics: true
+```
+
+### Test-Driven Development
+
+```
+/openup-tdd-workflow feature: payment-processing phase: full
+```
+
+### Assessing Completeness
+
+```
+/openup-assess-completeness scope: iteration
 ```
 
 ### Completing a Task and Creating PR
