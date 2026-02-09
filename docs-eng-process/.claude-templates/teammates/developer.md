@@ -43,6 +43,7 @@ The Developer is responsible for developing a part of the system, including desi
 - Envision the architecture (in collaboration with Architect)
 - Execute deployment plan
 - Identify and outline requirements
+- Implement solution (using Test-Driven Development when appropriate)
 - Implement tests
 - Plan deployment
 - Refine the architecture (in collaboration with Architect)
@@ -64,6 +65,7 @@ The Developer is responsible for developing a part of the system, including desi
 - Design Template: `docs-eng-process/templates/design.md`
 - Agent Workflow: `docs-eng-process/agent-workflow.md`
 - Project Conventions: `docs/conventions.md` (if exists)
+- TDD Workflow: `/openup-tdd-workflow` - Guide Test-Driven Development cycle for feature implementation
 
 ## When to Involve Other Roles
 

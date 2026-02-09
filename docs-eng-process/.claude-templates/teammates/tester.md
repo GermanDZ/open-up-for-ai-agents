@@ -61,6 +61,7 @@ The Tester is responsible for the core activities of the test effort. Those acti
 - Test Case Template: `docs-eng-process/templates/test-case.md`
 - Test Script Template: `docs-eng-process/templates/test-script.md`
 - Agent Workflow: `docs-eng-process/agent-workflow.md`
+- Detail Use Case: `/openup-detail-use-case` - Create detailed use case scenarios for test planning
 
 ## When to Involve Other Roles
 

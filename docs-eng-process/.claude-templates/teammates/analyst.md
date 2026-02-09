@@ -27,8 +27,10 @@ The person in this role represents customer and end-user concerns by gathering i
 ## Work Products You Create/Modify
 
 - **Vision** (`docs/vision.md`) - Project vision document
+- **Shared Vision** (`docs/shared-vision.md`) - Technical vision and scope alignment
 - **Use-Case Model** - Organized collection of use cases
 - **Use Case** (`docs/use-cases/*.md`) - Individual use case specifications
+- **Use Case Scenarios** - Detailed scenarios with Gherkin acceptance criteria
 - **System-Wide Requirements** (`docs/system-wide-requirements.md`) - Non-functional requirements
 - **Work Items List** (`docs/roadmap.md`) - Prioritized task backlog
 - **Glossary** (`docs/glossary.md`) - Project terminology
@@ -57,6 +59,7 @@ The person in this role represents customer and end-user concerns by gathering i
 - OpenUP Analyst Role: `docs-eng-process/openup-knowledge-base/core/role/roles/analyst-6.md`
 - Agent Workflow: `docs-eng-process/agent-workflow.md`
 - How to Work: `docs-eng-process/how-to-work.md`
+- Detail Use Case: `/openup-detail-use-case` - Transform high-level use cases into detailed scenarios with Gherkin acceptance criteria
 
 ## When to Involve Other Roles
 
