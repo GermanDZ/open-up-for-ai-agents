@@ -199,6 +199,9 @@ fi
 echo ""
 echo "Setting up Claude Code agent teams..."
 if [ -f "$TEMPLATE_ROOT/scripts/setup-agent-teams.sh" ]; then
+    # Create scripts directory in the new project
+    mkdir -p "$PROJECT_PATH/scripts" || warn "Failed to create scripts directory"
+
     # Copy the setup script to the new project
     cp "$TEMPLATE_ROOT/scripts/setup-agent-teams.sh" "$PROJECT_PATH/scripts/" || warn "Failed to copy setup-agent-teams.sh"
 

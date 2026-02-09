@@ -10,9 +10,13 @@ RED='\033[0;31m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Detect project root (directory containing this script)
+# Detect project root
+# First, try to use the script location to find templates (for when called from another project)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+TEMPLATE_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+# But use current working directory as the target project root
+PROJECT_ROOT="$(pwd)"
 
 # Function to print error and exit
 error_exit() {
@@ -83,7 +87,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Template locations
-TEMPLATES_DIR="$PROJECT_ROOT/docs-eng-process/.claude-templates"
+TEMPLATES_DIR="$TEMPLATE_ROOT/docs-eng-process/.claude-templates"
 CLAUDE_DIR="$PROJECT_ROOT/.claude"
 
 # Check if templates directory exists
