@@ -211,15 +211,18 @@ sync_item() {
 log_info "Syncing skills from framework..."
 echo ""
 
-# Skills are now flat .md files in the skills directory
+# Skills are in subdirectories with SKILL.md inside
 src_dir="$FRAMEWORK_TEMPLATES/skills"
 dest_dir="$CLAUDE_DIR/skills"
 
 if [ -d "$src_dir" ]; then
-  for skill_file in "$src_dir"/*.md; do
-    if [ -f "$skill_file" ]; then
-      skill_name=$(basename "$skill_file")
-      sync_item "$skill_file" "$dest_dir/$skill_name" "skills/$skill_name"
+  for skill_dir in "$src_dir"/*/; do
+    if [ -d "$skill_dir" ]; then
+      skill_name=$(basename "$skill_dir")
+      skill_file="$skill_dir/SKILL.md"
+      if [ -f "$skill_file" ]; then
+        sync_item "$skill_file" "$dest_dir/$skill_name/SKILL.md" "skills/$skill_name"
+      fi
     fi
   done
 fi
