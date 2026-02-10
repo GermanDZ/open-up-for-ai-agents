@@ -1,17 +1,21 @@
 # OpenUP Feature Team Configuration
 
-⚠️ **RECOMMENDED: Start with an Iteration** ⚠️
+⚠️ **CRITICAL: DO NOT SPAWN TEAMMATES YET** ⚠️
 
-For proper tracking and traceability, the team lead should start an iteration before spawning teammates:
+**STOP! Before spawning any teammates, you MUST:**
 
+1. First, call `/openup-start-iteration` to initialize the iteration
+2. Only AFTER the iteration is initialized, then spawn teammates
+3. If you skip this step, the work will not be properly tracked
+
+**Example correct flow:**
 ```
 /openup-start-iteration goal: "Implement typewriter effect feature"
-# Or with a task ID if you have a roadmap:
-/openup-start-iteration task_id: T-005
-# Then spawn teammates...
+# Wait for iteration to initialize...
+# THEN spawn teammates
 ```
 
-**If you don't have a roadmap yet**, you can spawn teammates directly and track work informally.
+**If the user hasn't provided a task_id or goal**, ask them for the iteration goal before proceeding.
 
 ---
 
