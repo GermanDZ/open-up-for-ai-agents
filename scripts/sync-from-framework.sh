@@ -255,6 +255,50 @@ if [ -d "$src_dir" ]; then
   done
 fi
 
+# Sync scripts (Python utility scripts)
+log_info "Syncing utility scripts from framework..."
+echo ""
+src_dir="$FRAMEWORK_TEMPLATES/scripts"
+if [ -d "$src_dir" ]; then
+  dest_dir="$CLAUDE_DIR/scripts"
+  mkdir -p "$dest_dir"
+  for script in "$src_dir"/*.py; do
+    if [ -f "$script" ]; then
+      script_name=$(basename "$script")
+      sync_item "$script" "$dest_dir/$script_name" "scripts/$script_name"
+      # Make scripts executable
+      if [ "$DRY_RUN" = false ] && [ -f "$dest_dir/$script_name" ]; then
+        chmod +x "$dest_dir/$script_name"
+      fi
+    fi
+  done
+fi
+
+# Sync config files
+log_info "Syncing config files from framework..."
+echo ""
+src_dir="$FRAMEWORK_TEMPLATES/config"
+if [ -d "$src_dir" ]; then
+  dest_dir="$CLAUDE_DIR/config"
+  mkdir -p "$dest_dir"
+  for config in "$src_dir"/*.md; do
+    if [ -f "$config" ]; then
+      config_name=$(basename "$config")
+      sync_item "$config" "$dest_dir/$config_name" "config/$config_name"
+    fi
+  done
+fi
+
+# Create cache directory if it doesn't exist
+log_info "Ensuring cache directory exists..."
+echo ""
+if [ "$DRY_RUN" = false ]; then
+  mkdir -p "$CLAUDE_DIR/cache"
+  log_verbose "Created cache directory: $CLAUDE_DIR/cache"
+else
+  log_info "[DRY RUN] Would create cache directory"
+fi
+
 # Check for settings.json
 log_info "Checking settings.json..."
 echo ""
