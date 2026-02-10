@@ -1,5 +1,12 @@
 {
-  "permissionsMode": "auto",
+  "defaultMode": "acceptEdits",
+  "permissions": {
+    "allow": [
+      "Edit",
+      "Write",
+      "Read"
+    ]
+  },
   "env": {
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
   }
