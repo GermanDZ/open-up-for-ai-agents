@@ -89,16 +89,18 @@ if [ -z "$FRAMEWORK_PATH" ]; then
   log_info "Auto-detecting framework repository..."
 
   # Check if we're in the framework repository itself
-  if [ -f "$PROJECT_ROOT/docs-eng-process/.claude-templates/CLAUDE.md" ]; then
+  # Framework repo has sync-templates-to-claude.sh script
+  if [ -f "$PROJECT_ROOT/scripts/sync-templates-to-claude.sh" ]; then
     log_error "You appear to be in the framework repository itself."
     log_error "This script is meant to be run from projects that USE the framework."
-    log_error "Use ./scripts/update-openup-skills.sh instead."
+    log_error "Use ./scripts/sync-templates-to-claude.sh instead."
     exit 1
   fi
 
   # Look for framework in common locations
   POSSIBLE_PATHS=(
     "$PROJECT_ROOT/../open-up-for-ai-agents"
+    "$HOME/personal-code/ai-dev-framework/open-up-for-ai-agents"
     "$HOME/projects/open-up-for-ai-agents"
     "$HOME/dev/open-up-for-ai-agents"
     "$HOME/code/open-up-for-ai-agents"
