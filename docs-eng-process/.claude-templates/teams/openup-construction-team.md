@@ -2,6 +2,23 @@
 
 This is an agent team configuration for the Construction phase of OpenUP.
 
+⚠️ **MANDATORY FIRST STEP FOR TEAM LEAD** ⚠️
+
+**BEFORE spawning any teammates, the team lead MUST:**
+
+1. Use `/openup-start-iteration task_id: XXX` to initialize the iteration
+2. Only AFTER the iteration is started, then spawn teammates
+3. Do NOT skip this step - all work must be tracked in iterations
+
+**Example correct flow:**
+```
+/openup-start-iteration task_id: T-005
+# Then spawn teammates...
+```
+
+---
+
+
 ## Phase Overview
 
 **Construction** - Build the system incrementally. Implement all remaining features iteratively until ready for deployment.
