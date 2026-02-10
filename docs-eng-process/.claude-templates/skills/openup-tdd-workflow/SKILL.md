@@ -1,6 +1,6 @@
 ---
 name: openup-tdd-workflow
-description: Guide Test-Driven Development cycle adapted for AI agents
+description: Guide Test-Driven Development cycle adapted for AI agents with a pragmatic approach
 arguments:
   - name: phase
     description: TDD phase (red, green, refactor, full)
@@ -12,7 +12,9 @@ arguments:
 
 # TDD Workflow
 
-This skill guides you through the Test-Driven Development (TDD) cycle, adapted for AI agent workflows. TDD follows a red-green-refactor cycle to ensure code is testable and tested from the start.
+This skill guides you through the Test-Driven Development (TDD) cycle, adapted for AI agent workflows with a pragmatic approach.
+
+**Important**: This is a guideline, not a strict process. The goal is quality software, not process purity. TDD follows a red-green-refactor cycle to ensure code is testable and tested from the start.
 
 ## When to Use
 
@@ -27,18 +29,20 @@ Use this skill when:
 
 Do NOT use this skill when:
 - Adding tests after implementation is complete (use test generation instead)
-- Doing simple bug fixes or trivial changes
-- Exploratory coding or prototyping
+- Doing simple bug fixes or trivial changes (just add tests as needed)
+- Exploratory coding or prototyping (tests come later)
 - Writing documentation or configuration
+- TDD would significantly slow down development without adding value
+
+**Remember**: TDD is a tool, not a mandate. Use it when it helps, skip it when it doesn't.
 
 ## Success Criteria
 
 After using this skill, verify:
-- [ ] Test is written first (RED phase)
-- [ ] Implementation makes test pass (GREEN phase)
-- [ ] Code is refactored while tests pass (REFACTOR phase)
-- [ ] All tests still pass
-- [ ] Code is clean and maintainable
+- [ ] Tests are written (preferably before implementation)
+- [ ] Implementation makes tests pass
+- [ ] Code is reasonably clean and functional
+- [ ] Tests pass before commit
 
 ## Process Summary
 
@@ -55,9 +59,9 @@ Based on `$ARGUMENTS[phase]`:
 
 | Phase | Description |
 |-------|-------------|
-| red | Write failing test first |
-| green | Implement to make test pass |
-| refactor | Clean up code while tests pass |
+| red | Write test first (preferably before implementation) |
+| green | Implement to make test pass (commit point) |
+| refactor | Clean up code while tests pass (optional for small changes) |
 | full | Run complete red-green-refactor cycle |
 
 ### 2. Run Phase-Specific Process
@@ -70,9 +74,9 @@ See phase-specific documentation:
 ### 3. Verify Before Proceeding
 
 After each phase:
-- RED: Verify test fails for the right reason
-- GREEN: Verify test passes and implementation is minimal
-- REFACTOR: Verify tests still pass and code is improved
+- RED: Write test first when practical (not mandatory for every case)
+- GREEN: Verify test passes before committing (commit when green)
+- REFACTOR: Verify tests still pass, refactor is optional for small changes
 
 ### 4. Create TDD Log
 
@@ -87,49 +91,49 @@ Document the TDD cycle in `docs/tdd-logs/<feature>-tdd.md`:
 
 ```
          ┌─────────┐
-         │   RED   │ Write failing test
+         │   RED   │ Write test (preferably first)
          └────┬────┘
               │
               ▼
       ┌─────────────┐
-      │    GREEN    │ Make it pass
+      │    GREEN    │ Make it pass ⭐ COMMIT HERE
       └──────┬──────┘
              │
              ▼
         ┌─────────┐
-        │ REFACTOR│ Clean it up
+        │ REFACTOR│ Clean it up (optional for small changes)
         └────┬────┘
              │
              ▼
         (back to RED for next test)
 ```
 
-## TDD Principles
+## TDD Principles (Pragmatic Approach)
 
-1. **Write the test first** - Before any implementation code
-2. **Write only enough test to fail** - Minimal test for the requirement
-3. **Write only enough code to pass** - Minimal implementation
-4. **Refactor** - Improve code without changing behavior
-5. **Repeat** - One test/feature at a time
+1. **Write tests when practical** - Before implementation when beneficial, not as a dogma
+2. **Focus on coverage and quality** - Tests should verify behavior effectively
+3. **Commit when green** - Only commit when tests pass, never in red state
+4. **Refactor reasonably** - Address obvious improvements, don't obsess over perfection
+5. **Run CI once at the end** - Use local tests during development, CI for final validation
 
 ## AI Agent TDD Adaptations
 
-Since AI agents generate code differently:
+Since AI agents generate code differently, take a pragmatic approach:
 
 **RED Phase:**
-- Agent writes test specification first
-- Test is created and verified to fail
-- Test captures requirement in code
+- Write test first when practical and beneficial
+- Don't obsess over making tests fail - the goal is coverage
+- Focus on capturing requirements in code
 
 **GREEN Phase:**
-- Agent generates minimal implementation
-- Implementation is verified against test
-- Only what's needed to pass is added
+- Generate implementation that makes tests pass
+- This is the commit point - only commit when tests pass
+- Focus on functionality over perfection
 
 **REFACTOR Phase:**
-- Agent reviews code for improvements
-- Refactoring is applied
-- Tests verify behavior unchanged
+- Review code for obvious improvements
+- Address reasonable refactor opportunities before committing
+- Don't let perfect be the enemy of good - larger refactors can be separate tasks
 
 ## Output
 

@@ -2,6 +2,8 @@
 
 This document explains the Test-Driven Development practice used in this project.
 
+**Note**: We take a pragmatic approach to TDD. The goal is quality software with good test coverage, not process purity. Use TDD when it helps, skip it when it doesn't.
+
 ## What is TDD?
 
 Test-Driven Development (TDD) is a software development practice where you write tests *before* writing the implementation code. It follows a simple, repetitive cycle that ensures code quality, correctness, and maintainability.
@@ -62,19 +64,28 @@ TDD fits naturally into our atomic commit workflow:
 
 ```
 1. [refactor] Prepare code structure (tests still pass)
-2. [test] Add failing tests for new functionality (RED)
-3. [feat] Implement feature to make tests pass (GREEN)
-4. [refactor] Clean up implementation (REFACTOR)
+2. [test] Write tests for new functionality (preferably first)
+3. [feat] Implement feature to make tests pass (GREEN → COMMIT HERE)
+4. [refactor] Clean up implementation (optional for small changes)
 5. [docs] Update documentation
 ```
 
+**Important**: Commit when tests are green. Never commit in red state.
+
 ## Integration with Agent Workflow
 
-When implementing features using TDD:
+When implementing features using TDD (pragmatic approach):
 
 1. **Plan phase**: Identify test cases from use cases
-2. **Implementation phase**: Follow RED-GREEN-REFACTOR for each test case
-3. **Commit phase**: Each GREEN state is a potential commit point
-4. **Review phase**: Tests serve as specification documentation
+2. **Implementation phase**: Write tests (preferably first), implement until green
+3. **Commit phase**: Commit when tests pass (green state), never in red state
+4. **CI phase**: Run CI/test suite once at the end, not repeatedly during development
+5. **Review phase**: Tests serve as specification documentation
+
+**Key Points**:
+- Write tests first when practical and beneficial
+- Don't obsess over strict red-green-refactor adherence
+- Commit when tests pass, run CI once at the end
+- Focus on quality and coverage, not process purity
 
 For complete TDD guidance, see the [OpenUP knowledge base](openup-knowledge-base/practice-technical/test_driven_development/).

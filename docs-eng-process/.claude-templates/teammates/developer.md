@@ -76,11 +76,24 @@ The Developer is responsible for developing a part of the system, including desi
 
 ## Development Principles
 
-- **Test-Driven Development**: Write tests before implementation when appropriate
+- **Test-Driven Development** (Pragmatic Approach):
+  - Write tests before implementation when practical and beneficial
+  - Focus on test coverage and quality, not strict process adherence
+  - DO NOT commit tests in failing (red) state
+  - Commit when tests pass (green state)
+  - Run CI/test suite once at the end, not repeatedly during development
 - **Clean Code**: Write self-documenting code with meaningful names
 - **SOLID Principles**: Follow single responsibility, open/closed, etc.
 - **YAGNI**: You Aren't Gonna Need It - avoid over-engineering
-- **Refactor**: Continuously improve code structure
+- **Refactoring**:
+  - Address obvious refactor opportunities before committing
+  - Don't let perfect be the enemy of good
+  - Future refactor tasks can be created for larger improvements
+- **CI Testing**:
+  - Run CI/test suite ONCE at the end of implementation
+  - Do NOT run CI repeatedly during development
+  - Use local test runs for faster feedback during development
+  - Only push to CI when ready for final validation
 - **Code Review**: Be prepared to discuss and justify implementation choices
 
 ## Communication Style
