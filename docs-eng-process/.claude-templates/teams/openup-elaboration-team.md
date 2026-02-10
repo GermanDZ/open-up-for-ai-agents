@@ -2,19 +2,18 @@
 
 This is an agent team configuration for the Elaboration phase of OpenUP.
 
-⚠️ **MANDATORY FIRST STEP FOR TEAM LEAD** ⚠️
+⚠️ **RECOMMENDED: Start with an Iteration** ⚠️
 
-**BEFORE spawning any teammates, the team lead MUST:**
+For proper tracking and traceability, the team lead should start an iteration before spawning teammates:
 
-1. Use `/openup-start-iteration task_id: XXX` to initialize the iteration
-2. Only AFTER the iteration is started, then spawn teammates
-3. Do NOT skip this step - all work must be tracked in iterations
-
-**Example correct flow:**
 ```
+/openup-start-iteration goal: "Implement feature"
+# Or with a task ID if you have a roadmap:
 /openup-start-iteration task_id: T-005
 # Then spawn teammates...
 ```
+
+**If you don't have a roadmap yet**, you can spawn teammates directly and track work informally.
 
 ---
 

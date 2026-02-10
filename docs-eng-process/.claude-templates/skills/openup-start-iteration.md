@@ -9,8 +9,8 @@ arguments:
     description: The iteration goal (optional, reads from project-status if not provided)
     required: false
   - name: task_id
-    description: The task ID from roadmap to work on (required for task-based branching)
-    required: true
+    description: The task ID from roadmap to work on (optional, but recommended for task-based branching)
+    required: false
 ---
 
 # Start Iteration
