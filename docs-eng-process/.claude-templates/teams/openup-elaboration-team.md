@@ -68,6 +68,8 @@ The tester should create test cases and validate architectural decisions.
 
 ## Typical Workflow
 
+**CRITICAL FIRST STEP**: Before starting elaboration work, the team lead (architect) MUST use `/openup-start-iteration` to initialize the iteration. All work must be tracked as part of an iteration.
+
 1. **Architect** designs architecture and creates architecture notebook
 2. **Analyst** (if needed) details critical use cases
 3. **Developer** implements architectural baseline

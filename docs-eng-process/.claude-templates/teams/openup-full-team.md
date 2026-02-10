@@ -40,6 +40,8 @@ The OpenUP full team consists of all core roles working together to deliver soft
 
 ## Team Workflow
 
+**CRITICAL FIRST STEP**: Before any work begins, the team lead MUST use `/openup-start-iteration` to initialize the iteration. All work must be tracked as part of an iteration.
+
 The team works iteratively through these phases:
 
 1. **Inception**: Define scope, vision, feasibility (led by Analyst + Project Manager)

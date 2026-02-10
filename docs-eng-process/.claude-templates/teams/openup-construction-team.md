@@ -65,6 +65,8 @@ The tester should create test cases, execute tests, and track quality metrics.
 
 ## Typical Workflow
 
+**CRITICAL FIRST STEP**: Before starting construction work, the team lead (developer) MUST use `/openup-start-iteration` to initialize the iteration. All work must be tracked as part of an iteration.
+
 Each iteration:
 
 1. **Developer** implements features with tests

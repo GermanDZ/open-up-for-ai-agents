@@ -28,6 +28,8 @@ Investigate and resolve bugs, technical issues, or performance problems through 
 
 ## Investigation Process
 
+**CRITICAL FIRST STEP**: Before starting investigation, the team lead MUST use `/openup-start-iteration` to initialize the iteration. All work must be tracked as part of an iteration.
+
 1. **Understand the Issue**
    - Gather bug report or issue description
    - Identify reproduction steps

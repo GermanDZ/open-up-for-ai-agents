@@ -34,6 +34,8 @@ Implement a new feature from requirements through design, implementation, and te
 
 ## Feature Implementation Process
 
+**CRITICAL FIRST STEP**: Before starting feature work, the team lead (developer) MUST use `/openup-start-iteration` to initialize the iteration. All work must be tracked as part of an iteration.
+
 1. **Requirements**
    - Analyst gathers requirements for the feature
    - Defines use cases and acceptance criteria

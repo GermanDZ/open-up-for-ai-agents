@@ -67,6 +67,8 @@ The project-manager should coordinate the deployment and communication.
 
 ## Typical Workflow
 
+**CRITICAL FIRST STEP**: Before starting transition work, the team lead (tester or project-manager) MUST use `/openup-start-iteration` to initialize the iteration. All work must be tracked as part of an iteration.
+
 1. **Tester** conducts comprehensive testing (beta, performance, security)
 2. **Developer** fixes bugs found during testing
 3. **Tester** validates fixes and creates test reports

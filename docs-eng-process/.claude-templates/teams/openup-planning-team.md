@@ -34,6 +34,8 @@ Plan iterations, update the roadmap, assess priorities, and coordinate project p
 
 ## Planning Process
 
+**CRITICAL FIRST STEP**: Before starting planning work, the team lead (project-manager) MUST use `/openup-start-iteration` to initialize the iteration. All work must be tracked as part of an iteration.
+
 1. **Review Current State**
    - Review `docs/project-status.md` for current phase and iteration
    - Review `docs/roadmap.md` for pending tasks

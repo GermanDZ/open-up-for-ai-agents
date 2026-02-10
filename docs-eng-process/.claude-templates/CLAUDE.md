@@ -115,6 +115,17 @@ Create an OpenUP agent team for iteration planning. Spawn analyst to review requ
 
 See [teams guide](docs-eng-process/teams-guide.md) for complete team documentation.
 
+## Critical Requirement: All Work Must Be in an Iteration
+
+**IMPORTANT**: Before any team begins work, the team lead MUST use the `/openup-start-iteration` skill to initialize an iteration. All work must be tracked as part of an iteration, regardless of team type or task scope.
+
+The team lead should:
+1. First call `/openup-start-iteration` with appropriate iteration number and goal
+2. Then proceed with the assigned work
+3. Use `/openup-complete-task` when work is finished
+
+This ensures proper tracking, documentation, and adherence to the OpenUP iterative process.
+
 ## How to Use Agent Teams
 
 ### Step 1: Enable Agent Teams

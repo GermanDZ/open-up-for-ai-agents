@@ -61,6 +61,8 @@ The project-manager should create the initial project plan and risk list.
 
 ## Typical Workflow
 
+**CRITICAL FIRST STEP**: Before starting inception work, the team lead (analyst or project-manager) MUST use `/openup-start-iteration` to initialize the iteration. All work must be tracked as part of an iteration.
+
 1. **Analyst** gathers requirements and creates initial vision
 2. **Project Manager** creates initial project plan and risk list
 3. **Analyst** identifies key use cases (20-30% detail)
