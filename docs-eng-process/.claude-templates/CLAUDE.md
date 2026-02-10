@@ -298,6 +298,36 @@ Configure in settings.json:
 }
 ```
 
+## Updating OpenUP Skills
+
+To get the latest skills, teammates, and teams from the framework:
+
+### Option 1: Using sync-from-framework.sh (Recommended)
+
+```bash
+# First time: Copy script to your project
+cp /path/to/open-up-for-ai-agents/scripts/sync-from-framework.sh ./scripts/
+chmod +x ./scripts/sync-from-framework.sh
+
+# Pull latest framework updates
+cd /path/to/open-up-for-ai-agents && git pull
+
+# Sync to your project
+cd /path/to/your-project
+./scripts/sync-from-framework.sh --framework-path /path/to/open-up-for-ai-agents
+```
+
+### Option 2: Manual Copy
+
+```bash
+FRAMEWORK="/path/to/open-up-for-ai-agents"
+cp -r "$FRAMEWORK/docs-eng-process/.claude-templates/skills" .claude/
+cp -r "$FRAMEWORK/docs-eng-process/.claude-templates/teammates" .claude/
+cp -r "$FRAMEWORK/docs-eng-process/.claude-templates/teams" .claude/
+```
+
+See [scripts/README.md](../scripts/README.md) for more details.
+
 ## Best Practices
 
 1. **Use skills for common operations**: Skills automate repetitive tasks and ensure consistency

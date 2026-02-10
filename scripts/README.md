@@ -97,6 +97,63 @@ Update an existing project with the latest template changes.
 ./update-from-template.sh --template-dir ~/dev/open-up-for-ai-agents
 ```
 
+### sync-from-framework.sh
+
+**NEW**: Sync OpenUP skills, teammates, and teams from framework repository to your project.
+
+**Usage:**
+```bash
+./sync-from-framework.sh [OPTIONS]
+```
+
+**Options:**
+- `--dry-run` - Show what would be synced without making changes
+- `--verbose` - Show detailed output
+- `--framework-path PATH` - Path to framework repository (auto-detects if not provided)
+
+**What it syncs:**
+- ✅ Skills: `.claude/skills/` ← `framework/docs-eng-process/.claude-templates/skills/`
+- ✅ Teammates: `.claude/teammates/` ← `framework/docs-eng-process/.claude-templates/teammates/`
+- ✅ Teams: `.claude/teams/` ← `framework/docs-eng-process/.claude-templates/teams/`
+- ⚠️ Skips: `.claude/CLAUDE.md` (preserves your customizations)
+
+**Example:**
+```bash
+# Auto-detect framework location
+./sync-from-framework.sh
+
+# Specify framework path
+./sync-from-framework.sh --framework-path ~/projects/open-up-for-ai-agents
+
+# Dry run first to preview
+./sync-from-framework.sh --dry-run --verbose
+```
+
+**When to use:**
+- ✅ To pull latest skills after framework updates
+- ✅ To sync new teammates or teams
+- ✅ When you get "Unknown skill" errors
+
+**Important:** This script is meant to be **copied to your project**, not run from the framework repository.
+
+### update-openup-skills.sh
+
+**For framework developers only**: Updates the framework's own `.claude/` directory from templates.
+
+**Usage:**
+```bash
+# Only run this from within the framework repository
+./scripts/update-openup-skills.sh [--dry-run] [--verbose]
+```
+
+**What it does:**
+- Syncs `docs-eng-process/.claude-templates/` → `.claude/` within the framework repo
+- Used when developing the framework itself
+
+**When to use:**
+- ⚠️ Only if you're maintaining the framework repository
+- ❌ NOT for projects using the framework (use `sync-from-framework.sh` instead)
+
 ### update-openup.sh
 
 Convenience wrapper script for running updates. This script is meant to be copied to your project and customized with the path to your local framework clone.
@@ -125,12 +182,79 @@ chmod +x scripts/update-openup.sh
 
 ## Quick Reference
 
-| Task | Script |
-|------|--------|
-| Create new project | `bootstrap-project.sh <name>` |
-| Set up agent teams | `setup-agent-teams.sh` |
-| Update from template | `update-from-template.sh --template-dir <path>` |
-| Update (with submodule) | `update-from-template.sh --template-dir .openup-template` |
+| Task | Script | Context |
+|------|--------|---------|
+| **Create new project** | `bootstrap-project.sh <name>` | From framework repo |
+| **Set up agent teams** | `setup-agent-teams.sh` | From framework repo or in project |
+| **Update project (full)** | `update-from-template.sh --template-dir <path>` | In your project |
+| **Sync .claude files only** | `sync-from-framework.sh --framework-path <path>` | In your project |
+| **Update framework's .claude** | `update-openup-skills.sh` | In framework repo only |
+
+## Common Workflows
+
+### Initial Project Setup
+
+```bash
+# Option A: Bootstrap new project
+cd /path/to/open-up-for-ai-agents
+./scripts/bootstrap-project.sh my-project --base-dir ~/projects
+
+# Option B: Add to existing project
+cd ~/projects/existing-project
+/path/to/open-up-for-ai-agents/scripts/setup-agent-teams.sh
+```
+
+### Updating an Existing Project
+
+**Recommended: Use sync-from-framework.sh**
+
+This is the fastest way to get latest skills, teammates, and teams:
+
+```bash
+# 1. Copy script to your project (first time only)
+cp /path/to/open-up-for-ai-agents/scripts/sync-from-framework.sh ./scripts/
+chmod +x ./scripts/sync-from-framework.sh
+
+# 2. Pull latest framework updates
+cd /path/to/open-up-for-ai-agents
+git pull
+
+# 3. Sync to your project
+cd ~/projects/my-project
+./scripts/sync-from-framework.sh
+```
+
+**Alternative: Use update-from-template.sh**
+
+This updates documentation and other files in addition to `.claude/`:
+
+```bash
+cd ~/projects/my-project
+/path/to/open-up-for-ai-agents/scripts/update-from-template.sh \
+  --template-dir /path/to/open-up-for-ai-agents \
+  --backup
+```
+
+### Troubleshooting: ".claude files not updating"
+
+**Problem:** Running `update-from-template.sh --force` doesn't update `.claude/skills/`
+
+**Root cause:** The `update-from-template.sh` script copies from your project's `docs-eng-process/.claude-templates/`, which doesn't exist in projects using the framework. That directory only exists in the framework repository.
+
+**Solution:** Use `sync-from-framework.sh` instead:
+
+```bash
+# This copies from the framework's .claude-templates to your project's .claude
+./scripts/sync-from-framework.sh --framework-path /path/to/open-up-for-ai-agents
+```
+
+**What each script does:**
+
+| Script | Source | Destination | Use Case |
+|--------|--------|-------------|----------|
+| `update-from-template.sh` | Framework root | Project root | Update docs, templates, full sync |
+| `sync-from-framework.sh` | Framework `.claude-templates/` | Project `.claude/` | **Update skills/teammates/teams** |
+| `update-openup-skills.sh` | Framework `.claude-templates/` | Framework `.claude/` | Framework development only |
 
 ## Environment Variables
 
