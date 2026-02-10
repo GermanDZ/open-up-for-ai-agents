@@ -52,11 +52,17 @@ Example:
 
 Automate workflow operations:
 
+**Standard Workflow:**
 - `/openup-start-iteration` - Begin new iteration (reads project-status, updates iteration)
 - `/openup-complete-task` - Mark task complete, update roadmap, commit changes, optionally create PR
 - `/openup-create-pr` - Create pull request with roadmap task context
 - `/openup-assess-completeness` - Lightweight readiness assessment before task completion or phase transition
 - `/openup-retrospective` - Generate iteration retrospective with feedback and action items
+
+**Fast Iteration:**
+- `/openup-quick-task` - Fast iteration mode for small changes (~50% faster)
+
+**Other:**
 - `/openup-tdd-workflow` - Guide Test-Driven Development cycle adapted for AI agents
 - `/openup-request-input` - Create input request document for async stakeholder communication
 - `/openup-phase-review` - Check phase completion criteria and prepare for review
@@ -64,7 +70,7 @@ Automate workflow operations:
 
 Example:
 ```
-/openup-start-iteration iteration_number: 2 goal: "Complete user authentication"
+/openup-start-iteration task_id: T-002 goal: "Complete user authentication"
 ```
 
 See [skills guide](docs-eng-process/skills-guide.md) for complete skill documentation.
@@ -115,9 +121,23 @@ Create an OpenUP agent team for iteration planning. Spawn analyst to review requ
 
 See [teams guide](docs-eng-process/teams-guide.md) for complete team documentation.
 
+## Quick Start
+
+**New to OpenUP?** Start here: `/openup-init`
+
+This single command will:
+- Create project structure
+- Generate initial documents
+- Configure agent teams
+- Provide next steps
+
+Or see [QUICKSTART.md](docs-eng-process/QUICKSTART.md) for detailed guide.
+
 ## Critical Requirement: All Work Must Be in an Iteration
 
 **IMPORTANT**: Before any team begins work, the team lead MUST use the `/openup-start-iteration` skill to initialize an iteration. All work must be tracked as part of an iteration, regardless of team type or task scope.
+
+**For quick changes**, use `/openup-quick-task` for faster iteration with reduced overhead.
 
 The team lead should:
 1. First call `/openup-start-iteration` with appropriate iteration number and goal
@@ -347,6 +367,49 @@ See [scripts/README.md](../scripts/README.md) for more details.
 4. **Let teammates collaborate**: They can message each other directly
 5. **Monitor progress**: Check in on teammates and redirect if needed
 6. **Clean up when done**: Remove teammates after work is complete
+
+## Token Optimization
+
+OpenUP includes several features to optimize token usage:
+
+### Tiered Context
+
+Choose your context level based on task complexity:
+- **Tier 1 (Minimal)**: ~1,000 tokens - for quick tasks and small changes
+- **Tier 2 (Standard)**: ~4,000 tokens - for regular development work (default)
+- **Tier 3 (Full)**: ~12,000 tokens - for formal reviews and phase transitions
+
+See `.claude/config/tiered-context.md` for configuration details.
+
+### Caching
+
+Document parsing is automatically cached for 24 hours. Expected savings: 30-50% tokens.
+
+```bash
+# View cache statistics
+python3 .claude/scripts/cache-manager.py stats
+
+# Clear cache if needed
+python3 .claude/scripts/cache-manager.py clear
+```
+
+### Token Tracking
+
+Monitor your token usage:
+
+```bash
+# View usage statistics
+python3 .claude/scripts/token-tracker.py stats
+
+# View efficiency metrics
+python3 .claude/scripts/token-tracker.py efficiency
+```
+
+### Fast Mode Skills
+
+Use optimized skills for quick operations:
+- `/openup-quick-task` - For small changes, bug fixes, documentation
+- `--minimal` flag with batch-context.py for reduced context loading
 
 ## Troubleshooting
 
