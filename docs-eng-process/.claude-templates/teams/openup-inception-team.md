@@ -1,3 +1,29 @@
+⚠️ **CRITICAL: READ THIS BEFORE SPAWNING TEAMMATES** ⚠️
+
+## STOP! DO NOT SPAWN TEAMMATES FIRST!
+
+**The correct OpenUP workflow is:**
+
+1. ✅ **FIRST**: Initialize the iteration with `/openup-start-iteration`
+2. ✅ **SECOND**: Spawn teammates
+3. ✅ **THIRD**: Coordinate work
+
+**❌ WRONG:**
+```
+"Create an OpenUP team..." → Spawns teammates immediately → NO ITERATION
+```
+
+**✅ RIGHT:**
+```
+"Create an OpenUP team..." → /openup-start-iteration → Spawns teammates
+```
+
+**Even when the user says "create a team", you MUST initialize the iteration FIRST.**
+
+The team lead's first action should always be calling `/openup-start-iteration`, not spawning teammates.
+
+---
+
 # OpenUP Inception Team Configuration
 
 This is an agent team configuration for the Inception phase of OpenUP.

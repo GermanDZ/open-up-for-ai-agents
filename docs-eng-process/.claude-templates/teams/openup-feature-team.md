@@ -1,23 +1,30 @@
-# OpenUP Feature Team Configuration
+⚠️ **CRITICAL: READ THIS BEFORE SPAWNING TEAMMATES** ⚠️
 
-⚠️ **CRITICAL: DO NOT SPAWN TEAMMATES YET** ⚠️
+## STOP! DO NOT SPAWN TEAMMATES FIRST!
 
-**STOP! Before spawning any teammates, you MUST:**
+**The correct OpenUP workflow is:**
 
-1. First, call `/openup-start-iteration` to initialize the iteration
-2. Only AFTER the iteration is initialized, then spawn teammates
-3. If you skip this step, the work will not be properly tracked
+1. ✅ **FIRST**: Initialize the iteration with `/openup-start-iteration`
+2. ✅ **SECOND**: Spawn teammates
+3. ✅ **THIRD**: Coordinate work
 
-**Example correct flow:**
+**❌ WRONG:**
 ```
-/openup-start-iteration goal: "Implement typewriter effect feature"
-# Wait for iteration to initialize...
-# THEN spawn teammates
+"Create an OpenUP team..." → Spawns teammates immediately → NO ITERATION
 ```
 
-**If the user hasn't provided a task_id or goal**, ask them for the iteration goal before proceeding.
+**✅ RIGHT:**
+```
+"Create an OpenUP team..." → /openup-start-iteration → Spawns teammates
+```
+
+**Even when the user says "create a team", you MUST initialize the iteration FIRST.**
+
+The team lead's first action should always be calling `/openup-start-iteration`, not spawning teammates.
 
 ---
+
+# OpenUP Feature Team Configuration
 
 This is a task-specific team configuration for implementing new features end-to-end.
 
