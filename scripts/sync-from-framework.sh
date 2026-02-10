@@ -193,20 +193,18 @@ sync_item() {
 log_info "Syncing skills from framework..."
 echo ""
 
-for skill_category in openup-phases openup-artifacts openup-workflow; do
-  src_dir="$FRAMEWORK_TEMPLATES/skills/$skill_category"
-  if [ -d "$src_dir" ]; then
-    dest_dir="$CLAUDE_DIR/skills/$skill_category"
-    log_verbose "Processing category: $skill_category"
+# Skills are now flat .md files in the skills directory
+src_dir="$FRAMEWORK_TEMPLATES/skills"
+dest_dir="$CLAUDE_DIR/skills"
 
-    for skill_src in "$src_dir"/*; do
-      if [ -d "$skill_src" ] || [ -f "$skill_src" ]; then
-        skill_name=$(basename "$skill_src")
-        sync_item "$skill_src" "$dest_dir/$skill_name" "skills/$skill_category/$skill_name"
-      fi
-    done
-  fi
-done
+if [ -d "$src_dir" ]; then
+  for skill_file in "$src_dir"/*.md; do
+    if [ -f "$skill_file" ]; then
+      skill_name=$(basename "$skill_file")
+      sync_item "$skill_file" "$dest_dir/$skill_name" "skills/$skill_name"
+    fi
+  done
+fi
 
 # Sync teammates
 log_info "Syncing teammates from framework..."
