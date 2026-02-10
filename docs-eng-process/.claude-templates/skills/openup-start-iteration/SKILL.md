@@ -11,11 +11,17 @@ arguments:
   - name: task_id
     description: The task ID from roadmap to work on (optional, but recommended for task-based branching)
     required: false
+  - name: team
+    description: Team type to automatically deploy after initialization (feature, investigation, construction, elaboration, inception, transition, planning, full, or none)
+    required: false
+  - name: deploy_team
+    description: Whether to deploy a team after iteration initialization (true/false, default: false)
+    required: false
 ---
 
 # Start Iteration
 
-This skill initializes a new OpenUP iteration by reading the current project state, identifying tasks from the roadmap, and creating a task-based branch for the work.
+This skill initializes a new OpenUP iteration and optionally deploys a team to work on it. It reads the current project state, identifies tasks from the roadmap, creates a task-based branch, and can automatically spawn teammates.
 
 **IMPORTANT**: Branch creation requires proper planning. The skill will read the roadmap to identify the task and create an appropriately named branch based on the task type.
 
@@ -97,6 +103,34 @@ Update `docs/project-status.md`:
 ### 6. Log Initialization
 
 Create an entry in `docs/agent-logs/agent-runs.jsonl` documenting the iteration start with task context.
+
+### 7. Deploy Team (Optional)
+
+If `$ARGUMENTS[deploy_team]` is `true` or `$ARGUMENTS[team]` is specified:
+
+1. Determine team composition based on:
+   - `$ARGUMENTS[team]` if provided (feature, investigation, construction, etc.)
+   - Current phase and iteration goal if not specified
+
+2. Deploy the team:
+   - Use Task tool to spawn teammates with appropriate roles
+   - Brief each teammate with iteration context
+   - Set up coordination channels
+
+3. Team composition defaults:
+   - **feature**: analyst, architect, developer, tester
+   - **investigation**: architect, developer, tester
+   - **construction**: developer, tester
+   - **elaboration**: architect, developer, tester
+   - **inception**: analyst, project-manager
+   - **transition**: tester, project-manager, developer
+   - **planning**: project-manager, analyst
+   - **full**: all roles
+
+4. Confirm team deployment to user with:
+   - Team composition
+   - Assigned roles
+   - Next steps
 
 ## Output
 
