@@ -136,22 +136,24 @@ Update an existing project with the latest template changes.
 
 **Important:** This script is meant to be **copied to your project**, not run from the framework repository.
 
-### update-openup-skills.sh
+### sync-templates-to-claude.sh
 
 **For framework developers only**: Updates the framework's own `.claude/` directory from templates.
 
 **Usage:**
 ```bash
 # Only run this from within the framework repository
-./scripts/update-openup-skills.sh [--dry-run] [--verbose]
+./scripts/sync-templates-to-claude.sh [--dry-run] [--verbose]
 ```
 
 **What it does:**
 - Syncs `docs-eng-process/.claude-templates/` → `.claude/` within the framework repo
+- Updates skills, teammates, and teams
 - Used when developing the framework itself
 
 **When to use:**
 - ⚠️ Only if you're maintaining the framework repository
+- After modifying files in `docs-eng-process/.claude-templates/`
 - ❌ NOT for projects using the framework (use `sync-from-framework.sh` instead)
 
 ### update-openup.sh
@@ -188,7 +190,7 @@ chmod +x scripts/update-openup.sh
 | **Set up agent teams** | `setup-agent-teams.sh` | From framework repo or in project |
 | **Update project (full)** | `update-from-template.sh --template-dir <path>` | In your project |
 | **Sync .claude files only** | `sync-from-framework.sh --framework-path <path>` | In your project |
-| **Update framework's .claude** | `update-openup-skills.sh` | In framework repo only |
+| **Update framework's .claude** | `sync-templates-to-claude.sh` | In framework repo only |
 
 ## Common Workflows
 
@@ -254,7 +256,7 @@ cd ~/projects/my-project
 |--------|--------|-------------|----------|
 | `update-from-template.sh` | Framework root | Project root | Update docs, templates, full sync |
 | `sync-from-framework.sh` | Framework `.claude-templates/` | Project `.claude/` | **Update skills/teammates/teams** |
-| `update-openup-skills.sh` | Framework `.claude-templates/` | Framework `.claude/` | Framework development only |
+| `sync-templates-to-claude.sh` | Framework `.claude-templates/` | Framework `.claude/` | Framework development only |
 
 ## Environment Variables
 

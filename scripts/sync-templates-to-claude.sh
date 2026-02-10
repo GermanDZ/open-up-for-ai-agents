@@ -1,11 +1,14 @@
 #!/bin/bash
 #
-# Update OpenUP Skills Script
+# Sync Templates to .claude Script
 #
-# This script syncs OpenUP skills, templates, and documentation from the
-# dev process directory to the project's .claude directory.
+# This script syncs skills, teammates, and teams from the framework's
+# .claude-templates directory to the framework's .claude directory.
 #
-# Usage: ./scripts/update-openup-skills.sh [--dry-run] [--verbose]
+# This is for use WITHIN the framework repository only.
+# Projects using the framework should use sync-from-framework.sh instead.
+#
+# Usage: ./scripts/sync-templates-to-claude.sh [--dry-run] [--verbose]
 #
 
 set -e
@@ -132,7 +135,7 @@ copy_item() {
 # Display header
 echo ""
 echo "=========================================="
-echo "  OpenUP Skills Update Script"
+echo "  Sync Templates to .claude"
 echo "=========================================="
 echo ""
 if [ "$DRY_RUN" = true ]; then
@@ -239,7 +242,7 @@ echo ""
 if [ "$DRY_RUN" = true ]; then
   log_info "Dry run complete. Run without --dry-run to apply changes."
 else
-  log_success "OpenUP skills updated successfully!"
+  log_success "Templates synced to .claude successfully!"
   echo ""
   log_info "New skills available:"
   echo "  /openup-inception"
