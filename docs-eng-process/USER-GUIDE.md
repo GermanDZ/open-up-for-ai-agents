@@ -467,7 +467,24 @@ Create a placeholder use case UC-010 for this feature.
    - Agent detects trunk and creates feature branch
    - Format: `feature/T-005-user-authentication`
 
-4. **Create feature team (optional):**
+4. **Create feature team (two options):**
+
+   **Option A: Auto-deploy with iteration start**
+   ```
+   /start-iteration iteration_number: 2 goal: "Implement user authentication" task_id: T-005 team: feature
+   ```
+   This automatically deploys a feature team after initializing the iteration.
+
+   **Option B: Deploy team separately**
+   ```
+   /deploy-team team_type: feature
+   ```
+   Or with custom roles:
+   ```
+   /deploy-team roles: analyst,architect,developer,tester
+   ```
+
+   **Option C: Manual team creation**
    ```
    Create an OpenUP agent team for implementing user authentication.
 
@@ -844,15 +861,22 @@ Do not advance phase until I confirm.
 | `/transition` | Guide Transition phase | `activity: initiate\|check-status\|next-steps` | Starting/working in Transition |
 | `/create-vision` | Generate vision document | `project_name`, `problem_statement` | Need vision document |
 | `/create-use-case` | Create use case spec | `use_case_name`, `primary_actor`, `description` | Documenting requirements |
+| `/detail-use-case` | Add detailed scenarios to use case | `use_case_name`, `generate_tests` | Elaborating requirements |
+| `/shared-vision` | Create shared technical vision | `technical_objectives`, `scope_focus` | Team alignment on tech direction |
 | `/create-architecture-notebook` | Generate/update architecture docs | `system_name`, `architectural_concerns` | Architecture work |
 | `/create-risk-list` | Create/update risk assessment | `risks` (JSON) | Risk identification |
 | `/create-iteration-plan` | Plan iteration | `iteration_number` | Planning iterations |
 | `/create-test-plan` | Generate test cases | `scope` | Test planning |
-| `/start-iteration` | Begin new iteration | `iteration_number`, `goal` | Starting iteration |
+| `/create-documentation` | Generate user/API docs | `doc_type`, `feature` | Creating documentation |
+| `/start-iteration` | Begin new iteration (with optional team deployment) | `iteration_number`, `goal`, `task_id`, `team` | Starting iteration |
+| `/deploy-team` | Deploy agent team for custom tasks | `team_type`, `roles` | Creating teams for specific work |
 | `/complete-task` | Mark task complete, commit, update | `task_id`, `commit_message`, `create_pr` | Finishing work |
 | `/create-pr` | Create pull request with task context | `task_id`, `branch`, `title`, `base` | Ready for review |
 | `/request-input` | Create input request document | `title`, `questions`, `context`, `related_task` | Need stakeholder input |
+| `/assess-completeness` | Check readiness before completion | `scope`, `strict` | Verifying task/iteration completion |
 | `/phase-review` | Check phase completion | `phase` | Phase nearing completion |
+| `/retrospective` | Generate iteration retrospective | `iteration_number`, `include_metrics` | End of iteration reflection |
+| `/tdd-workflow` | Guide Test-Driven Development | `feature`, `phase` | Test-driven feature implementation |
 | `/log-run` | Create traceability logs | `run_id` | Ending agent run |
 
 ### When to Use Each Skill
@@ -862,17 +886,25 @@ Do not advance phase until I confirm.
 | Starting a new phase | `/inception`, `/elaboration`, `/construction`, `/transition` |
 | Checking phase progress | `/phase activity: check-status` |
 | Need project vision | `/create-vision` |
-| Defining requirements | `/create-use-case` |
+| Defining requirements | `/create-use-case`, `/detail-use-case` |
+| Technical team alignment | `/shared-vision` |
 | Architecture work needed | `/create-architecture-notebook` |
 | Identifying risks | `/create-risk-list` |
 | Planning iteration | `/create-iteration-plan` |
-| Starting iteration | `/start-iteration` |
+| Starting iteration (with team) | `/start-iteration` (use `team` argument to auto-deploy) |
+| Deploying custom team | `/deploy-team` (for standalone team deployment) |
 | Finishing task | `/complete-task` |
 | Creating pull request | `/create-pr` |
 | Need stakeholder input | `/request-input` |
+| Verifying completeness | `/assess-completeness` |
 | Phase nearly complete | `/phase-review` |
-| Ending agent run | `/log-run` |
+| End of iteration | `/retrospective` |
+| Test-driven development | `/tdd-workflow` |
+| Creating documentation | `/create-documentation` |
 | Testing needed | `/create-test-plan` |
+| Ending agent run | `/log-run` |
+
+**Note on Team Deployment**: `/start-iteration` can automatically deploy a team using the `team` argument (e.g., `team: feature`). Use `/deploy-team` separately when you need to create a custom team composition or deploy a team without full iteration initialization.
 
 ### Skill Examples
 
@@ -887,16 +919,24 @@ Do not advance phase until I confirm.
 ```
 /create-vision project_name: "TaskManager" problem_statement: "Teams need better tracking"
 /create-use-case use_case_name: "Create Task" primary_actor: "User" description: "User creates task"
+/detail-use-case use_case_name: "user-login" generate_tests: true
+/shared-vision technical_objectives: "scalability, security" scope_focus: "user authentication"
 /create-architecture-notebook system_name: "TaskManager" architectural_concerns: "scalability, security"
+/create-documentation doc_type: user-guide feature: user-authentication
 ```
 
 #### Workflow Skills
 ```
-/start-iteration iteration_number: 2 goal: "Implement user authentication"
+/start-iteration iteration_number: 2 goal: "Implement user authentication" team: feature
+/deploy-team team_type: investigation
+/deploy-team roles: analyst,architect
 /complete-task task_id: T-005 create_pr: true
 /create-pr task_id: T-005 base: develop
 /request-input title: "Feature Scope" context: "Need to clarify scope" questions: '[{"type":"text","question":"What are the core features?"}]'
+/assess-completeness scope: iteration
 /phase-review
+/retrospective include_metrics: true
+/tdd-workflow feature: payment-processing phase: full
 /log-run
 ```
 

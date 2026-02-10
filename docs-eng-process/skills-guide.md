@@ -746,6 +746,42 @@ Generate iteration retrospective with feedback and action items.
 
 **See Also**: `openup-start-iteration`, `openup-complete-task`, `openup-assess-completeness`
 
+### /openup-deploy-team
+
+Deploy an OpenUP agent team to work on the current iteration or custom task.
+
+**Purpose**: Create and configure agent teams with proper role assignments for specific work
+
+**When to Use**:
+- After `/openup-start-iteration` has completed to deploy a team
+- Need to create a custom team for a specific task
+- Want to quickly spawn teammates without full iteration setup
+- Working on tasks that don't require full iteration initialization
+
+**When NOT to Use**:
+- Before `/openup-start-iteration` has been called (for iteration work)
+- Without knowing the iteration goal or task context
+- For non-OpenUP work
+- When iteration initialization with automatic team deployment is preferred
+
+**Arguments**:
+- `team_type` (optional): Type of team (feature, investigation, construction, elaboration, inception, transition, planning, full)
+- `roles` (optional): Specific roles to include as comma-separated list (analyst, architect, developer, tester, project-manager)
+
+**Examples**:
+```
+/openup-deploy-team team_type: feature
+/openup-deploy-team roles: analyst,developer,tester
+```
+
+**Success Criteria**:
+- [ ] Team is created with appropriate roles
+- [ ] Team members are briefed with iteration/task context
+- [ ] Coordination channels are established
+- [ ] Team lead is ready to assign work
+
+**See Also**: `openup-start-iteration`, `openup-complete-task`, Team configurations
+
 ### /openup-tdd-workflow
 
 Guide Test-Driven Development cycle adapted for AI agents.
@@ -857,6 +893,7 @@ Create an OpenUP agent team for feature implementation.
 | Assessing readiness | `/openup-assess-completeness` |
 | End of iteration | `/openup-retrospective` |
 | Test-driven development | `/openup-tdd-workflow` |
+| Deploying agent teams | `/openup-deploy-team` |
 
 ## References
 
