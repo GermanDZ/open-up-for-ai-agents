@@ -72,7 +72,7 @@ python3 .claude/scripts/token-tracker.py efficiency
 ### 5. Quick Task Skill
 
 **Files Created:**
-- `.claude/skills/openup-workflow/quick-task/SKILL.md` - Fast iteration mode
+- `.claude/skills/openup-quick-task/SKILL.md` - Fast iteration mode
 
 **Expected Impact:** 50% faster iteration for small changes
 
@@ -131,8 +131,7 @@ python3 .claude/scripts/token-tracker.py efficiency
 │   └── tiered-context.md         # Context tiers
 ├── skills/
 │   ├── openup-init/              # One-command setup
-│   └── openup-workflow/
-│       └── quick-task/           # Fast iteration
+│   └── openup-quick-task/        # Fast iteration
 └── teammates/
     └── *-compact.md              # Compressed role instructions (5 files)
 ```
