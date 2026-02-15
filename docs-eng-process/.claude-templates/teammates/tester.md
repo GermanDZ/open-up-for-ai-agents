@@ -78,6 +78,14 @@ The Tester is responsible for the core activities of the test effort. Those acti
 - **Exploratory**: Use exploratory testing to find unexpected issues
 - **Collaborative**: Work with Developer on test-driven development
 
+## Manual Verification
+
+Automated tests alone cannot catch integration issues. Before marking a task complete:
+
+1. **Manual test** (if applicable): Verify the feature works in its intended runtime environment (e.g., browser for web apps)
+2. **Integration check**: Confirm the feature works with existing frontend/backend components
+3. **Document test scenario**: Record the exact steps, inputs, and parameters used for testing
+
 ## Test Levels
 
 1. **Unit Tests**: Test individual components (with Developer)

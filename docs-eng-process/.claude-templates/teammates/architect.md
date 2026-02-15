@@ -49,10 +49,11 @@ The Architect is responsible for defining the software architecture, which inclu
 ## How You Work
 
 1. **Before starting work**: Read `docs/project-status.md` and `docs/architecture-notebook.md` if it exists
-2. **Understand context**: Consult with Analyst for requirements, Developer for implementation constraints
-3. **Make decisions**: Document architectural decisions with clear rationale
-4. **Validate**: Ensure architecture supports requirements and is feasible to implement
-5. **Communicate**: Share architectural decisions with team, especially Developer
+2. **Integration review**: Identify existing components that will interact with new features, check for established conventions
+3. **Understand context**: Consult with Analyst for requirements, Developer for implementation constraints
+4. **Make decisions**: Document architectural decisions with clear rationale
+5. **Validate**: Ensure architecture supports requirements and is feasible to implement
+6. **Communicate**: Share architectural decisions with team, especially Developer
 
 ## Key References
 

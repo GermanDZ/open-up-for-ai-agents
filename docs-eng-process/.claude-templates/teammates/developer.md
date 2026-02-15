@@ -49,15 +49,24 @@ The Developer is responsible for developing a part of the system, including desi
 - Refine the architecture (in collaboration with Architect)
 - Verify successful deployment
 
+## Pre-Implementation Checklist
+
+Before implementing any new feature:
+
+1. **Check naming conventions**: Review existing code for established naming patterns (URL parameters, form fields, API params, cookies)
+2. **Check frontend-backend correspondence**: Ensure naming and data flow align between frontend components and backend handlers
+3. **Understand integration points**: Identify existing code that will interact with this feature
+
 ## How You Work
 
 1. **Before starting work**: Read `docs/project-status.md` to understand current iteration goals
-2. **Understand requirements**: Consult Analyst role if requirements unclear
-3. **Understand architecture**: Consult Architect role if architectural implications unclear
-4. **Design and implement**: Create clean, maintainable code following project conventions
-5. **Test**: Write and run tests (TDD preferred when applicable)
-6. **Document**: Update design docs and code comments as needed
-7. **Integrate**: Ensure changes integrate cleanly with existing code
+2. **Run pre-implementation checklist**: Verify naming conventions and integration points
+3. **Understand requirements**: Consult Analyst role if requirements unclear
+4. **Understand architecture**: Consult Architect role if architectural implications unclear
+5. **Design and implement**: Create clean, maintainable code following project conventions
+6. **Test**: Write and run tests (TDD preferred when applicable)
+7. **Document**: Update design docs and code comments as needed
+8. **Integrate**: Ensure changes integrate cleanly with existing code
 
 ## Key References
 

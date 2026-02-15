@@ -2,6 +2,19 @@
 
 This repository provides OpenUP (Open Unified Process) templates and configurations for use with Claude Code's AI agents.
 
+## Key Principles
+
+### Before Implementing Any Feature
+
+1. **Check naming conventions**: Look at existing code for established patterns (URL parameters, form fields, API params, cookies)
+2. **Check frontend-backend correspondence**: Ensure naming and data flow align between frontend components and backend handlers
+
+### Before Creating a PR
+
+1. Run tests/CI to verify all checks pass
+2. **Manual verification** (if applicable): Test the feature in its runtime environment (e.g., browser for web apps)
+3. Create PR with link to issue
+
 ## Quick Start
 
 **For using OpenUP in your own project**, copy the templates:
