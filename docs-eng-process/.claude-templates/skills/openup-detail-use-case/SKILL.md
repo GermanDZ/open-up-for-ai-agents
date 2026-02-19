@@ -6,7 +6,7 @@ arguments:
     description: Name of the use case to detail (file name without .md)
     required: true
   - name: generate_tests
-    description: Generate test cases from scenarios (true/false, default: true)
+    description: "Generate test cases from scenarios (true/false, default: true)"
     required: false
 ---
 

@@ -9,13 +9,13 @@ arguments:
     description: Roadmap task ID (optional, creates task if not provided)
     required: false
   - name: skip_branch
-    description: Skip branch creation (default: false)
+    description: "Skip branch creation (default: false)"
     required: false
   - name: skip_commit
-    description: Skip auto-commit (default: false)
+    description: "Skip auto-commit (default: false)"
     required: false
   - name: skip_logging
-    description: Skip traceability logging (default: false)
+    description: "Skip traceability logging (default: false)"
     required: false
 ---
 

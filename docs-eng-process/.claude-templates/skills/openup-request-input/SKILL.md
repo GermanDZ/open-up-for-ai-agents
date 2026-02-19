@@ -57,14 +57,13 @@ Create filename in format: `docs/input-requests/YYYY-MM-DD-<short-topic>.md`
 ### 2. Fill Frontmatter
 
 ```yaml
----
+# frontmatter
 title: "$ARGUMENTS[title]"
 created: "<current-timestamp-ISO8601>"
 created_by: "agent-name"
 status: pending
 run_id: "<current-run-id>"
 related_task: "$ARGUMENTS[related_task]"  # optional
----
 ```
 
 ### 3. Write Context Section

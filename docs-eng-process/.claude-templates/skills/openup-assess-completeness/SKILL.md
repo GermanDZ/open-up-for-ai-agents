@@ -6,7 +6,7 @@ arguments:
     description: Assessment scope (task, iteration, phase)
     required: false
   - name: strict
-    description: Fail on any missing items (true/false, default: false)
+    description: "Fail on any missing items (true/false, default: false)"
     required: false
 ---
 

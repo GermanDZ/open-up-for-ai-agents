@@ -6,7 +6,7 @@ arguments:
     description: Iteration to review (optional, defaults to current)
     required: false
   - name: include_metrics
-    description: Include git metrics (true/false, default: true)
+    description: "Include git metrics (true/false, default: true)"
     required: false
 ---
 

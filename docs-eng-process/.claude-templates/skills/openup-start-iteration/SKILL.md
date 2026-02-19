@@ -15,7 +15,7 @@ arguments:
     description: Team type to automatically deploy after initialization (feature, investigation, construction, elaboration, inception, transition, planning, full, or none)
     required: false
   - name: deploy_team
-    description: Whether to deploy a team after iteration initialization (true/false, default: false)
+    description: "Whether to deploy a team after iteration initialization (true/false, default: false)"
     required: false
 ---
 
