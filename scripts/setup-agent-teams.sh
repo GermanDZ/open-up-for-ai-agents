@@ -47,7 +47,8 @@ Usage: $0 [OPTIONS]
 Set up Claude Code agent teams for the current project.
 
 This script copies agent team templates (teammate instructions, team configs,
-and CLAUDE.md) to the project's .claude directory.
+and CLAUDE.openup.md) to the project's .claude directory and ensures
+the project's CLAUDE.md includes a reference.
 
 Options:
   -h, --help           Show this help message
@@ -104,7 +105,10 @@ fi
 # Files to copy
 TEAMMATES_DIR="$CLAUDE_DIR/teammates"
 TEAMS_DIR="$CLAUDE_DIR/teams"
+CLAUDE_OPENUP_DEST="$CLAUDE_DIR/CLAUDE.openup.md"
 CLAUDE_DEST="$CLAUDE_DIR/CLAUDE.md"
+OPENUP_REF_PATH=".claude/CLAUDE.openup.md"
+OPENUP_REF_TEXT="This project follows OpenUP. See $OPENUP_REF_PATH for the shared OpenUP instructions."
 
 # Function to copy file with backup
 copy_file() {
@@ -160,6 +164,43 @@ copy_dir() {
     done
 }
 
+ensure_openup_reference() {
+    local target_file="$1"
+
+    if [ ! -f "$target_file" ]; then
+        return 0
+    fi
+
+    if ! grep -Fq "$OPENUP_REF_TEXT" "$target_file"; then
+        if [ "$DRY_RUN" = true ]; then
+            echo "Would add OpenUP reference to: $target_file"
+            return 0
+        fi
+        echo "" >> "$target_file"
+        echo "$OPENUP_REF_TEXT" >> "$target_file"
+        success "Updated: $target_file"
+    fi
+}
+
+create_claude_stub() {
+    local target_file="$1"
+
+    if [ "$DRY_RUN" = true ]; then
+        echo "Would add: $target_file"
+        return 0
+    fi
+
+    mkdir -p "$(dirname "$target_file")"
+    cat > "$target_file" << EOF
+# Project Instructions
+
+Add project-specific instructions here.
+
+$OPENUP_REF_TEXT
+EOF
+    success "Created: $target_file"
+}
+
 # Main execution
 echo ""
 info "Setting up Claude Code agent teams..."
@@ -187,9 +228,16 @@ else
     warn "Teams template directory not found: $TEMPLATES_DIR/teams"
 fi
 
-# Copy CLAUDE.md
-info "Setting up CLAUDE.md..."
-copy_file "$CLAUDE_TEMPLATE" "$CLAUDE_DEST"
+# Copy OpenUP instructions
+info "Setting up CLAUDE.openup.md..."
+copy_file "$CLAUDE_TEMPLATE" "$CLAUDE_OPENUP_DEST"
+
+# Ensure project CLAUDE.md exists and references OpenUP instructions
+if [ -f "$CLAUDE_DEST" ]; then
+    ensure_openup_reference "$CLAUDE_DEST"
+else
+    create_claude_stub "$CLAUDE_DEST"
+fi
 
 # Summary
 echo ""
@@ -203,13 +251,14 @@ else
     echo "Created files:"
     echo "  - .claude/teammates/ (role instructions)"
     echo "  - .claude/teams/ (team configurations)"
-    echo "  - .claude/CLAUDE.md (agent team instructions)"
+    echo "  - .claude/CLAUDE.openup.md (OpenUP instructions)"
+    echo "  - .claude/CLAUDE.md (project instructions)"
     echo ""
     echo "Next steps:"
     echo "1. Enable agent teams: export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1"
     echo "2. Start Claude Code in this project"
     echo "3. Create a team: 'Create an OpenUP agent team with [roles]'"
     echo ""
-    echo "For more information, see .claude/CLAUDE.md"
+    echo "For more information, see .claude/CLAUDE.openup.md"
 fi
 echo ""

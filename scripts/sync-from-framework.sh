@@ -20,6 +20,7 @@ NC='\033[0m' # No Color
 # Script options
 DRY_RUN=false
 VERBOSE=false
+UPDATE_CLAUDE=false
 FRAMEWORK_PATH=""
 
 # Parse arguments
@@ -37,13 +38,18 @@ while [[ $# -gt 0 ]]; do
       FRAMEWORK_PATH="$2"
       shift 2
       ;;
+    --update-claude)
+      UPDATE_CLAUDE=true
+      shift
+      ;;
     --help|-h)
-      echo "Usage: $0 [--dry-run] [--verbose] [--framework-path PATH]"
+      echo "Usage: $0 [--dry-run] [--verbose] [--framework-path PATH] [--update-claude]"
       echo ""
       echo "Options:"
       echo "  --dry-run            Show what would be synced without actually syncing"
       echo "  --verbose            Show detailed output"
       echo "  --framework-path     Path to the OpenUP framework repository (auto-detects if not provided)"
+      echo "  --update-claude       Overwrite existing .claude/CLAUDE.md from the framework template"
       echo "  --help               Show this help message"
       echo ""
       echo "This script syncs OpenUP skills, teammates, teams, and documentation from"
@@ -338,16 +344,71 @@ echo ""
 
 src_claude="$FRAMEWORK_TEMPLATES/CLAUDE.md"
 dest_claude="$CLAUDE_DIR/CLAUDE.md"
+dest_claude_openup="$CLAUDE_DIR/CLAUDE.openup.md"
+openup_ref_path=".claude/CLAUDE.openup.md"
 
-if [ ! -f "$dest_claude" ]; then
-  log_info "Creating CLAUDE.md from framework template"
+openup_ref_text="This project follows OpenUP. See $openup_ref_path for the shared OpenUP instructions."
+
+ensure_openup_reference() {
+  local target_file="$1"
+
+  if [ ! -f "$target_file" ]; then
+    return
+  fi
+
+  if ! grep -Fq "$openup_ref_text" "$target_file"; then
+    if [ "$DRY_RUN" = false ]; then
+      echo "" >> "$target_file"
+      echo "$openup_ref_text" >> "$target_file"
+    else
+      log_info "[DRY RUN] Would add OpenUP reference to $target_file"
+    fi
+  fi
+}
+
+create_claude_stub() {
+  local target_file="$1"
+
   if [ "$DRY_RUN" = false ]; then
-    sync_item "$src_claude" "$dest_claude" "CLAUDE.md"
+    cat > "$target_file" << EOF
+# Project Instructions
+
+Add project-specific instructions here.
+
+$openup_ref_text
+EOF
+  else
+    log_info "[DRY RUN] Would create $target_file"
+  fi
+}
+
+# Always sync the OpenUP template to a dedicated file in .claude
+if [ -f "$src_claude" ]; then
+  log_info "Syncing OpenUP template to CLAUDE.openup.md"
+  if [ "$DRY_RUN" = false ]; then
+    sync_item "$src_claude" "$dest_claude_openup" "CLAUDE.openup.md"
   fi
 else
-  log_warn "CLAUDE.md exists - skipping to preserve local changes"
-  log_warn "  To manually update, see: $src_claude"
-  SKIPPED_FILES=$((SKIPPED_FILES + 1))
+  log_warn "OpenUP template not found at: $src_claude"
+fi
+
+if [ ! -f "$dest_claude" ]; then
+  log_info "Creating CLAUDE.md stub"
+  create_claude_stub "$dest_claude"
+else
+  if [ "$UPDATE_CLAUDE" = true ]; then
+    log_info "Updating CLAUDE.md from framework template"
+    if [ "$DRY_RUN" = false ]; then
+      sync_item "$src_claude" "$dest_claude" "CLAUDE.md"
+      ensure_openup_reference "$dest_claude"
+    fi
+  else
+    log_warn "CLAUDE.md exists - skipping to preserve local changes"
+    log_warn "  OpenUP template is available at: $openup_ref_path"
+    log_warn "  To overwrite CLAUDE.md, run with --update-claude"
+    ensure_openup_reference "$dest_claude"
+    SKIPPED_FILES=$((SKIPPED_FILES + 1))
+  fi
 fi
 
 # Display summary

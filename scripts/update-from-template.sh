@@ -388,30 +388,63 @@ if [ -d "$TEMPLATE_DIR/docs-eng-process/.claude-templates" ]; then
         "$PROJECT_PATH/.claude/teams" \
         ""
 
-    # Update CLAUDE.md if it exists
-    if [ -f "$TEMPLATE_DIR/docs-eng-process/.claude-templates/CLAUDE.md" ]; then
-        if [ -f "$PROJECT_PATH/.claude/CLAUDE.md" ]; then
+    openup_ref_path=".claude/CLAUDE.openup.md"
+    openup_ref_text="This project follows OpenUP. See $openup_ref_path for the shared OpenUP instructions."
+
+    ensure_openup_reference() {
+        local target_file="$1"
+
+        if [ ! -f "$target_file" ]; then
+            return
+        fi
+
+        if ! grep -Fq "$openup_ref_text" "$target_file"; then
             if [ "$DRY_RUN" = true ]; then
-                echo "  Would update: .claude/CLAUDE.md"
+                echo "  Would add OpenUP reference to: .claude/CLAUDE.md"
             else
-                if [ "$BACKUP" = true ]; then
-                    backup_file "$PROJECT_PATH/.claude/CLAUDE.md"
-                    BACKUPS_CREATED=$((BACKUPS_CREATED + 1))
-                fi
-                cp "$TEMPLATE_DIR/docs-eng-process/.claude-templates/CLAUDE.md" "$PROJECT_PATH/.claude/CLAUDE.md"
-                echo "  Updated: .claude/CLAUDE.md"
-                FILES_UPDATED=$((FILES_UPDATED + 1))
-            fi
-        else
-            if [ "$DRY_RUN" = true ]; then
-                echo "  Would add: .claude/CLAUDE.md"
-            else
-                mkdir -p "$PROJECT_PATH/.claude"
-                cp "$TEMPLATE_DIR/docs-eng-process/.claude-templates/CLAUDE.md" "$PROJECT_PATH/.claude/CLAUDE.md"
-                echo "  Added: .claude/CLAUDE.md"
-                FILES_ADDED=$((FILES_ADDED + 1))
+                echo "" >> "$target_file"
+                echo "$openup_ref_text" >> "$target_file"
             fi
         fi
+    }
+
+    create_claude_stub() {
+        local target_file="$1"
+
+        if [ "$DRY_RUN" = true ]; then
+            echo "  Would add: .claude/CLAUDE.md"
+            return
+        fi
+
+        mkdir -p "$PROJECT_PATH/.claude"
+        cat > "$target_file" << EOF
+# Project Instructions
+
+Add project-specific instructions here.
+
+$openup_ref_text
+EOF
+        echo "  Added: .claude/CLAUDE.md"
+        FILES_ADDED=$((FILES_ADDED + 1))
+    }
+
+    # Sync OpenUP template into .claude/CLAUDE.openup.md
+    if [ -f "$TEMPLATE_DIR/docs-eng-process/.claude-templates/CLAUDE.md" ]; then
+        if [ "$DRY_RUN" = true ]; then
+            echo "  Would update: .claude/CLAUDE.openup.md"
+        else
+            mkdir -p "$PROJECT_PATH/.claude"
+            cp "$TEMPLATE_DIR/docs-eng-process/.claude-templates/CLAUDE.md" "$PROJECT_PATH/.claude/CLAUDE.openup.md"
+            echo "  Updated: .claude/CLAUDE.openup.md"
+            FILES_UPDATED=$((FILES_UPDATED + 1))
+        fi
+    fi
+
+    # Keep project CLAUDE.md user-owned; only add reference or create stub
+    if [ -f "$PROJECT_PATH/.claude/CLAUDE.md" ]; then
+        ensure_openup_reference "$PROJECT_PATH/.claude/CLAUDE.md"
+    else
+        create_claude_stub "$PROJECT_PATH/.claude/CLAUDE.md"
     fi
 fi
 
