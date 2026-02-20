@@ -77,6 +77,16 @@ scripts: Fix setup-agent-teams.sh to use current directory
 - Fixes issue where script installed files in wrong location
 ```
 
+### 5.1. AI handoff checkpoint (recommended)
+
+For AI-assisted work, include one concise checkpoint before final commit to reduce churn:
+
+- What changed (1-3 bullets)
+- What was verified (tests/checks run)
+- What remains (if anything)
+
+This prevents repeated status/tool loops and keeps review context compact.
+
 ### 6. Sync and Push
 
 ```bash
