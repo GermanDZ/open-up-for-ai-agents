@@ -47,3 +47,55 @@ See [agent-workflow.md](agent-workflow.md) for:
 - Role-based execution
 - Branching and commit policies
 - Traceability logging requirements
+
+## Fast completion mode (token-efficient)
+
+When speed is the priority, use the smallest valid workflow for the task.
+
+| Task size | Preferred workflow | Why |
+|-----------|--------------------|-----|
+| Tiny fix (single file, low risk) | `/openup-quick-task` | Lowest process overhead |
+| Normal task (code + docs updates) | `/openup-complete-task` | Full completion with one closure path |
+| Iteration/phase milestone work | Standard SOP + phase skills | Requires full traceability and review |
+
+## Minimal-output defaults
+
+To reduce token usage in long sessions:
+
+- Request summary-first responses (brief status + next action)
+- Prefer targeted reads/search over full-file reads
+- For noisy commands, return counts + last 20-50 lines only
+- Avoid repeating unchanged plans or previously confirmed context
+- Use one closure path at the end (see below)
+
+## Closure path rule
+
+Use exactly one closure path per finished task:
+
+- If you used `/openup-complete-task`, do not run `/openup-log-run` again unless logs explicitly failed and need recovery
+- Use `/openup-log-run` directly only when you are not using `/openup-complete-task`
+
+## Prompt templates for low token usage
+
+### Small fix
+
+```
+Use quick mode for this small change.
+Keep output concise (decision + action + result).
+Do targeted reads only; avoid full-file dumps.
+```
+
+### Standard task
+
+```
+Implement this task with minimal token overhead.
+Use one execution plan, concise progress updates, and one closure path.
+If using /openup-complete-task, do not run /openup-log-run unless recovery is needed.
+```
+
+### Noisy command guardrail
+
+```
+When running commands that can produce large output, summarize results and include only essential snippets.
+Prefer counts, error summary, and tail output.
+```

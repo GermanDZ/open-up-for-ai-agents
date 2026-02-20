@@ -13,6 +13,7 @@
 /transition activity: initiate        # Start Transition phase
 
 /start-iteration goal: "..."          # Begin new iteration
+/quick-task task: "..."               # Fast path for tiny, low-risk changes
 /complete-task task_id: T-001         # Finish task, commit, update
 /create-pr task_id: T-001             # Create pull request
 /request-input title: "..."           # Request stakeholder input
@@ -173,6 +174,19 @@ Before agent stops, verify:
 - [ ] Traceability logs created
 - [ ] docs/ updated (project-status, roadmap, phase notes)
 - [ ] Task marked complete in roadmap
+
+**Closure path rule**:
+- If you ran `/complete-task`, do not run `/log-run` again unless recovering from a logging failure.
+
+---
+
+## Low-token Patterns
+
+- Use `/quick-task` for tiny fixes and short docs changes
+- Prefer targeted search and partial reads over full-file dumps
+- For noisy commands, return summary + tail output only
+- Avoid repeated state checks when no state changed
+- Keep progress updates to concise delta-only notes
 
 ---
 
