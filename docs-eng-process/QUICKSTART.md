@@ -207,6 +207,7 @@ python3 .claude/scripts/token-tracker.py stats
 - **Skills reference**: `docs-eng-process/skills-guide.md`
 - **Teams guide**: `docs-eng-process/teams-guide.md`
 - **Agent workflow**: `docs-eng-process/agent-workflow.md`
+- **Updates**: `docs-eng-process/updating.md`
 - **Troubleshooting**: `docs-eng-process/USER-GUIDE.md`
 
 ## Next Steps

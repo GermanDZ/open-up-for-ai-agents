@@ -15,6 +15,8 @@
 
 **📄 Quick reference:** [QUICK-REFERENCE.md](QUICK-REFERENCE.md) - One-page cheat sheet
 
+**🔄 Updates:** [updating.md](updating.md) - Canonical update guide and decision tree
+
 ### For AI Agents
 
 1. **Read this file first** - understand the process structure

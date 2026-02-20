@@ -2,6 +2,8 @@
 
 This directory contains utility scripts for working with the OpenUP framework.
 
+**Canonical update guidance lives in** `docs-eng-process/updating.md`. Use that guide to choose the right update path and keep this file for script-level details.
+
 ## Available Scripts
 
 ### bootstrap-project.sh
@@ -208,7 +210,9 @@ cd ~/projects/existing-project
 
 ### Updating an Existing Project
 
-**Recommended: Use sync-from-framework.sh**
+Before updating, check `docs-eng-process/updating.md` for the decision tree. If you only need skills/teams/teammates, use `sync-from-framework.sh`. Use `update-from-template.sh` when you want full documentation updates.
+
+**Common: Use sync-from-framework.sh**
 
 This is the fastest way to get latest skills, teammates, and teams:
 

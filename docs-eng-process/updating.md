@@ -1,10 +1,41 @@
-# Updating Projects from Template
+# OpenUP Update Hub
 
-This document describes how to update existing projects that use the OpenUP framework with the latest changes from the template repository.
+This page is the canonical guide for updating projects that use the OpenUP framework. Use it to choose the right update path and the smallest command that matches your goal.
 
-## Overview
+## Quick Decision Guide
 
-When you create a project using the OpenUP framework, the `docs-eng-process` directory is copied into your project. Over time, the framework template receives updates and improvements. You can update your existing projects to receive these updates.
+Use the table below to pick the correct update path.
+
+| Goal | Recommended Script | What It Updates |
+|------|--------------------|-----------------|
+| Update OpenUP docs and templates | `update-from-template.sh` | `docs-eng-process/` + `.claude/teammates` + `.claude/teams` + `.claude/CLAUDE.md` |
+| Update skills/teammates/teams only | `sync-from-framework.sh` | `.claude/skills` + `.claude/teammates` + `.claude/teams` |
+
+**Important:** `update-from-template.sh` does **not** update `.claude/skills/` in most projects because `docs-eng-process/.claude-templates/` exists only in the framework repo. If you see "Unknown skill" errors, run `sync-from-framework.sh`.
+
+## Recommended Default
+
+If you only need the latest skills, teammates, and teams, use `sync-from-framework.sh`. Use `update-from-template.sh` when you specifically want to update `docs-eng-process/` content.
+
+## Quick Sync: Skills, Teammates, Teams Only
+
+Use this when you want the latest OpenUP skills without changing documentation files.
+
+```bash
+# 1. Copy script to your project (first time only)
+cp /path/to/open-up-for-ai-agents/scripts/sync-from-framework.sh ./scripts/
+chmod +x ./scripts/sync-from-framework.sh
+
+# 2. Pull latest framework updates
+cd /path/to/open-up-for-ai-agents
+git pull
+
+# 3. Sync to your project
+cd /path/to/your-project
+./scripts/sync-from-framework.sh
+```
+
+For options and troubleshooting, see `scripts/README.md` in the framework repo.
 
 ## Update Methods
 
@@ -213,7 +244,7 @@ meld docs-eng-process /tmp/openup/docs-eng-process
 
 ## Update Workflow
 
-Recommended update workflow:
+Recommended update workflow for full template updates:
 
 1. **Check what's new**
    ```bash
