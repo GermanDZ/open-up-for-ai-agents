@@ -80,6 +80,16 @@ If the task doesn't fit:
 - Request user approval or defer to backlog
 - Do not proceed without explicit approval
 
+### Step 3.5: Select Workflow Depth (Task-Size Gate)
+
+Before branch/task execution, choose the lightest valid workflow:
+
+- **Tiny, low-risk changes** (small docs/config/bug fix): use `/openup-quick-task` when allowed by project policy
+- **Normal implementation tasks**: use `/openup-complete-task` for integrated commit + docs + logging
+- **Iteration/phase-level work**: use full SOP + phase skills
+
+**Goal**: reduce overhead while preserving required traceability for the scope of work.
+
 ### Step 4: Create Branch (if needed)
 
 **MANDATORY**: Before starting any work, ensure you are on an appropriate branch. Never work directly on trunk. New tasks must start on a clean branch (either trunk or a branch that has been merged to trunk).
@@ -462,6 +472,14 @@ Append to: `docs/agent-logs/agent-runs.jsonl`
 
 **If no commits exist**: Do not create logs. Return to [End-of-Run SOP](#end-of-run-sop) Step 1 to commit changes first.
 
+### Single Closure Path Rule
+
+To avoid duplicate workflow overhead and duplicate logs:
+
+- If `/openup-complete-task` was used successfully, do **not** run `/openup-log-run` again in the same closure flow
+- Use `/openup-log-run` directly only when `/openup-complete-task` is not being used
+- If logging failed during `/openup-complete-task`, run `/openup-log-run` as a recovery action and note the failure/recovery in logs
+
 **See [End-of-Run SOP](#end-of-run-sop) for the complete mandatory procedure that must be followed before creating logs.**
 
 ---
@@ -522,6 +540,14 @@ Before stopping, verify:
 - [ ] Traceability logs created with commit SHAs (Step 3 complete)
 - [ ] Documentation updated (Step 4 complete)
 - [ ] Task is marked as complete in roadmap (if permission granted)
+
+### Output Size Discipline (All Steps)
+
+During end-of-run execution, keep command output compact:
+
+- Prefer command summaries over full stdout dumps
+- For noisy tools, report counts, failure summary, and a short tail excerpt
+- Avoid re-running state checks unless new information is expected
 
 **ONLY after all steps are complete**: Inform the user that the task is finished and stop. Do not proceed to additional tasks in this run.
 
@@ -720,7 +746,6 @@ Create an OpenUP agent team for construction phase.
 ```
 Create an OpenUP feature team.
 /complete-task task_id: T-005
-/log-run
 ```
 
 **Phase Review with Team**:

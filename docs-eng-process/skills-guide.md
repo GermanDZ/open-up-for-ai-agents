@@ -535,6 +535,10 @@ Mark a task as complete, update roadmap, commit changes, and prepare logs.
 - [ ] Project status is updated
 - [ ] Traceability logs are created with commit SHAs
 
+**Closure Path Rule**:
+- Prefer `/openup-complete-task` as the single closeout path for normal tasks
+- Do not run `/openup-log-run` again after a successful `/openup-complete-task` unless recovering from logging failure
+
 **See Also**: `openup-create-pr`, `openup-log-run`, `openup-start-iteration`
 
 ### /openup-create-pr
@@ -675,7 +679,37 @@ Create traceability logs for the current agent run.
 
 **IMPORTANT**: Must be called AFTER all changes are committed.
 
+**Use carefully**:
+- Use directly when you are not using `/openup-complete-task`
+- If `/openup-complete-task` already created logs, do not call this again in the same closeout flow
+
 **See Also**: `openup-complete-task`, `openup-start-iteration`
+
+### /openup-quick-task
+
+Fast path for tiny, low-risk changes with minimal overhead.
+
+**When to Use**:
+- Small bug fixes or docs/config updates
+- Single-file or low-complexity edits
+- Time-sensitive fixes where full workflow overhead is unnecessary
+
+**When NOT to Use**:
+- New features or major refactors
+- Multi-hour tasks needing full traceability artifacts
+- Work requiring architecture review or broader coordination
+
+**Example**:
+```
+/openup-quick-task task: "Fix typo in setup docs"
+```
+
+**Success Criteria**:
+- [ ] Change completed and verified
+- [ ] Commit/log behavior follows selected quick-task options
+- [ ] Result is communicated concisely
+
+**See Also**: `openup-start-iteration`, `openup-complete-task`
 
 ### /openup-assess-completeness
 
