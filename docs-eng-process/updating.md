@@ -8,10 +8,12 @@ Use the table below to pick the correct update path.
 
 | Goal | Recommended Script | What It Updates |
 |------|--------------------|-----------------|
-| Update OpenUP docs and templates | `update-from-template.sh` | `docs-eng-process/` + `.claude/teammates` + `.claude/teams` + `.claude/CLAUDE.md` |
-| Update skills/teammates/teams only | `sync-from-framework.sh` | `.claude/skills` + `.claude/teammates` + `.claude/teams` |
+| Update OpenUP docs and templates | `update-from-template.sh` | `docs-eng-process/` + `.claude/teammates` + `.claude/teams` + `.claude/CLAUDE.openup.md` |
+| Update skills/teammates/teams only | `sync-from-framework.sh` | `.claude/skills` + `.claude/teammates` + `.claude/teams` + `.claude/CLAUDE.openup.md` |
 
 **Important:** `update-from-template.sh` does **not** update `.claude/skills/` in most projects because `docs-eng-process/.claude-templates/` exists only in the framework repo. If you see "Unknown skill" errors, run `sync-from-framework.sh`.
+
+**CLAUDE.md handling:** your project owns `.claude/CLAUDE.md`. The OpenUP instructions are synced to `.claude/CLAUDE.openup.md`, and the scripts add a short reference line to your project file if it is missing.
 
 ## Recommended Default
 
@@ -20,6 +22,7 @@ If you only need the latest skills, teammates, and teams, use `sync-from-framewo
 ## Quick Sync: Skills, Teammates, Teams Only
 
 Use this when you want the latest OpenUP skills without changing documentation files.
+This also refreshes `.claude/CLAUDE.openup.md` and appends a reference line to `.claude/CLAUDE.md` if needed.
 
 ```bash
 # 1. Copy script to your project (first time only)
@@ -111,8 +114,11 @@ git clone --depth 1 https://github.com/GermanDZ/open-up-for-ai-agents.git /tmp/o
 # Copy docs-eng-process
 rsync -av --delete /tmp/openup-template/docs-eng-process/ /path/to/your-project/docs-eng-process/
 
-# Copy .claude templates
-rsync -av /tmp/openup-template/docs-eng-process/.claude-templates/ /path/to/your-project/.claude/
+# Copy .claude templates (keep project CLAUDE.md as-is)
+rsync -av /tmp/openup-template/docs-eng-process/.claude-templates/teammates/ /path/to/your-project/.claude/teammates/
+rsync -av /tmp/openup-template/docs-eng-process/.claude-templates/teams/ /path/to/your-project/.claude/teams/
+rsync -av /tmp/openup-template/docs-eng-process/.claude-templates/skills/ /path/to/your-project/.claude/skills/
+cp /tmp/openup-template/docs-eng-process/.claude-templates/CLAUDE.md /path/to/your-project/.claude/CLAUDE.openup.md
 ```
 
 ## Script Options
@@ -182,7 +188,9 @@ The update process updates:
 1. **docs-eng-process/** - All framework documentation and templates
 2. **.claude/teammates/** - Agent teammate instructions
 3. **.claude/teams/** - Team configuration files
-4. **.claude/CLAUDE.md** - Agent team usage instructions
+4. **.claude/CLAUDE.openup.md** - Shared OpenUP instructions
+
+Your `.claude/CLAUDE.md` is preserved and only gets a short reference line added if missing.
 
 ## What Does NOT Get Updated
 

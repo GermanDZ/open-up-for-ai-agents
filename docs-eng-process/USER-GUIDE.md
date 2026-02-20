@@ -127,6 +127,7 @@ my-project/
 ├── .claude/                   # Claude Code configuration
 │   ├── teammates/             # Role instructions
 │   ├── teams/                 # Team configurations
+│   ├── CLAUDE.openup.md        # Shared OpenUP instructions
 │   └── CLAUDE.md              # Project instructions
 └── scripts/                   # Utility scripts
 ```
@@ -1116,11 +1117,12 @@ cp docs-eng-process/.claude-templates/settings.json.example .claude/settings.jso
 
 #### 1. CLAUDE.md Location Confusion
 
-**Issue:** CLAUDE.md exists in two locations:
-- Root directory: `.claude/CLAUDE.md` (ACTIVE - this is what agents use)
-- Template directory: `docs-eng-process/.claude-templates/CLAUDE.md` (TEMPLATE)
+**Issue:** CLAUDE instructions exist in multiple locations:
+- Root directory: `.claude/CLAUDE.md` (PROJECT-SPECIFIC)
+- Root directory: `.claude/CLAUDE.openup.md` (SHARED OPENUP INSTRUCTIONS)
+- Template directory: `docs-eng-process/.claude-templates/CLAUDE.md` (TEMPLATE SOURCE)
 
-**Fix:** The root `.claude/CLAUDE.md` is authoritative. The template is for new projects. When updating from template, compare both and merge changes.
+**Fix:** Your project owns `.claude/CLAUDE.md`. The OpenUP instructions live in `.claude/CLAUDE.openup.md` and are refreshed from the template. Keep a short reference line in your project file pointing to the OpenUP instructions.
 
 #### 2. Skills Documentation vs Implementation
 
@@ -1161,6 +1163,8 @@ cp docs-eng-process/.claude-templates/settings.json.example .claude/settings.jso
 | Skills | `.claude/skills/` | Active skills (installed) |
 | Team configs | `.claude/teams/` | Active team configs (installed) |
 | Role instructions | `.claude/teammates/` | Role-specific instructions |
+| Project instructions | `.claude/CLAUDE.md` | Project-specific guidance for agents |
+| OpenUP instructions | `.claude/CLAUDE.openup.md` | Shared OpenUP guidance (synced from template) |
 | Claude settings | `.claude/settings.json` | Claude Code config |
 | Templates | `docs-eng-process/templates/` | Reference for creating docs |
 
@@ -1176,8 +1180,12 @@ git submodule add https://github.com/GermanDZ/open-up-for-ai-agents.git .openup-
 **Option 2: Manual Copy**
 ```bash
 # Compare and copy individual files
-cp docs-eng-process/.claude-templates/CLAUDE.md .claude/CLAUDE.md.backup
+cp docs-eng-process/.claude-templates/CLAUDE.md .claude/CLAUDE.openup.md
 cp -r /path/to/new-template/docs-eng-process/* docs-eng-process/
+
+# Ensure your project CLAUDE.md references OpenUP instructions
+echo "" >> .claude/CLAUDE.md
+echo "This project follows OpenUP. See .claude/CLAUDE.openup.md for the shared OpenUP instructions." >> .claude/CLAUDE.md
 ```
 
 **Caution:** Never overwrite your `docs/` directory when updating.
@@ -1360,7 +1368,7 @@ my-project/
 │   │   ├── input-request.md
 │   │   └── ...
 │   ├── .claude-templates/         # Claude Code templates
-│   │   ├── CLAUDE.md
+│   │   ├── CLAUDE.md              # OpenUP instructions template
 │   │   ├── settings.json.example
 │   │   ├── teammates/             # Role instructions
 │   │   ├── teams/                 # Team configs
@@ -1368,6 +1376,7 @@ my-project/
 │   └── openup-knowledge-base/     # OpenUP reference
 ├── .claude/                       # CLAUDE CODE CONFIG
 │   ├── CLAUDE.md                  # Project instructions
+│   ├── CLAUDE.openup.md           # Shared OpenUP instructions
 │   ├── settings.json              # Claude settings
 │   ├── teammates/                 # Installed role instructions
 │   ├── teams/                     # Installed team configs

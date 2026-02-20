@@ -326,4 +326,4 @@ The team should:
 
 - Team configs are located in: `docs-eng-process/.claude-templates/teams/`
 - Role instructions are located in: `.claude/teammates/`
-- CLAUDE.md: `docs-eng-process/.claude-templates/CLAUDE.md`
+- OpenUP instructions template: `docs-eng-process/.claude-templates/CLAUDE.md` (synced to `.claude/CLAUDE.openup.md`)

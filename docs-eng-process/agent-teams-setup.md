@@ -40,7 +40,9 @@ This copies the following files to your `.claude/` directory:
 
 - `.claude/teammates/*.md` - Individual role instructions for each OpenUP role
 - `.claude/teams/*.md` - Team configuration files
-- `.claude/CLAUDE.md` - Agent team usage instructions
+- `.claude/CLAUDE.openup.md` - Shared OpenUP agent team instructions
+
+Your project-owned `.claude/CLAUDE.md` is preserved; the setup script adds a short reference line to the OpenUP instructions if missing.
 
 ### 3. Create a Team
 

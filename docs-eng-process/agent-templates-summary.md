@@ -44,7 +44,7 @@ Each team configuration defines:
 
 ### 3. CLAUDE.md Template (`docs-eng-process/.claude-templates/CLAUDE.md`)
 
-Comprehensive instructions for using OpenUP agent teams:
+Shared OpenUP instructions (synced into projects as `.claude/CLAUDE.openup.md`):
 
 - How to enable agent teams
 - Available team configurations
@@ -74,6 +74,7 @@ When you run `scripts/bootstrap-project.sh` to create a new project:
 │   └── tester.md
 ├── teams/
 │   └── openup-full-team.md
+├── CLAUDE.openup.md
 └── CLAUDE.md
 ```
 
@@ -98,7 +99,7 @@ docs-eng-process/
 │   │   └── tester.md
 │   ├── teams/                  # Team configuration files
 │   │   └── openup-full-team.md
-│   └── CLAUDE.md               # Main instructions file
+│   └── CLAUDE.md               # OpenUP instructions template
 ├── openup-knowledge-base/       # OpenUP role definitions
 │   └── core/role/roles/
 │       ├── analyst-6.md        # Source for analyst role
@@ -147,9 +148,10 @@ The `scripts/setup-agent-teams.sh` script handles:
 2. Creating `.claude/` directory structure
 3. Copying teammate instructions
 4. Copying team configurations
-5. Copying CLAUDE.md
-6. Handling existing files (with `--force` option)
-7. Providing dry-run mode (`--dry-run`)
+5. Copying CLAUDE.openup.md
+6. Ensuring `.claude/CLAUDE.md` references the OpenUP instructions
+7. Handling existing files (with `--force` option)
+8. Providing dry-run mode (`--dry-run`)
 
 ## Example Usage
 
