@@ -53,9 +53,9 @@ export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
 
 ### Skills (`.claude/skills/`)
 Reusable workflow operations that can be invoked with `/`:
-- **Phase skills**: `/inception`, `/elaboration`, `/construction`, `/transition`
-- **Artifact skills**: `/create-vision`, `/create-use-case`, `/create-architecture-notebook`, etc.
-- **Workflow skills**: `/start-iteration`, `/complete-task`, `/request-input`, `/phase-review`, `/log-run`
+- **Phase skills**: `/openup-inception`, `/openup-elaboration`, `/openup-construction`, `/openup-transition`
+- **Artifact skills**: `/openup-create-vision`, `/openup-create-use-case`, `/openup-create-architecture-notebook`, etc.
+- **Workflow skills**: `/openup-start-iteration`, `/openup-complete-task`, `/openup-request-input`, `/openup-phase-review`, `/openup-log-run`
 
 ### Teams (`.claude/teams/`)
 Pre-configured agent teams for different scenarios:
@@ -88,10 +88,11 @@ This repository contains **templates** that can be copied to other projects. The
 docs-eng-process/.claude-templates/
 ├── CLAUDE.md              # Main instructions (with setup guide)
 ├── settings.json.example  # Example settings with hooks
-├── skills/                # Reusable workflow skills
-│   ├── openup-phases/     # Phase-specific skills
-│   ├── openup-artifacts/  # Artifact creation skills
-│   └── openup-workflow/   # Workflow automation skills
+├── skills/                # Reusable workflow skills (26 /openup-* commands)
+│   ├── openup-inception/  # Each skill is a directory with SKILL.md
+│   ├── openup-start-iteration/
+│   ├── openup-complete-task/
+│   └── ...                # See docs-eng-process/skills-guide.md for full list
 ├── teams/                 # Team configurations
 │   ├── openup-full-team.md
 │   ├── openup-inception-team.md
@@ -115,19 +116,19 @@ After copying templates to your project:
 
 ```
 # Start a new iteration
-/start-iteration goal: "Implement user authentication"
+/openup-start-iteration goal: "Implement user authentication"
 
 # Create a team for the work
 Create an OpenUP agent team for construction phase. Spawn developer and tester.
 
 # Create artifacts
-/create-architecture-notebook system_name: "MyApp"
+/openup-create-architecture-notebook system_name: "MyApp"
 
 # Complete work
-/complete-task task_id: T-001
+/openup-complete-task task_id: T-001
 
 # Review phase
-/phase-review
+/openup-phase-review
 ```
 
 ## About OpenUP
