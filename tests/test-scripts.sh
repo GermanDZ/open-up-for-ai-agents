@@ -132,7 +132,33 @@ else
     test_fail "Agent templates" ".claude directory not created"
 fi
 
-# Test 4: Setup agent teams script
+# Test 4: Bootstrap script installs skills
+test_start "Bootstrap script installs skills"
+if [ -d "$TEST_DIR/test-project/.claude/skills" ]; then
+    REQUIRED_SKILLS=(
+        ".claude/skills/openup-init/SKILL.md"
+        ".claude/skills/openup-start-iteration/SKILL.md"
+        ".claude/skills/openup-complete-task/SKILL.md"
+        ".claude/skills/openup-inception/SKILL.md"
+        ".claude/skills/openup-create-vision/SKILL.md"
+    )
+
+    MISSING=0
+    for file in "${REQUIRED_SKILLS[@]}"; do
+        if [ ! -f "$TEST_DIR/test-project/$file" ]; then
+            test_fail "Skills files" "Missing: $file"
+            MISSING=1
+        fi
+    done
+
+    if [ $MISSING -eq 0 ]; then
+        test_pass "Skills installed with SKILL.md files"
+    fi
+else
+    test_fail "Skills directory" ".claude/skills directory not created"
+fi
+
+# Test 5: Setup agent teams script (standalone)
 test_start "Setup agent teams script"
 SETUP_TEST_DIR="/tmp/openup-test-setup"
 rm -rf "$SETUP_TEST_DIR"
@@ -140,17 +166,34 @@ mkdir -p "$SETUP_TEST_DIR/docs-eng-process/.claude-templates/teammates"
 mkdir -p "$SETUP_TEST_DIR/docs-eng-process/.claude-templates/teams"
 mkdir -p "$SETUP_TEST_DIR/docs"
 
-# Copy template files to test directory
+# Copy template files to test directory (including skills)
 cp "$PROJECT_ROOT/docs-eng-process/.claude-templates/teammates/"*.md "$SETUP_TEST_DIR/docs-eng-process/.claude-templates/teammates/" 2>/dev/null || true
 cp "$PROJECT_ROOT/docs-eng-process/.claude-templates/teams/"*.md "$SETUP_TEST_DIR/docs-eng-process/.claude-templates/teams/" 2>/dev/null || true
 cp "$PROJECT_ROOT/docs-eng-process/.claude-templates/CLAUDE.md" "$SETUP_TEST_DIR/docs-eng-process/.claude-templates/" 2>/dev/null || true
+cp -r "$PROJECT_ROOT/docs-eng-process/.claude-templates/skills" "$SETUP_TEST_DIR/docs-eng-process/.claude-templates/" 2>/dev/null || true
+cp "$PROJECT_ROOT/docs-eng-process/.claude-templates/settings.json.example" "$SETUP_TEST_DIR/docs-eng-process/.claude-templates/" 2>/dev/null || true
 
 cd "$SETUP_TEST_DIR"
 if bash "$PROJECT_ROOT/scripts/setup-agent-teams.sh" >/dev/null 2>&1; then
-    if [ -d "$SETUP_TEST_DIR/.claude/teammates" ]; then
-        test_pass "Setup script creates .claude directory"
-    else
+    SETUP_OK=true
+    if [ ! -d "$SETUP_TEST_DIR/.claude/teammates" ]; then
         test_fail "Setup output" ".claude/teammates not created"
+        SETUP_OK=false
+    fi
+    if [ ! -d "$SETUP_TEST_DIR/.claude/skills" ]; then
+        test_fail "Setup output" ".claude/skills not created"
+        SETUP_OK=false
+    fi
+    if [ ! -f "$SETUP_TEST_DIR/.claude/skills/openup-init/SKILL.md" ]; then
+        test_fail "Setup output" ".claude/skills/openup-init/SKILL.md not created"
+        SETUP_OK=false
+    fi
+    if [ ! -f "$SETUP_TEST_DIR/.claude/settings.json" ]; then
+        test_fail "Setup output" ".claude/settings.json not created"
+        SETUP_OK=false
+    fi
+    if [ "$SETUP_OK" = true ]; then
+        test_pass "Setup script creates .claude directory with teammates, skills, and settings"
     fi
 else
     test_fail "Setup execution" "Script returned non-zero exit code"

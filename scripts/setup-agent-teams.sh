@@ -47,7 +47,7 @@ Usage: $0 [OPTIONS]
 Set up Claude Code agent teams for the current project.
 
 This script copies agent team templates (teammate instructions, team configs,
-and CLAUDE.openup.md) to the project's .claude directory and ensures
+skills, and CLAUDE.openup.md) to the project's .claude directory and ensures
 the project's CLAUDE.md includes a reference.
 
 Options:
@@ -105,6 +105,7 @@ fi
 # Files to copy
 TEAMMATES_DIR="$CLAUDE_DIR/teammates"
 TEAMS_DIR="$CLAUDE_DIR/teams"
+SKILLS_DIR="$CLAUDE_DIR/skills"
 CLAUDE_OPENUP_DEST="$CLAUDE_DIR/CLAUDE.openup.md"
 CLAUDE_DEST="$CLAUDE_DIR/CLAUDE.md"
 OPENUP_REF_PATH=".claude/CLAUDE.openup.md"
@@ -164,6 +165,35 @@ copy_dir() {
     done
 }
 
+# Function to copy skills directory (each skill is a subdirectory with SKILL.md)
+copy_skills_dir() {
+    local src="$1"
+    local dest="$2"
+
+    if [ "$DRY_RUN" = true ]; then
+        echo "Would copy skills directory: $src -> $dest"
+        return 0
+    fi
+
+    # Create destination directory
+    mkdir -p "$dest"
+
+    # Copy each skill subdirectory
+    for skill_dir in "$src"/*/; do
+        if [ -d "$skill_dir" ]; then
+            local skill_name="$(basename "$skill_dir")"
+            local dest_skill_dir="$dest/$skill_name"
+            mkdir -p "$dest_skill_dir"
+            for file in "$skill_dir"*; do
+                if [ -f "$file" ]; then
+                    local filename="$(basename "$file")"
+                    copy_file "$file" "$dest_skill_dir/$filename"
+                fi
+            done
+        fi
+    done
+}
+
 ensure_openup_reference() {
     local target_file="$1"
 
@@ -210,6 +240,7 @@ if [ "$DRY_RUN" = false ]; then
     # Create .claude directory structure
     mkdir -p "$TEAMMATES_DIR"
     mkdir -p "$TEAMS_DIR"
+    mkdir -p "$SKILLS_DIR"
 fi
 
 # Copy teammate instructions
@@ -226,6 +257,26 @@ if [ -d "$TEMPLATES_DIR/teams" ]; then
     copy_dir "$TEMPLATES_DIR/teams" "$TEAMS_DIR"
 else
     warn "Teams template directory not found: $TEMPLATES_DIR/teams"
+fi
+
+# Copy skills
+if [ -d "$TEMPLATES_DIR/skills" ]; then
+    info "Setting up skills..."
+    copy_skills_dir "$TEMPLATES_DIR/skills" "$SKILLS_DIR"
+else
+    warn "Skills template directory not found: $TEMPLATES_DIR/skills"
+fi
+
+# Copy settings.json (only if it doesn't already exist, to preserve user customizations)
+SETTINGS_SRC="$TEMPLATES_DIR/settings.json.example"
+SETTINGS_DEST="$CLAUDE_DIR/settings.json"
+if [ -f "$SETTINGS_SRC" ]; then
+    if [ ! -f "$SETTINGS_DEST" ]; then
+        info "Setting up settings.json..."
+        copy_file "$SETTINGS_SRC" "$SETTINGS_DEST"
+    else
+        info "settings.json already exists, skipping (preserving user customizations)"
+    fi
 fi
 
 # Copy OpenUP instructions
@@ -249,15 +300,17 @@ if [ "$DRY_RUN" = true ]; then
     echo "Run without --dry-run to apply changes."
 else
     echo "Created files:"
+    echo "  - .claude/skills/ (workflow skills - /openup-* commands)"
     echo "  - .claude/teammates/ (role instructions)"
     echo "  - .claude/teams/ (team configurations)"
+    echo "  - .claude/settings.json (agent teams enabled)"
     echo "  - .claude/CLAUDE.openup.md (OpenUP instructions)"
     echo "  - .claude/CLAUDE.md (project instructions)"
     echo ""
     echo "Next steps:"
-    echo "1. Enable agent teams: export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1"
-    echo "2. Start Claude Code in this project"
-    echo "3. Create a team: 'Create an OpenUP agent team with [roles]'"
+    echo "1. Start Claude Code in this project"
+    echo "2. Run /openup-init to initialize your project"
+    echo "3. Or create a team: 'Create an OpenUP agent team with [roles]'"
     echo ""
     echo "For more information, see .claude/CLAUDE.openup.md"
 fi
