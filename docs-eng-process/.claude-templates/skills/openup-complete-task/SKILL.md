@@ -9,48 +9,24 @@ arguments:
     description: Custom commit message (optional, auto-generates if not provided)
     required: false
   - name: create_pr
-    description: Create a pull request after completing the task (optional, default false)
+    description: "Create a pull request after completing the task (default: true — set to 'false' to skip)"
     required: false
 ---
 
 # Complete Task
 
-This skill finalizes a completed task by committing all changes, updating documentation, and preparing traceability logs.
-
-## When to Use
-
-Use this skill when:
-- A task implementation is complete and ready to commit
-- All tests pass for the task
-- Documentation has been updated
-- Ready to update roadmap and mark task complete
-- Need to create traceability logs for the work
-
-## When NOT to Use
-
-Do NOT use this skill when:
-- Still implementing the task (finish implementation first)
-- Tests are failing (fix tests first)
-- Just need to commit without updating roadmap (use git directly)
-- Looking to create PR without completing task (use `/openup-create-pr`)
+Finalize a completed task: commit remaining changes, update docs, create traceability logs, and create a PR.
 
 ## Success Criteria
 
-After using this skill, verify:
-- [ ] All changes are committed with descriptive message
-- [ ] No uncommitted changes remain
+After this skill completes, ALL of these must be true:
+
+- [ ] All changes are committed (no uncommitted changes remain)
+- [ ] Commit messages follow canonical format: `type(scope): description [T-XXX]`
 - [ ] Roadmap is updated to mark task complete
 - [ ] Project status is updated
 - [ ] Traceability logs are created with commit SHAs
-- [ ] PR is created (if create_pr=true)
-
-## Process Summary
-
-1. Verify task completion
-2. Commit all changes
-3. Update documentation
-4. Create traceability logs
-5. Optionally create PR
+- [ ] PR is created (unless `create_pr` was explicitly `"false"`)
 
 ## Detailed Steps
 
@@ -61,90 +37,68 @@ Before marking a task as complete, verify:
 - All tests pass
 - Documentation is updated
 
-### 2. Commit All Changes
+### 2. Commit Remaining Changes
 
-**MANDATORY**: All changes must be committed before proceeding.
+Most changes should already be committed as atomic commits during implementation (see `commit-procedure.md`). This step handles any leftover uncommitted work.
 
-1. Stage all changes: `git add -A` (or selectively stage)
-2. Create commit with descriptive message:
+1. Run `git status --porcelain` to check for uncommitted changes
+2. If changes exist:
+   - Stage relevant files: `git add <files>`
+   - Commit using canonical format: `type(scope): description [$ARGUMENTS[task_id]]`
    - Use `$ARGUMENTS[commit_message]` if provided
-   - Otherwise auto-generate: "Complete task $ARGUMENTS[task_id]: <task description>"
-   - Include task ID in commit message
-3. Verify commit exists: `git log -1 --oneline`
-4. Record commit SHA
+3. Verify: `git status --porcelain` returns empty
 
-### 3. Verify No Uncommitted Changes
-
-Run `git status --porcelain` and verify it returns empty.
-
-### 4. Update Roadmap
+### 3. Update Roadmap
 
 Update `docs/roadmap.md`:
 - Mark task `$ARGUMENTS[task_id]` as `completed`
 - Add completion date
-- Update any dependencies
 
-### 5. Update Project Status
+### 4. Update Project Status
 
 Update `docs/project-status.md`:
 - Update "Active Work Items" table
 - Update `last_updated` and `updated_by` fields
 
-### 6. Create Traceability Logs
+### 5. Create Traceability Logs
 
 Create both markdown and JSONL logs:
 - Markdown log: `docs/agent-logs/YYYY/MM/DD/<timestamp>-<agent>-<branch>.md`
 - JSONL entry: Append to `docs/agent-logs/agent-runs.jsonl`
 - Include commit SHAs in the logs
 
-### 7. Optionally Create Pull Request
+### 6. Create Pull Request
 
-If `$ARGUMENTS[create_pr] == "true"`:
+**PR is created by default.** Skip ONLY if `$ARGUMENTS[create_pr]` is explicitly `"false"`.
 
-1. **Verify current branch has unmerged commits**:
-   - Run: `git log <trunk>..HEAD --oneline`
-   - Proceed only if unmerged commits exist
+1. Push the branch:
+   ```bash
+   git push -u origin $(git rev-parse --abbrev-ref HEAD)
+   ```
 
-2. **Invoke `/openup-create-pr` skill**:
-   - Pass `task_id: $ARGUMENTS[task_id]`
-   - Let the skill auto-detect branch and generate description
+2. Verify unmerged commits exist:
+   ```bash
+   git log <trunk>..HEAD --oneline
+   ```
 
-3. **Inform user of result**:
-   - If PR created successfully: Provide PR URL
-   - If PR creation failed: Explain error and provide next steps
-   - If no unmerged commits: Inform user that PR is not needed
+3. Invoke `/openup-create-pr` skill with `task_id: $ARGUMENTS[task_id]`
 
-Example usage:
-```
-/openup-complete-task task_id: T-005 create_pr: true
-```
+4. Report result to user:
+   - Success → provide PR URL
+   - No unmerged commits → inform user PR is not needed
+   - Failure → explain error and provide manual steps
 
 ## Output
 
 Returns a summary of:
 - Task completed
-- Commit SHA
+- Commit SHAs
 - Files changed
 - Log locations
-- PR URL (if create_pr was true)
-
-## Common Errors
-
-| Error | Cause | Solution |
-|-------|-------|----------|
-| Uncommitted changes remain | Not all files were staged/committed | Run `git add -A && git commit` |
-| Commit failed | Pre-commit hook or merge conflict | Resolve issue and retry commit |
-| Roadmap task not found | Task ID doesn't exist in roadmap | Verify task ID or update roadmap first |
-| PR creation failed | No unmerged commits or remote issue | Check branch status and remote |
-
-## References
-
-- Agent Workflow End-of-Run SOP: `docs-eng-process/agent-workflow.md`
-- Traceability Logging SOP: `docs-eng-process/agent-workflow.md`
+- PR URL
 
 ## See Also
 
-- [openup-assess-completeness](../assess-completeness/SKILL.md) - Assess task completeness before marking complete
 - [openup-create-pr](../create-pr/SKILL.md) - Create pull request separately
 - [openup-log-run](../log-run/SKILL.md) - Traceability logging details
 - [openup-start-iteration](../start-iteration/SKILL.md) - Begin next iteration

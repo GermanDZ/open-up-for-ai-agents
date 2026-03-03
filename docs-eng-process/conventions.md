@@ -9,16 +9,22 @@
 
 ## Commit Message Format
 
+**This is the single source of truth for commit messages.** All skills and docs reference this format.
+
 ```
-type(scope): brief description
+type(scope): brief description [T-XXX]
 
 - Detail about what changed
 - Why it changed (if not obvious)
-
-Refs #issue-number
 ```
 
 **Types**: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`
+
+**Examples**:
+- `feat(auth): add login form component [T-005]`
+- `fix(api): handle timeout in retry logic [T-012]`
+- `docs(readme): update setup instructions [T-003]`
+- `refactor(db): extract query builder [T-008]`
 
 ## Branch Naming
 

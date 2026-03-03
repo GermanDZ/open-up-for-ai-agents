@@ -9,140 +9,65 @@ arguments:
 
 # Log Run
 
-This skill creates traceability logs for the current agent run, following the Traceability Logging SOP.
-
-**IMPORTANT**: This skill should only be called AFTER all changes are committed. The logs require actual commit SHAs.
-
-## When to Use
-
-Use this skill when:
-- Completing work that should be logged for traceability
-- Need to document agent activities for audit trail
-- Creating record of work for future reference
-- Completing a task or iteration
-- After committing all changes
-
-## When NOT to Use
-
-Do NOT use this skill when:
-- Changes are not yet committed (commit first)
-- Looking to commit changes (use git directly)
-- Just need to save work without logging (use git)
-- Run is incomplete and will continue
-
-## Success Criteria
-
-After using this skill, verify:
-- [ ] Markdown log exists with all required fields
-- [ ] JSONL entry is valid and appended
-- [ ] Commit SHAs are correctly recorded
-- [ ] Log files are in correct directory structure
-- [ ] All required metadata is included
+Create traceability logs for the current agent run. **Call only AFTER all changes are committed** (logs require actual commit SHAs).
 
 ## Prerequisites
 
-Before calling this skill, ensure:
-1. All changes are committed to git
-2. `git status --porcelain` returns empty (no uncommitted changes)
-3. Commit SHAs are available for reference
+- `git status --porcelain` returns empty (all changes committed)
+- Commit SHAs are available for reference
 
 ## Process
 
 ### 1. Generate Run ID
 
-If `$ARGUMENTS[run_id]` is not provided, generate one:
-- Format: `YYYY-MM-DDTHH:MM:SSZ-agent-branch`
-- Use current timestamp, agent name, and current branch
+If `$ARGUMENTS[run_id]` is not provided, generate: `YYYY-MM-DDTHH:MM:SSZ-agent-branch`
 
 ### 2. Collect Run Metadata
 
-Collect the following information:
-- Current branch: `git branch --show-current`
-- Trunk branch: Detect using algorithm (prefer `origin/HEAD`, fallback to `main`, `master`, or current)
+- Branch: `git branch --show-current`
+- Trunk: detect via `origin/HEAD`, fallback `main`/`master`
 - Start/end timestamps
 - Phase from `docs/project-status.md`
-- Commits created during run: `git log --oneline <since>...HEAD`
+- Commits: `git log --oneline <since>...HEAD`
 
-### 3. Read Project Context
-
-Read `docs/project-status.md` to extract:
-- Current phase
-- Iteration goals
-- Active work items
-
-### 4. Create Markdown Log
+### 3. Create Markdown Log
 
 Create `docs/agent-logs/YYYY/MM/DD/<timestamp>-<agent>-<branch>.md` with:
 - Run metadata (branch, trunk, timestamps)
-- Roles assumed and any role switches
+- Roles assumed and switches
 - Tasks performed (one per primary-role task boundary)
-- **Commit SHAs**: List all commits created during this run
-- Consulting-role usage within tasks
-- Key decisions/assumptions + links to relevant docs
+- Commit SHAs created during run
+- Consulting-role usage
+- Key decisions/assumptions + doc links
 - Initial instructions/prompt (verbatim)
-- Start/end timestamps
 
-### 5. Append JSONL Entry
+### 4. Append JSONL Entry
 
 Append to `docs/agent-logs/agent-runs.jsonl`:
 
 ```json
-{
-  "run_id": "<generated-or-provided-run-id>",
-  "agent": "claude",
-  "branch": "<current-branch>",
-  "trunk": "<detected-trunk>",
-  "start": "<start-timestamp>",
-  "end": "<end-timestamp>",
-  "phase": "<current-phase>",
-  "iteration_goals": ["<goal1>", "<goal2>"],
-  "prompt_hash": "sha256:abc...",
-  "md_log_path": "<path-to-markdown-log>",
-  "tasks": [
-    {
-      "role": "<primary-role>",
-      "objective": "<task-objective>",
-      "start": "<task-start>",
-      "end": "<task-end>",
-      "commits": ["<sha1>", "<sha2>"],
-      "docs_updated": ["<doc-path1>"],
-      "consulting_roles": ["<consulting-role>"]
-    }
-  ],
-  "decisions": ["<decision-doc-path>"],
-  "notes": "<run-summary>"
-}
+{"run_id":"<id>","agent":"claude","branch":"<branch>","trunk":"<trunk>","start":"<ts>","end":"<ts>","phase":"<phase>","iteration_goals":["..."],"prompt_hash":"sha256:...","md_log_path":"<path>","tasks":[{"role":"<role>","objective":"<obj>","start":"<ts>","end":"<ts>","commits":["<sha>"],"docs_updated":["<path>"],"consulting_roles":["<role>"]}],"decisions":["<path>"],"notes":"<summary>"}
 ```
 
-### 6. Verify Logs
+### 5. Verify
 
-Verify:
 - Markdown log exists and is readable
 - JSONL entry is valid JSON
-- Commit SHAs referenced in logs actually exist
+- Commit SHAs referenced actually exist
 - All required fields are populated
-
-## Output
-
-Returns:
-- Path to markdown log
-- Confirmation of JSONL update
-- List of commits logged
-- Run ID
 
 ## Common Errors
 
 | Error | Cause | Solution |
 |-------|-------|----------|
-| Uncommitted changes | Files not committed before logging | Commit changes first with `git add -A && git commit` |
-| Invalid JSONL | JSON format error in entry | Verify JSON syntax before appending |
-| Missing commits | No commits found for run | Verify commits exist and run is complete |
-| Directory not found | docs/agent-logs/ doesn't exist | Create directory structure first |
+| Uncommitted changes | Files not committed | `git add -A && git commit` first |
+| Invalid JSONL | JSON format error | Verify syntax before appending |
+| Missing commits | No commits for run | Verify run is complete |
+| Directory not found | docs/agent-logs/ missing | Create directory structure first |
 
 ## References
 
 - Traceability Logging SOP: `docs-eng-process/agent-workflow.md`
-- End-of-Run SOP: `docs-eng-process/agent-workflow.md`
 
 ## See Also
 

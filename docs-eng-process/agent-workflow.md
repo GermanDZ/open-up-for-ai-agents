@@ -162,13 +162,18 @@ Each task must be planned before execution:
 
 ### Commit Policy Per Task
 
-**⚠️ CRITICAL**: Committing changes is not optional - it is a mandatory requirement for task completion.
+**⚠️ CRITICAL**: Commit DURING implementation, not just at the end.
 
-- All changes made during a task must be committed in **at least one atomic commit**
-- If a task is split into multiple steps, each step may be a separate commit (still atomic per step)
-- **MANDATORY**: When confirming a task is finished, you MUST commit all changes to git before stopping. Do not leave uncommitted changes.
-- **MANDATORY**: Uncommitted changes mean the task is NOT complete. Task execution history is only persisted when changes are committed.
-- **MANDATORY**: Before declaring a task finished, verify with `git status --porcelain` that no uncommitted changes exist.
+**Do NOT save all changes for one big commit at the end.** Instead:
+
+1. **Commit after each meaningful unit of work** — a new function, a passing test, a config change, a doc update
+2. **Use the canonical commit format** from `docs-eng-process/conventions.md`:
+   ```
+   type(scope): brief description [T-XXX]
+   ```
+3. **At task end**, commit any remaining uncommitted changes, then verify with `git status --porcelain` that nothing is left
+
+**MANDATORY**: Uncommitted changes mean the task is NOT complete. Before declaring a task finished, `git status --porcelain` must return empty.
 
 **See [End-of-Run SOP](#end-of-run-sop) for the complete mandatory procedure that must be followed before stopping.**
 

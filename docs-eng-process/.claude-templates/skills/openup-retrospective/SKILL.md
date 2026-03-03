@@ -12,104 +12,35 @@ arguments:
 
 # Retrospective
 
-This skill generates an iteration retrospective document capturing what went well, what to improve, and action items for continuous improvement.
+Generate an iteration retrospective capturing what went well, what to improve, and action items.
 
-## When to Use
-
-Use this skill when:
-- Completing an iteration
-- Need to capture lessons learned
-- Preparing for next iteration planning
-- Implementing continuous improvement
-- Ending Construction or Transition iteration
-
-## When NOT to Use
-
-Do NOT use this skill when:
-- Mid-iteration and just checking progress (use project status)
-- Iteration hasn't started yet
-- Looking for project status update (use project-status.md)
-- Only need git statistics (use git log directly)
-
-## Success Criteria
-
-After using this skill, verify:
-- [ ] Retrospective document is created
-- [ ] What went well is documented
-- [ ] What to improve is identified
-- [ ] Action items are defined with owners
-- [ ] Metrics are included (if requested)
-- [ ] Next iteration considerations are noted
-
-## Process Summary
-
-1. Read project status and determine iteration
-2. Analyze completed tasks
-3. Gather feedback from team and artifacts
-4. Collect metrics (if requested)
-5. Generate retrospective document
-
-## Detailed Steps
+## Process
 
 ### 1. Determine Iteration
 
-If `$ARGUMENTS[iteration_number]` is provided:
-- Use that iteration number
-- Read iteration-specific information
-
-If not provided:
-- Read `docs/project-status.md` for current iteration
-- Use current iteration number
+If `$ARGUMENTS[iteration_number]` is provided, use it. Otherwise read `docs/project-status.md` for the current iteration number.
 
 ### 2. Read Project Context
 
-Read `docs/project-status.md` for:
-- Iteration goal
-- Iteration dates
-- Team members involved
-- Overall iteration status
+Read `docs/project-status.md` for: iteration goal, dates, team members, overall status.
 
 ### 3. Analyze Completed Tasks
 
-Read `docs/roadmap.md` to identify:
-- Tasks planned for this iteration
-- Tasks completed
-- Tasks not completed
-- Tasks added during iteration
+Read `docs/roadmap.md` to identify: tasks planned, completed, not completed, and added during iteration. Note complexity, challenges, and successes for each.
 
-For each completed task:
-- Note complexity
-- Note any challenges
-- Note successes
+### 4. Gather Feedback
 
-### 4. Gather Feedback Sources
+Review these sources for patterns and issues:
+- `docs/agent-logs/` - Agent run logs
+- `docs/risk-list.md` - Risks emerged or mitigated
+- `docs/roadmap.md` - Velocity (completed vs planned), blocked items
+- Git commit messages
 
-**From Project Artifacts:**
-- `docs/agent-logs/` - Agent run logs for issues
-- `docs/test-logs/` - Test logs for quality issues
-- `docs/risk-list.md` - Risks that emerged or were mitigated
-- Git commit messages - Patterns and issues
+### 5. Collect Metrics (if `$ARGUMENTS[include_metrics] == "true"`)
 
-**From Roadmap:**
-- Velocity (tasks completed vs planned)
-- Story points (if tracked)
-- Blocked items and reasons
-
-**From Status Updates:**
-- Project status updates
-- Any team notes or comments
-
-### 5. Collect Metrics (Optional)
-
-If `$ARGUMENTS[include_metrics] == "true"`:
-
-**Git Metrics:**
 ```bash
-# Count commits
+# Commits in iteration period
 git log --oneline --since="$start_date" --until="$end_date" | wc -l
-
-# Count pull requests
-# (Project-specific, check for PRs)
 
 # Lines changed
 git diff --stat trunk...HEAD
@@ -118,121 +49,26 @@ git diff --stat trunk...HEAD
 git shortlog -sn --since="$start_date" --until="$end_date"
 ```
 
-**Task Metrics:**
-- Tasks planned: count from roadmap
-- Tasks completed: count completed in roadmap
-- Completion rate: completed / planned * 100%
+Task metrics: tasks planned, tasks completed, completion rate (completed / planned * 100%).
 
-### 6. Structure the Retrospective
+### 6. Create Retrospective Document
 
-Using the iteration retrospective template, create:
+Create `docs/iteration-retrospectives/iteration-{n}-retrospective.md` with sections:
+- **Iteration Overview**: number, date range, goal, participants
+- **Summary**: overall assessment, key achievements, major challenges
+- **What Went Well**: process, technical, collaboration successes
+- **What to Improve**: process issues, technical challenges, gaps
+- **Action Items**: specific action, owner, due date, priority for each improvement
+- **Metrics** (if included): task completion stats, git stats
+- **Next Iteration Considerations**: carry forward, changes, risks to monitor
 
-**Iteration Overview:**
-- Iteration number
-- Date range
-- Goal
-- Participants
+### 7. Update Project Status
 
-**Summary:**
-- Overall assessment (successful, mixed, challenging)
-- Key achievements
-- Major challenges
-
-**What Went Well:**
-- Process successes
-- Technical wins
-- Collaboration highlights
-- Tools that worked well
-
-**What to Improve:**
-- Process issues
-- Technical challenges
-- Communication gaps
-- Tool limitations
-
-**Action Items:**
-- Specific improvements
-- Owners assigned
-- Due dates
-- Priority
-
-**Metrics (if included):**
-- Task completion statistics
-- Git statistics
-- Quality metrics
-
-**Next Iteration Considerations:**
-- What to carry forward
-- What to change
-- Risks to monitor
-
-### 7. Generate Action Items
-
-Convert "What to Improve" into actionable items:
-
-For each improvement:
-1. Define specific action
-2. Assign owner (role or person)
-3. Set due date (next iteration or specific date)
-4. Set priority
-5. Define success criteria
-
-Example:
-```
-| Action | Owner | Due Date | Priority |
-|--------|-------|----------|----------|
-| Set up automated testing pipeline | Developer | Next iteration | High |
-| Improve requirements documentation | Analyst | Iteration N+2 | Medium |
-```
-
-### 8. Create Retrospective Document
-
-Create `docs/iteration-retrospectives/iteration-{n}-retrospective.md` using the template:
-- Fill in all sections
-- Include metrics table
-- Link to related artifacts
-
-### 9. Update Project Status
-
-In `docs/project-status.md`:
-- Add link to retrospective in iteration history
-- Note any ongoing action items
-- Update status if iteration is complete
+In `docs/project-status.md`: add link to retrospective, note ongoing action items, update iteration status.
 
 ## Output
 
-Returns a summary of:
-- Retrospective document created
-- What went well (count)
-- What to improve (count)
-- Action items created
-- Overall iteration rating
-- Key metrics (if included)
-
-## Example Usage
-
-```
-/openup-retrospective include_metrics: true
-```
-
-```
-/openup-retrospective iteration_number: 3 include_metrics: false
-```
-
-## Common Errors
-
-| Error | Cause | Solution |
-|-------|-------|----------|
-| Iteration not found | Iteration number doesn't exist | Verify iteration number or omit for current |
-| No project status | docs/project-status.md doesn't exist | Initialize project first |
-| No tasks completed | Iteration just started | Complete some work first |
-| Git metrics fail | Invalid date range or no commits | Check dates and git history |
-
-## References
-
-- Iteration Retrospective Template: `docs-eng-process/templates/iteration-retrospective.md`
-- Agile Retrospective Practices: OpenUP knowledge base
-- Agent Workflow: `docs-eng-process/agent-workflow.md`
+Returns: retrospective document path, counts of what went well / what to improve / action items, overall iteration rating, key metrics (if included).
 
 ## See Also
 
