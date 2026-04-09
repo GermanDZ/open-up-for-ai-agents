@@ -115,8 +115,9 @@ def main() -> None:
     if status != "in-progress":
         # No active iteration — must start one
         task_arg = f" task_id: {task_id}" if task_id else " task_id: T-XXX"
+        # stdout is injected as context into Claude's message (does not block)
         print(
-            f"[on-task-request] 🚦 Task request detected — OpenUP PM intake required.\n\n"
+            f"[SYSTEM - OpenUP PM Intake]\n"
             f"You are the Project Manager. Do NOT explore files, read code, or write\n"
             f"anything yet. Follow this sequence:\n\n"
             f"  1. Run: /openup-start-iteration{task_arg}\n"
@@ -125,27 +126,26 @@ def main() -> None:
             f"  3. Brief each specialist (developer, tester, architect as needed)\n"
             f"     using the delegation format from your Orchestrator Protocol.\n\n"
             f"  4. Collect outputs and synthesize.\n\n"
-            f"Project phase: {phase} | No active iteration\n"
-            f"Start the iteration first — then coordinate the team.",
-            file=sys.stderr,
+            f"Project phase: {phase} | No active iteration detected.\n"
+            f"Start the iteration first — then coordinate the team."
         )
-        sys.exit(2)
+        sys.exit(0)
 
     else:
         # Iteration is active — remind Claude to act as PM, not solo
         active_task = current_task if current_task not in ("", "None", "none") else task_id or "?"
+        # stdout is injected as context into Claude's message (does not block)
         print(
-            f"[on-task-request] 🚦 Active iteration detected (task {active_task}).\n\n"
-            f"You are the Project Manager. Do not work solo. Coordinate the team:\n\n"
+            f"[SYSTEM - OpenUP PM Reminder]\n"
+            f"You are the Project Manager. Active iteration: task {active_task}.\n"
+            f"Do not work solo. Coordinate the team:\n\n"
             f"  1. Confirm the team is deployed (if not, spawn {suggested_team} now).\n\n"
             f"  2. Decompose the work into specialist subtasks.\n\n"
             f"  3. Brief each specialist and collect their outputs.\n\n"
             f"  4. Synthesize and verify against acceptance criteria.\n\n"
-            f"If the team is already active, send them their next subtask.\n"
-            f"Do not write code or modify files directly — delegate to specialists.",
-            file=sys.stderr,
+            f"Do not write code or modify files directly — delegate to specialists."
         )
-        sys.exit(2)
+        sys.exit(0)
 
 
 if __name__ == "__main__":

@@ -196,21 +196,22 @@ def main() -> None:
         ("\n  Also: " + "; ".join(suggestions)) if suggestions else ""
     )
 
+    # stdout is injected as context into Claude's message (does not block)
     print(
-        f"[check-unfinished-tasks] ⚠️  Unfinished work detected — starting a new iteration is blocked.\n\n"
+        f"[SYSTEM - OpenUP Unfinished Work Warning]\n"
+        f"Unfinished work detected. Do NOT start a new iteration yet.\n\n"
         f"Current state:\n\n{issues_text}\n\n"
-        f"Recommended actions:\n\n"
+        f"Required actions before starting new work:\n\n"
         f"  1. Complete the current task:\n"
         f"       /openup-complete-task\n"
         f"     This will commit remaining work, create the PR, log the run,\n"
         f"     and update project-status.md to 'completed'.\n\n"
-        f"  2. Or explicitly defer it (if you're pivoting to higher-priority work):\n"
+        f"  2. Or explicitly defer it (if pivoting to higher-priority work):\n"
         f"     Update docs/roadmap.md — change the task status to 'deferred',\n"
         f"     then update docs/project-status.md Status to 'deferred'.\n"
-        f"     Then re-run the start-iteration command.{suggestions_text}",
-        file=sys.stderr,
+        f"     Then re-run the start-iteration command.{suggestions_text}"
     )
-    sys.exit(2)
+    sys.exit(0)
 
 
 if __name__ == "__main__":
