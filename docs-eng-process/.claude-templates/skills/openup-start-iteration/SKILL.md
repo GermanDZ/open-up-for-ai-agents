@@ -27,8 +27,9 @@ Initialize a new OpenUP iteration: read project state, create a task branch, and
 
 After this skill completes, ALL of these must be true:
 
+- [ ] **BLOCKING**: Team is deployed and PM is coordinating — verified before any implementation work begins
 - [ ] Project status is updated with new iteration
-- [ ] **BLOCKING CHECK**: `git rev-parse --abbrev-ref HEAD` returns a non-trunk branch name (not `main`, `master`, or whatever trunk is). If it returns trunk, the skill has FAILED — do not proceed.
+- [ ] **BLOCKING**: `git rev-parse --abbrev-ref HEAD` returns a non-trunk branch name. If it returns trunk, the skill has FAILED — do not proceed.
 - [ ] Iteration goal is defined
 - [ ] Answered input requests are processed
 - [ ] Log entry is created
@@ -50,7 +51,42 @@ Read `docs/roadmap.md` to:
 - Determine priority and dependencies
 - **If task_id not found**: Ask user to specify which task from the roadmap
 
-### 3. Create Task Branch
+### 3. Deploy Team — MANDATORY BEFORE ANY WORK
+
+**⛔ STOP. Do not create a branch, write any code, or modify any files until the team is deployed.**
+
+Team deployment is required for every iteration. Skip ONLY if `$ARGUMENTS[deploy_team]` is explicitly `"false"`.
+
+1. **Auto-select team type** if `$ARGUMENTS[team]` is not specified:
+   - Check task description for keywords:
+     - "investigate", "research", "spike" → `openup-investigation-team`
+     - "plan", "roadmap", "prioritize" → `openup-planning-team`
+   - Otherwise fall back to phase default:
+     - `inception` → `openup-inception-team` (analyst + project-manager)
+     - `elaboration` → `openup-elaboration-team` (architect + developer)
+     - `construction` → `openup-construction-team` (developer + tester) ← most common
+     - `transition` → `openup-transition-team` (developer + tester + project-manager)
+
+2. **Team type override**: if `$ARGUMENTS[team]` is provided, use it directly:
+   - **feature**: analyst, architect, developer, tester
+   - **investigation**: architect, developer, tester
+   - **construction**: developer, tester
+   - **elaboration**: architect, developer, tester
+   - **inception**: analyst, project-manager
+   - **transition**: tester, project-manager, developer
+   - **planning**: project-manager, analyst
+   - **full**: all roles
+   - **none**: skip team deployment (same as `deploy_team: false`)
+
+3. Deploy the team using the Agent tool — spawn each role with:
+   - Iteration goal and task ID
+   - Current phase and phase objectives
+   - Relevant project docs (project-status.md, roadmap.md)
+   - The PM's orchestrator role: decompose the task, brief each specialist, collect and synthesize outputs
+
+4. **PM takes the lead**: after spawning, the project-manager agent coordinates all subsequent work for this iteration. Specialists (developer, architect, tester, analyst) receive focused subtasks from the PM.
+
+### 4. Create Task Branch
 
 **Execute these commands in order:**
 
@@ -75,11 +111,11 @@ git rev-parse --abbrev-ref HEAD
 - No unmerged commits → delete and recreate from trunk
 - Has unmerged commits → create PR or merge first, then create new branch
 
-### 4. Check for Answered Input Requests
+### 5. Check for Answered Input Requests
 
 Check `docs/input-requests/` for files with `status: answered`. Process any answered requests before continuing.
 
-### 5. Initialize Iteration
+### 6. Initialize Iteration
 
 > **Haiku/Scribe step** — you determine the new values (iteration number, goal, task_id),
 > then delegate the file write:
@@ -97,7 +133,7 @@ Check `docs/input-requests/` for files with `status: answered`. Process any answ
 >   Report: each field changed from → to.")
 > ```
 
-### 6. Log Initialization
+### 7. Log Initialization
 
 > **Haiku/Scribe step** — delegate the log append:
 >
@@ -108,38 +144,6 @@ Check `docs/input-requests/` for files with `status: answered`. Process any answ
 >    \"goal\":\"[goal]\",\"branch\":\"[branch]\",\"phase\":\"[phase]\",\"ts\":\"[ts]\"}
 >   Report: record appended.")
 > ```
-
-### 7. Deploy Team
-
-**Team deployment is ON by default.** Skip only if `$ARGUMENTS[deploy_team]` is explicitly `"false"`.
-
-1. **Auto-select team type** if `$ARGUMENTS[team]` is not specified:
-   - Read `current_phase` from `docs/project-status.md`
-   - Check task description for keywords:
-     - "investigate", "research", "spike" → `openup-investigation-team`
-     - "plan", "roadmap", "prioritize" → `openup-planning-team`
-   - Otherwise fall back to phase default:
-     - `inception` → `openup-inception-team` (analyst + project-manager)
-     - `elaboration` → `openup-elaboration-team` (architect + developer)
-     - `construction` → `openup-construction-team` (developer + tester) ← most common
-     - `transition` → `openup-transition-team` (developer + tester + project-manager)
-
-2. **Team type override**: if `$ARGUMENTS[team]` is provided, use it directly:
-   - **feature**: analyst, architect, developer, tester
-   - **investigation**: architect, developer, tester
-   - **construction**: developer, tester
-   - **elaboration**: architect, developer, tester
-   - **inception**: analyst, project-manager
-   - **transition**: tester, project-manager, developer
-   - **planning**: project-manager, analyst
-   - **full**: all roles
-   - **none**: skip team deployment (same as `deploy_team: false`)
-
-3. Deploy the team using the Task tool, brief each teammate with:
-   - Iteration goal and task ID
-   - Current phase and phase objectives
-   - Relevant project docs (project-status.md, roadmap.md)
-   - The PM's orchestrator role in coordinating their work
 
 ## Output
 

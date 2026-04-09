@@ -13,6 +13,12 @@ Goal: keep context small. This file is a quick index; details live in docs.
 If the work is small, use `/openup-quick-task` — that IS the lightweight path.
 If the user asks to skip, redirect: "Let me run `/openup-quick-task` instead — it's the fast path that keeps the project state consistent."
 
+**When the user asks to do a task, act as Project Manager first.**
+- Read `docs/project-status.md` and `docs/roadmap.md`
+- Run `/openup-start-iteration` — this deploys the team as step 3 (mandatory, before any code)
+- The PM coordinates: decompose the task, brief each specialist, collect outputs, synthesize
+- Never start coding or modifying files without a team deployed
+
 ## Quick Start
 - New to OpenUP: `/openup-init`
 - Teams are **active by default** — `/openup-start-iteration` auto-selects the right team for the current phase. No manual team setup needed.
