@@ -77,11 +77,29 @@ git commit -m "quick: $task
 Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>"
 ```
 
-### 5. Quick Log (optional)
+### 5. Rubric Check (artifact tasks only)
+
+If the task produced a new or updated work product (use case, architecture notebook, iteration plan, test plan, vision), run a quick rubric check:
+
+- Detect artifact type from changed files
+- Load the matching rubric from `.claude/rubrics/`
+- Grade each criterion: ✅ satisfied / ❌ gap
+- If any gaps: fix them before proceeding (quick tasks still need quality output)
+
+Skip this step for pure code changes (bug fixes, refactors, configuration).
+
+### 6. Quick Log (optional)
 
 If not skipping logging:
 ```bash
 echo "$(date -Iseconds) | quick-task | $task" >> docs/agent-logs/quick-tasks.log
+```
+
+If the task produced an artifact or meaningful decision, also append to `.claude/memory/iteration-learnings.md`:
+```
+## [date] quick: [task]
+- What changed: [brief]
+- Conventions established: [any patterns worth reusing]
 ```
 
 ## Output
