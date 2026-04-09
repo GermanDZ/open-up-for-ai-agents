@@ -1,6 +1,57 @@
 # Getting Started
 
-This guide explains how to initialize a new project from this template.
+This guide explains how to initialize a new project from this template or add OpenUP to an existing repository.
+
+## Adding OpenUP to an Existing Repository
+
+If your app already exists and you want to install OpenUP for the first time, start here.
+
+### 1. Copy the Framework Docs
+
+Copy `docs-eng-process/` from the framework repository into your app:
+
+```bash
+FRAMEWORK="/path/to/open-up-for-ai-agents"
+APP="/path/to/your-existing-app"
+
+mkdir -p "$APP/docs-eng-process"
+rsync -av "$FRAMEWORK/docs-eng-process/" "$APP/docs-eng-process/"
+```
+
+This gives your project the OpenUP process documentation, templates, agent workflow docs, and initialization prompts.
+
+### 2. Install Skills, Teams, and Teammates
+
+Use the framework sync script to install the `.claude/` assets into your existing app:
+
+```bash
+mkdir -p "$APP/scripts"
+cp "$FRAMEWORK/scripts/sync-from-framework.sh" "$APP/scripts/"
+chmod +x "$APP/scripts/sync-from-framework.sh"
+
+cd "$APP"
+./scripts/sync-from-framework.sh --framework-path "$FRAMEWORK"
+```
+
+This installs:
+
+- `.claude/skills/`
+- `.claude/teammates/`
+- `.claude/teams/`
+- `.claude/CLAUDE.openup.md`
+- `.claude/settings.json` if it does not exist yet
+
+### 3. Create the Project Docs Structure
+
+Create the project-owned `docs/` structure and copy the initial templates:
+
+```bash
+mkdir -p docs docs/phases/inception docs/input-requests docs/use-cases docs/agent-logs
+cp docs-eng-process/templates/vision.md docs/vision.md
+cp docs-eng-process/templates/risk-list.md docs/risk-list.md
+```
+
+Then continue with the manual initialization steps below, or use [init-prompts.md](init-prompts.md) to let an agent create the initial docs for you.
 
 ## Prefer to Have an Agent Do This?
 

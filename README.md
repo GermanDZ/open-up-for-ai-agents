@@ -77,9 +77,41 @@ This repository also includes a Python-based converter that transforms Eclipse P
 # - .claude/ (agent team configuration, automatically set up)
 ```
 
+### Installing Into an Existing App
+
+If you already started building an app and want to add OpenUP on top, do a first-time install instead of using the update flow.
+
+```bash
+# In your existing app repo
+FRAMEWORK="/path/to/open-up-for-ai-agents"
+APP="/path/to/your-existing-app"
+
+mkdir -p "$APP/scripts" "$APP/docs" "$APP/docs-eng-process"
+
+# Copy the OpenUP process docs and templates
+rsync -av "$FRAMEWORK/docs-eng-process/" "$APP/docs-eng-process/"
+
+# Copy the sync script, then install skills, teammates, teams, and CLAUDE.openup.md
+cp "$FRAMEWORK/scripts/sync-from-framework.sh" "$APP/scripts/"
+chmod +x "$APP/scripts/sync-from-framework.sh"
+
+cd "$APP"
+./scripts/sync-from-framework.sh --framework-path "$FRAMEWORK"
+```
+
+This installs:
+
+- `docs-eng-process/` - OpenUP process docs and templates
+- `.claude/skills/` - OpenUP skills
+- `.claude/teammates/` - OpenUP role instructions
+- `.claude/teams/` - OpenUP team definitions
+- `.claude/CLAUDE.openup.md` - shared OpenUP instructions
+
+Then initialize the project-owned docs in `docs/` by following [docs-eng-process/getting-started.md](docs-eng-process/getting-started.md) or by using the prompts in [docs-eng-process/init-prompts.md](docs-eng-process/init-prompts.md).
+
 ### Updating Existing Projects
 
-If you have an existing project with an older version of the template, see [docs-eng-process/updating.md](docs-eng-process/updating.md) for update options.
+If OpenUP is already installed in your project and you just need the latest framework changes, see [docs-eng-process/updating.md](docs-eng-process/updating.md) for update options.
 
 **Recommended approach**: Add the framework as a git submodule:
 

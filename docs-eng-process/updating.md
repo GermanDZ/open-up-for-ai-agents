@@ -2,6 +2,26 @@
 
 This page is the canonical guide for updating projects that use the OpenUP framework. Use it to choose the right update path and the smallest command that matches your goal.
 
+## First-Time Install Into an Existing Project
+
+If your app does not already have `docs-eng-process/`, this is not an update. Install OpenUP first, then use the update paths in the rest of this guide.
+
+```bash
+FRAMEWORK="/path/to/open-up-for-ai-agents"
+APP="/path/to/your-existing-app"
+
+mkdir -p "$APP/scripts" "$APP/docs" "$APP/docs-eng-process"
+rsync -av "$FRAMEWORK/docs-eng-process/" "$APP/docs-eng-process/"
+
+cp "$FRAMEWORK/scripts/sync-from-framework.sh" "$APP/scripts/"
+chmod +x "$APP/scripts/sync-from-framework.sh"
+
+cd "$APP"
+./scripts/sync-from-framework.sh --framework-path "$FRAMEWORK"
+```
+
+Then initialize your project-owned docs by following [getting-started.md](getting-started.md) or the prompts in [init-prompts.md](init-prompts.md).
+
 ## Quick Decision Guide
 
 Use the table below to pick the correct update path.
@@ -18,6 +38,8 @@ Use the table below to pick the correct update path.
 ## Recommended Default
 
 If you only need the latest skills, teammates, and teams, use `sync-from-framework.sh`. Use `update-from-template.sh` when you specifically want to update `docs-eng-process/` content.
+
+If this is the first time installing OpenUP into an existing project, copy `docs-eng-process/` first. `update-from-template.sh` expects that directory to already exist.
 
 ## Quick Sync: Skills, Teammates, Teams Only
 

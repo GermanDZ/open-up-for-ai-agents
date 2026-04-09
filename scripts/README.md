@@ -46,6 +46,8 @@ Set up Claude Code agent teams in an existing project.
 - Copies team configurations to `.claude/teams/`
 - Copies CLAUDE.md with team usage instructions
 
+**Important:** This script does not install `.claude/skills/` and does not copy `docs-eng-process/`. For first-time installation into an existing app, use the workflow in `docs-eng-process/getting-started.md` and `sync-from-framework.sh`.
+
 **Example:**
 ```bash
 # First time setup
@@ -203,10 +205,18 @@ chmod +x scripts/update-openup.sh
 cd /path/to/open-up-for-ai-agents
 ./scripts/bootstrap-project.sh my-project --base-dir ~/projects
 
-# Option B: Add to existing project
+# Option B: Add OpenUP to an existing project
 cd ~/projects/existing-project
-/path/to/open-up-for-ai-agents/scripts/setup-agent-teams.sh
+FRAMEWORK="/path/to/open-up-for-ai-agents"
+
+mkdir -p scripts docs docs-eng-process
+rsync -av "$FRAMEWORK/docs-eng-process/" ./docs-eng-process/
+cp "$FRAMEWORK/scripts/sync-from-framework.sh" ./scripts/
+chmod +x ./scripts/sync-from-framework.sh
+./scripts/sync-from-framework.sh --framework-path "$FRAMEWORK"
 ```
+
+Then initialize `docs/` using `docs-eng-process/getting-started.md` or `docs-eng-process/init-prompts.md`.
 
 ### Updating an Existing Project
 
