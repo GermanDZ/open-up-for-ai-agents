@@ -46,6 +46,16 @@
           }
         ]
       }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/scripts/hooks/check-unfinished-tasks.py"
+          }
+        ]
+      }
     ]
   }
 }

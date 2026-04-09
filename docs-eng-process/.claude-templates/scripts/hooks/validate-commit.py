@@ -55,7 +55,12 @@ def extract_commit_message(command: str) -> str | None:
     m = MSG_RE.search(command)
     if not m:
         return None
-    return (m.group(1) or m.group(2) or "").strip()
+    msg = (m.group(1) or m.group(2) or "").strip()
+    # Shell substitution inside -m "$(...)": the hook sees the raw command
+    # before evaluation, so we can't determine the real message — allow through.
+    if msg.startswith("$("):
+        return None
+    return msg
 
 
 def first_line(msg: str) -> str:
