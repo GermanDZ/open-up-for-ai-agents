@@ -11,6 +11,23 @@ arguments:
 
 Create traceability logs for the current agent run. **Call only AFTER all changes are committed** (logs require actual commit SHAs).
 
+> **Haiku/Scribe step** — this entire skill is mechanical. Spawn a Haiku sub-agent with
+> the scribe role to execute it. Brief template:
+>
+> ```
+> Agent(model="haiku", description="Write agent run log",
+>   prompt="You are a Scribe. Write a traceability log entry.
+>   Branch: [branch]. Commits: [sha list]. Phase: [phase]. Task: [task_id].
+>   Start: [ts]. End: [ts]. Files changed: [list].
+>   1. Create docs/agent-logs/YYYY/MM/DD/<timestamp>-agent-<branch>.md
+>      with the run metadata, commits, and key decisions listed below: [decisions].
+>   2. Append a JSONL record to docs/agent-logs/agent-runs.jsonl.
+>   Report: paths created and JSONL record written.")
+> ```
+>
+> Collect the commit SHAs and metadata yourself (they require git commands), then
+> hand off the write operations to the scribe.
+
 ## Prerequisites
 
 - `git status --porcelain` returns empty (all changes committed)

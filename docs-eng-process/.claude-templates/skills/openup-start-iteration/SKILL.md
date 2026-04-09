@@ -81,16 +81,33 @@ Check `docs/input-requests/` for files with `status: answered`. Process any answ
 
 ### 5. Initialize Iteration
 
-Update `docs/project-status.md`:
-- Increment `iteration` or use provided `$ARGUMENTS[iteration_number]`
-- Set `iteration_goal` to provided `$ARGUMENTS[goal]` or derive from roadmap task
-- Set `status` to `in-progress`
-- Set `current_task` to the task_id
-- Update `iteration_started` to today's date
+> **Haiku/Scribe step** — you determine the new values (iteration number, goal, task_id),
+> then delegate the file write:
+>
+> ```
+> Agent(model="haiku", description="Initialize project-status for new iteration",
+>   prompt="You are a Scribe. In docs/project-status.md update these fields:
+>   - **Iteration**: [new number]
+>   - **Iteration Goal**: [goal text]
+>   - **Status**: in-progress
+>   - **Current Task**: [task_id]
+>   - **Iteration Started**: [YYYY-MM-DD]
+>   - **Last Updated**: [YYYY-MM-DD]
+>   - **Updated By**: openup-start-iteration
+>   Report: each field changed from → to.")
+> ```
 
 ### 6. Log Initialization
 
-Create an entry in `docs/agent-logs/agent-runs.jsonl` documenting the iteration start with task context.
+> **Haiku/Scribe step** — delegate the log append:
+>
+> ```
+> Agent(model="haiku", description="Log iteration start",
+>   prompt="You are a Scribe. Append a JSONL record to docs/agent-logs/agent-runs.jsonl:
+>   {\"run_id\":\"[id]\",\"event\":\"iteration_start\",\"task_id\":\"[task_id]\",
+>    \"goal\":\"[goal]\",\"branch\":\"[branch]\",\"phase\":\"[phase]\",\"ts\":\"[ts]\"}
+>   Report: record appended.")
+> ```
 
 ### 7. Deploy Team
 

@@ -90,17 +90,20 @@ Skip this step for pure code changes (bug fixes, refactors, configuration).
 
 ### 6. Quick Log (optional)
 
-If not skipping logging:
-```bash
-echo "$(date -Iseconds) | quick-task | $task" >> docs/agent-logs/quick-tasks.log
-```
-
-If the task produced an artifact or meaningful decision, also append to `.claude/memory/iteration-learnings.md`:
-```
-## [date] quick: [task]
-- What changed: [brief]
-- Conventions established: [any patterns worth reusing]
-```
+> **Haiku/Scribe step** — delegate both writes:
+>
+> ```
+> Agent(model="haiku", description="Write quick-task log entry",
+>   prompt="You are a Scribe.
+>   1. Append this line to docs/agent-logs/quick-tasks.log:
+>      [ISO timestamp] | quick-task | [task description]
+>   2. [Only if task produced an artifact or decision] Append to
+>      .claude/memory/iteration-learnings.md:
+>      ## [YYYY-MM-DD] quick: [task]
+>      - What changed: [brief]
+>      - Conventions established: [any patterns worth reusing]
+>   Report: files written.")
+> ```
 
 ## Output
 
