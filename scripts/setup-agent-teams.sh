@@ -288,15 +288,42 @@ else
     warn "Hooks template directory not found: $TEMPLATES_DIR/scripts/hooks"
 fi
 
-# Copy settings.json (only if it doesn't already exist, to preserve user customizations)
+# Merge hooks from settings.json.example into the project's settings.json.
+# Non-hooks fields (defaultMode, permissions, env) are always preserved.
+# With --force, the hooks section is replaced with the canonical set.
+# Without --force, hooks are only written if the file doesn't exist yet.
 SETTINGS_SRC="$TEMPLATES_DIR/settings.json.example"
 SETTINGS_DEST="$CLAUDE_DIR/settings.json"
 if [ -f "$SETTINGS_SRC" ]; then
     if [ ! -f "$SETTINGS_DEST" ]; then
         info "Setting up settings.json..."
         copy_file "$SETTINGS_SRC" "$SETTINGS_DEST"
+    elif [ "$FORCE" = true ]; then
+        if [ "$DRY_RUN" = true ]; then
+            echo "Would merge hooks from: $SETTINGS_SRC -> $SETTINGS_DEST"
+        else
+            # Use python3 to merge: keep existing non-hooks keys, replace hooks block
+            cp "$SETTINGS_DEST" "${SETTINGS_DEST}.bak"
+            python3 - "$SETTINGS_SRC" "$SETTINGS_DEST" <<'PYEOF'
+import json, sys
+src_path, dest_path = sys.argv[1], sys.argv[2]
+try:
+    with open(src_path) as f:
+        src = json.load(f)
+    with open(dest_path) as f:
+        dest = json.load(f)
+    dest["hooks"] = src.get("hooks", {})
+    with open(dest_path, "w") as f:
+        json.dump(dest, f, indent=2)
+        f.write("\n")
+    print(f"Updated hooks in {dest_path}")
+except Exception as e:
+    print(f"Warning: could not merge settings.json hooks: {e}", file=sys.stderr)
+    sys.exit(1)
+PYEOF
+        fi
     else
-        info "settings.json already exists, skipping (preserving user customizations)"
+        info "settings.json already exists — hooks not updated (use --force to update hooks)"
     fi
 fi
 
