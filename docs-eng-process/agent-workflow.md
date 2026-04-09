@@ -58,7 +58,17 @@ Also read `.claude/memory/iteration-learnings.md` if it exists — scan for gotc
 - Propose phase transition to user
 - **Do NOT automatically advance phase** (requires human approval)
 
-### Step 2: Read Roadmap and Select Task
+### Step 2: Check for Pending Plans
+
+If `docs/plans/` exists, check for plan files that have been saved but not yet started:
+
+- Look for entries in `docs/roadmap.md` with `status: planned` that link to a file in `docs/plans/`
+- For any such entry, **read the linked plan file** — it contains the full implementation plan created in a prior session
+- When starting work on a planned task, treat the plan file as the authoritative spec: the decomposition, approach, and file list are already decided — do not re-plan
+
+This is the mechanism for cross-session continuity: plan in one session, implement in another without losing context.
+
+### Step 3: Read Roadmap and Select Task
 
 Read `docs/roadmap.md` and select the next task:
 
@@ -71,7 +81,7 @@ Read `docs/roadmap.md` and select the next task:
   4. Tasks with earliest due date
   5. First task in the list
 
-### Step 3: Verify Phase Context
+### Step 4: Verify Phase Context
 
 Ensure the selected task aligns with:
 - Current `phase` from `docs/project-status.md`
@@ -82,7 +92,7 @@ If the task doesn't fit:
 - Request user approval or defer to backlog
 - Do not proceed without explicit approval
 
-### Step 3.5: Select Workflow Depth (Task-Size Gate)
+### Step 4.5: Select Workflow Depth (Task-Size Gate)
 
 Before branch/task execution, choose the lightest valid workflow:
 
@@ -92,7 +102,7 @@ Before branch/task execution, choose the lightest valid workflow:
 
 **Goal**: reduce overhead while preserving required traceability for the scope of work.
 
-### Step 4: Create Branch (if needed)
+### Step 5: Create Branch (if needed)
 
 **MANDATORY**: Before starting any work, ensure you are on an appropriate branch. Never work directly on trunk. New tasks must start on a clean branch (either trunk or a branch that has been merged to trunk).
 

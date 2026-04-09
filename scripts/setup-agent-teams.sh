@@ -237,6 +237,7 @@ info "Setting up Claude Code agent teams..."
 echo ""
 
 RUBRICS_DIR="$CLAUDE_DIR/rubrics"
+HOOKS_DIR="$CLAUDE_DIR/scripts/hooks"
 
 if [ "$DRY_RUN" = false ]; then
     # Create .claude directory structure
@@ -244,6 +245,7 @@ if [ "$DRY_RUN" = false ]; then
     mkdir -p "$TEAMS_DIR"
     mkdir -p "$SKILLS_DIR"
     mkdir -p "$RUBRICS_DIR"
+    mkdir -p "$HOOKS_DIR"
 fi
 
 # Copy teammate instructions
@@ -276,6 +278,14 @@ if [ -d "$TEMPLATES_DIR/rubrics" ]; then
     copy_dir "$TEMPLATES_DIR/rubrics" "$RUBRICS_DIR"
 else
     warn "Rubrics template directory not found: $TEMPLATES_DIR/rubrics"
+fi
+
+# Copy hook scripts
+if [ -d "$TEMPLATES_DIR/scripts/hooks" ]; then
+    info "Setting up hook scripts..."
+    copy_dir "$TEMPLATES_DIR/scripts/hooks" "$HOOKS_DIR"
+else
+    warn "Hooks template directory not found: $TEMPLATES_DIR/scripts/hooks"
 fi
 
 # Copy settings.json (only if it doesn't already exist, to preserve user customizations)
@@ -315,6 +325,7 @@ else
     echo "  - .claude/teammates/ (role instructions)"
     echo "  - .claude/teams/ (team configurations)"
     echo "  - .claude/rubrics/ (work product quality rubrics)"
+    echo "  - .claude/scripts/hooks/ (automation hooks)"
     echo "  - .claude/settings.json (agent teams enabled)"
     echo "  - .claude/CLAUDE.openup.md (OpenUP instructions)"
     echo "  - .claude/CLAUDE.md (project instructions)"
