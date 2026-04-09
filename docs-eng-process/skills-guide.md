@@ -468,7 +468,7 @@ Workflow skills automate common workflow operations.
 
 ### /openup-start-iteration
 
-Begin a new iteration with proper phase context and task selection.
+Begin a new iteration with proper phase context, task selection, and team deployment.
 
 **When to Use**:
 - Starting a new iteration in any phase
@@ -481,12 +481,19 @@ Begin a new iteration with proper phase context and task selection.
 - Looking to complete iteration
 
 **Arguments**:
-- `iteration_number` (optional): The iteration number
+- `task_id` (required): Task ID from roadmap to work on
+- `iteration_number` (optional): The iteration number (auto-increments if not provided)
 - `goal` (optional): The iteration goal
+- `team` (optional): Team type override (feature, construction, elaboration, inception, transition, investigation, planning, full, none)
+- `deploy_team` (optional): `false` to skip team deployment (default: `true` — team is deployed automatically)
+
+**Team Auto-Selection**: A team is deployed automatically based on the current phase unless `deploy_team: false` is passed. Pass `team: none` to skip, or override with a specific team type.
 
 **Example**:
 ```
-/openup-start-iteration iteration_number: 2 goal: "Complete user authentication"
+/openup-start-iteration task_id: T-007
+/openup-start-iteration task_id: T-007 team: feature
+/openup-start-iteration task_id: T-007 deploy_team: false
 ```
 
 **Success Criteria**:
@@ -494,8 +501,9 @@ Begin a new iteration with proper phase context and task selection.
 - [ ] Iteration branch is created
 - [ ] Iteration goal is defined
 - [ ] Answered input requests are processed
+- [ ] Team deployed (unless opted out)
 
-**See Also**: `openup-create-iteration-plan`, `openup-complete-task`, `openup-request-input`
+**See Also**: `openup-orchestrate`, `openup-create-iteration-plan`, `openup-complete-task`, `openup-request-input`
 
 ### /openup-complete-task
 
@@ -534,6 +542,7 @@ Mark a task as complete, update roadmap, commit changes, and prepare logs.
 - [ ] Roadmap is updated to mark task complete
 - [ ] Project status is updated
 - [ ] Traceability logs are created with commit SHAs
+- [ ] Iteration learnings appended to `.claude/memory/iteration-learnings.md`
 
 **Closure Path Rule**:
 - Prefer `/openup-complete-task` as the single closeout path for normal tasks
@@ -713,37 +722,47 @@ Fast path for tiny, low-risk changes with minimal overhead.
 
 ### /openup-assess-completeness
 
-Lightweight readiness assessment before task completion or phase transition.
+Rubric-based readiness assessment before task completion or phase transition.
 
-**Purpose**: Verify all required work is complete before moving forward
+**Purpose**: Grade work products against explicit quality criteria and verify all required work is complete before moving forward. For work product artifacts (use cases, architecture notebooks, iteration plans, test plans, vision), produces a per-criterion breakdown with specific gaps rather than a generic pass/fail.
 
 **When to Use**:
+- After creating or updating a work product artifact (use case, architecture notebook, etc.)
 - About to complete a task and want to verify readiness
 - Approaching end of iteration and need to assess completion
 - Considering phase transition and need to verify criteria
-- Preparing for code review or handoff
 
 **When NOT to Use**:
-- Mid-iteration and just checking progress
-- Need detailed quality assessment
-- Looking for code review feedback
+- Mid-iteration and just checking progress (not ready for assessment yet)
+- Looking for code review feedback (different skill)
 
 **Arguments**:
 - `scope` (optional): Assessment scope (task, iteration, phase)
+- `artifact` (optional): Work product type to assess (use-case, architecture-notebook, iteration-plan, test-plan, vision). Auto-detected from modified files if not provided.
 - `strict` (optional): Fail on any missing items (true/false)
+
+**Rubric grading output format**:
+```
+✅ [criterion name]  — satisfied
+❌ [criterion name] — [specific gap description]
+Result: satisfied | needs_revision
+```
+
+If `needs_revision`: the skill identifies the specific gaps. Address them and re-run until `satisfied`.
 
 **Example**:
 ```
+/openup-assess-completeness scope: task artifact: use-case
 /openup-assess-completeness scope: iteration strict: true
 ```
 
 **Success Criteria**:
-- [ ] All required checks are performed
-- [ ] Readiness report is generated
-- [ ] Missing items are identified (if any)
-- [ ] Pass/fail status is clear
+- [ ] Rubric assessment completed for any work product artifacts
+- [ ] All process checks performed
+- [ ] Per-criterion gaps identified (if any)
+- [ ] Pass/fail status is clear with specific action items
 
-**See Also**: `openup-complete-task`, `openup-retrospective`, `openup-phase-review`
+**See Also**: `openup-orchestrate`, `openup-complete-task`, `openup-retrospective`, `openup-phase-review`
 
 ### /openup-retrospective
 
@@ -814,7 +833,53 @@ Deploy an OpenUP agent team to work on the current iteration or custom task.
 - [ ] Coordination channels are established
 - [ ] Team lead is ready to assign work
 
-**See Also**: `openup-start-iteration`, `openup-complete-task`, Team configurations
+**See Also**: `openup-start-iteration`, `openup-orchestrate`, `openup-complete-task`, Team configurations
+
+### /openup-orchestrate
+
+Run a full orchestrated iteration — PM decomposes the goal, delegates to specialist roles, collects outputs, and synthesizes results.
+
+**Purpose**: Implements the coordinator + specialist pattern. The Project Manager acts as an orchestrator: it decomposes the iteration goal into role-specific subtasks, briefs each specialist with focused context (not the full project), collects their outputs, and synthesizes a coherent result verified against the iteration's acceptance criteria.
+
+**When to Use**:
+- Iteration involves multiple work product types requiring different expertise (e.g., implementation + architecture decision + test plan)
+- Quality requires independent review by specialists
+- Running a multi-role team and want the PM to coordinate explicitly
+
+**When NOT to Use**:
+- Task is single-role in scope (use the role directly instead)
+- Quick task that doesn't need full team coordination
+- Team isn't active yet (run `/openup-start-iteration` first)
+
+**Arguments**:
+- `task_id` (required): Task ID to orchestrate (must match `docs/roadmap.md`)
+- `team` (optional): Team type override (same options as `/openup-start-iteration`)
+- `dry_run` (optional): Preview the orchestration plan without spawning teammates (`true/false`)
+
+**Orchestration Flow**:
+1. Load iteration context + past learnings from `.claude/memory/iteration-learnings.md`
+2. Decompose goal → role subtasks with deliverables and done-when criteria
+3. Spawn team (if not active)
+4. Brief each specialist with focused context only
+5. Collect outputs; re-brief on gaps
+6. Synthesize; run rubric assessment
+7. Save orchestration learnings
+
+**Examples**:
+```
+/openup-orchestrate task_id: T-007
+/openup-orchestrate task_id: T-007 team: feature
+/openup-orchestrate task_id: T-007 dry_run: true
+```
+
+**Success Criteria**:
+- [ ] Orchestration plan documented before spawning
+- [ ] Each specialist briefed with focused context only
+- [ ] All specialist outputs collected and checked
+- [ ] Rubric assessment returns `satisfied`
+- [ ] Orchestration learnings saved to `.claude/memory/iteration-learnings.md`
+
+**See Also**: `openup-start-iteration`, `openup-assess-completeness`, `openup-complete-task`, `openup-deploy-team`
 
 ### /openup-tdd-workflow
 
@@ -925,6 +990,7 @@ Create an OpenUP agent team for feature implementation.
 | Detailing use cases | `/openup-detail-use-case` |
 | Creating documentation | `/openup-create-documentation` |
 | Assessing readiness | `/openup-assess-completeness` |
+| Orchestrating a full team iteration | `/openup-orchestrate` |
 | End of iteration | `/openup-retrospective` |
 | Test-driven development | `/openup-tdd-workflow` |
 | Deploying agent teams | `/openup-deploy-team` |

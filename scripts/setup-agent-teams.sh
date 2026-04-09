@@ -236,11 +236,14 @@ echo ""
 info "Setting up Claude Code agent teams..."
 echo ""
 
+RUBRICS_DIR="$CLAUDE_DIR/rubrics"
+
 if [ "$DRY_RUN" = false ]; then
     # Create .claude directory structure
     mkdir -p "$TEAMMATES_DIR"
     mkdir -p "$TEAMS_DIR"
     mkdir -p "$SKILLS_DIR"
+    mkdir -p "$RUBRICS_DIR"
 fi
 
 # Copy teammate instructions
@@ -265,6 +268,14 @@ if [ -d "$TEMPLATES_DIR/skills" ]; then
     copy_skills_dir "$TEMPLATES_DIR/skills" "$SKILLS_DIR"
 else
     warn "Skills template directory not found: $TEMPLATES_DIR/skills"
+fi
+
+# Copy rubrics
+if [ -d "$TEMPLATES_DIR/rubrics" ]; then
+    info "Setting up quality rubrics..."
+    copy_dir "$TEMPLATES_DIR/rubrics" "$RUBRICS_DIR"
+else
+    warn "Rubrics template directory not found: $TEMPLATES_DIR/rubrics"
 fi
 
 # Copy settings.json (only if it doesn't already exist, to preserve user customizations)
@@ -303,6 +314,7 @@ else
     echo "  - .claude/skills/ (workflow skills - /openup-* commands)"
     echo "  - .claude/teammates/ (role instructions)"
     echo "  - .claude/teams/ (team configurations)"
+    echo "  - .claude/rubrics/ (work product quality rubrics)"
     echo "  - .claude/settings.json (agent teams enabled)"
     echo "  - .claude/CLAUDE.openup.md (OpenUP instructions)"
     echo "  - .claude/CLAUDE.md (project instructions)"

@@ -209,6 +209,69 @@ Spawn teammates for:
 
 **Team config**: `docs-eng-process/.claude-templates/teams/openup-planning-team.md`
 
+## Default Team Activation
+
+**Teams are deployed by default** when you run `/openup-start-iteration`. You no longer need to manually create a team after starting an iteration — the correct team is auto-selected based on the current phase:
+
+| Phase | Default Team | Roles |
+|-------|-------------|-------|
+| Inception | Inception Team | analyst + project-manager |
+| Elaboration | Elaboration Team | architect + developer |
+| Construction | Construction Team | developer + tester (most common) |
+| Transition | Transition Team | developer + tester + project-manager |
+| Task: "investigate" | Investigation Team | architect + developer + tester |
+| Task: "plan"/"roadmap" | Planning Team | project-manager + analyst |
+
+To **opt out** of auto-deployment: `/openup-start-iteration task_id: T-007 deploy_team: false`
+To **override** the team type: `/openup-start-iteration task_id: T-007 team: feature`
+
+## Orchestrator Pattern
+
+The Project Manager role acts as an **orchestrator** that coordinates specialist agents — inspired by multi-agent coordinator patterns where one agent delegates to focused specialists.
+
+### How Orchestration Works
+
+```
+PM (Orchestrator)
+├── Decomposes iteration goal into role subtasks
+├── Analyst → [focused requirements brief] → deliverable
+├── Architect → [focused design brief] → deliverable  
+├── Developer → [focused implementation brief] → deliverable
+├── Tester → [focused test brief] → deliverable
+└── Synthesizes all outputs → verify acceptance criteria → done
+```
+
+### Key Principles
+
+- **Each specialist gets only what they need** — don't dump the full project context on every brief
+- **One coordinator, multiple specialists** — PM orchestrates but doesn't do the implementation work
+- **Explicit done-when criteria** — every brief includes criteria (from the relevant rubric) for when the subtask is complete
+- **Synthesis is PM's job** — PM is responsible for integrating outputs and resolving conflicts
+
+### Using the Orchestrator Skill
+
+Instead of manually coordinating specialists, use `/openup-orchestrate`:
+
+```
+/openup-start-iteration task_id: T-007
+/openup-orchestrate task_id: T-007
+/openup-complete-task task_id: T-007
+```
+
+Or preview the orchestration plan before spawning teammates:
+```
+/openup-orchestrate task_id: T-007 dry_run: true
+```
+
+### When to Orchestrate vs. Direct Delegation
+
+| Scenario | Approach |
+|----------|----------|
+| Multi-artifact iteration (code + docs + tests) | `/openup-orchestrate` |
+| Single-role task (e.g., write a test plan) | Use that role directly |
+| Complex feature touching all roles | `/openup-orchestrate team: feature` |
+| Simple bugfix | Developer directly, no orchestration needed |
+
 ## Team Collaboration Patterns
 
 ### Analyst ↔ Architect
@@ -278,12 +341,12 @@ Configure in `.claude/settings.json`:
 
 ## Best Practices
 
-1. **Start with the minimum roles**: Only spawn teammates for roles needed
-2. **Add roles as needed**: You can add more teammates during the session
-3. **Use clear prompts**: Explain what each role should focus on
-4. **Let teammates collaborate**: They can message each other directly
-5. **Monitor progress**: Check in on teammates and redirect if needed
-6. **Clean up when done**: Remove teammates after work is complete
+1. **Use the auto-deployment default**: Let `/openup-start-iteration` pick the right team — only override when you know you need a different composition
+2. **For complex iterations, use `/openup-orchestrate`**: The PM's orchestrator protocol ensures each specialist gets focused, relevant briefs
+3. **Focus each specialist's brief**: Don't give the developer the full vision doc — give them the specific requirements and constraints for their subtask
+4. **Rubrics drive "done"**: Each specialist's brief should include done-when criteria from the work product rubric
+5. **Read past learnings first**: Before orchestrating, scan `.claude/memory/iteration-learnings.md` for gotchas and decisions from prior iterations
+6. **Synthesize at the PM level**: Conflicts between specialist recommendations are resolved by the PM, not by individual specialists overriding each other
 
 ## Example Workflows
 

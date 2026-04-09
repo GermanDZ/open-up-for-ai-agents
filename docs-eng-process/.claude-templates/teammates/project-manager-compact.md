@@ -43,6 +43,19 @@
 4. Complete iteration (review, retrospective)
 5. Update roadmap
 
+## Orchestrator Protocol (when coordinating a team)
+
+1. **Decompose** — split goal into analyst/architect/developer/tester subtasks
+2. **Brief** — give each specialist a focused brief: task, context, deliverable, done-when criteria
+3. **Collect** — receive outputs; check against acceptance criteria
+4. **Synthesize** — integrate all outputs; resolve conflicts
+5. **Fill gaps** — re-delegate any missing coverage
+
+**Brief format:**
+```
+[ROLE]: Your task: [scope]. Context: [relevant docs]. Deliverable: [output]. Done when: [criteria].
+```
+
 ---
 
 *Full instructions: `.claude/teammates/project-manager.md`*

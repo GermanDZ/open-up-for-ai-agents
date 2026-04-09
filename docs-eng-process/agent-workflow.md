@@ -37,7 +37,7 @@ Before proceeding with normal workflow, check for answered input requests:
 
 **Note**: If the user explicitly asks to process input requests (e.g., "Continue with input-requests"), prioritize this step and process all answered requests before selecting new tasks.
 
-### Step 1: Read Project Status
+### Step 1: Read Project Status and Learnings
 
 Read `docs/project-status.md` to establish context:
 
@@ -45,6 +45,8 @@ Read `docs/project-status.md` to establish context:
 - Extract `iteration` (current iteration number)
 - Extract `iteration_goal` (what this iteration should achieve)
 - Extract `status` (not-started | in-progress | blocked | completed)
+
+Also read `.claude/memory/iteration-learnings.md` if it exists — scan for gotchas, decisions, and conventions from past iterations that apply to the current task. This is your institutional memory; don't repeat mistakes or redo decisions already made.
 
 **If `status == blocked`**:
 - Report all blockers to the user
@@ -698,11 +700,13 @@ OpenUP workflow procedures integrate with Claude Code's Skills and Agent Teams c
 Skills encapsulate common workflow operations. Use skills to automate repetitive tasks:
 
 **Workflow Skills** (automate SOP steps):
-- `/start-iteration` - Automates Start-of-Run SOP for iteration initialization
-- `/complete-task` - Automates End-of-Run SOP for task completion
+- `/start-iteration` - Automates Start-of-Run SOP; **deploys team by default** (auto-selected from phase)
+- `/complete-task` - Automates End-of-Run SOP; saves iteration learnings to `.claude/memory/`
+- `/orchestrate` - PM orchestrates a full iteration: decomposes goal, delegates to specialists, synthesizes
 - `/request-input` - Automates Asynchronous Input SOP
 - `/phase-review` - Checks phase completion criteria
 - `/log-run` - Automates Traceability Logging SOP
+- `/assess-completeness` - Rubric-based quality gate for work products and iterations
 
 **Phase Skills** (guide phase-specific work):
 - `/inception` - Guides Inception phase activities
@@ -722,49 +726,70 @@ See [Skills Guide](skills-guide.md) for complete skill documentation.
 
 ### Agent Teams
 
-Agent Teams enable role-based collaboration. Teams automatically follow role-based instructions and the SOPs defined in this document:
+Agent Teams enable role-based collaboration. **Teams are active by default** — `/start-iteration` deploys the appropriate team automatically unless explicitly opted out with `deploy_team: false`.
 
 **Available Roles**:
 - **analyst** - Requirements, stakeholder communication
 - **architect** - Architecture design, technical decisions
 - **developer** - Implementation, unit testing
-- **project-manager** - Planning, coordination
+- **project-manager** - Planning, coordination, **orchestration**
 - **tester** - Test planning, execution
 
 **Team Configurations**:
-- **Phase teams**: Inception, Elaboration, Construction, Transition
-- **Task teams**: Feature, Investigation, Planning, Full Team
+- **Phase teams**: Inception, Elaboration, Construction, Transition (auto-selected by phase)
+- **Task teams**: Feature, Investigation, Planning, Full Team (override with `team:` argument)
 
 See [Teams Guide](teams-guide.md) for complete team documentation.
+
+### Orchestrator Pattern
+
+The Project Manager acts as an **orchestrator** that coordinates specialist agents. This maps to the coordinator + specialist pattern:
+
+1. **PM decomposes** the iteration goal into role-appropriate subtasks
+2. **PM delegates** with focused briefs (task, context, deliverable, done-when criteria)
+3. **Specialists work** in their own isolated context — each gets only what they need
+4. **PM synthesizes** all outputs and verifies against acceptance criteria
+
+Use `/orchestrate task_id: T-XXX` to run a full orchestrated iteration.
 
 ### Using Skills with Teams
 
 Skills and teams work together. Example workflows:
 
-**Iteration Start with Team**:
+**Iteration Start with Team (default)**:
 ```
-/start-iteration goal: "Implement user authentication"
-Create an OpenUP agent team for construction phase.
+/openup-start-iteration task_id: T-007
+# Team is auto-deployed based on current phase — no extra step needed
 ```
 
-**Feature Implementation with Team**:
+**Fully Orchestrated Iteration**:
 ```
-Create an OpenUP feature team.
-/complete-task task_id: T-005
+/openup-start-iteration task_id: T-007
+/openup-orchestrate task_id: T-007
+# PM coordinates analyst + architect + developer + tester, synthesizes result
+/openup-complete-task task_id: T-007
+```
+
+**Skip Team Deployment**:
+```
+/openup-start-iteration task_id: T-007 deploy_team: false
+# Single-agent execution for small, single-role tasks
 ```
 
 **Phase Review with Team**:
 ```
 /phase-review
-Create an OpenUP team for phase review preparation.
+# Team should already be active from the last start-iteration
 ```
 
 ### Skills that Reference SOPs
 
 | Skill | References SOP |
 |-------|----------------|
-| `/start-iteration` | Start-of-Run SOP |
-| `/complete-task` | End-of-Run SOP, Traceability Logging SOP |
+| `/start-iteration` | Start-of-Run SOP; auto-deploys team |
+| `/complete-task` | End-of-Run SOP, Traceability Logging SOP; saves learnings |
+| `/orchestrate` | PM Orchestrator Protocol; coordinates full team iteration |
+| `/assess-completeness` | Uses rubrics from `.claude/rubrics/`; iterates until satisfied |
 | `/request-input` | Asynchronous Input SOP |
 | `/log-run` | Traceability Logging SOP, End-of-Run SOP |
 

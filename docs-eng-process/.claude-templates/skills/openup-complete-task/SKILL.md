@@ -26,6 +26,7 @@ After this skill completes, ALL of these must be true:
 - [ ] Roadmap is updated to mark task complete
 - [ ] Project status is updated
 - [ ] Traceability logs are created with commit SHAs
+- [ ] Iteration learnings entry appended to `.claude/memory/iteration-learnings.md`
 - [ ] PR is created (unless `create_pr` was explicitly `"false"`)
 
 ## Detailed Steps
@@ -67,7 +68,22 @@ Create both markdown and JSONL logs:
 - JSONL entry: Append to `docs/agent-logs/agent-runs.jsonl`
 - Include commit SHAs in the logs
 
-### 6. Create Pull Request
+### 6. Save Iteration Learnings
+
+Append an entry to `.claude/memory/iteration-learnings.md` (create the file if it doesn't exist):
+
+```markdown
+## [YYYY-MM-DD] [task_id]: [task title]
+
+- **What worked**: [brief — approaches, patterns, or decisions that proved effective]
+- **Decisions made**: [key technical or process choices and their rationale]
+- **Gotchas**: [surprises, edge cases, or constraints future iterations should know]
+- **Conventions established**: [new patterns or standards to carry forward]
+```
+
+Keep each entry concise (4–8 bullet points total). Focus on non-obvious learnings that future sessions won't be able to derive from the code or git log alone.
+
+### 7. Create Pull Request
 
 **PR is created by default.** Skip ONLY if `$ARGUMENTS[create_pr]` is explicitly `"false"`.
 

@@ -15,7 +15,7 @@ arguments:
     description: Team type to automatically deploy after initialization (feature, investigation, construction, elaboration, inception, transition, planning, full, or none)
     required: false
   - name: deploy_team
-    description: "Whether to deploy a team after iteration initialization (true/false, default: false)"
+    description: "Whether to deploy a team after iteration initialization (true/false, default: true — pass 'false' to skip team deployment)"
     required: false
 ---
 
@@ -92,11 +92,22 @@ Update `docs/project-status.md`:
 
 Create an entry in `docs/agent-logs/agent-runs.jsonl` documenting the iteration start with task context.
 
-### 7. Deploy Team (Optional)
+### 7. Deploy Team
 
-If `$ARGUMENTS[deploy_team]` is `true` or `$ARGUMENTS[team]` is specified:
+**Team deployment is ON by default.** Skip only if `$ARGUMENTS[deploy_team]` is explicitly `"false"`.
 
-1. Determine team composition based on `$ARGUMENTS[team]` or current phase:
+1. **Auto-select team type** if `$ARGUMENTS[team]` is not specified:
+   - Read `current_phase` from `docs/project-status.md`
+   - Check task description for keywords:
+     - "investigate", "research", "spike" → `openup-investigation-team`
+     - "plan", "roadmap", "prioritize" → `openup-planning-team`
+   - Otherwise fall back to phase default:
+     - `inception` → `openup-inception-team` (analyst + project-manager)
+     - `elaboration` → `openup-elaboration-team` (architect + developer)
+     - `construction` → `openup-construction-team` (developer + tester) ← most common
+     - `transition` → `openup-transition-team` (developer + tester + project-manager)
+
+2. **Team type override**: if `$ARGUMENTS[team]` is provided, use it directly:
    - **feature**: analyst, architect, developer, tester
    - **investigation**: architect, developer, tester
    - **construction**: developer, tester
@@ -105,8 +116,13 @@ If `$ARGUMENTS[deploy_team]` is `true` or `$ARGUMENTS[team]` is specified:
    - **transition**: tester, project-manager, developer
    - **planning**: project-manager, analyst
    - **full**: all roles
+   - **none**: skip team deployment (same as `deploy_team: false`)
 
-2. Deploy the team using Task tool, brief each teammate with iteration context.
+3. Deploy the team using the Task tool, brief each teammate with:
+   - Iteration goal and task ID
+   - Current phase and phase objectives
+   - Relevant project docs (project-status.md, roadmap.md)
+   - The PM's orchestrator role in coordinating their work
 
 ## Output
 
