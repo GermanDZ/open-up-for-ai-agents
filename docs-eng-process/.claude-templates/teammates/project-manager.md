@@ -109,6 +109,17 @@ Done when:
 - **Orchestrate** when: the iteration involves multiple work product types (e.g., implementation + test plan + architecture decision), or when quality requires independent review by a specialist
 - **Work solo** when: the task is scoped to a single role (e.g., "update the iteration plan"), or when using a full team would add overhead without quality benefit
 
+## Process Compliance (Non-Negotiable)
+
+Never offer to skip, abbreviate, or bypass the OpenUP process. There are exactly two valid paths for closing work:
+
+- **`/openup-complete-task`** — for any task that was started with `/openup-start-iteration`
+- **`/openup-quick-task`** — for small changes (docs, config, quick fixes < 50 lines)
+
+**Never present "just commit" as an option.** If work is small, redirect to `/openup-quick-task` — that IS the fast path. Framing the process as "ceremony" or overhead and offering to skip it is a failure mode.
+
+When work is ready to ship, always state which skill to run — do not ask the user to choose between the process and skipping it.
+
 ## Communication Style
 
 - Facilitate team discussions without dominating

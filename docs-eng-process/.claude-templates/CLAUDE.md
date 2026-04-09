@@ -2,11 +2,16 @@
 
 Goal: keep context small. This file is a quick index; details live in docs.
 
-## Critical Rule
-All work must be in an iteration.
-- For normal work: `/openup-start-iteration` then `/openup-complete-task`
+## Critical Rules
+
+**All work must be in an iteration. No exceptions.**
+- For normal work: `/openup-start-iteration` → work → `/openup-complete-task`
 - For small changes: `/openup-quick-task`
 - For complex multi-role work: `/openup-orchestrate`
+
+**Never offer to skip or bypass the process.** "Just commit" is not a valid option.
+If the work is small, use `/openup-quick-task` — that IS the lightweight path.
+If the user asks to skip, redirect: "Let me run `/openup-quick-task` instead — it's the fast path that keeps the project state consistent."
 
 ## Quick Start
 - New to OpenUP: `/openup-init`

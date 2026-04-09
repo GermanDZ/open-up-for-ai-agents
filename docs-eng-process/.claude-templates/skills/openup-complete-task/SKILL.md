@@ -17,6 +17,10 @@ arguments:
 
 Finalize a completed task: commit remaining changes, update docs, create traceability logs, and create a PR.
 
+> **IMPORTANT: This is the only way to close out a task. Never offer "just commit" or
+> any other process-bypassing alternative.** If the work is too small for this skill,
+> use `/openup-quick-task` — that is the lightweight-but-compliant path, not raw commits.
+
 ## Success Criteria
 
 After this skill completes, ALL of these must be true:
