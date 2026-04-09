@@ -288,10 +288,11 @@ else
     warn "Hooks template directory not found: $TEMPLATES_DIR/scripts/hooks"
 fi
 
-# Merge hooks from settings.json.example into the project's settings.json.
-# Non-hooks fields (defaultMode, permissions, env) are always preserved.
-# With --force, the hooks section is replaced with the canonical set.
-# Without --force, hooks are only written if the file doesn't exist yet.
+# Merge OpenUP hooks into the project's settings.json.
+# All non-hooks fields (defaultMode, permissions, env, etc.) are always preserved.
+# With --force, OpenUP hooks (identified by /.claude/scripts/hooks/ in their command)
+#   are replaced with the canonical set; any custom hooks you've added are kept.
+# Without --force, the file is only written if it doesn't exist yet.
 SETTINGS_SRC="$TEMPLATES_DIR/settings.json.example"
 SETTINGS_DEST="$CLAUDE_DIR/settings.json"
 if [ -f "$SETTINGS_SRC" ]; then
@@ -300,30 +301,80 @@ if [ -f "$SETTINGS_SRC" ]; then
         copy_file "$SETTINGS_SRC" "$SETTINGS_DEST"
     elif [ "$FORCE" = true ]; then
         if [ "$DRY_RUN" = true ]; then
-            echo "Would merge hooks from: $SETTINGS_SRC -> $SETTINGS_DEST"
+            echo "Would merge OpenUP hooks from: $SETTINGS_SRC -> $SETTINGS_DEST"
+            echo "  (custom hooks preserved; only /.claude/scripts/hooks/ entries updated)"
         else
-            # Use python3 to merge: keep existing non-hooks keys, replace hooks block
             cp "$SETTINGS_DEST" "${SETTINGS_DEST}.bak"
+            info "Backed up: $SETTINGS_DEST -> ${SETTINGS_DEST}.bak"
             python3 - "$SETTINGS_SRC" "$SETTINGS_DEST" <<'PYEOF'
 import json, sys
+
+OPENUP_MARKER = "/.claude/scripts/hooks/"
+
+def is_openup_hook(hook):
+    return OPENUP_MARKER in hook.get("command", "")
+
+def merge_hooks(existing, incoming):
+    """Keep custom hooks, replace OpenUP hooks with incoming canonical set."""
+    custom = [h for h in existing if not is_openup_hook(h)]
+    openup = [h for h in incoming if is_openup_hook(h)]
+    return openup + custom  # OpenUP hooks first, custom hooks after
+
+def merge_event(existing_event, new_event):
+    """Merge two lists of matcher objects for one hook event."""
+    by_matcher = {item.get("matcher", ""): item for item in existing_event}
+    result = []
+    seen = set()
+    for new_item in new_event:
+        matcher = new_item.get("matcher", "")
+        seen.add(matcher)
+        if matcher in by_matcher:
+            merged = dict(new_item)
+            merged["hooks"] = merge_hooks(
+                by_matcher[matcher].get("hooks", []),
+                new_item.get("hooks", [])
+            )
+            result.append(merged)
+        else:
+            result.append(new_item)
+    # Keep existing matchers not in the template
+    for item in existing_event:
+        if item.get("matcher", "") not in seen:
+            result.append(item)
+    return result
+
 src_path, dest_path = sys.argv[1], sys.argv[2]
 try:
     with open(src_path) as f:
         src = json.load(f)
     with open(dest_path) as f:
         dest = json.load(f)
-    dest["hooks"] = src.get("hooks", {})
+
+    src_hooks = src.get("hooks", {})
+    dest_hooks = dest.get("hooks", {})
+    merged = {}
+
+    for event in set(list(src_hooks) + list(dest_hooks)):
+        if event in src_hooks and event in dest_hooks:
+            merged[event] = merge_event(dest_hooks[event], src_hooks[event])
+        elif event in src_hooks:
+            merged[event] = src_hooks[event]
+        else:
+            merged[event] = dest_hooks[event]
+
+    dest["hooks"] = merged
     with open(dest_path, "w") as f:
         json.dump(dest, f, indent=2)
         f.write("\n")
-    print(f"Updated hooks in {dest_path}")
+    print(f"Merged OpenUP hooks into {dest_path} (custom hooks preserved)")
 except Exception as e:
-    print(f"Warning: could not merge settings.json hooks: {e}", file=sys.stderr)
+    print(f"Warning: could not merge settings.json: {e}", file=sys.stderr)
     sys.exit(1)
 PYEOF
+            success "Updated: $SETTINGS_DEST"
         fi
     else
-        info "settings.json already exists — hooks not updated (use --force to update hooks)"
+        info "settings.json already exists — OpenUP hooks not updated (use --force to update)"
     fi
 fi
 
