@@ -19,6 +19,19 @@ If the user asks to skip, redirect: "Let me run `/openup-quick-task` instead —
 - The PM coordinates: decompose the task, brief each specialist, collect outputs, synthesize
 - Never start coding or modifying files without a team deployed
 
+## Token-Efficiency Protocol (Mandatory)
+- Run one subtask per session; start a fresh session when scope changes.
+- Keep one active orchestrator (project-manager by default); spawn specialists only for bounded work.
+- Allow status updates only at `started`, `blocked`, and `done`.
+- Use compact handoffs (max 6 bullets): `decision`, `diff summary`, `risks`, `next action`.
+- Do not resend full task lists after kickoff; reference task IDs and share only deltas.
+- Use lightweight models for coordination; escalate only for complex architecture/debug/codegen.
+- Batch implementation and tests before reporting back.
+- Set a token budget per lane (PM/dev/test); checkpoint and restart with a fresh session if exceeded.
+
+Default cycle:
+`/openup-start-iteration` -> assign one subtask -> specialist completes and reports once -> PM routes next step -> new session on scope change.
+
 ## Quick Start
 - New to OpenUP: `/openup-init`
 - Teams are **active by default** — `/openup-start-iteration` auto-selects the right team for the current phase. No manual team setup needed.

@@ -24,22 +24,32 @@ The team lead's first action should always be calling `/openup-start-iteration`,
 
 ---
 
+## Token-Efficient Team Protocol (Mandatory)
+
+To reduce token usage while preserving quality, the team lead and all teammates MUST follow these rules:
+
+1. **One subtask per session**: open a fresh session for each roadmap/task item. Do not keep long-running multi-task sessions.
+2. **Single orchestrator**: keep one active coordinator (usually project-manager). Spawn specialist agents only for bounded work, then stop them.
+3. **Milestone-only updates**: status messages are allowed only at `started`, `blocked`, and `done`. Do not send heartbeat or idle notifications.
+4. **Compact handoffs**: every handoff must be max 6 bullets with only: `decision`, `diff summary`, `risks`, `next action`.
+5. **No repeated large context**: do not resend full task lists/specs after kickoff. Refer by task ID and send only deltas.
+6. **Model tiering**: use lightweight models for coordination/planning; escalate to stronger models only for complex design/debug/codegen.
+7. **Batch before reporting**: complete a meaningful chunk (code + tests for the subtask) before reporting back.
+8. **Budget gate**: define a token budget per iteration lane (PM/dev/test). If exceeded, checkpoint and restart with a fresh session.
+
+Default execution cycle:
+`/openup-start-iteration` -> assign one subtask -> specialist completes and reports once -> PM decides next subtask -> new session when scope changes.
+
+---
+
 # OpenUP Full Team Configuration
 
 This is an agent team configuration for OpenUP (Open Unified Process) methodology.
 
-⚠️ **RECOMMENDED: Start with an Iteration** ⚠️
+⚠️ **MANDATORY FIRST STEP FOR TEAM LEAD** ⚠️
 
-For proper tracking and traceability, the team lead should start an iteration before spawning teammates:
-
-```
-/openup-start-iteration goal: "Implement feature"
-# Or with a task ID if you have a roadmap:
-/openup-start-iteration task_id: T-005
-# Then spawn teammates...
-```
-
-**If you don't have a roadmap yet**, you can spawn teammates directly and track work informally.
+Before spawning any teammates, the team lead MUST initialize an iteration with `/openup-start-iteration`.
+All work must be tracked in an iteration, even exploratory work.
 
 ---
 
