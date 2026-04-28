@@ -1,12 +1,13 @@
 ---
 id: T-003
 title: Suitability "fit" metadata in workflow skill front-matter
-status: ready
+status: done
 priority: low
 estimate: 0.5 session
 plan: docs/plans/2026-04-28-spdd-ideas-worth-adopting-in-openup.md#4
 depends-on: []
 blocks: []
+completed: 2026-04-28
 ---
 
 # T-003 — Suitability "fit" metadata in workflow skill front-matter

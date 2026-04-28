@@ -15,7 +15,7 @@
 |---|---|---|---|
 | [T-001](tasks/T-001-reasons-task-spec.md) | REASONS task spec — template, skill, rubric | ready | high |
 | [T-002](tasks/T-002-sync-spec-skill.md) | `/openup-sync-spec` — refactor back-propagation | deferred | medium |
-| [T-003](tasks/T-003-suitability-stars.md) | Suitability "fit" metadata in workflow skills | ready | low |
+| [T-003](tasks/T-003-suitability-stars.md) | Suitability "fit" metadata in workflow skills | done | low |
 
 **Done (out-of-band, in `.claude/` — gitignored)**
 

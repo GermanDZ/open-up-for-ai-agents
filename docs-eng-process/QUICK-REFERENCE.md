@@ -268,6 +268,31 @@ git log --oneline
 
 ---
 
+## Skill Fit Matrix
+
+Each workflow skill declares what it's good and bad for in its own front-matter
+(`fit:` block). This matrix is the consolidated view — pick the skill whose
+"great" column matches your situation.
+
+| Skill | Great for | OK for | Poor fit |
+|-------|-----------|--------|----------|
+| `/quick-task` | typo fixes, doc updates, single-file config tweaks, hotfixes | small bug fixes (<50 LOC), single-component refactors | new features, multi-role work, architectural changes |
+| `/start-iteration` | feature work, multi-step tasks, anything needing a deployed team | single-component changes that benefit from explicit framing | typo fixes, hotfixes, exploratory spikes, throwaway scripts |
+| `/orchestrate` | complex multi-role tasks, architecture+impl+test cycles | medium tasks where decomposition aids token-efficiency | trivial changes, single-role work, hotfixes |
+| `/plan-feature` | turning a fresh feature idea into a plan + roadmap entry | re-planning when scope shifts mid-flight | already-scoped tasks (skip to `/start-iteration`) |
+| `/complete-task` | finishing a roadmap-tracked task, ending an iteration | closing out ad-hoc work needing commit + roadmap update | mid-task checkpoints, abandoning WIP |
+| `/create-pr` | shipping a finished task, opening a review-ready PR | WIP / draft PRs for early feedback | pre-merge to local-only branches, uncommitted work |
+| `/assess-completeness` | pre-merge quality gate, phase transitions, artifact rubric grading | mid-iteration sanity checks on partial artifacts | pure code changes (no rubric), exploratory work |
+| `/phase-review` | end-of-phase milestone evaluation, transition gates | mid-phase sanity check on completion criteria | within-iteration progress checks |
+| `/retrospective` | end-of-iteration reflection, capturing patterns | mid-iteration reset when blockers pile up | single-task wrap-ups, trivial iterations |
+| `/request-input` | blocked tasks needing human decision, ambiguous requirements | scope/priority clarifications mid-iteration | obvious answers, urgent same-session needs |
+| `/tdd-workflow` | well-specified features with clear test surface, regression bug fixes | refactors with strong existing test coverage | exploratory spikes, prototyping, UI-only tweaks |
+| `/log-run` | end-of-session wrap-up after commits, audit-required workflows | mid-session checkpoints when commits exist | pre-commit runs (no SHAs), trivial sessions handled by hooks |
+
+**Rule of thumb.** If your situation appears in a "poor fit" column, pick a different skill — don't force-fit.
+
+---
+
 ## Related Documentation
 
 - **Full User Guide:** [USER-GUIDE.md](USER-GUIDE.md)
