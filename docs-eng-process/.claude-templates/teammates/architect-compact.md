@@ -39,6 +39,7 @@
 - Document trade-offs
 - Consider maintainability
 - Plan for evolution
+- **Spec-first for architectural changes**: update architecture notebook before code; refactors go code-first then `/openup-sync-spec`
 
 ---
 

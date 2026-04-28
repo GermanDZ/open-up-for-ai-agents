@@ -1,6 +1,10 @@
 ---
 name: openup-retrospective
 description: Generate iteration retrospective with feedback and action items
+fit:
+  great: [end-of-iteration reflection, capturing patterns to feed forward]
+  ok: [mid-iteration when blockers pile up and a reset is needed]
+  poor: [single-task wrap-ups (use complete-task notes), trivial iterations]
 arguments:
   - name: iteration_number
     description: Iteration to review (optional, defaults to current)

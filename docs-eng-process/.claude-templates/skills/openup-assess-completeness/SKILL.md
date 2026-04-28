@@ -1,6 +1,10 @@
 ---
 name: openup-assess-completeness
 description: Rubric-based readiness assessment before task completion or phase transition
+fit:
+  great: [pre-merge quality gate, phase transitions, artifact rubric grading]
+  ok: [mid-iteration sanity checks on partially-built artifacts]
+  poor: [pure code changes with no rubric to grade against, exploratory work]
 arguments:
   - name: scope
     description: Assessment scope (task, iteration, phase)

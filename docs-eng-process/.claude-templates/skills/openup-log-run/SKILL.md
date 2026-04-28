@@ -1,6 +1,10 @@
 ---
 name: openup-log-run
 description: Create traceability logs (markdown + JSONL) for the current agent run
+fit:
+  great: [end-of-session wrap-up after commits, audit-required workflows]
+  ok: [mid-session checkpoints when commits exist]
+  poor: [pre-commit runs (no SHAs to log), trivial sessions handled by hooks]
 arguments:
   - name: run_id
     description: Unique identifier for this run (optional, auto-generates if not provided)

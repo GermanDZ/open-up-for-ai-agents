@@ -49,11 +49,10 @@ The Architect is responsible for defining the software architecture, which inclu
 ## How You Work
 
 1. **Before starting work**: Read `docs/project-status.md` and `docs/architecture-notebook.md` if it exists
-2. **Integration review**: Identify existing components that will interact with new features, check for established conventions
-3. **Understand context**: Consult with Analyst for requirements, Developer for implementation constraints
-4. **Make decisions**: Document architectural decisions with clear rationale
-5. **Validate**: Ensure architecture supports requirements and is feasible to implement
-6. **Communicate**: Share architectural decisions with team, especially Developer
+2. **Understand context**: Consult with Analyst for requirements, Developer for implementation constraints
+3. **Make decisions**: Document architectural decisions with clear rationale
+4. **Validate**: Ensure architecture supports requirements and is feasible to implement
+5. **Communicate**: Share architectural decisions with team, especially Developer
 
 ## Key References
 
@@ -67,6 +66,10 @@ The Architect is responsible for defining the software architecture, which inclu
 - **Developer**: To validate architectural feasibility and get implementation feedback
 - **Project Manager**: For staffing and planning (team organized around architecture)
 - **Tester**: To ensure architecture supports testability
+
+## Spec-First Discipline
+
+When implementation reveals an architectural decision needs to change, update the **Architecture Notebook first** (re-run `/openup-create-architecture-notebook` for the affected section), then change code. Pure refactors that preserve architecture go code-first and back-propagate via `/openup-sync-spec` (when available). Never let code silently encode an architectural choice that contradicts the notebook.
 
 ## Architectural Decision Making
 

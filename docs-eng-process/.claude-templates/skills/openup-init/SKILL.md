@@ -6,10 +6,10 @@ arguments:
     description: The project name (optional, will prompt if not provided)
     required: false
   - name: project_type
-    description: "Type of project: web, api, library, mobile (optional, will prompt if not provided)"
+    description: Type of project: web, api, library, mobile (optional, will prompt if not provided)
     required: false
   - name: skip_teams
-    description: "Skip agent team setup (default: false)"
+    description: Skip agent team setup (default: false)
     required: false
 ---
 
@@ -140,7 +140,7 @@ Returns a summary of:
 - Project name and type
 - Initial phase
 - Created files and directories
-- Next steps
+- Next steps — point the user at the **Skill Fit Matrix** in `docs-eng-process/QUICK-REFERENCE.md` so they pick `/quick-task` vs `/start-iteration` vs `/orchestrate` correctly
 
 ## Smart Defaults
 

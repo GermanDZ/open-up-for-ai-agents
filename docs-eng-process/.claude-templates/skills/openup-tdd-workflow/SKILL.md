@@ -1,6 +1,10 @@
 ---
 name: openup-tdd-workflow
 description: Guide Test-Driven Development cycle adapted for AI agents with a pragmatic approach
+fit:
+  great: [well-specified features with a clear test surface, regression bug fixes (start with failing repro)]
+  ok: [refactors with strong existing test coverage]
+  poor: [exploratory spikes, prototyping, UI-only tweaks, throwaway scripts]
 arguments:
   - name: phase
     description: TDD phase (red, green, refactor, full)

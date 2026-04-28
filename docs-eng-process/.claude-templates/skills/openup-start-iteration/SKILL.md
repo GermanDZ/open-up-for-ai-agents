@@ -1,6 +1,10 @@
 ---
 name: openup-start-iteration
 description: Begin a new OpenUP iteration with proper phase context and task selection
+fit:
+  great: [feature work, multi-step tasks, anything needing a deployed team]
+  ok: [single-component changes that benefit from explicit iteration framing]
+  poor: [typo fixes, hotfixes, exploratory spikes, throwaway scripts]
 arguments:
   - name: iteration_number
     description: The iteration number (optional, auto-increments if not provided)

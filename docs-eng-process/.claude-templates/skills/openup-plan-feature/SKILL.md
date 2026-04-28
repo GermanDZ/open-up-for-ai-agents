@@ -1,6 +1,10 @@
 ---
 name: openup-plan-feature
 description: Generate iteration plan and roadmap entry for a feature idea
+fit:
+  great: [turning a fresh feature idea into a roadmap entry + plan]
+  ok: [re-planning when scope shifts mid-flight]
+  poor: [already-scoped tasks with a plan (skip to start-iteration), trivial fixes]
 arguments:
   - name: topic
     description: The feature idea or requirements to plan (e.g., "Add PDF export for chat conversations")

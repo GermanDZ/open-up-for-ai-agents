@@ -1,6 +1,10 @@
 ---
 name: openup-complete-task
 description: Mark a task as complete, update roadmap, commit changes, and prepare traceability logs
+fit:
+  great: [finishing a roadmap-tracked task, ending an iteration cleanly]
+  ok: [closing out ad-hoc work that needs commit + roadmap update]
+  poor: [mid-task checkpoints, abandoning work-in-progress]
 arguments:
   - name: task_id
     description: The task ID to mark as complete (e.g., T-001)

@@ -19,6 +19,15 @@ If the user asks to skip, redirect: "Let me run `/openup-quick-task` instead —
 - The PM coordinates: decompose the task, brief each specialist, collect outputs, synthesize
 - Never start coding or modifying files without a team deployed
 
+**Fix the spec first when behavior changes.**
+- **Behavior change** (logic, scope, acceptance criteria differ from artifact): update the use case / iteration plan / task description **first**, then change code.
+- **Refactor only** (no behavior change): change code first, then back-propagate to artifacts via `/openup-sync-spec` (when available) or by re-running the originating `/openup-create-*` skill.
+- This keeps specs and code from drifting silently. If you find yourself "just tweaking" code that contradicts the spec, stop and update the spec.
+
+**Edit artifacts through their skill, not by hand.**
+- Use cases, iteration plans, architecture notebook, vision, test plan: changes go through the relevant `/openup-create-*` or `/openup-detail-*` skill so the rubric in `.claude/rubrics/` is re-applied.
+- Direct hand-edits silently bypass rubric criteria; only acceptable for typo-level fixes.
+
 ## Token-Efficiency Protocol (Mandatory)
 - Run one subtask per session; start a fresh session when scope changes.
 - Keep one active orchestrator (project-manager by default); spawn specialists only for bounded work.

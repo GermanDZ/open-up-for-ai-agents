@@ -1,6 +1,10 @@
 ---
 name: openup-orchestrate
 description: Run a full orchestrated iteration — PM decomposes the goal, delegates to specialist roles, collects outputs, and synthesizes results
+fit:
+  great: [complex multi-role tasks, architecture+impl+test cycles, anything benefiting from role isolation]
+  ok: [medium tasks where decomposition aids token-efficiency]
+  poor: [trivial changes, single-role work, hotfixes — heavyweight overkill]
 arguments:
   - name: task_id
     description: The task ID to orchestrate (must match a task in docs/roadmap.md)

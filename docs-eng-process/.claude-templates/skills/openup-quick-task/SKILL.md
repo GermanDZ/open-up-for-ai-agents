@@ -1,6 +1,10 @@
 ---
 name: openup-quick-task
 description: Fast iteration mode for small changes - simplified workflow with minimal overhead
+fit:
+  great: [typo fixes, doc updates, single-file config tweaks, hotfixes]
+  ok: [small bug fixes under ~50 LOC, single-component refactors]
+  poor: [new features, multi-role work, architectural changes, anything needing a rubric]
 arguments:
   - name: task
     description: Brief description of the task to complete

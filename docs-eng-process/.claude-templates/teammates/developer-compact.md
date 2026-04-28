@@ -8,7 +8,7 @@
 
 ## Quick Process
 
-1. Read task from roadmap
+1. Read task spec at `docs/tasks/T-XXX-*.md` (authoritative); fall back to roadmap line if no spec
 2. Review design (or create with Architect)
 3. Implement with TDD approach when applicable
 4. Write/update unit tests
@@ -36,6 +36,7 @@ For AI agents, TDD is flexible:
 - Unit tests for new functionality
 - Follow project coding conventions
 - Update relevant documentation
+- **Spec-first for behavior changes**: update use case / task description before code; refactors go code-first then `/openup-sync-spec`
 
 ## When to Involve Others
 

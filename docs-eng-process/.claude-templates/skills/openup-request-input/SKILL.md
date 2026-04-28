@@ -1,6 +1,10 @@
 ---
 name: openup-request-input
 description: Create an input request document for asynchronous stakeholder communication
+fit:
+  great: [blocked tasks needing a human decision, ambiguous requirements]
+  ok: [scope/priority clarifications mid-iteration]
+  poor: [questions with obvious answers, internal-only decisions, urgent same-session needs]
 arguments:
   - name: title
     description: Descriptive title for the request

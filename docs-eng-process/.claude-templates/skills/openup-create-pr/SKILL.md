@@ -1,6 +1,10 @@
 ---
 name: openup-create-pr
 description: Create a pull request with proper description linking to roadmap task context
+fit:
+  great: [shipping a finished task, opening a review-ready PR]
+  ok: [WIP / draft PRs for early feedback]
+  poor: [pre-merge to local-only branches, work not yet committed]
 arguments:
   - name: task_id
     description: The task ID from roadmap (e.g., T-001). Auto-detected from branch name if not provided.
