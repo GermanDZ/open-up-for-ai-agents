@@ -1,12 +1,13 @@
 ---
 id: T-001
 title: REASONS-style task spec — template, skill, rubric
-status: ready
+status: done
 priority: high
 estimate: 1–2 sessions
 plan: docs/plans/2026-04-28-spdd-ideas-worth-adopting-in-openup.md#1
 depends-on: []
 blocks: [T-002]
+completed: 2026-04-28
 ---
 
 # T-001 — REASONS-style task spec: template, skill, rubric

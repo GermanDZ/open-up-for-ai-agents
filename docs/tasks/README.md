@@ -26,5 +26,13 @@ adopted from Martin Fowler's "Structured Prompt-Driven Development" (SPDD).
 - **Spec-first**: behaviour changes update this file *before* code (per `.claude/CLAUDE.openup.md`).
 - **Refactors**: code first, then back-propagate via `/openup-sync-spec` (skill TBD — see T-002).
 
-> The official template and skill (`/openup-create-task-spec`) are defined by **T-001** itself.
-> Until that lands, use the structure of this directory's existing files as the de facto template.
+## Creating a Task Spec
+
+Run `/openup-create-task-spec` — it copies the template at
+`docs-eng-process/templates/task-spec.md`, runs an analyst → architect → developer
+handoff to populate the sections, and grades the result against
+`.claude/rubrics/task-spec-rubric.md`. A spec must score all-✅ before its
+`status` moves from `proposed` to `ready`.
+
+For worked examples, see the existing `T-001` / `T-002` / `T-003` files in
+this directory — they were authored against this format and pass the rubric.

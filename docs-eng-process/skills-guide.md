@@ -265,6 +265,41 @@ Transform a high-level use case into detailed scenarios with test cases.
 
 **See Also**: `openup-create-use-case`, `openup-create-test-plan`, `openup-elaboration`
 
+### /openup-create-task-spec
+
+Produce a REASONS-Canvas task spec — the per-task executable blueprint a developer-role agent reads verbatim before generating code.
+
+**Purpose**: Bridge the gap between coarse roadmap lines / use cases and code generation; format adopted from Martin Fowler's "Structured Prompt-Driven Development".
+
+**When to Use**:
+- A roadmap task is about to enter implementation and has no spec yet
+- A plan item needs decomposition before assignment
+- Existing in-progress work needs a retroactive spec for handoff
+
+**When NOT to Use**:
+- Trivial typo / config tweaks (use `/openup-quick-task`)
+- Spec already exists at `docs/tasks/T-XXX-*.md` (re-run this skill — never hand-edit)
+- Idea-stage work with no requirements yet (run `/openup-plan-feature` first)
+
+**Arguments**:
+- `task_id` (optional): T-XXX. Auto-allocated if not provided.
+- `title` (optional): One-line task title. Read from roadmap if existing.
+- `source` (optional): `roadmap` | `plan` | `adhoc` (default `roadmap`)
+- `plan_ref` (optional): Path + section to originating plan
+
+**Example**:
+```
+/openup-create-task-spec title: "Refactor auth middleware" plan_ref: "docs/plans/2026-05-01-auth.md#2"
+```
+
+**Success Criteria**:
+- [ ] File at `docs/tasks/T-XXX-<slug>.md` matches `docs-eng-process/templates/task-spec.md`
+- [ ] All eight criteria in `.claude/rubrics/task-spec-rubric.md` are ✅
+- [ ] Front-matter `status: ready`
+- [ ] Roadmap entry references the spec
+
+**See Also**: `openup-create-iteration-plan`, `openup-assess-completeness`, `openup-orchestrate`
+
 ### /openup-shared-vision
 
 Create shared technical vision for team alignment.
