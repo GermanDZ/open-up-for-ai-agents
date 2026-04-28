@@ -1,0 +1,43 @@
+#!/bin/bash
+#
+# Pre-commit hook: enforce .claude/ <-> .claude-templates/ sync.
+#
+# .claude/ is gitignored at the repo root, but the framework ships content
+# to other projects via docs-eng-process/.claude-templates/. Editing one
+# without the other causes silent drift — projects updating from the
+# framework would never see the change.
+#
+# To enable this hook in a fresh clone:
+#   git config core.hooksPath .githooks
+#
+
+set -e
+
+ROOT="$(git rev-parse --show-toplevel)"
+
+# Only run if the sync check script is present.
+if [ ! -x "$ROOT/scripts/check-claude-sync.sh" ]; then
+  exit 0
+fi
+
+# Only run if either side of the pairing exists in this repo.
+if [ ! -d "$ROOT/.claude" ] && [ ! -d "$ROOT/docs-eng-process/.claude-templates" ]; then
+  exit 0
+fi
+
+# Allow opt-out for emergency commits.
+if [ "${SKIP_CLAUDE_SYNC_CHECK:-}" = "1" ]; then
+  echo "[pre-commit] SKIP_CLAUDE_SYNC_CHECK=1 — skipping .claude sync check" >&2
+  exit 0
+fi
+
+if ! "$ROOT/scripts/check-claude-sync.sh"; then
+  echo "" >&2
+  echo "Commit blocked. Either:" >&2
+  echo "  - Run:  scripts/check-claude-sync.sh --fix-from-live" >&2
+  echo "          (when your .claude/ edits are canonical)" >&2
+  echo "  - Run:  scripts/check-claude-sync.sh --fix-from-templates" >&2
+  echo "          (when .claude-templates/ is canonical)" >&2
+  echo "  - Or set SKIP_CLAUDE_SYNC_CHECK=1 to bypass for this commit." >&2
+  exit 1
+fi

@@ -22,7 +22,16 @@ cd open-up-for-ai-agents
 
 # Add upstream as a remote
 git remote add upstream https://github.com/GermanDZ/open-up-for-ai-agents.git
+
+# Enable the repo's git hooks (one-time)
+git config core.hooksPath .githooks
 ```
+
+> The pre-commit hook in `.githooks/pre-commit` enforces that `.claude/` and
+> `docs-eng-process/.claude-templates/` stay in sync. `.claude/` is gitignored
+> at the repo root, but `.claude-templates/` is what ships to projects via
+> the framework's update scripts. Editing one without the other causes silent
+> drift; the hook catches it. To bypass once: `SKIP_CLAUDE_SYNC_CHECK=1 git commit ...`
 
 ### 2. Create a Branch
 
