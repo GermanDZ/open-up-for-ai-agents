@@ -295,6 +295,40 @@ if [ -d "$src_dir" ]; then
   done
 fi
 
+# Sync rubrics (quality rubrics used by skills' grading steps)
+log_info "Syncing rubrics from framework..."
+echo ""
+src_dir="$FRAMEWORK_TEMPLATES/rubrics"
+if [ -d "$src_dir" ]; then
+  dest_dir="$CLAUDE_DIR/rubrics"
+  mkdir -p "$dest_dir"
+  for rubric in "$src_dir"/*.md; do
+    if [ -f "$rubric" ]; then
+      rubric_name=$(basename "$rubric")
+      sync_item "$rubric" "$dest_dir/$rubric_name" "rubrics/$rubric_name"
+    fi
+  done
+fi
+
+# Sync hook scripts (automation hooks wired up via settings.json below)
+log_info "Syncing hook scripts from framework..."
+echo ""
+src_dir="$FRAMEWORK_TEMPLATES/scripts/hooks"
+if [ -d "$src_dir" ]; then
+  dest_dir="$CLAUDE_DIR/scripts/hooks"
+  mkdir -p "$dest_dir"
+  for hook in "$src_dir"/*; do
+    if [ -f "$hook" ]; then
+      hook_name=$(basename "$hook")
+      sync_item "$hook" "$dest_dir/$hook_name" "scripts/hooks/$hook_name"
+      # Make hooks executable
+      if [ "$DRY_RUN" = false ] && [ -f "$dest_dir/$hook_name" ]; then
+        chmod +x "$dest_dir/$hook_name"
+      fi
+    fi
+  done
+fi
+
 # Create cache directory if it doesn't exist
 log_info "Ensuring cache directory exists..."
 echo ""
@@ -306,21 +340,107 @@ else
 fi
 
 # Check for settings.json
+#
+# Hooks live in .claude/scripts/hooks/ (synced above) but only fire if they are
+# wired into settings.json. So when settings.json already exists we MERGE the
+# OpenUP hooks in (identified by the /.claude/scripts/hooks/ marker), preserving
+# every non-hook field and any custom hooks the project added. A .bak is written
+# first. When it doesn't exist yet we create it from the template.
 log_info "Checking settings.json..."
 echo ""
-if [ ! -f "$CLAUDE_DIR/settings.json" ]; then
-  if [ -f "$FRAMEWORK_TEMPLATES/settings.json.example" ]; then
+SETTINGS_SRC="$FRAMEWORK_TEMPLATES/settings.json.example"
+SETTINGS_DEST="$CLAUDE_DIR/settings.json"
+if [ -f "$SETTINGS_SRC" ]; then
+  if [ ! -f "$SETTINGS_DEST" ]; then
     log_warn "No settings.json found. Creating from template..."
     if [ "$DRY_RUN" = false ]; then
-      cp "$FRAMEWORK_TEMPLATES/settings.json.example" "$CLAUDE_DIR/settings.json"
+      cp "$SETTINGS_SRC" "$SETTINGS_DEST"
       log_success "Created settings.json with recommended defaults"
-      ((SYNCED_COUNT++))
+      SYNCED_FILES=$((SYNCED_FILES + 1))
     else
       log_info "[DRY RUN] Would create settings.json"
     fi
+  else
+    if [ "$DRY_RUN" = true ]; then
+      log_info "[DRY RUN] Would merge OpenUP hooks into settings.json"
+      log_info "  (custom hooks preserved; only /.claude/scripts/hooks/ entries updated)"
+    else
+      cp "$SETTINGS_DEST" "${SETTINGS_DEST}.bak"
+      log_verbose "Backed up: $SETTINGS_DEST -> ${SETTINGS_DEST}.bak"
+      if python3 - "$SETTINGS_SRC" "$SETTINGS_DEST" <<'PYEOF'
+import json, sys
+
+OPENUP_MARKER = "/.claude/scripts/hooks/"
+
+def is_openup_hook(hook):
+    return OPENUP_MARKER in hook.get("command", "")
+
+def merge_hooks(existing, incoming):
+    """Keep custom hooks, replace OpenUP hooks with incoming canonical set."""
+    custom = [h for h in existing if not is_openup_hook(h)]
+    openup = [h for h in incoming if is_openup_hook(h)]
+    return openup + custom  # OpenUP hooks first, custom hooks after
+
+def merge_event(existing_event, new_event):
+    """Merge two lists of matcher objects for one hook event."""
+    by_matcher = {item.get("matcher", ""): item for item in existing_event}
+    result = []
+    seen = set()
+    for new_item in new_event:
+        matcher = new_item.get("matcher", "")
+        seen.add(matcher)
+        if matcher in by_matcher:
+            merged = dict(new_item)
+            merged["hooks"] = merge_hooks(
+                by_matcher[matcher].get("hooks", []),
+                new_item.get("hooks", [])
+            )
+            result.append(merged)
+        else:
+            result.append(new_item)
+    # Keep existing matchers not in the template
+    for item in existing_event:
+        if item.get("matcher", "") not in seen:
+            result.append(item)
+    return result
+
+src_path, dest_path = sys.argv[1], sys.argv[2]
+try:
+    with open(src_path) as f:
+        src = json.load(f)
+    with open(dest_path) as f:
+        dest = json.load(f)
+
+    src_hooks = src.get("hooks", {})
+    dest_hooks = dest.get("hooks", {})
+    merged = {}
+
+    for event in sorted(set(list(src_hooks) + list(dest_hooks))):
+        if event in src_hooks and event in dest_hooks:
+            merged[event] = merge_event(dest_hooks[event], src_hooks[event])
+        elif event in src_hooks:
+            merged[event] = src_hooks[event]
+        else:
+            merged[event] = dest_hooks[event]
+
+    dest["hooks"] = merged
+    with open(dest_path, "w") as f:
+        json.dump(dest, f, indent=2)
+        f.write("\n")
+    print(f"Merged OpenUP hooks into {dest_path} (custom hooks preserved)")
+except Exception as e:
+    print(f"Warning: could not merge settings.json: {e}", file=sys.stderr)
+    sys.exit(1)
+PYEOF
+      then
+        log_success "Merged OpenUP hooks into settings.json (custom hooks preserved)"
+        SYNCED_FILES=$((SYNCED_FILES + 1))
+      else
+        log_warn "Could not merge settings.json; restoring backup"
+        mv "${SETTINGS_DEST}.bak" "$SETTINGS_DEST"
+      fi
+    fi
   fi
-else
-  log_verbose "settings.json exists (not overwriting)"
 fi
 
 # Sync documentation (optional - ask user if they want this)

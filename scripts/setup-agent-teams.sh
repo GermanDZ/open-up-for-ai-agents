@@ -354,7 +354,7 @@ try:
     dest_hooks = dest.get("hooks", {})
     merged = {}
 
-    for event in set(list(src_hooks) + list(dest_hooks)):
+    for event in sorted(set(list(src_hooks) + list(dest_hooks))):
         if event in src_hooks and event in dest_hooks:
             merged[event] = merge_event(dest_hooks[event], src_hooks[event])
         elif event in src_hooks:
