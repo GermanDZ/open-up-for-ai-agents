@@ -1,6 +1,16 @@
 # Roadmap
 
 
+<!-- plan-hook: 2026-05-13 -->
+### Proposed: OpenSpec Ideas Worth Adopting in OpenUP
+
+- **Status**: `proposed` (analysis only; no tasks created yet)
+- **Plan**: [plans/2026-05-13-openspec-ideas-for-openup.md](plans/2026-05-13-openspec-ideas-for-openup.md)
+- **Evaluation**: [plans/2026-05-13-openspec-evaluation.md](plans/2026-05-13-openspec-evaluation.md) (SPDD self-grading)
+- **Created**: 2026-05-13
+- **Notes**: Counterpart to the 2026-04-28 SPDD plan. Item #1 (readiness DAG) is a precondition for un-deferring T-002 (`/openup-sync-spec`); item #5 (explore mode) is complementary to the 2026-04-28 "fix-spec-first" rule.
+
+
 <!-- plan-hook: 2026-04-28 -->
 ### In Progress: SPDD Ideas Worth Adopting in OpenUP
 

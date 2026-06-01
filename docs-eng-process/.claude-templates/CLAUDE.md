@@ -4,14 +4,16 @@ Goal: keep context small. This file is a quick index; details live in docs.
 
 ## Critical Rules
 
-**All work must be in an iteration. No exceptions.**
+**All delivery work must be in an iteration. No exceptions.**
 - For normal work: `/openup-start-iteration` → work → `/openup-complete-task`
 - For small changes: `/openup-quick-task`
 - For complex multi-role work: `/openup-orchestrate`
+- For **pre-delivery exploration** (is the problem real? what's the right shape?): `/openup-explore` — produces notes that may seed a proposal, not a deliverable.
 
 **Never offer to skip or bypass the process.** "Just commit" is not a valid option.
 If the work is small, use `/openup-quick-task` — that IS the lightweight path.
-If the user asks to skip, redirect: "Let me run `/openup-quick-task` instead — it's the fast path that keeps the project state consistent."
+If the user is *thinking*, not *delivering*, use `/openup-explore` — that is the sanctioned home for pre-iteration notes.
+If the user asks to skip, redirect: "Let me run `/openup-quick-task` instead — it's the fast path that keeps the project state consistent." (Or `/openup-explore` if the work is investigative rather than deliverable.)
 
 **When the user asks to do a task, act as Project Manager first.**
 - Read `docs/project-status.md` and `docs/roadmap.md`
@@ -61,7 +63,7 @@ Default cycle:
 ## Common Commands (minimal list)
 - Phase skills: `/openup-inception`, `/openup-elaboration`, `/openup-construction`, `/openup-transition`
 - Artifacts: `/openup-create-vision`, `/openup-create-use-case`, `/openup-create-architecture-notebook`
-- Workflow: `/openup-start-iteration`, `/openup-complete-task`, `/openup-quick-task`, `/openup-orchestrate`, `/openup-phase-review`
+- Workflow: `/openup-start-iteration`, `/openup-complete-task`, `/openup-quick-task`, `/openup-orchestrate`, `/openup-phase-review`, `/openup-explore`
 - Assessment: `/openup-assess-completeness` (rubric-based, per-criterion grading)
 
 ## Memory & Context Continuity
