@@ -242,6 +242,23 @@ class AutoLogCommitTests(unittest.TestCase):
         log = self.repo.dir / "docs" / "agent-logs" / "agent-runs.jsonl"
         self.assertFalse(log.exists())
 
+    def test_skips_log_only_commit(self):
+        # A commit that touched ONLY the run log is pure bookkeeping. Logging
+        # it again would re-dirty the log and tail-chase forever — the hook
+        # must skip it so a final "commit the log" reaches a clean tree.
+        self._make_commit()  # a real prior commit (gives the next one a parent)
+        log = self.repo.dir / "docs" / "agent-logs" / "agent-runs.jsonl"
+        log.parent.mkdir(parents=True, exist_ok=True)
+        log.write_text('{"event":"commit","sha":"abc","task_id":"T-006"}\n')
+        git(self.repo.dir, "add", "-A")
+        git(self.repo.dir, "commit", "-q", "-m", "chore(logs): record [T-006]")
+        before = log.read_text()
+        proc = run_hook("auto-log-commit.py", self._commit_payload(),
+                        self.repo.dir)
+        self.assertEqual(proc.returncode, 0)
+        # No new record appended — the log-only commit was recognized.
+        self.assertEqual(log.read_text(), before)
+
 
 # --------------------------------------------------------------------------
 # validate-commit.py

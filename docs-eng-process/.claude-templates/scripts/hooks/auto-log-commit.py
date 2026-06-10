@@ -16,6 +16,11 @@ line of agent-runs.jsonl already records this SHA with event "commit", we
 do nothing. This makes the hook safe even when the same commit fires the
 hook more than once.
 
+Self-reference guard: a commit that touched ONLY the run log itself is pure
+bookkeeping (it persists a previously auto-logged line). Logging it again
+would re-dirty the log and tail-chase forever, so such commits are skipped.
+This lets a final "commit the log" reach a genuinely clean tree.
+
 Exit codes:
   0 — always (PostToolUse cannot block; this hook only appends)
 
@@ -87,6 +92,21 @@ def commit_succeeded(payload: dict, command: str) -> bool:
     return True
 
 
+def commit_only_touches_log(cwd: str, sha: str) -> bool:
+    """True if the commit at <sha> changed ONLY the run log itself.
+
+    Such a commit is pure bookkeeping (persisting a prior auto-logged line);
+    logging it again would re-dirty the log and tail-chase forever. Uses
+    diff-tree against the first parent; the root commit (no parent) lists its
+    whole tree, which will not be log-only, so it is logged normally.
+    """
+    rc, out = run(f"git diff-tree --no-commit-id --name-only -r {sha}", cwd)
+    if rc != 0:
+        return False
+    files = [ln.strip() for ln in out.splitlines() if ln.strip()]
+    return files == [LOG_REL]
+
+
 def last_logged_sha(log_path: Path) -> str | None:
     """Return the sha recorded on the last commit-event line, or None."""
     try:
@@ -131,6 +151,11 @@ def main() -> None:
         rc, sha = run("git rev-parse HEAD", cwd)
         sha = sha.strip()
         if rc != 0 or not sha:
+            sys.exit(0)
+
+        # Self-reference guard: skip commits that only touched the run log —
+        # logging them would re-dirty it and tail-chase forever.
+        if commit_only_touches_log(cwd, sha):
             sys.exit(0)
 
         log_path = Path(cwd) / LOG_REL
