@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "task_id": "T-008",
+  "iteration": 5,
+  "phase": "construction",
+  "track": "standard",
+  "branch": "feature/T-008-coordination-frontmatter-readiness",
+  "worktree": "/Users/germandz/personal-code/ai-dev-framework/open-up-for-ai-agents",
+  "session_id": null,
+  "started_at": "2026-06-10T17:48:39Z",
+  "gates": {
+    "team_deployed": true,
+    "plan_persisted": "docs/changes/T-008/plan.md",
+    "log_written": true,
+    "roadmap_synced": true,
+    "retro_due": false
+  },
+  "iterations_since_retro": 4
+}

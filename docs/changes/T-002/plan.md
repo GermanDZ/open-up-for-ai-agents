@@ -7,7 +7,13 @@ estimate: 1 session
 plan: docs/plans/2026-04-28-spdd-ideas-worth-adopting-in-openup.md#3
 depends-on: [T-001]
 blocks: []
+touches:
+  - .claude/skills/openup-workflow/
+  - docs-eng-process/templates/
 defer-until: "drift observed in practice after T-001 lands"
+claimed-by: null
+claimed-at: null
+worktree: null
 ---
 
 # T-002 — `/openup-sync-spec`: refactor → artifact back-propagation

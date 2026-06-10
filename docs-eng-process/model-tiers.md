@@ -19,7 +19,7 @@ Rationale).
 judgment-bearing work always gets the session model. `haiku` pins the cheapest
 model for work where a stronger model adds cost but no quality.
 
-## Skill Assignments (29 skills)
+## Skill Assignments (30 skills)
 
 | Skill | Location | Model | Tier |
 |-------|----------|-------|------|
@@ -29,6 +29,7 @@ model for work where a stronger model adds cost but no quality.
 | openup-deploy-team | workflow | `haiku` | Coordination |
 | openup-phase-review | workflow | `haiku` | Coordination |
 | openup-assess-completeness | workflow | `haiku` | Coordination |
+| openup-readiness | workflow | `haiku` | Coordination |
 | openup-retrospective | workflow | `haiku` | Coordination |
 | openup-inception | phases | `haiku` | Coordination |
 | openup-elaboration | phases | `haiku` | Coordination |
@@ -53,7 +54,7 @@ model for work where a stronger model adds cost but no quality.
 | openup-plan-feature | top-level | `inherit` | Authoring |
 | openup-quick-task | top-level | `inherit` | Reasoning |
 
-Totals: 11 × `haiku`, 18 × `inherit`.
+Totals: 12 × `haiku`, 18 × `inherit`.
 
 ## Agents
 
