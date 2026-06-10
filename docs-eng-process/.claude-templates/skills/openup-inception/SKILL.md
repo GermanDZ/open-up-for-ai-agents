@@ -1,6 +1,7 @@
 ---
 name: openup-inception
 description: Initialize and manage Inception phase activities - define scope, vision, and feasibility
+model: haiku
 arguments:
   - name: activity
     description: Specific activity to perform (initiate, check-status, next-steps)

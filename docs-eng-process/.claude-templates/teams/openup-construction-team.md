@@ -33,7 +33,7 @@ To reduce token usage while preserving quality, the team lead and all teammates 
 3. **Milestone-only updates**: status messages are allowed only at `started`, `blocked`, and `done`. Do not send heartbeat or idle notifications.
 4. **Compact handoffs**: every handoff must be max 6 bullets with only: `decision`, `diff summary`, `risks`, `next action`.
 5. **No repeated large context**: do not resend full task lists/specs after kickoff. Refer by task ID and send only deltas.
-6. **Model tiering**: use lightweight models for coordination/planning; escalate to stronger models only for complex design/debug/codegen.
+6. **Model tiering**: enforced via `model:` frontmatter and per-role assignments — see docs-eng-process/model-tiers.md.
 7. **Batch before reporting**: complete a meaningful chunk (code + tests for the subtask) before reporting back.
 8. **Budget gate**: define a token budget per iteration lane (PM/dev/test). If exceeded, checkpoint and restart with a fresh session.
 
@@ -69,24 +69,28 @@ For proper tracking and traceability, the team lead should start an iteration be
 ## Team Members
 
 ### developer (Lead)
+- **Model**: inherit
 - **Focus**: Feature implementation, unit testing, integration
 - **Key Work Products**: Implementation (code), Developer Tests, Design
 - **Collaborates With**: Tester (test coverage), Architect (technical guidance)
 - **Reference**: `.claude/teammates/developer.md`
 
 ### tester (Lead)
+- **Model**: inherit
 - **Focus**: Test planning, test implementation, test execution, quality assurance
 - **Key Work Products**: Test Cases, Test Scripts, Test Logs
 - **Collaborates With**: Developer (test implementation), Analyst (acceptance criteria)
 - **Reference**: `.claude/teammates/tester.md`
 
 ### architect (As needed)
+- **Model**: inherit
 - **Focus**: Technical guidance, architecture adherence, code reviews
 - **Key Work Products**: Architecture updates, Design reviews
 - **Collaborates With**: Developer (implementation guidance)
 - **Reference**: `.claude/teammates/architect.md`
 
 ### analyst (As needed)
+- **Model**: inherit
 - **Focus**: Requirements clarification, acceptance criteria
 - **Key Work Products**: Requirements updates, Use case clarifications
 - **Collaborates With**: Tester (acceptance criteria), Developer (requirements understanding)

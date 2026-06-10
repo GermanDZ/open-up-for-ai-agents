@@ -1,6 +1,7 @@
 ---
 name: openup-deploy-team
 description: Deploy an OpenUP agent team to work on the current iteration
+model: haiku
 arguments:
   - name: team_type
     description: Type of team to create (feature, investigation, construction, elaboration, inception, transition, planning, full)

@@ -1,6 +1,7 @@
 ---
 name: openup-log-run
 description: Create traceability logs (markdown + JSONL) for the current agent run
+model: haiku
 fit:
   great: [end-of-session wrap-up after commits, audit-required workflows]
   ok: [mid-session checkpoints when commits exist]
@@ -15,12 +16,13 @@ arguments:
 
 Create traceability logs for the current agent run. **Call only AFTER all changes are committed** (logs require actual commit SHAs).
 
-> **Haiku/Scribe step** — this entire skill is mechanical. Spawn a Haiku sub-agent with
-> the scribe role to execute it. Brief template:
+> **Scribe step** — this entire skill is mechanical. Delegate to the
+> `openup-scribe` agent (Agent tool, subagent_type: "openup-scribe"). You
+> determine the values; the scribe only writes. Brief it with:
 >
 > ```
-> Agent(model="haiku", description="Write agent run log",
->   prompt="You are a Scribe. Write a traceability log entry.
+> Agent(subagent_type="openup-scribe", description="Write agent run log",
+>   prompt="Write a traceability log entry.
 >   Branch: [branch]. Commits: [sha list]. Phase: [phase]. Task: [task_id].
 >   Start: [ts]. End: [ts]. Files changed: [list].
 >   1. Create docs/agent-logs/YYYY/MM/DD/<timestamp>-agent-<branch>.md

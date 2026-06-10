@@ -33,7 +33,7 @@ To reduce token usage while preserving quality, the team lead and all teammates 
 3. **Milestone-only updates**: status messages are allowed only at `started`, `blocked`, and `done`. Do not send heartbeat or idle notifications.
 4. **Compact handoffs**: every handoff must be max 6 bullets with only: `decision`, `diff summary`, `risks`, `next action`.
 5. **No repeated large context**: do not resend full task lists/specs after kickoff. Refer by task ID and send only deltas.
-6. **Model tiering**: use lightweight models for coordination/planning; escalate to stronger models only for complex design/debug/codegen.
+6. **Model tiering**: enforced via `model:` frontmatter and per-role assignments — see docs-eng-process/model-tiers.md.
 7. **Batch before reporting**: complete a meaningful chunk (code + tests for the subtask) before reporting back.
 8. **Budget gate**: define a token budget per iteration lane (PM/dev/test). If exceeded, checkpoint and restart with a fresh session.
 
@@ -69,24 +69,28 @@ Plan iterations, update the roadmap, assess priorities, and coordinate project p
 ## Team Members
 
 ### project-manager (Lead)
+- **Model**: haiku
 - **Focus**: Lead planning session, coordinate roadmap updates
 - **Key Activities**: Iteration planning, task prioritization, risk assessment
 - **Collaborates With**: Analyst (requirements scope), Architect (technical feasibility), Developer (estimates)
 - **Reference**: `.claude/teammates/project-manager.md`
 
 ### analyst
+- **Model**: inherit
 - **Focus**: Review and prioritize requirements
 - **Key Activities**: Requirements analysis, stakeholder input, value assessment
 - **Collaborates With**: Project Manager (prioritization), Architect (feasibility)
 - **Reference**: `.claude/teammates/analyst.md`
 
 ### architect (As needed)
+- **Model**: inherit
 - **Focus**: Assess technical feasibility and dependencies
 - **Key Activities**: Technical analysis, dependency identification, effort assessment
 - **Collaborates With**: Analyst (requirements feasibility), Project Manager (planning)
 - **Reference**: `.claude/teammates/architect.md`
 
 ### developer (As needed)
+- **Model**: inherit
 - **Focus**: Provide effort estimates for development tasks
 - **Key Activities**: Task estimation, technical assessment
 - **Collaborates With**: Project Manager (estimates), Architect (technical details)

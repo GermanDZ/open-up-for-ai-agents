@@ -33,7 +33,7 @@ To reduce token usage while preserving quality, the team lead and all teammates 
 3. **Milestone-only updates**: status messages are allowed only at `started`, `blocked`, and `done`. Do not send heartbeat or idle notifications.
 4. **Compact handoffs**: every handoff must be max 6 bullets with only: `decision`, `diff summary`, `risks`, `next action`.
 5. **No repeated large context**: do not resend full task lists/specs after kickoff. Refer by task ID and send only deltas.
-6. **Model tiering**: use lightweight models for coordination/planning; escalate to stronger models only for complex design/debug/codegen.
+6. **Model tiering**: enforced via `model:` frontmatter and per-role assignments — see docs-eng-process/model-tiers.md.
 7. **Batch before reporting**: complete a meaningful chunk (code + tests for the subtask) before reporting back.
 8. **Budget gate**: define a token budget per iteration lane (PM/dev/test). If exceeded, checkpoint and restart with a fresh session.
 
@@ -69,18 +69,21 @@ For proper tracking and traceability, the team lead should start an iteration be
 ## Team Members
 
 ### analyst (Lead)
+- **Model**: inherit
 - **Focus**: Requirements gathering, stakeholder communication, vision definition
 - **Key Work Products**: Vision, Use Cases (20-30%), Risk List, Project Plan
 - **Collaborates With**: Project Manager (planning), Architect (feasibility assessment)
 - **Reference**: `.claude/teammates/analyst.md`
 
 ### project-manager (Lead)
+- **Model**: haiku
 - **Focus**: Planning, coordination, risk management, stakeholder communication
 - **Key Work Products**: Project Plan, Work Items List, Risk List
 - **Collaborates With**: Analyst (requirements scope), Stakeholders (communication)
 - **Reference**: `.claude/teammates/project-manager.md`
 
 ### architect (As needed)
+- **Model**: inherit
 - **Focus**: Technical feasibility assessment, initial architectural considerations
 - **Key Work Products**: Initial architecture assessment
 - **Collaborates With**: Analyst (requirements feasibility)

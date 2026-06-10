@@ -1,6 +1,7 @@
 ---
 name: openup-elaboration
 description: Initialize and manage Elaboration phase activities - establish architecture baseline
+model: haiku
 arguments:
   - name: activity
     description: Specific activity to perform (initiate, check-status, next-steps)

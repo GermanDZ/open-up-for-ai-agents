@@ -1,6 +1,7 @@
 ---
 name: openup-transition
 description: Initialize and manage Transition phase activities - deploy to users
+model: haiku
 arguments:
   - name: activity
     description: Specific activity to perform (initiate, check-status, next-steps)

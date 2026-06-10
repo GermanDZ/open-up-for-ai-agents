@@ -1,6 +1,7 @@
 ---
 name: openup-quick-task
 description: Fast iteration mode for small changes - simplified workflow with minimal overhead
+model: inherit
 fit:
   great: [typo fixes, doc updates, single-file config tweaks, hotfixes]
   ok: [small bug fixes under ~50 LOC, single-component refactors]
@@ -94,12 +95,13 @@ Skip this step for pure code changes (bug fixes, refactors, configuration).
 
 ### 6. Quick Log (optional)
 
-> **Haiku/Scribe step** — delegate both writes:
+> **Scribe step** — delegate both writes to the `openup-scribe` agent (Agent
+> tool, subagent_type: "openup-scribe"). You determine the values; the scribe
+> only writes. Brief it with:
 >
 > ```
-> Agent(model="haiku", description="Write quick-task log entry",
->   prompt="You are a Scribe.
->   1. Append this line to docs/agent-logs/quick-tasks.log:
+> Agent(subagent_type="openup-scribe", description="Write quick-task log entry",
+>   prompt="1. Append this line to docs/agent-logs/quick-tasks.log:
 >      [ISO timestamp] | quick-task | [task description]
 >   2. [Only if task produced an artifact or decision] Append to
 >      .claude/memory/iteration-learnings.md:

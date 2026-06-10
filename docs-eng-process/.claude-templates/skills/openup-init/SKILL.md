@@ -1,6 +1,7 @@
 ---
 name: openup-init
 description: One-command project setup for OpenUP - interactive initialization wizard
+model: inherit
 arguments:
   - name: project_name
     description: The project name (optional, will prompt if not provided)

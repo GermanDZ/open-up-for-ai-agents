@@ -1,6 +1,7 @@
 ---
 name: openup-create-documentation
 description: Generate human-readable documentation from code and artifacts
+model: inherit
 arguments:
   - name: doc_type
     description: Type of documentation (user-guide, api-reference, troubleshooting, tutorial)

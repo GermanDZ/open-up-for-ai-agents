@@ -4,7 +4,7 @@
 <!-- plan-hook: 2026-06-10 -->
 ### Planned: Process v2 — Mechanize OpenUP for the Claude Code Harness
 
-- **Status**: `planned` (decomposed into tasks; not started)
+- **Status**: `in-progress` (Wave 1 started 2026-06-10)
 - **Plan**: [plans/2026-06-10-process-v2-claude-code-harness.md](plans/2026-06-10-process-v2-claude-code-harness.md)
 - **Created**: 2026-06-10
 - **Evidence base**: Kaze webapp empirical audit (2026-06-10) + 2026 AI-agent SDLC research (AI-DLC, Spec Kit, OpenSpec, BMAD, Kiro)
@@ -14,7 +14,7 @@
 
 | ID | Title | Status | Priority | Depends on |
 |---|---|---|---|---|
-| T-004 | Model tier map + `model:` frontmatter sweep + scribe/explorer agents | planned | high | — |
+| T-004 | Model tier map + `model:` frontmatter sweep + scribe/explorer agents | completed (2026-06-10) | high | — |
 | T-005 | `.openup/state.json` iteration state file | planned | high | — |
 | T-006 | Blocking gates + deterministic auto-logging + status sync | planned | high | T-005 |
 | T-007 | Three-ring docs scoping (product / changes / session) | planned | medium | — |

@@ -33,7 +33,7 @@ To reduce token usage while preserving quality, the team lead and all teammates 
 3. **Milestone-only updates**: status messages are allowed only at `started`, `blocked`, and `done`. Do not send heartbeat or idle notifications.
 4. **Compact handoffs**: every handoff must be max 6 bullets with only: `decision`, `diff summary`, `risks`, `next action`.
 5. **No repeated large context**: do not resend full task lists/specs after kickoff. Refer by task ID and send only deltas.
-6. **Model tiering**: use lightweight models for coordination/planning; escalate to stronger models only for complex design/debug/codegen.
+6. **Model tiering**: enforced via `model:` frontmatter and per-role assignments — see docs-eng-process/model-tiers.md.
 7. **Batch before reporting**: complete a meaningful chunk (code + tests for the subtask) before reporting back.
 8. **Budget gate**: define a token budget per iteration lane (PM/dev/test). If exceeded, checkpoint and restart with a fresh session.
 
@@ -69,24 +69,28 @@ For proper tracking and traceability, the team lead should start an iteration be
 ## Team Members
 
 ### tester (Lead)
+- **Model**: inherit
 - **Focus**: Final testing, validation, quality assurance for release
 - **Key Work Products**: Test Cases, Test Logs, Test Reports
 - **Collaborates With**: Developer (bug fixes), Analyst (user acceptance)
 - **Reference**: `.claude/teammates/tester.md`
 
 ### developer
+- **Model**: inherit
 - **Focus**: Bug fixes, deployment support, final integration
 - **Key Work Products**: Bug fixes, Deployment scripts
 - **Collaborates With**: Tester (fixing bugs), Project Manager (deployment coordination)
 - **Reference**: `.claude/teammates/developer.md`
 
 ### project-manager (Lead)
+- **Model**: haiku
 - **Focus**: Deployment coordination, user communication, release management
 - **Key Work Products**: Deployment Plan, Release Notes
 - **Collaborates With**: All roles for coordination
 - **Reference**: `.claude/teammates/project-manager.md`
 
 ### analyst (As needed)
+- **Model**: inherit
 - **Focus**: User feedback, acceptance, documentation
 - **Key Work Products**: User documentation, Feedback analysis
 - **Collaborates With**: Tester (acceptance criteria)

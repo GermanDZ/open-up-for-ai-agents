@@ -1,6 +1,7 @@
 ---
 name: openup-orchestrate
 description: Run a full orchestrated iteration — PM decomposes the goal, delegates to specialist roles, collects outputs, and synthesizes results
+model: inherit
 fit:
   great: [complex multi-role tasks, architecture+impl+test cycles, anything benefiting from role isolation]
   ok: [medium tasks where decomposition aids token-efficiency]

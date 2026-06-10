@@ -1,6 +1,7 @@
 ---
 name: openup-detail-use-case
 description: Transform a high-level use case into detailed scenarios with test cases
+model: inherit
 arguments:
   - name: use_case_name
     description: Name of the use case to detail (file name without .md)
