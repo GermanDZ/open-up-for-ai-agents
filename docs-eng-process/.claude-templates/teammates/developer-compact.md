@@ -8,7 +8,7 @@
 
 ## Quick Process
 
-1. Read task spec at `docs/tasks/T-XXX-*.md` (authoritative); fall back to roadmap line if no spec
+1. Read task spec at `docs/changes/T-XXX/plan.md` (authoritative); fall back to roadmap line if no spec
 2. Review design (or create with Architect)
 3. Implement with TDD approach when applicable
 4. Write/update unit tests

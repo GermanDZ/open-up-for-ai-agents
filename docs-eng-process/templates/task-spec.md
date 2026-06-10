@@ -97,7 +97,7 @@ How a reviewer (human or agent) confirms the task is done:
 ---
 
 <!--
-Worked example: see docs/tasks/T-001-reasons-task-spec.md for a real
+Worked example: see docs/changes/archive/T-001/plan.md for a real
 spec produced from this template. The task that introduced this template
 is itself written in the format — meta but useful as a reference.
 -->
