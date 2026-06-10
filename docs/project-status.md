@@ -2,12 +2,12 @@
 
 **Phase**: construction
 **Iteration**: 3
-**Iteration Goal**: T-006 — blocking gates + deterministic auto-logging + status sync: gate-edits.py, auto-log-commit.py, blocking on-stop, [T-XXX] enforcement, sync-status.py (Process v2 WS3)
+**Iteration Goal**: T-006 — Blocking gates + deterministic auto-logging + status sync
 **Status**: in-progress
 **Current Task**: T-006
 **Iteration Started**: 2026-06-10
 **Last Updated**: 2026-06-10
-**Updated By**: openup-start-iteration
+**Updated By**: sync-status.py
 
 ## Notes
 

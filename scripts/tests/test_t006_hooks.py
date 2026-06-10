@@ -334,6 +334,40 @@ class OnStopTests(unittest.TestCase):
         self.assertEqual(proc.returncode, 2)
         self.assertIn("UNCOMMITTED", proc.stderr)
 
+    def test_exempt_log_dirty_does_not_block(self):
+        # The hook-managed run log lags HEAD by one append by design. With gates
+        # satisfied and ONLY agent-runs.jsonl dirty, on-stop must allow stop.
+        self._commit_on_branch()
+        state_cli(self.repo.state_dir, "set-gate", "log_written", "true")
+        state_cli(self.repo.state_dir, "set-gate", "roadmap_synced", "true")
+        log = self.repo.dir / "docs" / "agent-logs" / "agent-runs.jsonl"
+        log.parent.mkdir(parents=True, exist_ok=True)
+        log.write_text('{"event":"commit"}\n')
+        git(self.repo.dir, "add", "-A")
+        git(self.repo.dir, "commit", "-q", "-m", "chore: track log [T-006]")
+        # Re-dirty it the way auto-log-commit does (append after the commit).
+        with log.open("a") as fh:
+            fh.write('{"event":"commit","sha":"deadbeef"}\n')
+        # Sanity: porcelain shows only the log as dirty.
+        st = git(self.repo.dir, "status", "--porcelain").stdout.strip()
+        self.assertIn("docs/agent-logs/agent-runs.jsonl", st)
+        proc = run_hook("on-stop.py", self._stop_payload(), self.repo.dir)
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+
+    def test_non_exempt_dirty_still_blocks(self):
+        # A dirty non-exempt file alongside the exempt log must still block.
+        self._commit_on_branch()
+        state_cli(self.repo.state_dir, "set-gate", "log_written", "true")
+        state_cli(self.repo.state_dir, "set-gate", "roadmap_synced", "true")
+        log = self.repo.dir / "docs" / "agent-logs" / "agent-runs.jsonl"
+        log.parent.mkdir(parents=True, exist_ok=True)
+        log.write_text('{"event":"commit"}\n')
+        (self.repo.dir / "scripts" / "foo.py").write_text("print('x')\n")
+        proc = run_hook("on-stop.py", self._stop_payload(), self.repo.dir)
+        self.assertEqual(proc.returncode, 2)
+        self.assertIn("UNCOMMITTED", proc.stderr)
+        self.assertIn("foo.py", proc.stderr)
+
     def test_blocks_when_log_gate_key_absent(self):
         # Defense-in-depth: a malformed state missing the log_written gate key
         # must be treated as UNMET (block), not skipped. Hand-corrupt the file
