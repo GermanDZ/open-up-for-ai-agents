@@ -24,6 +24,15 @@
             "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/scripts/hooks/validate-commit.py"
           }
         ]
+      },
+      {
+        "matcher": "Edit|Write|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/scripts/hooks/gate-edits.py"
+          }
+        ]
       }
     ],
     "PostToolUse": [
@@ -33,6 +42,10 @@
           {
             "type": "command",
             "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/scripts/hooks/on-branch-created.py"
+          },
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/scripts/hooks/auto-log-commit.py"
           }
         ]
       },

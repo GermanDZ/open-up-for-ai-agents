@@ -10,30 +10,38 @@ follows the canonical OpenUP format:
 Where:
   type   = feat | fix | refactor | test | docs | chore | style | perf | ci
   scope  = affected module/area (optional but encouraged)
-  T-XXX  = task ID from roadmap (optional but encouraged for traceability)
+  T-XXX  = task ID from roadmap
 
-Examples:
-  feat(auth): add JWT validation [T-007]
-  fix(api): handle null response from third-party service
-  docs: update architecture notebook for new caching layer
+  The [T-XXX] tag is OPTIONAL by default, but becomes MANDATORY when an
+  OpenUP iteration is active (.openup/state.json present with a task_id):
+  in that case a subject without a matching tag is rejected (exit 2) and the
+  error suggests the state's task_id.
+
+Bypass:
+  Include [openup-skip] anywhere in the commit message to suppress all
+  validation. Bypasses are logged to .claude/memory/bypass-log.md.
 
 Exit codes:
   0 — not a git commit, OR commit message is valid — allow the command
-  2 — commit message is malformed — block with helpful error on stderr
+  2 — commit message is malformed (or missing required [T-XXX]) — block
 
 Hook event: PreToolUse / Bash
 """
 
 import json
+import os
 import re
+import subprocess
 import sys
+from datetime import datetime, timezone
+from pathlib import Path
 
 VALID_TYPES = {
     "feat", "fix", "refactor", "test", "docs", "chore",
     "style", "perf", "ci", "build", "revert", "quick",
 }
 
-# Canonical format: type(scope): description  (task id optional)
+# Canonical format: type(scope): description  (task id checked separately)
 PATTERN = re.compile(
     r"^("
     + "|".join(VALID_TYPES)
@@ -49,6 +57,47 @@ MSG_RE = re.compile(
     re.DOTALL,
 )
 
+SKIP_RE = re.compile(r"\[openup-skip\]", re.IGNORECASE)
+
+# A task tag like [T-006]
+TASK_TAG_RE = re.compile(r"\[T-\d+\]", re.IGNORECASE)
+
+
+def run(cmd: str, cwd: str) -> tuple[int, str]:
+    result = subprocess.run(
+        cmd, shell=True, cwd=cwd, capture_output=True, text=True
+    )
+    return result.returncode, result.stdout.strip()
+
+
+def state_task_id(cwd: str) -> str | None:
+    """Return state.json task_id, or None if no state / read failure."""
+    try:
+        script = Path(cwd) / "scripts" / "openup-state.py"
+        code, out = run(f'python3 "{script}" get task_id', cwd)
+        if code == 0:
+            tid = out.strip()
+            return tid or None
+    except Exception:
+        return None
+    return None
+
+
+def log_bypass(cwd: str, branch: str, msg: str) -> None:
+    log_path = Path(cwd) / ".claude" / "memory" / "bypass-log.md"
+    try:
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+        entry = f"- `{ts}` | branch: `{branch}` | validate-commit | message: `{msg[:80]}`\n"
+        with log_path.open("a") as f:
+            if log_path.stat().st_size == 0:
+                f.write("# OpenUP Iteration-Check Bypasses\n\n"
+                        "Commits/edits that bypassed an OpenUP gate.\n"
+                        "Review periodically — frequent bypasses indicate a process gap.\n\n")
+            f.write(entry)
+    except OSError:
+        pass
+
 
 def extract_commit_message(command: str) -> str | None:
     """Return the commit message string, or None if we can't extract it."""
@@ -56,8 +105,6 @@ def extract_commit_message(command: str) -> str | None:
     if not m:
         return None
     msg = (m.group(1) or m.group(2) or "").strip()
-    # Shell substitution inside -m "$(...)": the hook sees the raw command
-    # before evaluation, so we can't determine the real message — allow through.
     if msg.startswith("$("):
         return None
     return msg
@@ -97,30 +144,59 @@ def main() -> None:
         # Can't extract message (e.g. uses heredoc or -F flag) — allow through
         sys.exit(0)
 
+    cwd = payload.get("cwd", os.getcwd())
+
+    # [openup-skip] bypass — audit and allow.
+    if SKIP_RE.search(msg):
+        _, branch = run("git rev-parse --abbrev-ref HEAD", cwd)
+        log_bypass(cwd, branch, msg)
+        print(
+            "[validate-commit] ⚠️  [openup-skip] detected — commit validation "
+            "suppressed.\n  Bypass logged to .claude/memory/bypass-log.md",
+            file=sys.stderr,
+        )
+        sys.exit(0)
+
     subject = first_line(msg)
 
     # Check for "Co-Authored-By" trailer only — those are fine
     if subject.startswith("Co-Authored-By"):
         sys.exit(0)
 
-    if PATTERN.match(subject):
-        sys.exit(0)
+    # Format check (type(scope): description).
+    if not PATTERN.match(subject):
+        print(
+            f"[validate-commit] ❌ Commit message does not follow the canonical format.\n\n"
+            f"  Your message:    {subject!r}\n\n"
+            f"  Required format: type(scope): description [T-XXX]\n"
+            f"  Valid types:     {', '.join(sorted(VALID_TYPES))}\n\n"
+            f"  Examples:\n"
+            f"    feat(auth): add JWT token validation [T-007]\n"
+            f"    fix(api): handle null upstream response\n"
+            f"    docs: update architecture notebook\n"
+            f"    refactor(cache): simplify TTL calculation [T-012]\n\n"
+            f"Please rewrite the commit message to match the format, then retry.",
+            file=sys.stderr,
+        )
+        sys.exit(2)
 
-    # Malformed — block with a helpful message
-    print(
-        f"[validate-commit] ❌ Commit message does not follow the canonical format.\n\n"
-        f"  Your message:    {subject!r}\n\n"
-        f"  Required format: type(scope): description [T-XXX]\n"
-        f"  Valid types:     {', '.join(sorted(VALID_TYPES))}\n\n"
-        f"  Examples:\n"
-        f"    feat(auth): add JWT token validation [T-007]\n"
-        f"    fix(api): handle null upstream response\n"
-        f"    docs: update architecture notebook\n"
-        f"    refactor(cache): simplify TTL calculation [T-012]\n\n"
-        f"Please rewrite the commit message to match the format, then retry.",
-        file=sys.stderr,
-    )
-    sys.exit(2)
+    # Mandatory-tag check: if an iteration is active with a task_id, the
+    # subject MUST carry a [T-XXX] tag.
+    task_id = state_task_id(cwd)
+    if task_id and not TASK_TAG_RE.search(subject):
+        print(
+            f"[validate-commit] ❌ Missing required task tag.\n\n"
+            f"  Your message:    {subject!r}\n\n"
+            f"  An OpenUP iteration is active for task {task_id}, so the commit\n"
+            f"  subject must carry the task tag. Append [{task_id}]:\n\n"
+            f"    {subject} [{task_id}]\n\n"
+            f"  (Use [openup-skip] to bypass for a deliberate one-off; bypasses\n"
+            f"  are audited in .claude/memory/bypass-log.md.)",
+            file=sys.stderr,
+        )
+        sys.exit(2)
+
+    sys.exit(0)
 
 
 if __name__ == "__main__":
