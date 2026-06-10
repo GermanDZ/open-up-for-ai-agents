@@ -48,9 +48,9 @@
 
 | ID | Title | Status | Priority |
 |---|---|---|---|
-| [T-001](tasks/T-001-reasons-task-spec.md) | REASONS task spec — template, skill, rubric | done | high |
-| [T-002](tasks/T-002-sync-spec-skill.md) | `/openup-sync-spec` — refactor back-propagation | deferred | medium |
-| [T-003](tasks/T-003-suitability-stars.md) | Suitability "fit" metadata in workflow skills | done | low |
+| [T-001](changes/archive/T-001/plan.md) | REASONS task spec — template, skill, rubric | done | high |
+| [T-002](changes/T-002/plan.md) | `/openup-sync-spec` — refactor back-propagation | deferred | medium |
+| [T-003](changes/archive/T-003/plan.md) | Suitability "fit" metadata in workflow skills | done | low |
 
 **Done (out-of-band, in `.claude/` — gitignored)**
 

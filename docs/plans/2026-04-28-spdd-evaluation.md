@@ -25,10 +25,10 @@ in by the per-task specs, not by amending the plan.
 
 | Item | Status | Tracker |
 |---|---|---|
-| #1 REASONS-style task spec | `ready` | [T-001](../tasks/T-001-reasons-task-spec.md) |
+| #1 REASONS-style task spec | `ready` | [T-001](../changes/archive/T-001/plan.md) |
 | #2 Fix-spec-first rule | **done** (commit `c39c824`-tree, `.claude/CLAUDE.openup.md` + 4 teammates) | n/a |
-| #3 `/openup-sync-spec` skill | `deferred` (un-defer when drift observed) | [T-002](../tasks/T-002-sync-spec-skill.md) |
-| #4 Suitability stars | `ready` | [T-003](../tasks/T-003-suitability-stars.md) |
+| #3 `/openup-sync-spec` skill | `deferred` (un-defer when drift observed) | [T-002](../changes/T-002/plan.md) |
+| #4 Suitability stars | `ready` | [T-003](../changes/archive/T-003/plan.md) |
 | #5 No hand-edit rule | **done** (`.claude/CLAUDE.openup.md`) | n/a |
 
 > Note: items #2 and #5 changes live in `.claude/` which is gitignored at

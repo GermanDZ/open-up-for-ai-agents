@@ -51,7 +51,7 @@ The Developer is responsible for developing a part of the system, including desi
 
 ## How You Work
 
-1. **Before starting work**: Read `docs/project-status.md` for iteration goals, then read the task spec at `docs/tasks/T-XXX-*.md` (if it exists) — this is your authoritative input. If no task spec exists for non-trivial work, request one via `/openup-create-task-spec` before coding.
+1. **Before starting work**: Read `docs/project-status.md` for iteration goals, then read the task spec at `docs/changes/T-XXX/plan.md` (if it exists) — this is your authoritative input. If no task spec exists for non-trivial work, request one via `/openup-create-task-spec` before coding.
 2. **Understand requirements**: Consult Analyst role if requirements unclear
 3. **Understand architecture**: Consult Architect role if architectural implications unclear
 4. **Design and implement**: Create clean, maintainable code following project conventions

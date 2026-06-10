@@ -278,7 +278,7 @@ Produce a REASONS-Canvas task spec — the per-task executable blueprint a devel
 
 **When NOT to Use**:
 - Trivial typo / config tweaks (use `/openup-quick-task`)
-- Spec already exists at `docs/tasks/T-XXX-*.md` (re-run this skill — never hand-edit)
+- Spec already exists at `docs/changes/T-XXX/plan.md` (re-run this skill — never hand-edit)
 - Idea-stage work with no requirements yet (run `/openup-plan-feature` first)
 
 **Arguments**:
@@ -293,7 +293,7 @@ Produce a REASONS-Canvas task spec — the per-task executable blueprint a devel
 ```
 
 **Success Criteria**:
-- [ ] File at `docs/tasks/T-XXX-<slug>.md` matches `docs-eng-process/templates/task-spec.md`
+- [ ] File at `docs/changes/T-XXX/plan.md` matches `docs-eng-process/templates/task-spec.md`
 - [ ] All eight criteria in `.claude/rubrics/task-spec-rubric.md` are ✅
 - [ ] Front-matter `status: ready`
 - [ ] Roadmap entry references the spec

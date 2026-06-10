@@ -172,20 +172,28 @@ The adherence core. Three changes to `.claude/scripts/hooks/` + `settings.json`:
 ```
 docs/
 ├── product/            # Ring 1: what IS true now (vision, architecture, use-cases, product docs)
-├── roadmap.md          # live board (status frontmatter per task, see WS5)
+├── roadmap.md          # live board (status frontmatter per task, see WS5) — STAYS in place
+├── project-status.md   # generated view of state + roadmap (WS3) — STAYS in place
+├── plans/              # program-level / multi-task plans that SEED changes — STAYS in place
 ├── changes/            # Ring 2: one folder per change — inputs, not truth
 │   └── T-015/
-│       ├── plan.md         # the REASONS spec / iteration plan
+│       ├── plan.md         # the REASONS spec / iteration plan for THIS change
 │       ├── design.md       # decisions made during execution (living)
 │       ├── inputs/         # examples, ideas, references seeding the work
 │       ├── test-notes.md
 │       └── state.json      # archived .openup/state.json on completion
 ├── changes/archive/    # completed change folders, moved by /openup-complete-task
+├── agent-logs/         # durable, committed audit trail (JSONL + markdown) — STAYS in place
 └── explorations/       # pre-iteration notes (existing)
-# Ring 3 (session debris): .openup/ + .claude/memory/ — never in docs/
+# Ring 3 (ephemeral session state, never committed to docs/): .openup/state.json + .claude/memory/
 ```
 
-Migration is mechanical (`git mv` + link rewrite script). Skills that load context get the corresponding update: brief a specialist with **Ring 1 + one change folder**, never "scan `docs/plans/`". On completion, durable outcomes merge into Ring 1 (the "fix-spec-first" rule already mandates this direction); the change folder archives. Plans stop going stale because `design.md` is the sanctioned place for mid-execution decisions — fixing Kaze's 25/27 frozen plans.
+**Decided during T-007 (2026-06-11) — refinements to the sketch above:**
+- **`docs/agent-logs/` is durable traceability, not Ring 3.** It is the committed audit trail that `auto-log-commit.py` appends to and `on-stop.py` exempts (WS3). Ring 3 ("session debris, never in `docs/`") means only the *ephemeral* `.openup/state.json` and `.claude/memory/` — not the audit log. Moving the audit log would re-open the 39% logging-gap that WS3 closed.
+- **`docs/plans/` stays in place.** The 5 program-level plans span multiple tasks (the Process v2 program seeds T-004…T-011); they are planning *inputs* that seed change folders, not a single change. `on-plan-exit.py` saves new plans here. Per-change planning lives in `changes/T-NNN/plan.md`; program plans remain in `docs/plans/`.
+- **`docs/project-status.md` and `docs/roadmap.md` stay in place** (Open Question #3: keep project-status as a generated view). Because they don't move, the apparent 150+/50+ reference blast radius is inert — the real migration surface is `docs/tasks/` (~10 refs) plus skill context-loading guidance.
+
+Migration is mechanical (`git mv` + link rewrite). What actually moves in T-007: create `product/`, `changes/`, `changes/archive/`; migrate `docs/tasks/T-NNN-*.md` → `changes/[archive/]T-NNN/plan.md` (done/verified tasks straight to `archive/`). Skills that load context get the corresponding update: brief a specialist with **Ring 1 + one change folder**, not "scan all of `docs/`". On completion, durable outcomes merge into Ring 1 (the "fix-spec-first" rule already mandates this direction); the change folder archives. Plans stop going stale because `design.md` is the sanctioned place for mid-execution decisions — fixing Kaze's 25/27 frozen plans.
 
 ### WS5 — Readiness DAG + claims + worktrees (T-008, T-009; absorbs OpenSpec #1)
 

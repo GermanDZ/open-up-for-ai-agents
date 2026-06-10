@@ -66,9 +66,18 @@ Default cycle:
 - Workflow: `/openup-start-iteration`, `/openup-complete-task`, `/openup-quick-task`, `/openup-orchestrate`, `/openup-phase-review`, `/openup-explore`
 - Assessment: `/openup-assess-completeness` (rubric-based, per-criterion grading)
 
+## Context Scoping (Three Rings)
+`docs/` is scoped per unit of work. When loading context, prefer the smallest ring that answers the question — do **not** "scan all of `docs/`".
+- **Ring 1 — product truth** (`docs/product/`): what IS true now (vision, architecture, use-cases). Plus the live board `docs/roadmap.md` + generated view `docs/project-status.md`, and program-level plans in `docs/plans/`.
+- **Ring 2 — changes** (`docs/changes/T-NNN/`): one folder per task — `plan.md` (the spec), `design.md` (in-flight decisions), inputs, test-notes. Completed changes archive to `docs/changes/archive/`.
+- **Ring 3 — ephemeral session state**: `.openup/state.json` + `.claude/memory/` (never committed to `docs/`). NB: `docs/agent-logs/` is the *durable* audit trail, not Ring 3.
+
+**When briefing a specialist, load Ring 1 + the one change folder for the task** — not the whole tree.
+
 ## Memory & Context Continuity
 - At session start, read `.claude/memory/iteration-learnings.md` for decisions from past iterations
-- Check `docs/plans/` for any plans with `planned` status — these are the authoritative spec
+- Check `docs/plans/` for any program-level plans with `planned` status — these are the authoritative spec
+- The per-change spec lives in `docs/changes/T-NNN/plan.md`; in-flight decisions go in that folder's `design.md` (keeps plans from going stale)
 - Plans saved via plan mode are automatically captured to `docs/plans/` and tracked in `docs/roadmap.md`
 
 ## Quality: Rubric-Based Assessment

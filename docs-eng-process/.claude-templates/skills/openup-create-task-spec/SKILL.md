@@ -38,7 +38,7 @@ Use this skill when:
 
 Do NOT use this skill when:
 - The change is a trivial typo / config tweak — use `/openup-quick-task`.
-- The task spec already exists at `docs/tasks/T-XXX-*.md` — update via this
+- The task spec already exists at `docs/changes/T-XXX/plan.md` — update via this
   skill (re-run), do not hand-edit (per the spec-first rule in `CLAUDE.openup.md`).
 - You're at the *idea* stage and don't yet have requirements — run
   `/openup-plan-feature` first.
@@ -46,7 +46,7 @@ Do NOT use this skill when:
 ## Success Criteria
 
 After this skill completes, ALL of these must be true:
-- [ ] File exists at `docs/tasks/T-XXX-<slug>.md` matching the template at
+- [ ] File exists at `docs/changes/T-XXX/plan.md` matching the template at
       `docs-eng-process/templates/task-spec.md`.
 - [ ] Front-matter is fully populated (`id`, `title`, `status`, `priority`, `estimate`).
 - [ ] Status is `ready` (not `proposed`) — the rubric grades to all-✅.
@@ -61,11 +61,12 @@ per round.
 
 ### 1. Allocate Task ID and Read Context
 
-- If `task_id` is missing, scan `docs/tasks/T-*.md` for the highest existing ID
-  and allocate `T-{n+1}`.
+- If `task_id` is missing, scan `docs/changes/*/plan.md` and
+  `docs/changes/archive/*/plan.md` for the highest existing ID and allocate `T-{n+1}`.
 - Read `docs/roadmap.md`, the originating plan (if `plan_ref` provided), and the
   use case(s) implicated.
-- Generate filename: `docs/tasks/<task_id>-<slug>.md` from the title.
+- Generate path: `docs/changes/<task_id>/plan.md`; create the `docs/changes/<task_id>/`
+  folder if it does not exist.
 - Copy `docs-eng-process/templates/task-spec.md` to that path.
 
 ### 2. Round 1 — Analyst + Architect
@@ -123,7 +124,7 @@ Returns:
 - Template: `docs-eng-process/templates/task-spec.md`
 - Rubric: `.claude/rubrics/task-spec-rubric.md`
 - Format origin: Martin Fowler, "Structured Prompt-Driven Development"
-- Index: `docs/tasks/README.md`
+- Index: `docs/changes/README.md`
 
 ## See Also
 
