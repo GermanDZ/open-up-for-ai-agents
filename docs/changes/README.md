@@ -24,6 +24,12 @@ docs/changes/
 `plan.md` front-matter; the live board is `docs/roadmap.md`, generated/synced via
 `scripts/sync-status.py`).
 
+Each `plan.md` also carries **coordination frontmatter** (`status`, `depends-on`,
+`blocks`, `touches`, `claimed-by`, `claimed-at`, `worktree`) that `/openup-readiness`
+parses into the dependency DAG. The full field set, status enum, hyphen convention, and
+minimum-required fields for active vs archived tasks are documented in
+[`docs-eng-process/coordination-frontmatter.md`](../../docs-eng-process/coordination-frontmatter.md).
+
 On completion, `/openup-complete-task`:
 1. merges durable outcomes into Ring 1 (`docs/product/`) — the "fix-spec-first" direction,
 2. copies `.openup/state.json` into the change folder as `state.json`,

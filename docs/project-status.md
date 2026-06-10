@@ -1,8 +1,8 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 4
-**Iteration Goal**: T-007 — Three-ring docs scoping (product / changes / session)
+**Iteration**: 5
+**Iteration Goal**: T-008 — Coordination frontmatter + /openup-readiness DAG
 **Status**: completed
 **Current Task**: None
 **Iteration Started**: 2026-06-11
