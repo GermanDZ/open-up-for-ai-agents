@@ -2,12 +2,12 @@
 
 **Phase**: construction
 **Iteration**: 4
-**Iteration Goal**: T-007 — Three-ring docs scoping (product / changes / archive) + context-loading updates
+**Iteration Goal**: T-007 — Three-ring docs scoping (product / changes / session)
 **Status**: in-progress
 **Current Task**: T-007
 **Iteration Started**: 2026-06-11
-**Last Updated**: 2026-06-11
-**Updated By**: openup-start-iteration
+**Last Updated**: 2026-06-10
+**Updated By**: sync-status.py
 
 ## Notes
 

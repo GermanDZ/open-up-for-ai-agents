@@ -17,7 +17,7 @@
 | T-004 | Model tier map + `model:` frontmatter sweep + scribe/explorer agents | completed (2026-06-10) | high | — |
 | T-005 | `.openup/state.json` iteration state file | completed (2026-06-10) | high | — |
 | T-006 | Blocking gates + deterministic auto-logging + status sync | completed (2026-06-10) | high | T-005 |
-| T-007 | Three-ring docs scoping (product / changes / session) | planned | medium | — |
+| T-007 | Three-ring docs scoping (product / changes / session) | in-progress | medium | — |
 | T-008 | Coordination frontmatter + `/openup-readiness` DAG | planned | medium | T-007 |
 | T-009 | Worktree-per-task + lease claims + collision pre-flight | planned | medium | T-005, T-008 |
 | T-010 | Graded tracks (quick/standard/full) | planned | medium | T-005, T-006 |
