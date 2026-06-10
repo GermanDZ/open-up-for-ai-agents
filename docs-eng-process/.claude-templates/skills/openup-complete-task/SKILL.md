@@ -149,12 +149,25 @@ python3 scripts/openup-state.py check-gates
 
 (Quick-track iterations were started with `--track quick`; for those use `check-gates --require log_written,roadmap_synced`.)
 
-Once gates pass, archive the state into the dated agent-logs tree and remove the live runtime file:
+Once gates pass, archive the iteration state and the **change folder** (Ring 2 → `docs/changes/archive/`).
+
+**If the task has a change folder** (`docs/changes/{task_id}/` exists — the standard three-ring case):
+
+```bash
+# 1. Archive .openup/state.json INTO the change folder as state.json (validate, copy, remove live file)
+python3 scripts/openup-state.py archive "docs/changes/{task_id}/state.json"
+# 2. Move the whole change folder into the archive ring (preserves history)
+git mv "docs/changes/{task_id}" "docs/changes/archive/{task_id}"
+```
+
+**Otherwise** (legacy / quick-track task with no change folder), archive the state into the dated agent-logs tree:
 
 ```bash
 python3 scripts/openup-state.py archive \
   "docs/agent-logs/$(date -u +%Y)/$(date -u +%m)/$(date -u +%d)/state-{task_id}.json"
 ```
+
+Either way the live `.openup/state.json` is removed by the `archive` command. Commit the archive move with the task's other completion commits.
 
 ### 8. Create Pull Request
 

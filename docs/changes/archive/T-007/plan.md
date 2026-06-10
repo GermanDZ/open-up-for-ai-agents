@@ -1,7 +1,8 @@
 ---
 id: T-007
 title: Three-ring docs scoping (product / changes / archive) + context-loading updates
-status: in-progress
+status: done
+completed: 2026-06-11
 priority: medium
 estimate: 1–2 sessions
 plan: docs/plans/2026-06-10-process-v2-claude-code-harness.md#ws4
@@ -52,6 +53,7 @@ new structure by housing this very task's spec in `docs/changes/T-007/`.
 - MOVED `docs/tasks/{T-001,T-003}` → `docs/changes/archive/{T-001,T-003}/plan.md`; `docs/tasks/T-002` → `docs/changes/T-002/plan.md`; `docs/tasks/README.md` → `docs/changes/README.md` (rewritten)
 - NEW `docs/changes/T-007/{plan.md,design.md}` (dogfood)
 - MOD references in `.claude/skills/.../create-task-spec/SKILL.md`, `.claude/teammates/developer.md`, `docs-eng-process/skills-guide.md`, `docs-eng-process/templates/task-spec.md` (+ template mirrors)
+- MOD `openup-complete-task/SKILL.md` §7 — archive the change folder to `docs/changes/archive/` on completion (the WS4 archive-on-complete mechanism)
 - NEW `docs-eng-process/migration-three-ring-docs.md`
 
 ## Operations
@@ -62,6 +64,7 @@ new structure by housing this very task's spec in `docs/changes/T-007/`.
 4. Update the `docs/tasks/` references (create-task-spec skill, developer teammates, skills-guide, task-spec template, roadmap + spdd-evaluation links) + three-ring context-loading guidance in `CLAUDE.md`. ✅
 5. Write the consumer migration note (`docs-eng-process/migration-three-ring-docs.md`); re-sync templates → `.claude/`. ✅
 6. Tester lane: grepped for dangling `docs/tasks` refs (none in functional paths), verified moved links resolve, `check-claude-sync` parity holds. ✅
+7. Mechanize archive-on-complete in `openup-complete-task` §7 (archive-on-complete is in T-007's charter); dogfood by archiving this folder on completion. ✅
 
 ## Norms
 

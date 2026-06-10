@@ -57,3 +57,18 @@ no correctness payoff and a large review burden for a medium-priority task.
 
 **Decision:** T-001 (`done`) and T-003 (`done`) → `docs/changes/archive/`; T-002 (`deferred`)
 → `docs/changes/T-002/` (active). `deferred` is "not yet done", so it belongs in the live ring.
+
+## D6 — Archive-on-complete mechanized in `openup-complete-task` §7
+
+**Context:** "archive-on-complete" is explicitly in T-007's charter (WS4 absorbs OpenSpec #4),
+but the original `plan.md` operations under-scoped it. Discovered while running
+`/openup-complete-task` to close T-007.
+
+**Decision:** Extend `openup-complete-task` §7: when `docs/changes/{task_id}/` exists, archive
+`.openup/state.json` into that folder as `state.json`, then `git mv` the folder to
+`docs/changes/archive/{task_id}/`. Legacy/quick tasks without a change folder keep the old
+dated-agent-logs state archive. Dogfooded by archiving this very folder on T-007 completion.
+
+**Why:** Without it the README's documented archive flow would never actually run, and T-007
+would be only partially delivered against its charter. Tight, in-scope addition (one skill §).
+
