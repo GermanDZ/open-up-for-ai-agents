@@ -72,7 +72,15 @@ Append to `docs/agent-logs/agent-runs.jsonl`:
 {"run_id":"<id>","agent":"claude","branch":"<branch>","trunk":"<trunk>","start":"<ts>","end":"<ts>","phase":"<phase>","iteration_goals":["..."],"prompt_hash":"sha256:...","md_log_path":"<path>","tasks":[{"role":"<role>","objective":"<obj>","start":"<ts>","end":"<ts>","commits":["<sha>"],"docs_updated":["<path>"],"consulting_roles":["<role>"]}],"decisions":["<path>"],"notes":"<summary>"}
 ```
 
-### 5. Verify
+### 5. Record the log gate
+
+Once the markdown log and JSONL record are written, flip the iteration-state gate (no-op if there is no active `.openup/state.json`):
+
+```bash
+python3 scripts/openup-state.py set-gate log_written true 2>/dev/null || true
+```
+
+### 6. Verify
 
 - Markdown log exists and is readable
 - JSONL entry is valid JSON

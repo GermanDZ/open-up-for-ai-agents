@@ -38,6 +38,7 @@ After this skill completes, ALL of these must be true:
 - [ ] Iteration goal is defined
 - [ ] Answered input requests are processed
 - [ ] Log entry is created
+- [ ] `.openup/state.json` created
 
 ## Process
 
@@ -91,6 +92,12 @@ Team deployment is required for every iteration. Skip ONLY if `$ARGUMENTS[deploy
 
 4. **PM takes the lead**: after spawning, the project-manager agent coordinates all subsequent work for this iteration. Specialists (developer, architect, tester, analyst) receive focused subtasks from the PM.
 
+5. **Record the team gate** — once the team is up, flip the gate in iteration state (created in step 5 below; if the branch/state does not exist yet, do this right after step 5):
+
+   ```bash
+   python3 scripts/openup-state.py set-gate team_deployed true
+   ```
+
 ### 4. Create Task Branch
 
 **Execute these commands in order:**
@@ -116,11 +123,28 @@ git rev-parse --abbrev-ref HEAD
 - No unmerged commits → delete and recreate from trunk
 - Has unmerged commits → create PR or merge first, then create new branch
 
-### 5. Check for Answered Input Requests
+### 5. Initialize Iteration State
+
+Write the machine-readable iteration state file. This is what hooks read to enforce process gates (see [state-file.md](../../../../docs-eng-process/state-file.md)). Fill in the iteration's actual values:
+
+```bash
+python3 scripts/openup-state.py init \
+  --task-id "{task_id}" \
+  --iteration {iteration_number} \
+  --phase {inception|elaboration|construction|transition} \
+  --track {quick|standard|full} \
+  --branch "$(git rev-parse --abbrev-ref HEAD)" \
+  --worktree "$(git rev-parse --show-toplevel)" \
+  [--plan docs/plans/{plan}.md]    # only if a plan was persisted
+```
+
+If the team was already deployed in step 3, also run `python3 scripts/openup-state.py set-gate team_deployed true` now.
+
+### 6. Check for Answered Input Requests
 
 Check `docs/input-requests/` for files with `status: answered`. Process any answered requests before continuing.
 
-### 6. Initialize Iteration
+### 7. Initialize Iteration
 
 > **Scribe step** — delegate to the `openup-scribe` agent (Agent tool,
 > subagent_type: "openup-scribe"). You determine the values (iteration number,
@@ -139,7 +163,7 @@ Check `docs/input-requests/` for files with `status: answered`. Process any answ
 >   Report: each field changed from → to.")
 > ```
 
-### 7. Log Initialization
+### 8. Log Initialization
 
 > **Scribe step** — delegate to the `openup-scribe` agent (Agent tool,
 > subagent_type: "openup-scribe"). You determine the values; the scribe only
