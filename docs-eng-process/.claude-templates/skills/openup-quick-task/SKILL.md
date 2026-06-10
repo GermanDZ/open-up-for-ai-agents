@@ -65,6 +65,21 @@ BRANCH_NAME="quick/$(date +%Y%m%d-%H%M%S)-$(echo $task | tr ' ' '-' | head -c 20
 git checkout -b $BRANCH_NAME
 ```
 
+Then initialize iteration state on the **quick** track. The quick track only requires the `log_written` and `roadmap_synced` gates — there is no plan or team gate:
+
+```bash
+python3 scripts/openup-state.py init \
+  --task-id "{task_id or generated id}" \
+  --iteration 0 \
+  --phase construction \
+  --track quick \
+  --branch "$(git rev-parse --abbrev-ref HEAD)" \
+  --worktree "$(git rev-parse --show-toplevel)" \
+  --force
+```
+
+(If branching is skipped and no `.openup/state.json` will exist, skip this and the gate steps below — quick tasks remain lightweight.)
+
 ### 3. Execute Task
 
 Implement the change:
@@ -110,6 +125,21 @@ Skip this step for pure code changes (bug fixes, refactors, configuration).
 >      - Conventions established: [any patterns worth reusing]
 >   Report: files written.")
 > ```
+
+After the log is written, record the gates and verify the quick-track required set. If `check-gates` exits nonzero, resolve the unmet gates before finishing:
+
+```bash
+python3 scripts/openup-state.py set-gate log_written true 2>/dev/null || true
+python3 scripts/openup-state.py set-gate roadmap_synced true 2>/dev/null || true
+python3 scripts/openup-state.py check-gates --require log_written,roadmap_synced 2>/dev/null || true
+```
+
+### 7. Archive State (if state was created)
+
+```bash
+python3 scripts/openup-state.py archive \
+  "docs/agent-logs/$(date -u +%Y)/$(date -u +%m)/$(date -u +%d)/state-quick-$(date -u +%H%M%S).json" 2>/dev/null || true
+```
 
 ## Output
 

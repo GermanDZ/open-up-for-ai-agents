@@ -36,6 +36,7 @@ After this skill completes, ALL of these must be true:
 - [ ] Project status is updated
 - [ ] Traceability logs are created with commit SHAs
 - [ ] Iteration learnings entry appended to `.claude/memory/iteration-learnings.md`
+- [ ] Iteration gates pass (`openup-state.py check-gates`) and state is archived
 - [ ] PR is created (unless `create_pr` was explicitly `"false"`)
 
 ## Detailed Steps
@@ -71,6 +72,12 @@ Most changes should already be committed as atomic commits during implementation
 >   2. Add 'Completed [YYYY-MM-DD]' to its Notes or detail section.
 >   Report: exact line(s) changed.")
 > ```
+
+Once the roadmap is updated, record the gate:
+
+```bash
+python3 scripts/openup-state.py set-gate roadmap_synced true
+```
 
 ### 4. Update Project Status
 
@@ -132,7 +139,24 @@ Most changes should already be committed as atomic commits during implementation
 >   Report: confirmed append.")
 > ```
 
-### 7. Create Pull Request
+### 7. Check Gates and Archive Iteration State
+
+**Verify all required gates pass before finalizing.** If this exits nonzero, completion is **blocked** — surface the unmet gates (printed one per line on stderr) and resolve each before continuing:
+
+```bash
+python3 scripts/openup-state.py check-gates
+```
+
+(Quick-track iterations were started with `--track quick`; for those use `check-gates --require log_written,roadmap_synced`.)
+
+Once gates pass, archive the state into the dated agent-logs tree and remove the live runtime file:
+
+```bash
+python3 scripts/openup-state.py archive \
+  "docs/agent-logs/$(date -u +%Y)/$(date -u +%m)/$(date -u +%d)/state-{task_id}.json"
+```
+
+### 8. Create Pull Request
 
 **PR is created by default.** Skip ONLY if `$ARGUMENTS[create_pr]` is explicitly `"false"`.
 

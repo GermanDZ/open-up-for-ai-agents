@@ -40,6 +40,7 @@ This repository follows the **OpenUP** (Open Unified Process) methodology, adapt
 - **[agent-workflow.md](agent-workflow.md)** - Complete agent SOP (start-of-run, role-based execution, branching, logging)
 - **[how-to-work.md](how-to-work.md)** - Minimal orientation and references
 - **[getting-started.md](getting-started.md)** - Project initialization guide
+- **[state-file.md](state-file.md)** - Machine-readable iteration state (`.openup/state.json`) and the `openup-state.py` helper CLI
 
 ### Templates
 

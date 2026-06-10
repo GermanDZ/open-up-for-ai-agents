@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openup-for-ai-agents/openup-state.schema.json",
+  "title": "OpenUP iteration state (v1)",
+  "description": "Machine-readable state for a single OpenUP iteration. Written by skills via scripts/openup-state.py, read by hooks. Never hand-edit.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "task_id",
+    "iteration",
+    "phase",
+    "track",
+    "branch",
+    "worktree",
+    "session_id",
+    "started_at",
+    "gates",
+    "iterations_since_retro"
+  ],
+  "properties": {
+    "schema": {
+      "type": "integer",
+      "const": 1,
+      "description": "State file schema version."
+    },
+    "task_id": {
+      "type": "string",
+      "description": "Roadmap task identifier, e.g. \"T-005\"."
+    },
+    "iteration": {
+      "type": "integer",
+      "description": "Iteration number."
+    },
+    "phase": {
+      "type": "string",
+      "enum": ["inception", "elaboration", "construction", "transition"],
+      "description": "OpenUP lifecycle phase."
+    },
+    "track": {
+      "type": "string",
+      "enum": ["quick", "standard", "full"],
+      "description": "Process track / weight."
+    },
+    "branch": {
+      "type": "string",
+      "description": "Git branch for the iteration."
+    },
+    "worktree": {
+      "type": "string",
+      "description": "Absolute path to the working tree."
+    },
+    "session_id": {
+      "type": ["string", "null"],
+      "description": "Claude Code session id, or null if unknown."
+    },
+    "started_at": {
+      "type": "string",
+      "description": "ISO-8601 UTC timestamp when the iteration state was created."
+    },
+    "gates": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "team_deployed",
+        "plan_persisted",
+        "log_written",
+        "roadmap_synced",
+        "retro_due"
+      ],
+      "properties": {
+        "team_deployed": {
+          "type": "boolean"
+        },
+        "plan_persisted": {
+          "type": ["string", "boolean"],
+          "description": "false = not done; string = path to the persisted plan."
+        },
+        "log_written": {
+          "type": "boolean"
+        },
+        "roadmap_synced": {
+          "type": "boolean"
+        },
+        "retro_due": {
+          "type": "boolean"
+        }
+      }
+    },
+    "iterations_since_retro": {
+      "type": "integer",
+      "description": "Count of iterations completed since the last retrospective."
+    }
+  }
+}

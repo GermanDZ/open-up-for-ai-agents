@@ -32,6 +32,10 @@ Thumbs.db
 # Claude Code
 /.claude
 
+# OpenUP runtime iteration state (machine-readable, regenerated per iteration)
+# The tracked schema + helper live in scripts/; only the runtime dir is ignored.
+/.openup/
+
 # Temporary files
 *.tmp
 temp/
