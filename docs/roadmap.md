@@ -1,6 +1,31 @@
 # Roadmap
 
 
+<!-- plan-hook: 2026-06-10 -->
+### Planned: Process v2 — Mechanize OpenUP for the Claude Code Harness
+
+- **Status**: `planned` (decomposed into tasks; not started)
+- **Plan**: [plans/2026-06-10-process-v2-claude-code-harness.md](plans/2026-06-10-process-v2-claude-code-harness.md)
+- **Created**: 2026-06-10
+- **Evidence base**: Kaze webapp empirical audit (2026-06-10) + 2026 AI-agent SDLC research (AI-DLC, Spec Kit, OpenSpec, BMAD, Kiro)
+- **Notes**: Absorbs items #1–#4 of the 2026-05-13 OpenSpec plan (readiness DAG, project-config, per-change folders, archive flow) into workstreams WS4/WS5. T-008 un-defers T-002 (`/openup-sync-spec`).
+
+**Tasks**
+
+| ID | Title | Status | Priority | Depends on |
+|---|---|---|---|---|
+| T-004 | Model tier map + `model:` frontmatter sweep + scribe/explorer agents | planned | high | — |
+| T-005 | `.openup/state.json` iteration state file | planned | high | — |
+| T-006 | Blocking gates + deterministic auto-logging + status sync | planned | high | T-005 |
+| T-007 | Three-ring docs scoping (product / changes / session) | planned | medium | — |
+| T-008 | Coordination frontmatter + `/openup-readiness` DAG | planned | medium | T-007 |
+| T-009 | Worktree-per-task + lease claims + collision pre-flight | planned | medium | T-005, T-008 |
+| T-010 | Graded tracks (quick/standard/full) | planned | medium | T-005, T-006 |
+| T-011 | Retro cadence trigger + `/openup-create-handoff` | planned | low | T-005 |
+
+**Next step**: Wave 1 — `/openup-start-iteration task_id: T-004` (smallest, immediate cost win), then T-005 (foundation for all gates).
+
+
 <!-- plan-hook: 2026-05-13 -->
 ### Proposed: OpenSpec Ideas Worth Adopting in OpenUP
 
