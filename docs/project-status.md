@@ -1,13 +1,13 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 2
-**Iteration Goal**: T-005 — machine-readable `.openup/state.json`: schema, helper CLI (`scripts/openup-state.py`), and skill read/write integration (Process v2 WS2)
-**Status**: completed
-**Current Task**: None
+**Iteration**: 3
+**Iteration Goal**: T-006 — blocking gates + deterministic auto-logging + status sync: gate-edits.py, auto-log-commit.py, blocking on-stop, [T-XXX] enforcement, sync-status.py (Process v2 WS3)
+**Status**: in-progress
+**Current Task**: T-006
 **Iteration Started**: 2026-06-10
 **Last Updated**: 2026-06-10
-**Updated By**: openup-complete-task
+**Updated By**: openup-start-iteration
 
 ## Notes
 
