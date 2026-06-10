@@ -1,8 +1,8 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 1
-**Iteration Goal**: T-004 — model tier map, `model:` frontmatter sweep, scribe/explorer subagent definitions (Process v2 Wave 1)
+**Iteration**: 2
+**Iteration Goal**: T-005 — machine-readable `.openup/state.json`: schema, helper CLI (`scripts/openup-state.py`), and skill read/write integration (Process v2 WS2)
 **Status**: completed
 **Current Task**: None
 **Iteration Started**: 2026-06-10
@@ -12,4 +12,4 @@
 ## Notes
 
 - Iteration tracking initialized with the Process v2 program (docs/plans/2026-06-10-process-v2-claude-code-harness.md). Prior framework work (PRs #1–#3) predates status tracking.
-- Active plan: Process v2, Wave 1 (T-004 → T-005).
+- Active plan: Process v2, Wave 1 complete — T-004 ✅, T-005 ✅. Next: Wave 2 (T-006 ∥ T-007).
