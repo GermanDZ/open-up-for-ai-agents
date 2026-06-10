@@ -33,7 +33,7 @@ To reduce token usage while preserving quality, the team lead and all teammates 
 3. **Milestone-only updates**: status messages are allowed only at `started`, `blocked`, and `done`. Do not send heartbeat or idle notifications.
 4. **Compact handoffs**: every handoff must be max 6 bullets with only: `decision`, `diff summary`, `risks`, `next action`.
 5. **No repeated large context**: do not resend full task lists/specs after kickoff. Refer by task ID and send only deltas.
-6. **Model tiering**: use lightweight models for coordination/planning; escalate to stronger models only for complex design/debug/codegen.
+6. **Model tiering**: enforced via `model:` frontmatter and per-role assignments — see docs-eng-process/model-tiers.md.
 7. **Batch before reporting**: complete a meaningful chunk (code + tests for the subtask) before reporting back.
 8. **Budget gate**: define a token budget per iteration lane (PM/dev/test). If exceeded, checkpoint and restart with a fresh session.
 
@@ -61,30 +61,35 @@ The OpenUP full team consists of all core roles working together to deliver soft
 ## Team Members
 
 ### analyst
+- **Model**: inherit
 - **Focus**: Requirements gathering, stakeholder communication, understanding problems
 - **Key Work Products**: Vision, Use Cases, System-Wide Requirements, Glossary
 - **Collaborates With**: Architect (technical feasibility), Developer (implementation input), Tester (acceptance criteria)
 - **Reference**: `.claude/teammates/analyst.md`
 
 ### architect
+- **Model**: inherit
 - **Focus**: Architecture design, technical decisions, architecture documentation
 - **Key Work Products**: Architecture Notebook
 - **Collaborates With**: Analyst (requirements understanding), Developer (implementation feedback), Project Manager (planning)
 - **Reference**: `.claude/teammates/architect.md`
 
 ### developer
+- **Model**: inherit
 - **Focus**: Implementation, unit testing, design, integration
 - **Key Work Products**: Design, Implementation (code), Developer Tests
 - **Collaborates With**: Architect (architecture constraints), Analyst (requirements input), Tester (test coverage)
 - **Reference**: `.claude/teammates/developer.md`
 
 ### project-manager
+- **Model**: haiku
 - **Focus**: Planning, coordination, risk management, stakeholder communication
 - **Key Work Products**: Project Plan, Iteration Plan, Risk List, Work Items List
 - **Collaborates With**: All roles for planning and status tracking
 - **Reference**: `.claude/teammates/project-manager.md`
 
 ### tester
+- **Model**: inherit
 - **Focus**: Test planning, test implementation, test execution, results analysis
 - **Key Work Products**: Test Cases, Test Scripts, Test Logs
 - **Collaborates With**: Analyst (acceptance criteria), Developer (test implementation), Architect (system understanding)

@@ -1,6 +1,7 @@
 ---
 name: openup-retrospective
 description: Generate iteration retrospective with feedback and action items
+model: haiku
 fit:
   great: [end-of-iteration reflection, capturing patterns to feed forward]
   ok: [mid-iteration when blockers pile up and a reset is needed]

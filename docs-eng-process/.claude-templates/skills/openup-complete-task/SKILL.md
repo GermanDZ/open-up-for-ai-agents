@@ -1,6 +1,7 @@
 ---
 name: openup-complete-task
 description: Mark a task as complete, update roadmap, commit changes, and prepare traceability logs
+model: inherit
 fit:
   great: [finishing a roadmap-tracked task, ending an iteration cleanly]
   ok: [closing out ad-hoc work that needs commit + roadmap update]
@@ -59,11 +60,13 @@ Most changes should already be committed as atomic commits during implementation
 
 ### 3. Update Roadmap
 
-> **Haiku/Scribe step** — spawn a Haiku sub-agent for this write operation:
+> **Scribe step** — delegate to the `openup-scribe` agent (Agent tool,
+> subagent_type: "openup-scribe"). You determine the values; the scribe only
+> writes. Brief it with:
 >
 > ```
-> Agent(model="haiku", description="Mark roadmap task completed",
->   prompt="You are a Scribe. In docs/roadmap.md, find task [task_id] and:
+> Agent(subagent_type="openup-scribe", description="Mark roadmap task completed",
+>   prompt="In docs/roadmap.md, find task [task_id] and:
 >   1. In the status table/row, change its status from 'in-progress' to 'completed'.
 >   2. Add 'Completed [YYYY-MM-DD]' to its Notes or detail section.
 >   Report: exact line(s) changed.")
@@ -71,11 +74,13 @@ Most changes should already be committed as atomic commits during implementation
 
 ### 4. Update Project Status
 
-> **Haiku/Scribe step** — spawn a Haiku sub-agent for this write operation:
+> **Scribe step** — delegate to the `openup-scribe` agent (Agent tool,
+> subagent_type: "openup-scribe"). You determine the values; the scribe only
+> writes. Brief it with:
 >
 > ```
-> Agent(model="haiku", description="Update project-status.md to completed",
->   prompt="You are a Scribe. In docs/project-status.md:
+> Agent(subagent_type="openup-scribe", description="Update project-status.md to completed",
+>   prompt="In docs/project-status.md:
 >   1. Change **Status** to 'completed'.
 >   2. Change **Current Task** to 'None'.
 >   3. Update **Last Updated** to [YYYY-MM-DD].
@@ -85,12 +90,13 @@ Most changes should already be committed as atomic commits during implementation
 
 ### 5. Create Traceability Logs
 
-> **Haiku/Scribe step** — collect commit SHAs and metadata yourself (they require git
-> commands), then hand off the write operations:
+> **Scribe step** — collect commit SHAs and metadata yourself (they require git
+> commands), then delegate the writes to the `openup-scribe` agent (Agent tool,
+> subagent_type: "openup-scribe"). Brief it with:
 >
 > ```
-> Agent(model="haiku", description="Write agent run log",
->   prompt="You are a Scribe. Write a traceability log entry.
+> Agent(subagent_type="openup-scribe", description="Write agent run log",
+>   prompt="Write a traceability log entry.
 >   Branch: [branch]. Task: [task_id]. Commits: [sha list]. Phase: [phase].
 >   Start: [ts]. End: [ts]. Files changed: [list]. Decisions: [list].
 >   1. Create docs/agent-logs/YYYY/MM/DD/<timestamp>-agent-<branch>.md
@@ -101,7 +107,8 @@ Most changes should already be committed as atomic commits during implementation
 
 ### 6. Save Iteration Learnings
 
-> **Haiku/Scribe step** — summarize the learnings yourself, then delegate the append:
+> **Scribe step** — summarize the learnings yourself, then delegate the append
+> to the `openup-scribe` agent (Agent tool, subagent_type: "openup-scribe"):
 >
 > First, synthesize from the session (your own work):
 > - What worked
@@ -112,8 +119,8 @@ Most changes should already be committed as atomic commits during implementation
 > Then hand off the write:
 >
 > ```
-> Agent(model="haiku", description="Append iteration learnings",
->   prompt="You are a Scribe. Append the following to .claude/memory/iteration-learnings.md
+> Agent(subagent_type="openup-scribe", description="Append iteration learnings",
+>   prompt="Append the following to .claude/memory/iteration-learnings.md
 >   (create the file if it does not exist):
 >
 >   ## [YYYY-MM-DD] [task_id]: [task title]

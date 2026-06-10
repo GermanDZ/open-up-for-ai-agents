@@ -43,6 +43,8 @@ fi
 #   .claude/CLAUDE.openup.md           <-> templates/CLAUDE.md
 #   .claude/teammates/X.md             <-> templates/teammates/X.md
 #   .claude/rubrics/X.md               <-> templates/rubrics/X.md
+#   .claude/teams/X.md                 <-> templates/teams/X.md
+#   .claude/agents/X.md                <-> templates/agents/X.md
 #   .claude/skills/openup-{cat}/X/SKILL.md  <-> templates/skills/openup-X/SKILL.md
 #       where {cat} ∈ {phases, artifacts, workflow}
 #   .claude/skills/openup-X/SKILL.md   <-> templates/skills/openup-X/SKILL.md
@@ -68,6 +70,22 @@ if [ -d "$LIVE/rubrics" ]; then
   for f in "$LIVE/rubrics"/*.md; do
     [ -f "$f" ] || continue
     add_pair "$f" "$TPL/rubrics/$(basename "$f")"
+  done
+fi
+
+# Teams
+if [ -d "$LIVE/teams" ]; then
+  for f in "$LIVE/teams"/*.md; do
+    [ -f "$f" ] || continue
+    add_pair "$f" "$TPL/teams/$(basename "$f")"
+  done
+fi
+
+# Agents
+if [ -d "$LIVE/agents" ]; then
+  for f in "$LIVE/agents"/*.md; do
+    [ -f "$f" ] || continue
+    add_pair "$f" "$TPL/agents/$(basename "$f")"
   done
 fi
 
@@ -140,6 +158,17 @@ if [ -d "$TPL/skills" ]; then
     fi
   done
 fi
+# Walk 1:1 template dirs (teams, agents) and check for template-only files
+for dir in teams agents; do
+  [ -d "$TPL/$dir" ] || continue
+  for tplfile in "$TPL/$dir"/*.md; do
+    [ -f "$tplfile" ] || continue
+    if [ ! -f "$LIVE/$dir/$(basename "$tplfile")" ]; then
+      ONLY_TPL+=("(missing live) $tplfile")
+      DRIFT=$((DRIFT+1))
+    fi
+  done
+done
 
 # Report
 if [ "$DRIFT" -eq 0 ]; then

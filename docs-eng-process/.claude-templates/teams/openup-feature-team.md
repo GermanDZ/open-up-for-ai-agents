@@ -33,7 +33,7 @@ To reduce token usage while preserving quality, the team lead and all teammates 
 3. **Milestone-only updates**: status messages are allowed only at `started`, `blocked`, and `done`. Do not send heartbeat or idle notifications.
 4. **Compact handoffs**: every handoff must be max 6 bullets with only: `decision`, `diff summary`, `risks`, `next action`.
 5. **No repeated large context**: do not resend full task lists/specs after kickoff. Refer by task ID and send only deltas.
-6. **Model tiering**: use lightweight models for coordination/planning; escalate to stronger models only for complex design/debug/codegen.
+6. **Model tiering**: enforced via `model:` frontmatter and per-role assignments — see docs-eng-process/model-tiers.md.
 7. **Batch before reporting**: complete a meaningful chunk (code + tests for the subtask) before reporting back.
 8. **Budget gate**: define a token budget per iteration lane (PM/dev/test). If exceeded, checkpoint and restart with a fresh session.
 
@@ -53,24 +53,28 @@ Implement a new feature from requirements through design, implementation, and te
 ## Team Members
 
 ### analyst
+- **Model**: inherit
 - **Focus**: Gather requirements, define acceptance criteria
 - **Key Activities**: Requirements elicitation, use case creation, stakeholder communication
 - **Collaborates With**: Architect (feasibility), Tester (acceptance criteria)
 - **Reference**: `.claude/teammates/analyst.md`
 
 ### architect
+- **Model**: inherit
 - **Focus**: Design feature architecture, make technical decisions
 - **Key Activities**: Architecture design, technical specifications, impact assessment
 - **Collaborates With**: Analyst (requirements understanding), Developer (implementation guidance)
 - **Reference**: `.claude/teammates/architect.md`
 
 ### developer (Lead)
+- **Model**: inherit
 - **Focus**: Implement the feature with tests
 - **Key Activities**: Implementation, unit testing, integration
 - **Collaborates With**: Architect (design constraints), Tester (test coverage)
 - **Reference**: `.claude/teammates/developer.md`
 
 ### tester
+- **Model**: inherit
 - **Focus**: Create tests, validate feature meets requirements
 - **Key Activities**: Test planning, test creation, test execution
 - **Collaborates With**: Analyst (acceptance criteria), Developer (test coverage)

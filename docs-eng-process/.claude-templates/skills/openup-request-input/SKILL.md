@@ -1,6 +1,7 @@
 ---
 name: openup-request-input
 description: Create an input request document for asynchronous stakeholder communication
+model: haiku
 fit:
   great: [blocked tasks needing a human decision, ambiguous requirements]
   ok: [scope/priority clarifications mid-iteration]

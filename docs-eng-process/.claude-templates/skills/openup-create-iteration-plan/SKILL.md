@@ -1,6 +1,7 @@
 ---
 name: openup-create-iteration-plan
 description: Plan iteration based on current state and roadmap
+model: inherit
 arguments:
   - name: iteration_number
     description: Iteration number to plan

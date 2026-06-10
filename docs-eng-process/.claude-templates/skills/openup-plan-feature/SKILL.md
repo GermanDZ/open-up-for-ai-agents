@@ -1,6 +1,7 @@
 ---
 name: openup-plan-feature
 description: Generate iteration plan and roadmap entry for a feature idea
+model: inherit
 fit:
   great: [turning a fresh feature idea into a roadmap entry + plan]
   ok: [re-planning when scope shifts mid-flight]

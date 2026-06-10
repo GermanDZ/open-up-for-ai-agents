@@ -33,7 +33,7 @@ To reduce token usage while preserving quality, the team lead and all teammates 
 3. **Milestone-only updates**: status messages are allowed only at `started`, `blocked`, and `done`. Do not send heartbeat or idle notifications.
 4. **Compact handoffs**: every handoff must be max 6 bullets with only: `decision`, `diff summary`, `risks`, `next action`.
 5. **No repeated large context**: do not resend full task lists/specs after kickoff. Refer by task ID and send only deltas.
-6. **Model tiering**: use lightweight models for coordination/planning; escalate to stronger models only for complex design/debug/codegen.
+6. **Model tiering**: enforced via `model:` frontmatter and per-role assignments — see docs-eng-process/model-tiers.md.
 7. **Batch before reporting**: complete a meaningful chunk (code + tests for the subtask) before reporting back.
 8. **Budget gate**: define a token budget per iteration lane (PM/dev/test). If exceeded, checkpoint and restart with a fresh session.
 
@@ -69,18 +69,21 @@ Investigate and resolve bugs, technical issues, or performance problems through 
 ## Team Members
 
 ### architect (Lead)
+- **Model**: inherit
 - **Focus**: Analyze architecture and system design implications
 - **Key Activities**: Root cause analysis, architectural impact assessment
 - **Collaborates With**: Developer (code analysis), Tester (reproduction)
 - **Reference**: `.claude/teammates/architect.md`
 
 ### developer (Lead)
+- **Model**: inherit
 - **Focus**: Analyze code, find root cause, implement fix
 - **Key Activities**: Code inspection, debugging, fix implementation
 - **Collaborates With**: Architect (design understanding), Tester (reproduction and verification)
 - **Reference**: `.claude/teammates/developer.md`
 
 ### tester (Lead)
+- **Model**: inherit
 - **Focus**: Reproduce issue, verify fix, prevent regression
 - **Key Activities**: Issue reproduction, test creation, fix verification
 - **Collaborates With**: Developer (reproduction steps), Architect (impact assessment)

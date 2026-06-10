@@ -33,7 +33,7 @@ To reduce token usage while preserving quality, the team lead and all teammates 
 3. **Milestone-only updates**: status messages are allowed only at `started`, `blocked`, and `done`. Do not send heartbeat or idle notifications.
 4. **Compact handoffs**: every handoff must be max 6 bullets with only: `decision`, `diff summary`, `risks`, `next action`.
 5. **No repeated large context**: do not resend full task lists/specs after kickoff. Refer by task ID and send only deltas.
-6. **Model tiering**: use lightweight models for coordination/planning; escalate to stronger models only for complex design/debug/codegen.
+6. **Model tiering**: enforced via `model:` frontmatter and per-role assignments — see docs-eng-process/model-tiers.md.
 7. **Batch before reporting**: complete a meaningful chunk (code + tests for the subtask) before reporting back.
 8. **Budget gate**: define a token budget per iteration lane (PM/dev/test). If exceeded, checkpoint and restart with a fresh session.
 
@@ -69,24 +69,28 @@ For proper tracking and traceability, the team lead should start an iteration be
 ## Team Members
 
 ### architect (Lead)
+- **Model**: inherit
 - **Focus**: Architecture design, technical decisions, architecture documentation
 - **Key Work Products**: Architecture Notebook, Design documents
 - **Collaborates With**: Developer (implementation feedback), Analyst (requirements understanding)
 - **Reference**: `.claude/teammates/architect.md`
 
 ### developer (Lead)
+- **Model**: inherit
 - **Focus**: Architectural baseline implementation, spike solutions, prototyping
 - **Key Work Products**: Implementation (code), Developer Tests
 - **Collaborates With**: Architect (architecture constraints), Tester (validation)
 - **Reference**: `.claude/teammates/developer.md`
 
 ### tester
+- **Model**: inherit
 - **Focus**: Test planning, architecture validation through testing
 - **Key Work Products**: Test Cases, Test Scripts
 - **Collaborates With**: Architect (testability), Developer (test implementation)
 - **Reference**: `.claude/teammates/tester.md`
 
 ### analyst (As needed)
+- **Model**: inherit
 - **Focus**: Detailed requirements for critical use cases
 - **Key Work Products**: Detailed Use Cases (80%)
 - **Collaborates With**: Architect (requirements for architecture)

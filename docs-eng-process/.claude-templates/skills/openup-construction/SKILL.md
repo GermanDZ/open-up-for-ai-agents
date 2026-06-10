@@ -1,6 +1,7 @@
 ---
 name: openup-construction
 description: Initialize and manage Construction phase activities - build the system incrementally
+model: haiku
 arguments:
   - name: activity
     description: Specific activity to perform (initiate, check-status, next-steps)

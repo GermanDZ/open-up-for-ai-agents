@@ -36,7 +36,7 @@ If the user asks to skip, redirect: "Let me run `/openup-quick-task` instead —
 - Allow status updates only at `started`, `blocked`, and `done`.
 - Use compact handoffs (max 6 bullets): `decision`, `diff summary`, `risks`, `next action`.
 - Do not resend full task lists after kickoff; reference task IDs and share only deltas.
-- Use lightweight models for coordination; escalate only for complex architecture/debug/codegen.
+- Model tiering is declared in `model:` frontmatter (skills, agents, team roles) — see docs-eng-process/model-tiers.md. Do not override it in prose.
 - Batch implementation and tests before reporting back.
 - Set a token budget per lane (PM/dev/test); checkpoint and restart with a fresh session if exceeded.
 

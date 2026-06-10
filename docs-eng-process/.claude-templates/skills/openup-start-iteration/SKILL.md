@@ -1,6 +1,7 @@
 ---
 name: openup-start-iteration
 description: Begin a new OpenUP iteration with proper phase context and task selection
+model: haiku
 fit:
   great: [feature work, multi-step tasks, anything needing a deployed team]
   ok: [single-component changes that benefit from explicit iteration framing]
@@ -121,12 +122,13 @@ Check `docs/input-requests/` for files with `status: answered`. Process any answ
 
 ### 6. Initialize Iteration
 
-> **Haiku/Scribe step** — you determine the new values (iteration number, goal, task_id),
-> then delegate the file write:
+> **Scribe step** — delegate to the `openup-scribe` agent (Agent tool,
+> subagent_type: "openup-scribe"). You determine the values (iteration number,
+> goal, task_id); the scribe only writes. Brief it with:
 >
 > ```
-> Agent(model="haiku", description="Initialize project-status for new iteration",
->   prompt="You are a Scribe. In docs/project-status.md update these fields:
+> Agent(subagent_type="openup-scribe", description="Initialize project-status for new iteration",
+>   prompt="In docs/project-status.md update these fields:
 >   - **Iteration**: [new number]
 >   - **Iteration Goal**: [goal text]
 >   - **Status**: in-progress
@@ -139,11 +141,13 @@ Check `docs/input-requests/` for files with `status: answered`. Process any answ
 
 ### 7. Log Initialization
 
-> **Haiku/Scribe step** — delegate the log append:
+> **Scribe step** — delegate to the `openup-scribe` agent (Agent tool,
+> subagent_type: "openup-scribe"). You determine the values; the scribe only
+> writes. Brief it with:
 >
 > ```
-> Agent(model="haiku", description="Log iteration start",
->   prompt="You are a Scribe. Append a JSONL record to docs/agent-logs/agent-runs.jsonl:
+> Agent(subagent_type="openup-scribe", description="Log iteration start",
+>   prompt="Append a JSONL record to docs/agent-logs/agent-runs.jsonl:
 >   {\"run_id\":\"[id]\",\"event\":\"iteration_start\",\"task_id\":\"[task_id]\",
 >    \"goal\":\"[goal]\",\"branch\":\"[branch]\",\"phase\":\"[phase]\",\"ts\":\"[ts]\"}
 >   Report: record appended.")
