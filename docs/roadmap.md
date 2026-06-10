@@ -8,7 +8,7 @@
 - **Plan**: [plans/2026-06-10-process-v2-claude-code-harness.md](plans/2026-06-10-process-v2-claude-code-harness.md)
 - **Created**: 2026-06-10
 - **Evidence base**: Kaze webapp empirical audit (2026-06-10) + 2026 AI-agent SDLC research (AI-DLC, Spec Kit, OpenSpec, BMAD, Kiro)
-- **Notes**: Absorbs items #1–#4 of the 2026-05-13 OpenSpec plan (readiness DAG, project-config, per-change folders, archive flow) into workstreams WS4/WS5. T-008 un-defers T-002 (`/openup-sync-spec`).
+- **Notes**: Absorbs items #1–#4 of the 2026-05-13 OpenSpec plan (readiness DAG, project-config, per-change folders, archive flow) into workstreams WS4/WS5. T-008 un-defers T-002 (`/openup-sync-spec`). Wave 1 complete — T-004 ✅, T-005 ✅, T-006 ✅.
 
 **Tasks**
 
@@ -16,7 +16,7 @@
 |---|---|---|---|---|
 | T-004 | Model tier map + `model:` frontmatter sweep + scribe/explorer agents | completed (2026-06-10) | high | — |
 | T-005 | `.openup/state.json` iteration state file | completed (2026-06-10) | high | — |
-| T-006 | Blocking gates + deterministic auto-logging + status sync | in-progress | high | T-005 |
+| T-006 | Blocking gates + deterministic auto-logging + status sync | completed (2026-06-10) | high | T-005 |
 | T-007 | Three-ring docs scoping (product / changes / session) | planned | medium | — |
 | T-008 | Coordination frontmatter + `/openup-readiness` DAG | planned | medium | T-007 |
 | T-009 | Worktree-per-task + lease claims + collision pre-flight | planned | medium | T-005, T-008 |
