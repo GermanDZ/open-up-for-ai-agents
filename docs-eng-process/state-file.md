@@ -78,3 +78,6 @@ any unmet gate) and, as its final step, `archive`s the state to
 `plan_persisted` and `retro_due` are **not** in the default set because they are
 track-dependent. The **quick** track requires only `log_written,roadmap_synced`
 and calls `check-gates --require log_written,roadmap_synced`.
+
+See [tracks.md](tracks.md) for the full quick / standard / full ceremony matrix and how
+`track` wires to the gates, team deployment, and the complete-task rubric.

@@ -259,6 +259,46 @@ class AutoLogCommitTests(unittest.TestCase):
         # No new record appended — the log-only commit was recognized.
         self.assertEqual(log.read_text(), before)
 
+    def test_skips_logs_dir_only_commit(self):
+        # T-012 regression: the complete-task closing commit bundles the
+        # markdown traceability log WITH agent-runs.jsonl — both under
+        # docs/agent-logs/. That is still pure bookkeeping, so the hook must
+        # skip it; otherwise it appends a fresh record and leaves the JSONL
+        # dirty every iteration (the "always uncommitted after PR" bug).
+        self._make_commit()  # prior commit → gives the next one a parent
+        logdir = self.repo.dir / "docs" / "agent-logs"
+        logdir.mkdir(parents=True, exist_ok=True)
+        jsonl = logdir / "agent-runs.jsonl"
+        jsonl.write_text('{"event":"commit","sha":"abc","task_id":"T-006"}\n')
+        md = logdir / "2026" / "06" / "11" / "run.md"
+        md.parent.mkdir(parents=True, exist_ok=True)
+        md.write_text("# run log\n")
+        git(self.repo.dir, "add", "-A")
+        git(self.repo.dir, "commit", "-q", "-m", "docs(logs): traceability [T-006]")
+        before = jsonl.read_text()
+        proc = run_hook("auto-log-commit.py", self._commit_payload(),
+                        self.repo.dir)
+        self.assertEqual(proc.returncode, 0)
+        # Markdown-log + JSONL bundled together is recognized as logs-only.
+        self.assertEqual(jsonl.read_text(), before)
+
+    def test_logs_commit_with_code_still_appended(self):
+        # Negative control: a commit touching a code file ALONGSIDE log files
+        # is NOT logs-only, so it must still be logged — the broadened guard
+        # must not over-skip real work.
+        self._make_commit()
+        run_hook("auto-log-commit.py", self._commit_payload(), self.repo.dir)
+        log = self.repo.dir / "docs" / "agent-logs" / "agent-runs.jsonl"
+        n_before = len([l for l in log.read_text().splitlines() if l.strip()])
+        (self.repo.dir / "h.txt").write_text("z\n")
+        note = self.repo.dir / "docs" / "agent-logs" / "note.md"
+        note.write_text("n\n")
+        git(self.repo.dir, "add", "-A")
+        git(self.repo.dir, "commit", "-q", "-m", "feat: mix code and log [T-006]")
+        run_hook("auto-log-commit.py", self._commit_payload(), self.repo.dir)
+        n_after = len([l for l in log.read_text().splitlines() if l.strip()])
+        self.assertEqual(n_after, n_before + 1)
+
 
 # --------------------------------------------------------------------------
 # validate-commit.py

@@ -1036,4 +1036,5 @@ Create an OpenUP agent team for feature implementation.
 - Templates are located in: `docs-eng-process/templates/`
 - Executable scripts are in: `docs-eng-process/.claude-templates/skills/scripts/`
 - Agent Workflow: `docs-eng-process/agent-workflow.md`
+- Graded ceremony tracks (quick / standard / full): [`docs-eng-process/tracks.md`](tracks.md) — how `/openup-start-iteration` and `/openup-quick-task` pick a track and what ceremony each applies.
 - Anthropic Agent Skills Framework: https://claude.com/blog/equipping-agents-for-the-real-world-with-agent-skills

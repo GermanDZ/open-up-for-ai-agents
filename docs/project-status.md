@@ -1,8 +1,8 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 6
-**Iteration Goal**: T-009 — Worktree-per-task + lease claims + collision pre-flight
+**Iteration**: 7
+**Iteration Goal**: T-010 — Graded tracks (quick/standard/full)
 **Status**: completed
 **Current Task**: None
 **Iteration Started**: 2026-06-11
