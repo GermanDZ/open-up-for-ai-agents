@@ -14,6 +14,7 @@ keywords:
 related:
   workproducts:
   - use-case
+last-synced: ""   # full git SHA of last code↔spec sync (set by /openup-sync-spec)
 ---
 
 

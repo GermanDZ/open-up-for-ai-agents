@@ -759,6 +759,36 @@ Produce a handoff brief so the next owner can resume a change cold (Process v2 W
 
 **See Also**: `openup-complete-task`, `openup-log-run`, `openup-readiness`
 
+### /openup-sync-spec
+
+Refactor → artifact back-propagation: diff code against each artifact's `last-synced`
+ref, classify it, propose targeted section edits for the stale ones. Read-only by
+default — refuses behaviour-changing diffs and routes them spec-first to the originating
+`/openup-create-*` skill.
+
+**When to Use**:
+- After a pure refactor (rename / extract / move) that may have left a use-case,
+  architecture notebook, iteration plan, or task spec naming the old symbols
+- To set or check a `last-synced` baseline on an artifact
+
+**When NOT to Use**:
+- Authoring new behaviour — that goes spec-first through `/openup-create-*`
+- Wholesale doc regeneration (this skill only proposes targeted edits)
+
+**Arguments**:
+- `since` (optional): diff baseline — a git ref or `"last commit"`; defaults to each
+  artifact's own `last-synced`
+- `artifact` (optional): restrict to one type (`use-case-specification` |
+  `architecture-notebook` | `iteration-plan` | `task-spec`)
+
+**Example**:
+```
+/openup-sync-spec
+/openup-sync-spec since: last commit artifact: architecture-notebook
+```
+
+**See Also**: `openup-complete-task`, `openup-readiness`, `openup-create-use-case`, `openup-create-architecture-notebook`
+
 ### /openup-quick-task
 
 Fast path for tiny, low-risk changes with minimal overhead.
