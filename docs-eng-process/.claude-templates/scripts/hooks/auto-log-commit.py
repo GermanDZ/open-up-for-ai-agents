@@ -16,10 +16,13 @@ line of agent-runs.jsonl already records this SHA with event "commit", we
 do nothing. This makes the hook safe even when the same commit fires the
 hook more than once.
 
-Self-reference guard: a commit that touched ONLY the run log itself is pure
-bookkeeping (it persists a previously auto-logged line). Logging it again
-would re-dirty the log and tail-chase forever, so such commits are skipped.
-This lets a final "commit the log" reach a genuinely clean tree.
+Self-reference guard: a commit that touched ONLY audit-trail files (anything
+under docs/agent-logs/ — the JSONL run log and the markdown narrative logs)
+is pure bookkeeping (it persists previously auto-logged lines). Logging it
+again would re-dirty the log and tail-chase forever, so such commits are
+skipped. This lets a closing "commit the logs" reach a genuinely clean tree
+even when the markdown log is bundled with the JSONL (the complete-task
+pattern), not just when the JSONL is committed alone.
 
 Exit codes:
   0 — always (PostToolUse cannot block; this hook only appends)
@@ -42,6 +45,7 @@ from pathlib import Path
 COMMIT_RE = re.compile(r"\bgit\b.*\bcommit\b", re.DOTALL)
 
 LOG_REL = "docs/agent-logs/agent-runs.jsonl"
+LOG_DIR = "docs/agent-logs/"
 
 
 def run(cmd: str, cwd: str) -> tuple[int, str]:
@@ -92,19 +96,25 @@ def commit_succeeded(payload: dict, command: str) -> bool:
     return True
 
 
-def commit_only_touches_log(cwd: str, sha: str) -> bool:
-    """True if the commit at <sha> changed ONLY the run log itself.
+def commit_only_touches_logs(cwd: str, sha: str) -> bool:
+    """True if the commit at <sha> changed ONLY audit-trail files.
 
-    Such a commit is pure bookkeeping (persisting a prior auto-logged line);
-    logging it again would re-dirty the log and tail-chase forever. Uses
-    diff-tree against the first parent; the root commit (no parent) lists its
-    whole tree, which will not be log-only, so it is logged normally.
+    A commit touching nothing but files under docs/agent-logs/ — the JSONL run
+    log AND the markdown narrative logs that complete-task writes — is pure
+    bookkeeping: it persists previously auto-logged lines. Logging it again
+    would append a fresh record and re-dirty agent-runs.jsonl, tail-chasing
+    forever. Skipping such commits lets a closing "commit the logs" reach a
+    genuinely clean tree even when the markdown log is bundled with the JSONL
+    (the complete-task pattern), not just when the JSONL is committed alone.
+
+    Uses diff-tree against the first parent; the root commit (no parent) lists
+    its whole tree, which will not be logs-only, so it is logged normally.
     """
     rc, out = run(f"git diff-tree --no-commit-id --name-only -r {sha}", cwd)
     if rc != 0:
         return False
     files = [ln.strip() for ln in out.splitlines() if ln.strip()]
-    return files == [LOG_REL]
+    return bool(files) and all(f.startswith(LOG_DIR) for f in files)
 
 
 def last_logged_sha(log_path: Path) -> str | None:
@@ -153,9 +163,10 @@ def main() -> None:
         if rc != 0 or not sha:
             sys.exit(0)
 
-        # Self-reference guard: skip commits that only touched the run log —
-        # logging them would re-dirty it and tail-chase forever.
-        if commit_only_touches_log(cwd, sha):
+        # Self-reference guard: skip commits that only touched audit-trail
+        # files (anything under docs/agent-logs/) — logging them would re-dirty
+        # the run log and tail-chase forever.
+        if commit_only_touches_logs(cwd, sha):
             sys.exit(0)
 
         log_path = Path(cwd) / LOG_REL
