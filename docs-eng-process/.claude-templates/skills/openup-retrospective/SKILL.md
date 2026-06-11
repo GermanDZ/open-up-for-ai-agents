@@ -71,6 +71,18 @@ Create `docs/iteration-retrospectives/iteration-{n}-retrospective.md` with secti
 
 In `docs/project-status.md`: add link to retrospective, note ongoing action items, update iteration status.
 
+### 8. Reset the Retro-Cadence Counter (T-011)
+
+Running this retrospective satisfies the cadence, so reset the durable counter. This zeroes
+`.openup/retro.json` and clears `gates.retro_due` in any live `.openup/state.json`:
+
+```bash
+python3 scripts/openup-state.py retro reset
+```
+
+After this, `/openup-start-iteration` will permit `full`-track starts again until 5 more
+tasks complete. See [state-file.md](../../../../docs-eng-process/state-file.md).
+
 ## Output
 
 Returns: retrospective document path, counts of what went well / what to improve / action items, overall iteration rating, key metrics (if included).

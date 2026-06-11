@@ -169,6 +169,20 @@ python3 scripts/openup-state.py archive \
 
 Either way the live `.openup/state.json` is removed by the `archive` command. Commit the archive move with the task's other completion commits.
 
+### 7a. Increment the Retro-Cadence Counter (T-011)
+
+Every completion advances the retrospective cadence. The counter is **durable**
+(`.openup/retro.json`) and survives the archive above, so this is independent of state
+removal — run it once per completed task:
+
+```bash
+python3 scripts/openup-state.py retro increment   # prints the new count
+```
+
+When the count reaches the threshold (5), the next `/openup-start-iteration` will set
+`gates.retro_due` and **refuse a `full`-track start** until `/openup-retrospective` runs
+(which resets the counter). See [state-file.md](../../../../docs-eng-process/state-file.md).
+
 ### 7b. Release the Worktree Claim (and remove the worktree)
 
 Release the live lease so the task's collision surface is freed for other sessions, and

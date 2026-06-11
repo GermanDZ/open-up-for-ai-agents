@@ -1,13 +1,13 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 7
-**Iteration Goal**: T-010 — Graded tracks (quick/standard/full)
-**Status**: completed
-**Current Task**: None
+**Iteration**: 8
+**Iteration Goal**: T-011 — Retro cadence trigger + /openup-create-handoff
+**Status**: in-progress
+**Current Task**: T-011
 **Iteration Started**: 2026-06-11
 **Last Updated**: 2026-06-11
-**Updated By**: openup-complete-task
+**Updated By**: openup-start-iteration
 
 ## Notes
 
