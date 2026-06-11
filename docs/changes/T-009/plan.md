@@ -46,8 +46,9 @@ valuable (un-blocks genuine parallel work — the wave-3 sequencing milestone).
   is the Kaze-evidence design: shared-markdown-file appends were the only source of merge
   conflicts, so claims live outside the tree, one file per task, no shared file to append.
 - **Out of scope** (program plan): cross-machine parallel work (claims are single-host);
-  a committed claims dir; CI-side enforcement. A `--steal`/override is also deferred — see
-  design.md and Open Question #2 below.
+  a committed claims dir; CI-side enforcement. A `--steal`/override and any claim TTL are
+  also out of scope — Open Question #2 was **resolved (PM/user 2026-06-11): no expiry, manual
+  `rm` only** (see design.md D1/D2).
 
 ## Design Decisions
 
@@ -59,27 +60,31 @@ valuable (un-blocks genuine parallel work — the wave-3 sequencing milestone).
 2. **One file per claim**, atomic write (write-temp + `rename`), to avoid any shared-file
    contention. Releasing = deleting the file.
 3. **Pre-flight reuses T-008 D2** path-segment-prefix collision on `touches`, now against
-   *live claim files* (not just frontmatter): the live set is the union of all
-   non-stale claim files' `touches`.
+   *live claim files* (not just frontmatter): the live set is the union of **all** claim
+   files' `touches` (claims never expire — D1). Each claim carries its own `touches` (D7),
+   so pre-flight reads only `.git/openup/claims/*.json`.
 
 ## Requirements
 
-1. **Worktree option in `/openup-start-iteration`.** A `worktree: true` option (default
-   off until stable, per the program plan) creates `../<repo>-T-NNN` via
-   `git worktree add`, on the task branch, and writes the claim. The created worktree path
-   is recorded in the task's frontmatter `worktree:` field and in the claim file.
+1. **Worktree-per-task in `/openup-start-iteration`, default-on** (PM/user 2026-06-11).
+   Every iteration creates `../<repo>-T-NNN` via `git worktree add` on the task branch and
+   writes the claim; a `worktree: false` escape hatch keeps the legacy in-place checkout.
+   The created worktree path is recorded in the task's frontmatter `worktree:` field and in
+   the claim file. (Bootstrap exception: T-009 itself runs in-place — design.md D6.)
 2. **Lease claim files.** Claims are leases, one JSON file per claim, at
    `.git/openup/claims/T-NNN.json`. Specify the exact shape (see "Claim file shape" below).
    The claims dir is created on first claim if absent.
 3. **Pre-flight collision check.** Before writing a claim, refuse when (a) any id in the
    task's `depends-on` is not `done`/`verified`, or (b) the task's `touches` overlaps the
-   `touches` of any **live** (non-stale) claim — printing **which session/task owns** the
-   conflicting surface. Overlap uses T-008 D2 path-segment-prefix semantics.
+   `touches` of **any live claim** — printing **which session/task owns** the conflicting
+   surface. Overlap uses T-008 D2 path-segment-prefix semantics. (Claims never expire, so
+   every present claim counts — D1.)
 4. **Release on complete.** `/openup-complete-task` releases the claim (deletes the claim
    file) and removes the worktree (`git worktree remove`), and nulls the frontmatter
    `claimed-by` / `claimed-at` / `worktree` fields.
 5. **Process doc.** `docs-eng-process/parallel-work.md` documents the worktree+claim model,
-   the claim shape, the pre-flight rules, stale-lease behavior, and the manual recovery path.
+   the claim shape, the pre-flight rules, and — since claims never expire — the manual
+   `rm` recovery path as the *sole* unblock mechanism for abandoned claims.
 6. **Templates re-synced.** Mirror `.claude/` changes into
    `docs-eng-process/.claude-templates/` (template-sync is manual per T-008 D7 — verify).
 
@@ -94,28 +99,37 @@ valuable (un-blocks genuine parallel work — the wave-3 sequencing milestone).
   "branch": "feature/T-009-worktree-claims",
   "worktree": "../open-up-for-ai-agents-T-009",
   "claimed_at": "2026-06-11T14:32:00Z",
-  "lease_ttl_hours": 24
+  "touches": [".claude/skills/openup-workflow/", ".claude/scripts/hooks/", "docs-eng-process/"]
 }
 ```
 
-- `claimed_at` is ISO-8601 UTC; a claim is **stale** when
-  `now - claimed_at > lease_ttl_hours` (default 24h — see design.md D1).
-- A stale claim does **not** block a new claim's collision check (it is excluded from the
-  live set), but in v1 is **not auto-deleted** — it is cleared by manual `rm` (see
-  design.md D2; flagged for PM confirmation).
+- `claimed_at` is ISO-8601 UTC, recorded for owner/audit visibility only.
+- `touches` is **copied into the claim from the task's frontmatter at claim time** (design.md
+  D7, resolving Q6): the claim file is self-contained, so pre-flight unions live claims'
+  `touches` by reading **only** `.git/openup/claims/*.json` — never joining back to
+  frontmatter. This keeps the claim files authoritative for collision (D5).
+- **Claims never expire** (PM/user 2026-06-11 — design.md D1): there is no `lease_ttl_hours`
+  field and no staleness evaluation. Every present claim counts in the live collision set
+  regardless of age, so an abandoned claim **blocks** an overlapping claim until cleared by
+  manual `rm .git/openup/claims/T-NNN.json` (the sole recovery path — design.md D2).
 
 ## Definition of Done / Acceptance Criteria
 
-- [ ] `/openup-start-iteration` exposes `worktree: true`, which runs
-      `git worktree add ../<repo>-T-NNN <branch>` and writes the claim file.
-- [ ] Claims are leases, one file per claim, at `.git/openup/claims/T-NNN.json`, with the
-      shape above (task_id, session_id, branch, worktree, claimed_at, lease_ttl_hours).
+- [ ] `/openup-start-iteration` creates a worktree **by default** —
+      `git worktree add ../<repo>-T-NNN <branch>` then writes the claim file (worktree
+      first, claim second; roll back the worktree if the claim write fails — design.md D6);
+      `worktree: false` opts out to in-place checkout.
+- [ ] Claims are one file per claim, at `.git/openup/claims/T-NNN.json`, with the shape
+      above (task_id, session_id, branch, worktree, claimed_at, **touches** — **no** lease/TTL
+      field). `touches` is copied from frontmatter at claim time so pre-flight reads only
+      claim files (D7).
 - [ ] The claims dir is created on first claim if it does not exist; claim writes are
       atomic (write-temp-then-rename).
 - [ ] Pre-flight **refuses** to claim if any `depends-on` id is not `done`/`verified`,
       naming the unmet dependency.
-- [ ] Pre-flight **refuses** to claim if `touches` overlaps a live claim's `touches`
-      (T-008 D2 path-segment-prefix semantics), printing the owning `session_id`/`task_id`.
+- [ ] Pre-flight **refuses** to claim if `touches` overlaps **any** live claim's `touches`
+      (T-008 D2 path-segment-prefix semantics; no staleness filter), printing the owning
+      `session_id`/`task_id`.
 - [ ] `/openup-complete-task` deletes the claim file, runs `git worktree remove`, and nulls
       `claimed-by` / `claimed-at` / `worktree` in the task frontmatter.
 - [ ] **End-to-end:** two simultaneous sessions on disjoint tasks run in separate worktrees

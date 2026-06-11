@@ -2,39 +2,40 @@
 
 Decisions made while authoring the spec / during execution that the program plan and
 `plan.md` did not fully pin down. D1 and D2 resolve **program Open Question #2 (claims TTL /
-stale-claim override)** — adopted as the plan's proposed defaults so implementation is not
-blocked, and **flagged for PM confirmation**.
+stale-claim override)** — **resolved by PM/user 2026-06-11**: no expiry, manual cleanup only.
 
-## D1 — Lease TTL = 24h  *(Open Question #2 — pending PM confirmation)*
+## D1 — Claims do not expire; there is no lease TTL  *(Open Question #2 — RESOLVED by PM 2026-06-11)*
 
-The program plan proposes a 24h lease expiry; Open Question #2 leaves it open.
+The program plan proposed a 24h lease expiry; Open Question #2 left it open. The team
+initially adopted 24h as a default.
 
-**Decided (default, pending PM confirm):** `lease_ttl_hours = 24`. A claim is **stale** when
-`now - claimed_at > 24h`. TTL is stored *in the claim file* (`lease_ttl_hours`) rather than
-hardcoded in the hook, so a future override is a data change, not a code change. Staleness is
-evaluated at read time by the pre-flight check; there is no background sweeper.
+**Decided (PM/user 2026-06-11): no expiry.** A claim is **permanent until manually removed**.
+There is **no `lease_ttl_hours` field**, no `claimed_at`-based staleness evaluation, and no
+background sweeper. Every claim file present under `.git/openup/claims/` counts in the live
+collision set **regardless of age** and blocks an overlapping claim until a human removes it.
+`claimed_at` is still recorded (for human/audit visibility and to name the owner) but is
+**never** used to expire a claim.
 
-Rationale: 24h covers a normal multi-session working day plus overnight without letting a
-truly abandoned (crashed) session block the surface indefinitely. **Flagged for PM
-confirmation** — if the PM wants a shorter/longer lease or a per-track TTL, only the default
-constant changes.
+Rationale: the user chose maximum safety — zero auto-reclaim logic to build, test, or trust.
+The accepted tradeoff is that a crashed/abandoned session blocks its task surface until a
+human notices and clears the claim (see D2). No time-based code path exists to get wrong.
 
-## D2 — Stale claims cleared by manual `rm` in v1; no `--steal` override  *(Open Question #2 — pending PM confirmation)*
+## D2 — Stale claims cleared by manual `rm` only; no `--steal` override  *(Open Question #2 — RESOLVED by PM 2026-06-11)*
 
 Open Question #2 asks whether a `--steal` (with audit) override is needed for crashed
 sessions, or whether manual `rm` is acceptable.
 
-**Decided (v1, pending PM confirm):** **manual `rm` only**, no `--steal` override in v1.
-A stale claim is *excluded from the live collision set* (so it does not block a new claim's
-pre-flight), but it is **not auto-deleted** and the stale claim file remains until a human/
-agent removes it with `rm .git/openup/claims/T-NNN.json`. The `parallel-work.md` doc
-documents this recovery path explicitly.
+**Decided (PM/user 2026-06-11): manual `rm` only**, no `--steal` override. Because claims
+never expire (D1), an abandoned claim **does block** an overlapping claim's pre-flight — it is
+*not* silently excluded. The **only** recovery path is a human/agent removing the file with
+`rm .git/openup/claims/T-NNN.json`. The `parallel-work.md` doc documents this recovery path
+prominently, since with no expiry it is the sole unblock mechanism.
 
-Rationale: auto-deletion of another session's claim is the dangerous operation (it could
-race a session that is merely slow, not crashed); deferring `--steal` keeps v1 safe and
-small. Because a stale claim already doesn't *block* anyone, the only cost of manual cleanup
-is a leftover file, not a stuck pipeline. **Flagged for PM confirmation** — if crashed
-sessions prove common in dogfooding, a `--steal` with audit-log entry is the v2 follow-up.
+Rationale: auto-deletion of another session's claim is the dangerous operation (it could race
+a session that is merely slow, not crashed); with no TTL there is no "obviously safe to steal"
+signal at all, so v1 deliberately ships zero force-reclaim. If crashed-session friction proves
+common in dogfooding, a `--steal` with audit-log entry (and possibly a reintroduced TTL) is a
+v2 follow-up — explicitly out of scope here.
 
 ## D3 — Claim file write atomicity: write-temp-then-rename
 
@@ -63,10 +64,48 @@ treats it as "no live claims" rather than an error.
 T-008's readiness skill reads the frontmatter `claimed-by` field; T-009's pre-flight must
 not rely on frontmatter, which can lag (it is written *after* the claim succeeds).
 
-**Decided:** pre-flight collision detection reads the **live claim files** under
-`.git/openup/claims/` (excluding stale ones per D1), takes the union of their `touches`, and
-runs the T-008 D2 path-segment-prefix overlap against the new task's `touches`. Frontmatter
-`claimed-by`/`worktree` are written as a *human/readiness-visible mirror* of the live claim,
-updated on claim and nulled on release — but the claim files, not the frontmatter, are
-authoritative for the refusal decision. This keeps `/openup-readiness` (frontmatter reader)
-and the pre-flight hook (claim-file reader) consistent without a write-ordering hazard.
+**Decided:** pre-flight collision detection reads **all live claim files** under
+`.git/openup/claims/` (no staleness filter — per D1 every claim counts), takes the union of
+their `touches` (each claim carries its own — see D7), and runs the T-008 D2
+path-segment-prefix overlap against the new task's `touches`. Frontmatter `claimed-by`/`worktree` are written as a *human/readiness-visible
+mirror* of the live claim, updated on claim and nulled on release — but the claim files, not
+the frontmatter, are authoritative for the refusal decision. This keeps `/openup-readiness`
+(frontmatter reader) and the pre-flight hook (claim-file reader) consistent without a
+write-ordering hazard.
+
+## D6 — Worktree-per-task is default-on  *(RESOLVED by PM 2026-06-11)*
+
+The program plan proposed `worktree: true` as an opt-in flag, "default once stable." The team
+initially specced it as opt-in.
+
+**Decided (PM/user 2026-06-11): default-on.** `/openup-start-iteration` creates
+`../<repo>-T-NNN` via `git worktree add` for **every** iteration by default; a
+`worktree: false` escape hatch keeps the legacy in-place checkout for cases that need it
+(e.g. an environment where a second worktree is impractical). The claim file is always
+written regardless of worktree mode.
+
+Consequence for ordering / rollback (resolves the tester's Q5): **create the worktree first,
+then write the claim.** If `git worktree add` fails, abort before any claim file exists — never
+leave a claim without a worktree. If the claim write fails after the worktree exists, remove
+the just-created worktree to roll back. Release order is the inverse: drop the claim, then
+`git worktree remove` (with `--force` only if the tree is known-clean per the developer's R1).
+
+**Bootstrap exception:** T-009 itself implements worktree support, so iteration 6 runs
+in-place (the feature does not yet exist to use on its own delivery). Default-on takes effect
+for iterations started *after* T-009 merges.
+
+## D7 — Claim file carries its own `touches` (resolves tester Q6)
+
+The tester flagged a plan↔design gap: the claim shape omitted `touches`, but D5 unions live
+claims' `touches` for collision. Either the claim embeds `touches`, or pre-flight joins each
+claim's `task_id` back to its frontmatter `touches`.
+
+**Decided: embed `touches` in the claim file**, copied from the task's frontmatter at claim
+time. Rationale: it makes the claim self-contained and keeps pre-flight a **pure claim-file
+read** — no frontmatter lookup at enforcement time, no dependency on frontmatter being
+written/synced first. This is the direct expression of D5 ("claim files, not frontmatter, are
+authoritative for the refusal decision"); option (b) would partly re-introduce the frontmatter
+dependency D5 exists to avoid. Cost: `touches` is duplicated (frontmatter + claim) for the
+life of the claim — acceptable, since the claim is ephemeral and the frontmatter remains the
+durable source that seeds it. If a task's `touches` changes mid-claim (rare), the claim must
+be re-written; documented as a known edge in `parallel-work.md`.
