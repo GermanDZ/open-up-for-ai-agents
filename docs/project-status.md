@@ -1,8 +1,8 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 5
-**Iteration Goal**: T-008 — Coordination frontmatter + /openup-readiness DAG
+**Iteration**: 6
+**Iteration Goal**: T-009 — Worktree-per-task + lease claims + collision pre-flight
 **Status**: completed
 **Current Task**: None
 **Iteration Started**: 2026-06-11

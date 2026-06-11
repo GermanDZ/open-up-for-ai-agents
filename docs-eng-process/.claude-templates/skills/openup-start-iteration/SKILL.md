@@ -22,6 +22,9 @@ arguments:
   - name: deploy_team
     description: "Whether to deploy a team after iteration initialization (true/false, default: true — pass 'false' to skip team deployment)"
     required: false
+  - name: worktree
+    description: "Whether to create an isolated git worktree for this task (true/false, default: true — pass 'false' for a legacy in-place checkout). See T-009 / parallel-work.md."
+    required: false
 ---
 
 # Start Iteration
@@ -98,22 +101,30 @@ Team deployment is required for every iteration. Skip ONLY if `$ARGUMENTS[deploy
    python3 scripts/openup-state.py set-gate team_deployed true
    ```
 
-### 4. Create Task Branch
+### 4. Create Task Branch (+ Worktree, default-on)
 
-**Execute these commands in order:**
+**Worktree-per-task is the default** (T-009 design D6): each iteration gets an isolated
+sibling worktree so parallel sessions never share a working tree. Pass `worktree: false`
+to use a legacy in-place checkout (e.g. when a sibling path is impractical, or for a task
+— like T-009 itself — that bootstraps the worktree feature).
 
 ```bash
 # 1. Detect trunk
 TRUNK=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@')
 [ -z "$TRUNK" ] && TRUNK="main"
 git rev-parse --verify "$TRUNK" 2>/dev/null || TRUNK="master"
+REPO=$(basename "$(git rev-parse --show-toplevel)")
+BRANCH={type}/{task_id}-{short-description}
 
-# 2. Switch to trunk and pull latest
-git checkout "$TRUNK"
-git pull origin "$TRUNK" 2>/dev/null || true
+# 2. Refresh trunk
+git checkout "$TRUNK" && git pull origin "$TRUNK" 2>/dev/null || true
 
-# 3. Create branch (see branching.md for naming patterns)
-git checkout -b {type}/{task_id}-{short-description}
+# 3a. DEFAULT (worktree-on): isolated worktree on a new branch (worktree FIRST — D6)
+git worktree add "../${REPO}-{task_id}" -b "$BRANCH" "$TRUNK"
+#    → continue all subsequent work inside ../${REPO}-{task_id}
+
+# 3b. OPT-OUT (worktree: false): in-place branch
+git checkout -b "$BRANCH"
 
 # 4. VERIFY — this must NOT return trunk
 git rev-parse --abbrev-ref HEAD
@@ -139,6 +150,33 @@ python3 scripts/openup-state.py init \
 ```
 
 If the team was already deployed in step 3, also run `python3 scripts/openup-state.py set-gate team_deployed true` now.
+
+### 5b. Pre-flight + write the worktree claim
+
+Live lease claims coordinate parallel sessions (one file per claim under
+`<git-common-dir>/openup/claims/`, never committed). See
+[parallel-work.md](../../../../docs-eng-process/parallel-work.md). The claim's collision
+surface (`touches`) and `depends-on` come from the task's `docs/changes/{task_id}/plan.md`
+frontmatter, so persist the plan **before** claiming.
+
+```bash
+# 1. PRE-FLIGHT (read-only): refuse early on an unmet dependency or a touches collision
+#    with a live claim. Exit 3 = unmet dep; exit 4 = collision (owner named); 0 = clear.
+python3 scripts/openup-claims.py preflight --task-id {task_id} || {
+  echo "Pre-flight refused — do NOT proceed. Resolve the dependency/collision above."; exit 1; }
+
+# 2. WRITE THE CLAIM (worktree already created in step 4 — worktree-first, claim-second; D6).
+#    On failure AFTER the worktree exists, roll back: git worktree remove "../${REPO}-{task_id}"
+python3 scripts/openup-claims.py claim \
+  --task-id {task_id} \
+  --session-id "$(python3 scripts/openup-state.py get session_id 2>/dev/null || echo "$BRANCH")" \
+  --branch "$(git rev-parse --abbrev-ref HEAD)" \
+  --worktree "$(git rev-parse --show-toplevel)"
+```
+
+Claims **never expire** — an abandoned claim blocks its surface until a human removes the
+file (`rm <git-common-dir>/openup/claims/{task_id}.json`); there is no TTL and no `--steal`.
+`/openup-complete-task` releases the claim and removes the worktree.
 
 ### 6. Check for Answered Input Requests
 

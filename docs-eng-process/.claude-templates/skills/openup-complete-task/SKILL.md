@@ -169,6 +169,26 @@ python3 scripts/openup-state.py archive \
 
 Either way the live `.openup/state.json` is removed by the `archive` command. Commit the archive move with the task's other completion commits.
 
+### 7b. Release the Worktree Claim (and remove the worktree)
+
+Release the live lease so the task's collision surface is freed for other sessions, and
+remove the isolated worktree (T-009). Claims never expire, so this release is the **only**
+thing that frees the surface — do not skip it.
+
+```bash
+# 1. Release the claim (idempotent — safe even if already released)
+python3 scripts/openup-claims.py release --task-id {task_id}
+
+# 2. Remove the worktree IF one was created (worktree-default-on tasks). Run this from a
+#    DIFFERENT worktree/the main checkout — git refuses to remove the worktree you are in.
+#    Add --force only if the tree is known-clean (all work committed/pushed).
+REPO=$(basename "$(git rev-parse --show-toplevel)")
+git worktree remove "../${REPO}-{task_id}" 2>/dev/null || \
+  echo "No worktree to remove (in-place task), or run from the main checkout."
+```
+
+If the task ran in-place (`worktree: false`), only the claim release applies.
+
 ### 8. Create Pull Request
 
 **PR is created by default.** Skip ONLY if `$ARGUMENTS[create_pr]` is explicitly `"false"`.
