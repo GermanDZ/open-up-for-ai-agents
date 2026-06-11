@@ -109,3 +109,16 @@ dependency D5 exists to avoid. Cost: `touches` is duplicated (frontmatter + clai
 life of the claim — acceptable, since the claim is ephemeral and the frontmatter remains the
 durable source that seeds it. If a task's `touches` changes mid-claim (rare), the claim must
 be re-written; documented as a known edge in `parallel-work.md`.
+
+## D8 — Corrupt claim file is fail-closed (resolves tester R6)
+
+The tester flagged (R6) that the corrupt/malformed-claim policy was unstated.
+
+**Decided: fail-closed.** When pre-flight encounters a claim file it cannot parse, it
+**refuses the new claim entirely** (exit 4, "REFUSED (fail-closed): corrupt claim …"),
+regardless of whether surfaces appear to overlap — a corrupt claim's `touches` is unknowable,
+so safety cannot be proven. The only exception is the claimant's *own* `task_id` (you may
+repair/overwrite your own corrupt claim). Recovery is the same `rm` path as any other claim.
+Rationale: corrupt coordination state should halt parallel starts until a human resolves it,
+not be silently treated as a free surface. Implemented in `openup-claims.py` (`live_claims`
+marks unreadable files `_corrupt`; `preflight` refuses on the first corrupt other-claim).

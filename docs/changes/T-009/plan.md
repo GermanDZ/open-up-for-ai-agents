@@ -115,28 +115,28 @@ valuable (un-blocks genuine parallel work — the wave-3 sequencing milestone).
 
 ## Definition of Done / Acceptance Criteria
 
-- [ ] `/openup-start-iteration` creates a worktree **by default** —
+- [x] `/openup-start-iteration` creates a worktree **by default** —
       `git worktree add ../<repo>-T-NNN <branch>` then writes the claim file (worktree
       first, claim second; roll back the worktree if the claim write fails — design.md D6);
       `worktree: false` opts out to in-place checkout.
-- [ ] Claims are one file per claim, at `.git/openup/claims/T-NNN.json`, with the shape
+- [x] Claims are one file per claim, at `.git/openup/claims/T-NNN.json`, with the shape
       above (task_id, session_id, branch, worktree, claimed_at, **touches** — **no** lease/TTL
       field). `touches` is copied from frontmatter at claim time so pre-flight reads only
       claim files (D7).
-- [ ] The claims dir is created on first claim if it does not exist; claim writes are
+- [x] The claims dir is created on first claim if it does not exist; claim writes are
       atomic (write-temp-then-rename).
-- [ ] Pre-flight **refuses** to claim if any `depends-on` id is not `done`/`verified`,
+- [x] Pre-flight **refuses** to claim if any `depends-on` id is not `done`/`verified`,
       naming the unmet dependency.
-- [ ] Pre-flight **refuses** to claim if `touches` overlaps **any** live claim's `touches`
+- [x] Pre-flight **refuses** to claim if `touches` overlaps **any** live claim's `touches`
       (T-008 D2 path-segment-prefix semantics; no staleness filter), printing the owning
       `session_id`/`task_id`.
-- [ ] `/openup-complete-task` deletes the claim file, runs `git worktree remove`, and nulls
+- [x] `/openup-complete-task` deletes the claim file, runs `git worktree remove`, and nulls
       `claimed-by` / `claimed-at` / `worktree` in the task frontmatter.
-- [ ] **End-to-end:** two simultaneous sessions on disjoint tasks run in separate worktrees
+- [x] **End-to-end:** two simultaneous sessions on disjoint tasks run in separate worktrees
       with visible claim files; a third session claiming an **overlapping** task is refused
       with the owning session named. (Program AC line, §"Acceptance Criteria".)
-- [ ] `docs-eng-process/parallel-work.md` documents the model; templates re-synced; links intact.
-- [ ] Verified by the tester against the end-to-end check above.
+- [x] `docs-eng-process/parallel-work.md` documents the model; templates re-synced; links intact.
+- [x] Verified by the tester against the end-to-end check above.
 
 ## Acceptance Check (from program plan)
 
