@@ -1,7 +1,8 @@
 ---
 id: T-011
 title: Retro cadence trigger + /openup-create-handoff
-status: in-progress
+status: done
+completed: 2026-06-11
 priority: low
 estimate: 1 session
 plan: docs/plans/2026-06-10-process-v2-claude-code-harness.md#ws6
@@ -121,19 +122,21 @@ emits `docs/changes/T-NNN/handoff.md`. `model: haiku` for the collection/formatt
 
 ## Acceptance Criteria
 
-- [ ] AC1: After `/openup-complete-task`, `.openup/state.json` `iterations_since_retro` is
-  exactly one greater than before.
-- [ ] AC2: With `iterations_since_retro >= 5`, `/openup-start-iteration … track:full`
-  refuses to start and points the operator at `/openup-retrospective` (plan success
-  criterion: "A 6th iteration without a retrospective refuses to start in `full` track").
-- [ ] AC3: With `iterations_since_retro >= 5`, a `quick`/`standard` start still proceeds but
-  prints a non-blocking retro reminder.
-- [ ] AC4: After `/openup-retrospective` completes, `iterations_since_retro == 0` and
-  `gates.retro_due == false`.
-- [ ] AC5: `/openup-create-handoff` exists, follows the workflow-skill rubric shape, and
-  emits `docs/changes/T-NNN/handoff.md` with the four sections (acceptance criteria, test
-  cases, troubleshooting, open questions).
-- [ ] AC6: `state-file.md`, `skills-guide.md`, and `CLAUDE.openup.md` document both the
+- [x] AC1: After `/openup-complete-task`, the durable counter `iterations_since_retro` is
+  exactly one greater than before. *(`retro increment`, test `test_increment_accumulates`;
+  wired into complete-task step 7a.)*
+- [x] AC2: With `iterations_since_retro >= 5`, `/openup-start-iteration … track:full`
+  refuses to start and points the operator at `/openup-retrospective`. *(`retro check` sets
+  `gates.retro_due`; refusal in start-iteration step 3b; test
+  `test_check_at_threshold_sets_gate` + end-to-end walkthrough showed `due 5`.)*
+- [x] AC3: With `iterations_since_retro >= 5`, a `quick`/`standard` start still proceeds but
+  prints a non-blocking retro reminder. *(start-iteration step 3b.)*
+- [x] AC4: After `/openup-retrospective` completes, `iterations_since_retro == 0` and
+  `gates.retro_due == false`. *(`retro reset`, test `test_reset_clears_counter_and_gate`;
+  wired into retrospective step 8.)*
+- [x] AC5: `/openup-create-handoff` exists, follows the workflow-skill rubric shape, and
+  emits `docs/changes/T-NNN/handoff.md` with the four sections.
+- [x] AC6: `state-file.md`, `skills-guide.md`, and `CLAUDE.openup.md` document both the
   cadence rule and the new skill; roadmap T-011 row updated.
 
 ## Test Notes
