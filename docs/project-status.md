@@ -1,8 +1,8 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 8
-**Iteration Goal**: T-011 — Retro cadence trigger + `/openup-create-handoff`
+**Iteration**: 9
+**Iteration Goal**: T-002 — `/openup-sync-spec`: refactor → artifact back-propagation
 **Status**: completed
 **Current Task**: None
 **Iteration Started**: 2026-06-11
