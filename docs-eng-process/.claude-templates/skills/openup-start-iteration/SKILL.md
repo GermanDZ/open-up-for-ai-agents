@@ -16,6 +16,9 @@ arguments:
   - name: task_id
     description: The task ID from roadmap to work on (required for task-based branching)
     required: true
+  - name: track
+    description: "Ceremony track (quick|standard|full). Optional — auto-selected from scope when omitted. quick = docs/config/typo/≤~50 LOC single file (state + auto-log only, no plan gate, no team, no readiness); standard = single-feature (plan gate + scribe + /openup-readiness, team optional); full = multi-role/architectural (standard + mandatory team + rubric at complete-task). See tracks.md."
+    required: false
   - name: team
     description: Team type to automatically deploy after initialization (feature, investigation, construction, elaboration, inception, transition, planning, full, or none)
     required: false
@@ -35,7 +38,7 @@ Initialize a new OpenUP iteration: read project state, create a task branch, and
 
 After this skill completes, ALL of these must be true:
 
-- [ ] **BLOCKING**: Team is deployed and PM is coordinating — verified before any implementation work begins
+- [ ] **BLOCKING (standard / full tracks)**: Team is deployed and PM is coordinating — verified before any implementation work begins. The `quick` track skips this by design.
 - [ ] Project status is updated with new iteration
 - [ ] **BLOCKING**: `git rev-parse --abbrev-ref HEAD` returns a non-trunk branch name. If it returns trunk, the skill has FAILED — do not proceed.
 - [ ] Iteration goal is defined
@@ -60,11 +63,38 @@ Read `docs/roadmap.md` to:
 - Determine priority and dependencies
 - **If task_id not found**: Ask user to specify which task from the roadmap
 
-### 3. Deploy Team — MANDATORY BEFORE ANY WORK
+### 3. Select Track
 
-**⛔ STOP. Do not create a branch, write any code, or modify any files until the team is deployed.**
+Choose the ceremony track that matches the task's scope. Use `$ARGUMENTS[track]` if
+provided; otherwise auto-select from the task description / `docs/changes/{task_id}/plan.md`
+scope using this decision table:
 
-Team deployment is required for every iteration. Skip ONLY if `$ARGUMENTS[deploy_team]` is explicitly `"false"`.
+| Track | When | Ceremony applied |
+|---|---|---|
+| `quick` | docs / config / typo / comment / ≤ ~50 LOC, single file | state file + auto-log only — **no plan gate, no team, no readiness** |
+| `standard` | single-feature work | plan gate + scribe logging + `/openup-readiness` check; team optional |
+| `full` | multi-role / architectural / cross-cutting | standard **+ team deployment + rubric assessment** at complete-task |
+
+The intake hook (`on-task-request.py`) prints a `Suggested track: …` line — treat it as the
+default unless the actual scope differs. The selected track drives two things below: the
+**Deploy-Team** step (step 4) and the `--track` flag passed to `openup-state.py init`
+(step 6). See [tracks.md](../../../../docs-eng-process/tracks.md) for the full wiring.
+
+### 4. Deploy Team — MANDATORY (standard / full) BEFORE ANY WORK
+
+**⛔ STOP. Do not create a branch, write any code, or modify any files until the team is
+deployed — on the `standard` and `full` tracks.** The `quick` track is the sanctioned
+exception: it skips the team entirely (same as `deploy_team: false`).
+
+Track determines whether a team is required:
+- **`quick`** ⇒ **skip team** (no Deploy-Team; proceed straight to step 5). Equivalent to
+  `deploy_team: false`.
+- **`standard`** ⇒ team **optional** — deploy the phase default unless `$ARGUMENTS[team]` is
+  `none` or `$ARGUMENTS[deploy_team]` is `"false"`.
+- **`full`** ⇒ team **mandatory** — always deploy; ignore an attempt to skip.
+
+The explicit `$ARGUMENTS[deploy_team]` / `$ARGUMENTS[team]` args still override the track
+default (except that `full` will not silently run team-less). When a team IS deployed:
 
 1. **Auto-select team type** if `$ARGUMENTS[team]` is not specified:
    - Check task description for keywords:
@@ -95,13 +125,13 @@ Team deployment is required for every iteration. Skip ONLY if `$ARGUMENTS[deploy
 
 4. **PM takes the lead**: after spawning, the project-manager agent coordinates all subsequent work for this iteration. Specialists (developer, architect, tester, analyst) receive focused subtasks from the PM.
 
-5. **Record the team gate** — once the team is up, flip the gate in iteration state (created in step 5 below; if the branch/state does not exist yet, do this right after step 5):
+5. **Record the team gate** — once the team is up, flip the gate in iteration state (created in step 6 below; if the branch/state does not exist yet, do this right after step 6):
 
    ```bash
    python3 scripts/openup-state.py set-gate team_deployed true
    ```
 
-### 4. Create Task Branch (+ Worktree, default-on)
+### 5. Create Task Branch (+ Worktree, default-on)
 
 **Worktree-per-task is the default** (T-009 design D6): each iteration gets an isolated
 sibling worktree so parallel sessions never share a working tree. Pass `worktree: false`
@@ -134,24 +164,24 @@ git rev-parse --abbrev-ref HEAD
 - No unmerged commits → delete and recreate from trunk
 - Has unmerged commits → create PR or merge first, then create new branch
 
-### 5. Initialize Iteration State
+### 6. Initialize Iteration State
 
-Write the machine-readable iteration state file. This is what hooks read to enforce process gates (see [state-file.md](../../../../docs-eng-process/state-file.md)). Fill in the iteration's actual values:
+Write the machine-readable iteration state file. This is what hooks read to enforce process gates (see [state-file.md](../../../../docs-eng-process/state-file.md)). Fill in the iteration's actual values — pass the **track selected in step 3** to `--track`:
 
 ```bash
 python3 scripts/openup-state.py init \
   --task-id "{task_id}" \
   --iteration {iteration_number} \
   --phase {inception|elaboration|construction|transition} \
-  --track {quick|standard|full} \
+  --track {selected track: quick|standard|full} \
   --branch "$(git rev-parse --abbrev-ref HEAD)" \
   --worktree "$(git rev-parse --show-toplevel)" \
-  [--plan docs/plans/{plan}.md]    # only if a plan was persisted
+  [--plan docs/plans/{plan}.md]    # standard/full only; the quick track has no plan gate
 ```
 
-If the team was already deployed in step 3, also run `python3 scripts/openup-state.py set-gate team_deployed true` now.
+If the team was already deployed in step 4, also run `python3 scripts/openup-state.py set-gate team_deployed true` now.
 
-### 5b. Pre-flight + write the worktree claim
+### 6b. Pre-flight + write the worktree claim
 
 Live lease claims coordinate parallel sessions (one file per claim under
 `<git-common-dir>/openup/claims/`, never committed). See
@@ -165,7 +195,7 @@ frontmatter, so persist the plan **before** claiming.
 python3 scripts/openup-claims.py preflight --task-id {task_id} || {
   echo "Pre-flight refused — do NOT proceed. Resolve the dependency/collision above."; exit 1; }
 
-# 2. WRITE THE CLAIM (worktree already created in step 4 — worktree-first, claim-second; D6).
+# 2. WRITE THE CLAIM (worktree already created in step 5 — worktree-first, claim-second; D6).
 #    On failure AFTER the worktree exists, roll back: git worktree remove "../${REPO}-{task_id}"
 python3 scripts/openup-claims.py claim \
   --task-id {task_id} \
@@ -178,11 +208,11 @@ Claims **never expire** — an abandoned claim blocks its surface until a human 
 file (`rm <git-common-dir>/openup/claims/{task_id}.json`); there is no TTL and no `--steal`.
 `/openup-complete-task` releases the claim and removes the worktree.
 
-### 6. Check for Answered Input Requests
+### 7. Check for Answered Input Requests
 
 Check `docs/input-requests/` for files with `status: answered`. Process any answered requests before continuing.
 
-### 7. Initialize Iteration
+### 8. Initialize Iteration
 
 > **Scribe step** — delegate to the `openup-scribe` agent (Agent tool,
 > subagent_type: "openup-scribe"). You determine the values (iteration number,
@@ -201,7 +231,7 @@ Check `docs/input-requests/` for files with `status: answered`. Process any answ
 >   Report: each field changed from → to.")
 > ```
 
-### 8. Log Initialization
+### 9. Log Initialization
 
 > **Scribe step** — delegate to the `openup-scribe` agent (Agent tool,
 > subagent_type: "openup-scribe"). You determine the values; the scribe only

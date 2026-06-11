@@ -66,6 +66,21 @@ Default cycle:
 - Workflow: `/openup-start-iteration`, `/openup-complete-task`, `/openup-quick-task`, `/openup-orchestrate`, `/openup-phase-review`, `/openup-explore`
 - Assessment: `/openup-assess-completeness` (rubric-based, per-criterion grading)
 
+## Graded Tracks
+Every unit of work runs on one ceremony track, selected at iteration start and recorded in
+`.openup/state.json` → `track`. Pick the lightest track the scope warrants.
+
+| Track | When | Ceremony |
+|---|---|---|
+| `quick` | docs / config / typo / ≤ ~50 LOC, single file | state + auto-log only — no plan gate, no team, no readiness |
+| `standard` | single-feature work (default) | plan gate + scribe + `/openup-readiness`; team optional |
+| `full` | multi-role / architectural / cross-cutting | standard + mandatory team + rubric at complete-task |
+
+**Selection rule:** quick for tiny single-file/doc edits; full for multi-role or architectural
+work; standard for everything else. `/openup-start-iteration` auto-selects (override with
+`track:`); `/openup-quick-task` is the quick-track entry point. Full detail:
+[tracks.md](../docs-eng-process/tracks.md).
+
 ## Context Scoping (Three Rings)
 `docs/` is scoped per unit of work. When loading context, prefer the smallest ring that answers the question — do **not** "scan all of `docs/`".
 - **Ring 1 — product truth** (`docs/product/`): what IS true now (vision, architecture, use-cases). Plus the live board `docs/roadmap.md` + generated view `docs/project-status.md`, and program-level plans in `docs/plans/`.

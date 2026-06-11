@@ -65,7 +65,7 @@ BRANCH_NAME="quick/$(date +%Y%m%d-%H%M%S)-$(echo $task | tr ' ' '-' | head -c 20
 git checkout -b $BRANCH_NAME
 ```
 
-Then initialize iteration state on the **quick** track. The quick track only requires the `log_written` and `roadmap_synced` gates — there is no plan or team gate:
+Then initialize iteration state on the **quick** track — this is the same `quick` track `/openup-start-iteration` selects for tiny scopes (see [tracks.md](../../../docs-eng-process/tracks.md)). The quick track only requires the `log_written` and `roadmap_synced` gates — there is no plan or team gate:
 
 ```bash
 python3 scripts/openup-state.py init \

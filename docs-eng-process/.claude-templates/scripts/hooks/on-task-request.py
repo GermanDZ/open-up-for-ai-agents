@@ -53,6 +53,40 @@ OPENUP_SKILL_RE = re.compile(
     re.IGNORECASE,
 )
 
+# Track-suggestion heuristics (T-010). Keep these small and pure so the
+# classifier can be unit-tested directly. quick wins over full when both match
+# (a small-scoped word is a stronger signal than a broad-refactor word); full
+# wins over standard. standard is the default fallthrough.
+QUICK_TRACK_RE = re.compile(
+    r"\b("
+    r"typo|rename|comment|bump|version|docs?|readme|"
+    r"format(?:ting)?|lint|whitespace|small|tiny|one[- ]?liner"
+    r")\b",
+    re.IGNORECASE,
+)
+FULL_TRACK_RE = re.compile(
+    r"\b("
+    r"architectural|architecture|redesign|across|migrate|migration|"
+    r"multi[- ]?(?:role|component|service)|rework|schema\s+change|"
+    r"broad\s+refactor"
+    r")\b",
+    re.IGNORECASE,
+)
+
+
+def suggest_track(prompt: str) -> str:
+    """Classify a task-request prompt into a suggested ceremony track.
+
+    Returns one of ``"quick"``, ``"full"``, ``"standard"``. quick takes
+    precedence over full (a small-scope signal is decisive); full takes
+    precedence over the standard default. Pure and side-effect free.
+    """
+    if QUICK_TRACK_RE.search(prompt):
+        return "quick"
+    if FULL_TRACK_RE.search(prompt):
+        return "full"
+    return "standard"
+
 
 def parse_project_status(path: Path) -> dict[str, str]:
     fields: dict[str, str] = {}
@@ -111,41 +145,44 @@ def main() -> None:
         "transition": "openup-transition-team (developer + tester + project-manager)",
     }
     suggested_team = phase_team_map.get(phase, "openup-construction-team (developer + tester)")
+    track = suggest_track(prompt)
 
     if status != "in-progress":
         # No active iteration — must start one
-        task_arg = f" task_id: {task_id}" if task_id else " task_id: T-XXX"
-        # stdout is injected as context into Claude's message (does not block)
+        task_arg = f"task_id: {task_id}" if task_id else "task_id: T-XXX"
         print(
-            f"[SYSTEM - OpenUP PM Intake]\n"
+            f"[on-task-request] 🚦 Task request detected — OpenUP PM intake required.\n\n"
             f"You are the Project Manager. Do NOT explore files, read code, or write\n"
             f"anything yet. Follow this sequence:\n\n"
-            f"  1. Run: /openup-start-iteration{task_arg}\n"
-            f"     This will deploy the {suggested_team}.\n\n"
+            f"  1. Run: /openup-start-iteration {task_arg} track: {track}\n"
+            f"     This will deploy the {suggested_team} (skipped on the quick track).\n\n"
             f"  2. As PM, decompose the task goal into role-specific subtasks.\n\n"
             f"  3. Brief each specialist (developer, tester, architect as needed)\n"
             f"     using the delegation format from your Orchestrator Protocol.\n\n"
             f"  4. Collect outputs and synthesize.\n\n"
-            f"Project phase: {phase} | No active iteration detected.\n"
-            f"Start the iteration first — then coordinate the team."
+            f"Suggested track: {track} — adjust if the scope differs (see tracks.md).\n"
+            f"Project phase: {phase} | No active iteration\n"
+            f"Start the iteration first — then coordinate the team.",
+            file=sys.stderr,
         )
-        sys.exit(0)
+        sys.exit(2)
 
     else:
         # Iteration is active — remind Claude to act as PM, not solo
         active_task = current_task if current_task not in ("", "None", "none") else task_id or "?"
-        # stdout is injected as context into Claude's message (does not block)
         print(
-            f"[SYSTEM - OpenUP PM Reminder]\n"
-            f"You are the Project Manager. Active iteration: task {active_task}.\n"
-            f"Do not work solo. Coordinate the team:\n\n"
+            f"[on-task-request] 🚦 Active iteration detected (task {active_task}).\n\n"
+            f"You are the Project Manager. Do not work solo. Coordinate the team:\n\n"
             f"  1. Confirm the team is deployed (if not, spawn {suggested_team} now).\n\n"
             f"  2. Decompose the work into specialist subtasks.\n\n"
             f"  3. Brief each specialist and collect their outputs.\n\n"
             f"  4. Synthesize and verify against acceptance criteria.\n\n"
-            f"Do not write code or modify files directly — delegate to specialists."
+            f"Suggested track: {track} — adjust if the scope differs (see tracks.md).\n"
+            f"If the team is already active, send them their next subtask.\n"
+            f"Do not write code or modify files directly — delegate to specialists.",
+            file=sys.stderr,
         )
-        sys.exit(0)
+        sys.exit(2)
 
 
 if __name__ == "__main__":

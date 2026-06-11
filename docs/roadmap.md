@@ -8,7 +8,7 @@
 - **Plan**: [plans/2026-06-10-process-v2-claude-code-harness.md](plans/2026-06-10-process-v2-claude-code-harness.md)
 - **Created**: 2026-06-10
 - **Evidence base**: Kaze webapp empirical audit (2026-06-10) + 2026 AI-agent SDLC research (AI-DLC, Spec Kit, OpenSpec, BMAD, Kiro)
-- **Notes**: Absorbs items #1–#4 of the 2026-05-13 OpenSpec plan (readiness DAG, project-config, per-change folders, archive flow) into workstreams WS4/WS5. T-008 un-defers T-002 (`/openup-sync-spec`). Wave 2 complete. Wave 3 started — T-008 ✅ (coordination frontmatter + /openup-readiness DAG). Next: T-009 (worktree-per-task + lease claims). Wave 3 complete — T-009 ✅ (worktree-per-task + lease claims + collision pre-flight).
+- **Notes**: Absorbs items #1–#4 of the 2026-05-13 OpenSpec plan (readiness DAG, project-config, per-change folders, archive flow) into workstreams WS4/WS5. T-008 un-defers T-002 (`/openup-sync-spec`). Wave 2 complete. Wave 3 started — T-008 ✅ (coordination frontmatter + /openup-readiness DAG). Next: T-009 (worktree-per-task + lease claims). Wave 3 complete — T-009 ✅ (worktree-per-task + lease claims + collision pre-flight). Wave 4 started — T-010 ✅ (graded quick/standard/full tracks + intake track suggestion).
 
 **Tasks**
 
@@ -20,10 +20,10 @@
 | T-007 | Three-ring docs scoping (product / changes / archive) | completed (2026-06-11) | medium | — |
 | T-008 | Coordination frontmatter + `/openup-readiness` DAG | completed (2026-06-11) | medium | T-007 |
 | T-009 | Worktree-per-task + lease claims + collision pre-flight | completed (2026-06-11) | medium | T-005, T-008 |
-| T-010 | Graded tracks (quick/standard/full) | planned | medium | T-005, T-006 |
+| T-010 | Graded tracks (quick/standard/full) | completed (2026-06-11) | medium | T-005, T-006 |
 | T-011 | Retro cadence trigger + `/openup-create-handoff` | planned | low | T-005 |
 
-**Next step**: Wave 4 — T-010 (graded tracks) ∥ T-011 (retro cadence + handoff); then revisit deferred T-002.
+**Next step**: Wave 4 — T-011 (retro cadence + handoff); then revisit deferred T-002.
 
 
 <!-- plan-hook: 2026-05-13 -->
