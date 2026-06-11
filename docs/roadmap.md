@@ -19,7 +19,7 @@
 | T-006 | Blocking gates + deterministic auto-logging + status sync | completed (2026-06-10) | high | T-005 |
 | T-007 | Three-ring docs scoping (product / changes / archive) | completed (2026-06-11) | medium | — |
 | T-008 | Coordination frontmatter + `/openup-readiness` DAG | completed (2026-06-11) | medium | T-007 |
-| T-009 | Worktree-per-task + lease claims + collision pre-flight | planned | medium | T-005, T-008 |
+| T-009 | Worktree-per-task + lease claims + collision pre-flight | in-progress | medium | T-005, T-008 |
 | T-010 | Graded tracks (quick/standard/full) | planned | medium | T-005, T-006 |
 | T-011 | Retro cadence trigger + `/openup-create-handoff` | planned | low | T-005 |
 
