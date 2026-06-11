@@ -23,7 +23,7 @@ If the user asks to skip, redirect: "Let me run `/openup-quick-task` instead —
 
 **Fix the spec first when behavior changes.**
 - **Behavior change** (logic, scope, acceptance criteria differ from artifact): update the use case / iteration plan / task description **first**, then change code.
-- **Refactor only** (no behavior change): change code first, then back-propagate to artifacts via `/openup-sync-spec` (when available) or by re-running the originating `/openup-create-*` skill.
+- **Refactor only** (no behavior change): change code first, then back-propagate to artifacts via `/openup-sync-spec` or by re-running the originating `/openup-create-*` skill.
 - This keeps specs and code from drifting silently. If you find yourself "just tweaking" code that contradicts the spec, stop and update the spec.
 
 **Edit artifacts through their skill, not by hand.**

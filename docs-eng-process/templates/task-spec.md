@@ -7,7 +7,7 @@ estimate: 1 session   # rough size (e.g. "0.5 session", "1–2 sessions")
 plan: docs/plans/<plan-file>.md#<section>   # link to originating plan, if any
 depends-on: []     # list of task IDs that must finish first
 blocks: []         # list of task IDs that wait on this one
-last-synced: ""    # git ref of last code↔spec sync (set by /openup-sync-spec)
+last-synced: ""    # full git SHA of last code↔spec sync (set by /openup-sync-spec)
 ---
 
 # T-XXX — <Title>

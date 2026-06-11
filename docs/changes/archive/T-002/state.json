@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "task_id": "T-002",
+  "iteration": 9,
+  "phase": "construction",
+  "track": "full",
+  "branch": "feature/T-002-sync-spec",
+  "worktree": "/Users/germandz/personal-code/ai-dev-framework/open-up-for-ai-agents",
+  "session_id": null,
+  "started_at": "2026-06-11T08:55:10Z",
+  "gates": {
+    "team_deployed": true,
+    "plan_persisted": "docs/changes/T-002/plan.md",
+    "log_written": true,
+    "roadmap_synced": true,
+    "retro_due": false
+  },
+  "iterations_since_retro": 1
+}

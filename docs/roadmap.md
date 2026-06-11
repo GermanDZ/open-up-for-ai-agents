@@ -23,7 +23,7 @@
 | T-010 | Graded tracks (quick/standard/full) | completed (2026-06-11) | medium | T-005, T-006 |
 | T-011 | Retro cadence trigger + `/openup-create-handoff` | completed (2026-06-11) | low | T-005 |
 
-**Next step**: Wave 4 complete — revisit deferred T-002 (`/openup-sync-spec`), now unblocked by T-008.
+**Next step**: T-002 (`/openup-sync-spec`) completed 2026-06-11 (iter 9). Process v2 program tasks all delivered.
 
 
 <!-- plan-hook: 2026-05-13 -->
@@ -49,7 +49,7 @@
 | ID | Title | Status | Priority |
 |---|---|---|---|
 | [T-001](changes/archive/T-001/plan.md) | REASONS task spec — template, skill, rubric | done | high |
-| [T-002](changes/T-002/plan.md) | `/openup-sync-spec` — refactor back-propagation | deferred | medium |
+| [T-002](changes/T-002/plan.md) | `/openup-sync-spec` — refactor back-propagation | completed (2026-06-11) | medium |
 | [T-003](changes/archive/T-003/plan.md) | Suitability "fit" metadata in workflow skills | done | low |
 
 **Done (out-of-band, in `.claude/` — gitignored)**
@@ -58,4 +58,4 @@
 - ✅ Plan item #5 — "Edit artifacts through their skill" rule in `CLAUDE.openup.md`
 
 **Next step**: pick T-003 (smallest, exercises the new format), then T-001.
-T-002 stays deferred until drift is observed.
+T-002 (`/openup-sync-spec`) completed 2026-06-11 — implemented when T-008's readiness DAG un-blocked it.

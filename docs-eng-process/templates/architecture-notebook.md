@@ -14,6 +14,7 @@ keywords:
 related:
   workproducts:
   - architecture-notebook-6
+last-synced: ""   # full git SHA of last code↔spec sync (set by /openup-sync-spec)
 ---
 
 
