@@ -22,6 +22,7 @@ Subcommands:
   set-gate     Set gates.<name> (typed coercion; path string allowed).
   check-gates  Exit nonzero if required gates are not all truthy.
   archive      Validate, copy state to a destination, then remove the original.
+  retro        Manage the durable retro-cadence counter (.openup/retro.json).
   validate     Validate .openup/state.json against the schema.
 
 Exit codes:
@@ -179,6 +180,56 @@ def require_state(args):
 
 
 # --------------------------------------------------------------------------
+# Retro cadence counter (T-011)
+#
+# The retrospective-cadence counter is DURABLE across iterations, so it cannot
+# live inside state.json: `archive` deletes state.json on every completion. It
+# lives in a sibling .openup/retro.json that `archive` never touches. The
+# `iterations_since_retro` field in state.json is an init-time mirror of this
+# value for audit/visibility. See docs/changes/T-011/design.md (DD1).
+# --------------------------------------------------------------------------
+RETRO_DEFAULT_THRESHOLD = 5
+
+
+def retro_path(args) -> Path:
+    return state_dir(args) / "retro.json"
+
+
+def read_retro_count(args) -> int:
+    p = retro_path(args)
+    if not p.exists():
+        return 0
+    try:
+        with p.open("r", encoding="utf-8") as fh:
+            data = json.load(fh)
+        value = data.get("iterations_since_retro", 0)
+        return value if isinstance(value, int) and not isinstance(value, bool) else 0
+    except (OSError, json.JSONDecodeError):
+        return 0
+
+
+def write_retro_count(args, count: int):
+    d = state_dir(args)
+    d.mkdir(parents=True, exist_ok=True)
+    p = d / "retro.json"
+    with p.open("w", encoding="utf-8") as fh:
+        json.dump({"iterations_since_retro": count}, fh, indent=2)
+        fh.write("\n")
+
+
+def _sync_state_count(args, count: int, retro_due):
+    """Mirror the durable count (and optionally retro_due) into a live state
+    file, if one exists. No-op between iterations when there is no state."""
+    state = read_state(args)
+    if state is None:
+        return
+    state["iterations_since_retro"] = count
+    if retro_due is not None:
+        state.setdefault("gates", {})["retro_due"] = retro_due
+    write_state(args, state)
+
+
+# --------------------------------------------------------------------------
 # Value coercion (for set / set-gate)
 # --------------------------------------------------------------------------
 def coerce_value(raw: str):
@@ -332,6 +383,38 @@ def cmd_archive(args):
     return EXIT_OK
 
 
+def cmd_retro(args):
+    """Manage the durable retrospective-cadence counter (.openup/retro.json)."""
+    action = args.action
+    if action == "get":
+        print(read_retro_count(args))
+        return EXIT_OK
+
+    if action == "increment":
+        count = read_retro_count(args) + 1
+        write_retro_count(args, count)
+        _sync_state_count(args, count, None)
+        print(count)
+        return EXIT_OK
+
+    if action == "reset":
+        write_retro_count(args, 0)
+        _sync_state_count(args, 0, False)
+        print("Retro counter reset to 0")
+        return EXIT_OK
+
+    if action == "check":
+        count = read_retro_count(args)
+        threshold = args.threshold if args.threshold is not None else RETRO_DEFAULT_THRESHOLD
+        due = count >= threshold
+        _sync_state_count(args, count, due)
+        print(f"{'due' if due else 'ok'} {count}")
+        return EXIT_OK
+
+    sys.stderr.write(f"Unknown retro action: {action}\n")  # pragma: no cover
+    sys.exit(2)
+
+
 def cmd_validate(args):
     state = require_state(args)
     errors = validate_state(state)
@@ -428,6 +511,26 @@ def build_parser():
     p_ar.add_argument("dest_path", help="Destination path for the archived state.")
     add_state_dir(p_ar)
     p_ar.set_defaults(func=cmd_archive)
+
+    # retro
+    p_re = sub.add_parser(
+        "retro",
+        help="Manage the durable retrospective-cadence counter (.openup/retro.json).",
+    )
+    p_re.add_argument(
+        "action",
+        choices=["get", "increment", "reset", "check"],
+        help="get: print count; increment: +1 (on completion); reset: 0 (on retrospective); "
+        "check: set gates.retro_due if count >= threshold (on start-iteration).",
+    )
+    p_re.add_argument(
+        "--threshold",
+        type=int,
+        default=None,
+        help=f"Cadence threshold for 'check' (default: {RETRO_DEFAULT_THRESHOLD}).",
+    )
+    add_state_dir(p_re)
+    p_re.set_defaults(func=cmd_retro)
 
     # validate
     p_va = sub.add_parser("validate", help="Validate state against the schema.")
