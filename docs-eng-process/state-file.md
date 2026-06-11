@@ -51,6 +51,7 @@ point at an alternate `.openup` directory (tests do this).
 | `set-gate <name> <value>` | Convenience for `gates.<name>`; same coercion (pass a path string for `plan_persisted`). |
 | `check-gates [--require a,b,c]` | Exit 0 if required gates truthy; else exit 6 and print each unmet gate to stderr. Default required: `team_deployed,log_written,roadmap_synced`. |
 | `archive <dest_path>` | Validate, copy state to `dest_path` (mkdir parents), then remove `state.json`. Exit 3 if no state. |
+| `retro {get\|increment\|reset\|check} [--threshold N]` | Manage the durable retro-cadence counter (`.openup/retro.json`). See [retro cadence](#retro-cadence-t-011). |
 | `validate` | Validate `state.json`; exit 0 ok, exit 7 invalid (prints reasons). |
 
 Exit codes: `0` ok, `2` usage, `3` no state, `4` already exists, `5` key
@@ -66,7 +67,7 @@ Which skill flips which gate:
 | `team_deployed` | `openup-start-iteration` | After the team is deployed (`set-gate team_deployed true`). |
 | `log_written` | `openup-log-run` | After the run log is written. |
 | `roadmap_synced` | `openup-complete-task` | After the roadmap is updated. |
-| `retro_due` | retrospective tooling | Driven by `iterations_since_retro`. |
+| `retro_due` | `openup-start-iteration` (`retro check`) | Set to `count >= 5` at iteration start; see [retro cadence](#retro-cadence-t-011). |
 
 `openup-complete-task` runs `check-gates` before marking complete (blocking on
 any unmet gate) and, as its final step, `archive`s the state to
@@ -81,3 +82,26 @@ and calls `check-gates --require log_written,roadmap_synced`.
 
 See [tracks.md](tracks.md) for the full quick / standard / full ceremony matrix and how
 `track` wires to the gates, team deployment, and the complete-task rubric.
+
+## Retro cadence (T-011)
+
+The retrospective cadence is enforced by a **durable counter**, not a convention. Because
+`archive` deletes `state.json` on every completion, the counter cannot live there — it lives
+in a sibling `.openup/retro.json` (`{"iterations_since_retro": N}`) that `archive` never
+touches. `state.json.iterations_since_retro` is an **init-time mirror** of that durable value
+(seeded via `init --iterations-since-retro "$(… retro get)"`), kept for audit/visibility.
+Both files are local (`.openup/` is gitignored); the cadence nudge fails safe — if the file
+is lost, the count restarts at 0 and the next retro simply fires sooner.
+
+| Action | Run by | Effect |
+|--------|--------|--------|
+| `retro get` | `openup-start-iteration` (seeds `--iterations-since-retro`) | Print N (0 if absent). |
+| `retro increment` | `openup-complete-task` (step 7a) | N += 1. Independent of archive ordering. |
+| `retro check [--threshold N]` | `openup-start-iteration` (step 6) | Set `gates.retro_due = (count >= N)` in the live state; threshold default 5. Prints `due N` / `ok N`. |
+| `retro reset` | `openup-retrospective` (step 8) | N = 0; clears `gates.retro_due` in any live state. |
+
+**The gate's teeth:** when `iterations_since_retro >= 5`, `/openup-start-iteration`
+**refuses a `full`-track start** until `/openup-retrospective` runs; `quick`/`standard`
+starts proceed with a non-blocking reminder. The hard block targets only the heavy track
+(WS6b) so the cadence trigger never re-imposes the friction T-010 removed. See
+`docs/changes/T-011/design.md` (DD1/DD2).

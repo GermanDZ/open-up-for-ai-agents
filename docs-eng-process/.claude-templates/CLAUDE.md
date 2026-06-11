@@ -63,7 +63,7 @@ Default cycle:
 ## Common Commands (minimal list)
 - Phase skills: `/openup-inception`, `/openup-elaboration`, `/openup-construction`, `/openup-transition`
 - Artifacts: `/openup-create-vision`, `/openup-create-use-case`, `/openup-create-architecture-notebook`
-- Workflow: `/openup-start-iteration`, `/openup-complete-task`, `/openup-quick-task`, `/openup-orchestrate`, `/openup-phase-review`, `/openup-explore`
+- Workflow: `/openup-start-iteration`, `/openup-complete-task`, `/openup-quick-task`, `/openup-orchestrate`, `/openup-phase-review`, `/openup-explore`, `/openup-create-handoff`
 - Assessment: `/openup-assess-completeness` (rubric-based, per-criterion grading)
 
 ## Graded Tracks

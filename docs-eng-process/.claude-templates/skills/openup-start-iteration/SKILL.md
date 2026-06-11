@@ -80,6 +80,29 @@ default unless the actual scope differs. The selected track drives two things be
 **Deploy-Team** step (step 4) and the `--track` flag passed to `openup-state.py init`
 (step 6). See [tracks.md](../../../../docs-eng-process/tracks.md) for the full wiring.
 
+### 3b. Check Retro Cadence (T-011)
+
+The retrospective cadence is enforced by a durable counter, not a convention. Read it:
+
+```bash
+python3 scripts/openup-state.py retro get   # N = completed tasks since the last retrospective
+```
+
+**If `N >= 5` AND the selected track is `full`: REFUSE to start.** Do not create a branch
+or deploy a team. Print the redirect and stop:
+
+> ⛔ Retrospective overdue — N iterations since the last one. Run `/openup-retrospective`
+> before starting `full`-track work (it resets the cadence). Or, if this work is genuinely
+> lighter, re-run with `track: standard`.
+
+**If `N >= 5` and the track is `quick`/`standard`:** proceed, but surface a **non-blocking**
+reminder in your summary: "Heads-up: retrospective overdue (N since last) — consider running
+`/openup-retrospective` soon." The hard gate intentionally targets only the heavy track
+(WS6b); see [design.md](../../../../docs/changes/T-011/design.md) DD2.
+
+(`gates.retro_due` is set to `N >= 5` by `retro check` in step 6 below — this step is the
+human-facing decision; step 6 records the gate.)
+
 ### 4. Deploy Team — MANDATORY (standard / full) BEFORE ANY WORK
 
 **⛔ STOP. Do not create a branch, write any code, or modify any files until the team is
@@ -176,7 +199,16 @@ python3 scripts/openup-state.py init \
   --track {selected track: quick|standard|full} \
   --branch "$(git rev-parse --abbrev-ref HEAD)" \
   --worktree "$(git rev-parse --show-toplevel)" \
+  --iterations-since-retro "$(python3 scripts/openup-state.py retro get)" \
   [--plan docs/plans/{plan}.md]    # standard/full only; the quick track has no plan gate
+```
+
+The `--iterations-since-retro` flag **seeds the new state's mirror from the durable
+counter** (`.openup/retro.json`), carrying the cadence forward across the iteration that
+`/openup-complete-task` archived. Then record `gates.retro_due` from the threshold:
+
+```bash
+python3 scripts/openup-state.py retro check   # sets gates.retro_due = (count >= 5)
 ```
 
 If the team was already deployed in step 4, also run `python3 scripts/openup-state.py set-gate team_deployed true` now.

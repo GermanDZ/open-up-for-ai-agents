@@ -729,6 +729,36 @@ Create traceability logs for the current agent run.
 
 **See Also**: `openup-complete-task`, `openup-start-iteration`
 
+### /openup-create-handoff
+
+Produce a handoff brief so the next owner can resume a change cold (Process v2 WS6c).
+
+**When to Use**:
+- Pausing a task mid-flight for another session/owner to finish
+- End-of-iteration handoff to a reviewer or tester
+- Capturing how to exercise a feature + open questions before completion
+
+**When NOT to Use**:
+- For the durable run log (use `/openup-log-run`)
+- To write the spec itself (that is the change folder's `plan.md`)
+
+**Arguments**:
+- `task_id` (required): the change folder to summarize (e.g. `T-011`)
+- `audience` (optional): who receives it (tunes emphasis)
+
+**Example**:
+```
+/openup-create-handoff task_id: T-011
+```
+
+**Success Criteria**:
+- [ ] `docs/changes/{task_id}/handoff.md` written with the four sections
+      (acceptance criteria, test cases, troubleshooting, open questions)
+- [ ] Concrete artifacts carried (commands, paths, IDs) — not prose restatements
+- [ ] Empty sections stated explicitly rather than invented
+
+**See Also**: `openup-complete-task`, `openup-log-run`, `openup-readiness`
+
 ### /openup-quick-task
 
 Fast path for tiny, low-risk changes with minimal overhead.

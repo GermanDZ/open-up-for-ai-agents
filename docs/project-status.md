@@ -1,8 +1,8 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 7
-**Iteration Goal**: T-010 — Graded tracks (quick/standard/full)
+**Iteration**: 8
+**Iteration Goal**: T-011 — Retro cadence trigger + `/openup-create-handoff`
 **Status**: completed
 **Current Task**: None
 **Iteration Started**: 2026-06-11
