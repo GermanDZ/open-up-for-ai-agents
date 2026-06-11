@@ -1,19 +1,17 @@
 ---
 id: T-009
 title: Worktree-per-task + lease claims + collision pre-flight
-status: in-progress
+status: done
+completed: 2026-06-11
 priority: medium
 estimate: 2 sessions
 plan: docs/plans/2026-06-10-process-v2-claude-code-harness.md#ws5c
 depends-on: [T-005, T-008]
 blocks: []
 touches:
+  - scripts/                             # openup-claims.py + tests (pre-flight lives here, not a hook)
   - .claude/skills/openup-workflow/      # start-iteration, complete-task gain worktree/claim steps
-  - .claude/scripts/hooks/               # pre-flight collision check
-  - docs-eng-process/                    # parallel-work.md process doc
-claimed-by: null
-claimed-at: null
-worktree: null
+  - docs-eng-process/                    # parallel-work.md process doc + template mirror
 ---
 
 # T-009 — Worktree-per-task + lease claims + collision pre-flight (Process v2 WS5c)
