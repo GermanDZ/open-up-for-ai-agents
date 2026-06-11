@@ -21,7 +21,7 @@
 | T-008 | Coordination frontmatter + `/openup-readiness` DAG | completed (2026-06-11) | medium | T-007 |
 | T-009 | Worktree-per-task + lease claims + collision pre-flight | completed (2026-06-11) | medium | T-005, T-008 |
 | T-010 | Graded tracks (quick/standard/full) | completed (2026-06-11) | medium | T-005, T-006 |
-| T-011 | Retro cadence trigger + `/openup-create-handoff` | planned | low | T-005 |
+| T-011 | Retro cadence trigger + `/openup-create-handoff` | in-progress | low | T-005 |
 
 **Next step**: Wave 4 — T-011 (retro cadence + handoff); then revisit deferred T-002.
 

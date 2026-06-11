@@ -2,12 +2,12 @@
 
 **Phase**: construction
 **Iteration**: 8
-**Iteration Goal**: T-011 — Retro cadence trigger + /openup-create-handoff
+**Iteration Goal**: T-011 — Retro cadence trigger + `/openup-create-handoff`
 **Status**: in-progress
 **Current Task**: T-011
 **Iteration Started**: 2026-06-11
 **Last Updated**: 2026-06-11
-**Updated By**: openup-start-iteration
+**Updated By**: sync-status.py
 
 ## Notes
 
