@@ -142,6 +142,12 @@ One skill = one cycle of "read the next task and execute":
 **Policy changes shipped in the same task** (or the skill contradicts the guides):
 - Teams demote from default to **opt-in for `full`-track** work; the mandatory
   "deploy team as step 3" gate becomes track-conditional.
+  > **Pulled forward 2026-06-12** (commit on `main`, quick track): this policy
+  > slice landed early on user feedback ("teams active by default didn't work
+  > well"). `CLAUDE.openup.md`, `on-task-request.py`, `start-iteration` (team now
+  > opt-in; `deploy_team` default `auto`), `complete-task` (standard gates on the
+  > team-less set), and `tracks.md` are updated. The `/openup-next` skill itself
+  > (T-017) remains to be built on top of this now-correct default.
 - New rule in `CLAUDE.openup.md`: *no information needed to continue work may
   live only in a conversation.*
 - Parallelism reframed as **per-lane**: T-009's worktrees/leases/collision

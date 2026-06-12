@@ -14,8 +14,8 @@ The track is selected once, at iteration start, and recorded in `.openup/state.j
 | Track | When to use | Ceremony applied |
 |---|---|---|
 | `quick` | docs / config / typo / comment / rename / version bump / ≤ ~50 LOC in a single file | **state file + auto-log only** — no plan gate, no team, no readiness check |
-| `standard` | single-feature work (the default) | plan gate + scribe logging + `/openup-readiness` check; **team optional** (phase default unless overridden) |
-| `full` | multi-role / architectural / cross-cutting / schema change / broad refactor | standard **+ mandatory team deployment + rubric assessment** at complete-task |
+| `standard` | single-feature work (the default) | plan gate + scribe logging + `/openup-readiness` check; **solo by default — team opt-in** (deploy only with `team:` / `deploy_team: true`) |
+| `full` | multi-role / architectural / cross-cutting / schema change / broad refactor | standard **+ team deployment (default-on, opt-out) + rubric assessment** at complete-task |
 
 **One-line selection rule:** *quick for tiny single-file/doc edits; full for multi-role or
 architectural work; standard for everything else (the default).*
@@ -44,8 +44,8 @@ can override with an explicit `track:` argument.
 |---|---|
 | `.openup/state.json` → `track` | The single source of truth. Written by `openup-state.py init --track {quick\|standard\|full}` (validated against the schema). |
 | `gate-edits.py` | On `track == "quick"` the plan gate is **relaxed**: state is still required, but a persisted plan is not, and the bypass is audited to `.claude/memory/bypass-log.md`. `standard`/`full` require `gates.plan_persisted`. |
-| `openup-start-iteration` (Select Track + Deploy Team steps) | `quick` ⇒ skip team; `standard` ⇒ team optional (phase default unless `team: none` / `deploy_team: false`); `full` ⇒ team mandatory. Explicit `team`/`deploy_team` args override the default (except `full` never runs team-less). |
-| `check-gates` | Default required set is `team_deployed,log_written,roadmap_synced`. The **quick** track calls `check-gates --require log_written,roadmap_synced` instead — no team or plan gate. |
+| `openup-start-iteration` (Select Track + Deploy Team steps) | `quick` ⇒ no team; `standard` ⇒ **solo by default** — deploy a team only with explicit `team:` / `deploy_team: true`; `full` ⇒ team default-on (opt-out with `deploy_team: false` / `team: none`). Explicit `team`/`deploy_team` args override the track default. |
+| `check-gates` | The script's `DEFAULT_REQUIRED_GATES` is the full set `team_deployed,log_written,roadmap_synced` (used by `full`). **`quick` and `standard` are solo and call `check-gates --require log_written,roadmap_synced`** — no team gate. Only `full` (or standard work that explicitly deployed a team) gates on `team_deployed`. |
 | `openup-complete-task` rubric | Only the **full** track requires `/openup-assess-completeness` for code-bearing tasks. `standard` keeps rubric checks for artifact-generating skills only (unchanged). |
 
 ## Entry points

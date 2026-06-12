@@ -141,13 +141,19 @@ python3 scripts/openup-state.py set-gate roadmap_synced true
 
 ### 7. Check Gates and Archive Iteration State
 
-**Verify all required gates pass before finalizing.** If this exits nonzero, completion is **blocked** — surface the unmet gates (printed one per line on stderr) and resolve each before continuing:
+**Verify all required gates pass before finalizing.** If this exits nonzero, completion is **blocked** — surface the unmet gates (printed one per line on stderr) and resolve each before continuing.
+
+The gate set depends on the track — **only `full` requires a team** (teams are opt-in; `quick` and `standard` work solo by default, so they do not gate on `team_deployed`):
 
 ```bash
-python3 scripts/openup-state.py check-gates
+# full track (a team was deployed): require the full set
+python3 scripts/openup-state.py check-gates --require team_deployed,log_written,roadmap_synced
+
+# quick / standard track (solo, no team): omit the team gate
+python3 scripts/openup-state.py check-gates --require log_written,roadmap_synced
 ```
 
-(Quick-track iterations were started with `--track quick`; for those use `check-gates --require log_written,roadmap_synced`.)
+(If `standard` work *did* explicitly deploy a team, use the `full` invocation to gate on it.)
 
 Once gates pass, archive the iteration state and the **change folder** (Ring 2 → `docs/changes/archive/`).
 

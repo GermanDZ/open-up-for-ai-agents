@@ -12,10 +12,12 @@ A "task request" is any message that:
     "start", "fix", "build", "add", "create feature", etc.)
 
 If the project is OpenUP-managed and no iteration is currently in-progress,
-the hook tells Claude to act as PM and run /openup-start-iteration first.
+the hook tells Claude to run /openup-start-iteration first, then work the
+task sequentially (one agent, assuming roles as needed).
 
-If an iteration IS already in-progress, the hook reminds Claude to act as
-PM and coordinate the team rather than working solo.
+If an iteration IS already in-progress, the hook reminds Claude to continue
+the work from the repo state. Teams are opt-in (full / multi-role work or
+explicit request), not the default — solo sequential work is expected.
 
 Exit codes:
   0 — not an OpenUP project, OR not a task request
@@ -151,35 +153,34 @@ def main() -> None:
         # No active iteration — must start one
         task_arg = f"task_id: {task_id}" if task_id else "task_id: T-XXX"
         print(
-            f"[on-task-request] 🚦 Task request detected — OpenUP PM intake required.\n\n"
-            f"You are the Project Manager. Do NOT explore files, read code, or write\n"
-            f"anything yet. Follow this sequence:\n\n"
-            f"  1. Run: /openup-start-iteration {task_arg} track: {track}\n"
-            f"     This will deploy the {suggested_team} (skipped on the quick track).\n\n"
-            f"  2. As PM, decompose the task goal into role-specific subtasks.\n\n"
-            f"  3. Brief each specialist (developer, tester, architect as needed)\n"
-            f"     using the delegation format from your Orchestrator Protocol.\n\n"
-            f"  4. Collect outputs and synthesize.\n\n"
+            f"[on-task-request] 🚦 Task request detected — start an OpenUP iteration first.\n\n"
+            f"Do NOT explore files, read code, or write anything yet. First:\n\n"
+            f"  1. Run: /openup-start-iteration {task_arg} track: {track}\n\n"
+            f"  2. Read the change spec (docs/changes/<task>/plan.md) and work it\n"
+            f"     yourself, sequentially — assume roles as needed (analyst →\n"
+            f"     developer → tester). Persist progress to the repo between steps.\n\n"
+            f"Teams are OPT-IN, not the default. Deploy {suggested_team} only for\n"
+            f"full / multi-role work, or pass team: / deploy_team: true when you want\n"
+            f"parallel specialists or independent review. A single-lane task needs no team.\n\n"
             f"Suggested track: {track} — adjust if the scope differs (see tracks.md).\n"
-            f"Project phase: {phase} | No active iteration\n"
-            f"Start the iteration first — then coordinate the team.",
+            f"Project phase: {phase} | No active iteration",
             file=sys.stderr,
         )
         sys.exit(2)
 
     else:
-        # Iteration is active — remind Claude to act as PM, not solo
+        # Iteration is active — remind Claude to continue from repo state, solo by default
         active_task = current_task if current_task not in ("", "None", "none") else task_id or "?"
         print(
             f"[on-task-request] 🚦 Active iteration detected (task {active_task}).\n\n"
-            f"You are the Project Manager. Do not work solo. Coordinate the team:\n\n"
-            f"  1. Confirm the team is deployed (if not, spawn {suggested_team} now).\n\n"
-            f"  2. Decompose the work into specialist subtasks.\n\n"
-            f"  3. Brief each specialist and collect their outputs.\n\n"
-            f"  4. Synthesize and verify against acceptance criteria.\n\n"
-            f"Suggested track: {track} — adjust if the scope differs (see tracks.md).\n"
-            f"If the team is already active, send them their next subtask.\n"
-            f"Do not write code or modify files directly — delegate to specialists.",
+            f"Continue the work yourself, sequentially:\n\n"
+            f"  1. Read the change folder (docs/changes/{active_task}/) for where it stands.\n\n"
+            f"  2. Do the next step, assuming roles as needed (analyst → developer → tester).\n\n"
+            f"  3. Persist progress to the repo (spec / design.md / run log) before stopping.\n\n"
+            f"Working solo on a single-lane task is the default and expected. A team is\n"
+            f"opt-in — deploy {suggested_team} only for full / multi-role work or to get\n"
+            f"independent review.\n\n"
+            f"Suggested track: {track} — adjust if the scope differs (see tracks.md).",
             file=sys.stderr,
         )
         sys.exit(2)

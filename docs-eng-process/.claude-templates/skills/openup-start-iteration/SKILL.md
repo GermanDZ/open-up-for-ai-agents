@@ -17,13 +17,13 @@ arguments:
     description: The task ID from roadmap to work on (required for task-based branching)
     required: true
   - name: track
-    description: "Ceremony track (quick|standard|full). Optional — auto-selected from scope when omitted. quick = docs/config/typo/≤~50 LOC single file (state + auto-log only, no plan gate, no team, no readiness); standard = single-feature (plan gate + scribe + /openup-readiness, team optional); full = multi-role/architectural (standard + mandatory team + rubric at complete-task). See tracks.md."
+    description: "Ceremony track (quick|standard|full). Optional — auto-selected from scope when omitted. quick = docs/config/typo/≤~50 LOC single file (state + auto-log only, no plan gate, no team, no readiness); standard = single-feature (plan gate + scribe + /openup-readiness, solo by default — team opt-in); full = multi-role/architectural (standard + team default-on, opt-out + rubric at complete-task). See tracks.md."
     required: false
   - name: team
     description: Team type to automatically deploy after initialization (feature, investigation, construction, elaboration, inception, transition, planning, full, or none)
     required: false
   - name: deploy_team
-    description: "Whether to deploy a team after iteration initialization (true/false, default: true — pass 'false' to skip team deployment)"
+    description: "Whether to deploy a team after iteration initialization (true/false/auto, default: auto — deploy only on the full track; skip on quick/standard. Pass 'true' to force a team, 'false' to force solo)"
     required: false
   - name: worktree
     description: "Whether to create an isolated git worktree for this task (true/false, default: true — pass 'false' for a legacy in-place checkout). See T-009 / parallel-work.md."
@@ -38,7 +38,7 @@ Initialize a new OpenUP iteration: read project state, create a task branch, and
 
 After this skill completes, ALL of these must be true:
 
-- [ ] **BLOCKING (standard / full tracks)**: Team is deployed and PM is coordinating — verified before any implementation work begins. The `quick` track skips this by design.
+- [ ] **BLOCKING (full track only, when a team is requested)**: If the `full` track (or an explicit `team:` / `deploy_team: true`) calls for a team, it is deployed and coordinating before implementation begins. `quick` and `standard` default to solo sequential work — no team required.
 - [ ] Project status is updated with new iteration
 - [ ] **BLOCKING**: `git rev-parse --abbrev-ref HEAD` returns a non-trunk branch name. If it returns trunk, the skill has FAILED — do not proceed.
 - [ ] Iteration goal is defined
@@ -103,21 +103,22 @@ reminder in your summary: "Heads-up: retrospective overdue (N since last) — co
 (`gates.retro_due` is set to `N >= 5` by `retro check` in step 6 below — this step is the
 human-facing decision; step 6 records the gate.)
 
-### 4. Deploy Team — MANDATORY (standard / full) BEFORE ANY WORK
+### 4. Deploy Team — OPT-IN (default-on for `full` only)
 
-**⛔ STOP. Do not create a branch, write any code, or modify any files until the team is
-deployed — on the `standard` and `full` tracks.** The `quick` track is the sanctioned
-exception: it skips the team entirely (same as `deploy_team: false`).
+**The default is solo, sequential work — one agent assumes roles as needed (analyst →
+developer → tester) and persists progress to the repo between steps.** A team is deployed
+only when the track or an explicit argument calls for it; you do not need a team to start.
 
-Track determines whether a team is required:
-- **`quick`** ⇒ **skip team** (no Deploy-Team; proceed straight to step 5). Equivalent to
-  `deploy_team: false`.
-- **`standard`** ⇒ team **optional** — deploy the phase default unless `$ARGUMENTS[team]` is
-  `none` or `$ARGUMENTS[deploy_team]` is `"false"`.
-- **`full`** ⇒ team **mandatory** — always deploy; ignore an attempt to skip.
+Track determines the team default:
+- **`quick`** ⇒ **no team** (proceed straight to step 5).
+- **`standard`** ⇒ **no team by default** — work solo and sequentially. Deploy a team only
+  if `$ARGUMENTS[team]` is set or `$ARGUMENTS[deploy_team]` is `"true"` (e.g. you want
+  parallel specialists or independent review).
+- **`full`** ⇒ **team default-on** — deploy the phase default unless `$ARGUMENTS[deploy_team]`
+  is `"false"` or `$ARGUMENTS[team]` is `none`.
 
-The explicit `$ARGUMENTS[deploy_team]` / `$ARGUMENTS[team]` args still override the track
-default (except that `full` will not silently run team-less). When a team IS deployed:
+The explicit `$ARGUMENTS[deploy_team]` / `$ARGUMENTS[team]` args override the track default.
+When a team IS deployed:
 
 1. **Auto-select team type** if `$ARGUMENTS[team]` is not specified:
    - Check task description for keywords:

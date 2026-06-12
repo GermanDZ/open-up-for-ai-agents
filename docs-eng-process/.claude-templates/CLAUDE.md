@@ -15,11 +15,11 @@ If the work is small, use `/openup-quick-task` — that IS the lightweight path.
 If the user is *thinking*, not *delivering*, use `/openup-explore` — that is the sanctioned home for pre-iteration notes.
 If the user asks to skip, redirect: "Let me run `/openup-quick-task` instead — it's the fast path that keeps the project state consistent." (Or `/openup-explore` if the work is investigative rather than deliverable.)
 
-**When the user asks to do a task, act as Project Manager first.**
+**When the user asks to do a task, start an iteration first — then work it sequentially.**
 - Read `docs/project-status.md` and `docs/roadmap.md`
-- Run `/openup-start-iteration` — this deploys the team as step 3 (mandatory, before any code)
-- The PM coordinates: decompose the task, brief each specialist, collect outputs, synthesize
-- Never start coding or modifying files without a team deployed
+- Run `/openup-start-iteration` — this persists iteration state and the plan before any code
+- **Default: one agent works the task end to end**, assuming roles as needed (analyst → developer → tester) and persisting progress to the repo between steps.
+- **Teams are opt-in, not the default.** Deploy one only for `full`-track (multi-role / architectural) work, or when you explicitly want parallel specialists or independent review. A single-lane task does not need a team.
 
 **Fix the spec first when behavior changes.**
 - **Behavior change** (logic, scope, acceptance criteria differ from artifact): update the use case / iteration plan / task description **first**, then change code.
@@ -32,7 +32,7 @@ If the user asks to skip, redirect: "Let me run `/openup-quick-task` instead —
 
 ## Token-Efficiency Protocol (Mandatory)
 - Run one subtask per session; start a fresh session when scope changes.
-- Keep one active orchestrator (project-manager by default); spawn specialists only for bounded work.
+- Default to a single agent working sequentially; spawn specialists (a team) only for `full`-track or bounded parallel work.
 - Allow status updates only at `started`, `blocked`, and `done`.
 - Use compact handoffs (max 6 bullets): `decision`, `diff summary`, `risks`, `next action`.
 - Do not resend full task lists after kickoff; reference task IDs and share only deltas.
@@ -41,11 +41,11 @@ If the user asks to skip, redirect: "Let me run `/openup-quick-task` instead —
 - Set a token budget per lane (PM/dev/test); checkpoint and restart with a fresh session if exceeded.
 
 Default cycle:
-`/openup-start-iteration` -> assign one subtask -> specialist completes and reports once -> PM routes next step -> new session on scope change.
+`/openup-start-iteration` -> work the task sequentially (assume roles as needed) -> persist progress to the repo -> `/openup-complete-task`. New session on scope change. Deploy a team only for full/multi-role work.
 
 ## Quick Start
 - New to OpenUP: `/openup-init`
-- Teams are **active by default** — `/openup-start-iteration` auto-selects the right team for the current phase. No manual team setup needed.
+- Teams are **opt-in, not active by default** — the default is a single agent working the task sequentially. `/openup-start-iteration` deploys a team only on the `full` track or when you pass `team:` / `deploy_team: true`.
 
 ## Roles (what they focus on)
 - analyst: requirements, use cases
@@ -74,7 +74,7 @@ Every unit of work runs on one ceremony track, selected at iteration start and r
 |---|---|---|
 | `quick` | docs / config / typo / ≤ ~50 LOC, single file | state + auto-log only — no plan gate, no team, no readiness |
 | `standard` | single-feature work (default) | plan gate + scribe + `/openup-readiness`; team optional |
-| `full` | multi-role / architectural / cross-cutting | standard + mandatory team + rubric at complete-task |
+| `full` | multi-role / architectural / cross-cutting | standard + team (opt-in, default-on for full) + rubric at complete-task |
 
 **Selection rule:** quick for tiny single-file/doc edits; full for multi-role or architectural
 work; standard for everything else. `/openup-start-iteration` auto-selects (override with
