@@ -70,11 +70,21 @@ padding — only list items a reasonable reader might think belong in scope.
 
 ## Operations
 
-Ordered steps a developer-role agent can execute. Each step should be testable
-on its own. Use 3–8 steps; if you need more, the task is probably too big.
+Ordered **checkbox** steps a developer-role agent can execute. Each step should
+be testable on its own. Use 3–8 steps; if you need more, the task is probably
+too big. The checkboxes are live progress state: the executing agent ticks
+`- [ ]` → `- [x]` as each step lands (this is the one sanctioned direct edit to
+a persisted `plan.md` — see `CLAUDE.openup.md`). `scripts/openup-board.py` reads
+them: the first **unchecked** box becomes the lane's `next_action`, and its
+optional leading `(role)` tag becomes the role `hat` `/openup-next` assumes.
 
-1. <step>
-2. <step>
+- Tag a step with a role only when it changes hats — `- [ ] (tester) …`,
+  `- [ ] (analyst) …`. Untagged steps default to the `developer` hat.
+- Legacy numbered lists still parse (they just yield no `next_action`); prefer
+  checkboxes so the board can drive the continue-loop.
+
+- [ ] <step>
+- [ ] (role) <step that hands off to another role hat>
 
 ## Norms
 

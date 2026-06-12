@@ -108,7 +108,12 @@ references only.
 
 Brief one developer-role agent with the partially-filled task spec.
 
-- **Developer** drafts: Operations (ordered, 3–8 testable steps).
+- **Developer** drafts: Operations as a **checkbox list** (`- [ ] <step>`,
+  ordered, 3–8 testable steps). Tag a step `- [ ] (role) …` only where it hands
+  off to a different role hat (tester, analyst, …); untagged steps default to
+  the `developer` hat. The first unchecked box is what `/openup-next` reads as
+  the lane's `next_action` — so each step must be a concrete, executable action,
+  not a heading. (Legacy numbered steps still parse but yield no `next_action`.)
 - Developer also fills the Norms section with file references only (no copies).
 
 ### 5. Rubric Grading

@@ -18,13 +18,13 @@
 |---|---|---|---|---|
 | T-015 | Mandatory ambiguity gate in spec authoring (assumptions made visible/vetoable) | completed (2026-06-12) | high | — |
 | T-016 | Self-briefing roles: per-role cold-start reading lists + pointer-only PM delegation | completed (2026-06-12) | high | T-015 |
-| T-017 | `/openup-next` sequential continue-loop + derived `.openup/board.json` + Operations checkboxes | proposed | high | T-015, T-016 |
+| T-017 | `/openup-next` sequential continue-loop + derived `.openup/board.json` + Operations checkboxes | completed (2026-06-12) | high | T-015, T-016 |
 | T-018 | `docs/project-config.yaml` context/rules injection (from 2026-05-13 #2) | proposed | medium | — |
 | T-019 | Behavior Delta section in the task spec (Added/Modified/Removed vs Ring 1) | proposed | high | T-007 |
 | T-020 | Scenario-per-requirement (Given/When/Then) + deterministic validation | proposed | high | T-019 |
 | T-021 | Implementation-vs-spec verify step in `/openup-complete-task` | proposed | medium | T-020 |
 
-**Next step**: T-015 ✅ and T-016 ✅ done. Headline path continues with **T-017** (`/openup-next` continue-loop + derived `.openup/board.json`) — now unblocked (depends on T-015, T-016). T-018 (D) remains independent and startable anytime.
+**Next step**: T-015 ✅, T-016 ✅, T-017 ✅ done — the headline clarity → self-brief → continue-loop path is complete (`scripts/openup-board.py` + `/openup-next` + checkbox Operations). Remaining: **T-018** (D, `project-config.yaml`) is independent and startable anytime; the **T-019 → T-020 → T-021** spec-self-sufficiency + verify chain is the other open thread (T-019 unblocked via done T-007).
 
 
 <!-- plan-hook: 2026-06-10 -->

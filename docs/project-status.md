@@ -1,16 +1,17 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 11
-**Iteration Goal**: T-016 — Self-briefing roles: per-role cold-start reading lists + pointer-only PM delegation
+**Iteration**: 12
+**Iteration Goal**: T-017 — /openup-next sequential continue-loop + derived .openup/board.json + Operations checkboxes
 **Status**: completed
-**Current Task**: None
+**Current Task**: T-017
 **Iteration Started**: 2026-06-12
 **Last Updated**: 2026-06-12
 **Updated By**: openup-complete-task
 
 ## Notes
 
+- **Iteration 12** (2026-06-12): T-017 `/openup-next` continue-loop — headline of the clarity/self-brief/loop path. Added `scripts/openup-board.py` (deterministic derived `.openup/board.json`: lanes with task/title/track/state/lease/hat/next_action/plan/collides_with/depends_ok; imports `openup-claims.py` so board `ready` == preflight-clear), the `/openup-next` skill (one cycle: top pickable lane → `/openup-start-iteration` claim+worktree → self-brief+hat → execute under track → tick Operations boxes → exit via complete-task OR create-handoff, the only two exits), checkbox `## Operations` convention (optional `(role)` hat tag; ticking is sanctioned progress state), and `CLAUDE.openup.md` no-conversation-only-state rule. board.py placed at repo-root `scripts/` (not the plan's `.claude/scripts/`) to sit beside its peers. 15 board tests + 47-test suite green. Solo, standard track, no team.
 - **Iteration 11** (2026-06-12): T-016 self-briefing roles — second task under the solo-by-default model. Added a uniform `## On Start, Read` block (status · active change folder · role guidelines) to all 5 reasoning teammate files; scribe keeps its read-only-target-file rule as the deliberate exception; one-line pointers in all 6 compacts. Collapsed the PM Delegation Brief Format to pointer-only (`[ROLE]: T-NNN. Deltas: …`) and named "writing scope into a brief" a fix-spec-first signal; added the briefing-from-docs principle to `CLAUDE.openup.md`. Resolved plan Open Question #3 (compacts get a pointer, not a verbatim copy). `.claude/` → `.claude-templates/` parity green (61 files). Solo, standard track, no team. Unblocks T-017 (`/openup-next`).
 - **Iteration 10** (2026-06-12): T-015 ambiguity gate — first task run under the new solo-by-default model (teams opt-in). Added an Ambiguity Gate step to `create-task-spec` and `plan-feature`, the `**Assumption:**` convention to the task-spec template, and rubric criterion 9. The T-015 spec itself exercised the gate (3 non-blocking assumptions recorded, no blocking questions). Solo, standard track, no team.
 - **Iteration 9 closed** (2026-06-11): T-002 `/openup-sync-spec` completed. Process v2 program (T-001–T-011) all delivered. [Retrospective](iteration-retrospectives/iteration-9-retrospective.md). Retro counter reset to 0.

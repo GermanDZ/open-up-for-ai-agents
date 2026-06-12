@@ -288,5 +288,6 @@ Returns a summary of:
 
 ## See Also
 
+- [openup-next](../next/SKILL.md) - The sequential continue-loop; picks the top board lane and delegates here to claim + init it
 - [openup-complete-task](../complete-task/SKILL.md) - Complete iteration tasks
 - [openup-create-iteration-plan](../../openup-artifacts/create-iteration-plan/SKILL.md) - Plan iteration before starting
