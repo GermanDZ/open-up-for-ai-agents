@@ -130,6 +130,62 @@ E (half session, folds into complete-task).
 C+D+A together address "objectives not clear before work"; B+E address
 "misunderstanding not caught during/after work."
 
+## 2026-06-12 (later) — Principle: roles self-brief from `docs/`, no custom instructions
+
+User-stated design principle, added mid-exploration: **each OpenUP role should
+be able to continue work from information already in `docs/` — status from
+roadmap/plans/logs, *what* from vision/use-cases/specs, *how* from OpenUP
+guidelines and elaboration outputs — without receiving custom instructions.**
+The docs ARE the briefing; a delegation should reduce to "role + task ID."
+
+### How far OpenUP is from this today
+
+- **Closest to the ideal:** the developer teammate already says "read
+  `docs/project-status.md`, then `docs/changes/T-XXX/plan.md` — your
+  authoritative input." The Three Rings rule defines what to load. The
+  readiness DAG makes "what's next" a query.
+- **Furthest from the ideal:** the PM Delegation Brief Format
+  (`.claude/teammates/project-manager.md`) instructs the PM to hand each
+  specialist scope + context-docs list + deliverable + done-when criteria.
+  Every one of those is (or should be) derivable: scope = task-spec
+  Story/Scope boundaries; context docs = coordination frontmatter +
+  role-scoped ring rule; deliverable = task-spec Structure/Operations;
+  done-when = rubric + task-spec Verification. The brief is redundant
+  *exactly when the spec is complete* — and a custom patch over the spec's
+  gaps when it isn't. Custom briefings are therefore a **symptom of
+  incomplete specs**, which ties this principle directly to Options A/B/C.
+- **Uneven:** not all teammate files have the developer's deterministic
+  cold-start reading list; per-role "how" sources (architecture notebook,
+  conventions, test plan) are referenced inconsistently across roles.
+
+### Option F — Self-briefing roles: pointer-only delegation (HIGH value / LOW–MED effort)
+
+Two coordinated edits:
+
+1. **Cold-start reading list per role.** Give every teammate file a uniform
+   "On start, read:" block — status (`project-status.md` + roadmap entry),
+   what (`docs/changes/T-NNN/` + linked Ring 1 artifacts), how (role-relevant
+   guideline docs: architect → architecture notebook; tester → test plan;
+   developer → conventions + arch notebook). Role-scoped rings, stated once
+   in the role file instead of re-decided per briefing.
+2. **Collapse the PM brief to a pointer + delta.** Replace the four-part
+   brief format with: `[ROLE]: T-NNN. Deltas: <only what the docs don't say —
+   usually nothing>`. If the PM finds itself writing scope or done-when into
+   a brief, that is a signal the task spec is incomplete → fix the spec
+   (fix-spec-first), don't patch it with prompt text.
+
+Pro: removes the largest remaining source of per-session custom instructions;
+makes brief-writing cost ~zero; turns "spec was incomplete" from a silent
+prompt-patch into a visible spec edit. Con: depends on spec completeness —
+sequence after C (ambiguity gate) so specs carry assumptions explicitly;
+A/B strengthen it further but aren't preconditions.
+
+### Effect on sequencing
+
+C and F are mutually reinforcing and both cheap: C makes specs complete
+enough to brief from; F removes the briefing layer that was compensating.
+Revised order: **C → F → D → A → B → E.**
+
 ## Open Questions
 
 - Should Option B's scenario requirement apply to `standard` track or only
@@ -140,9 +196,11 @@ C+D+A together address "objectives not clear before work"; B+E address
 - Option E vs the existing rubric pass in `/openup-complete-task` (full
   track) — extension or duplication? Check complete-task's current steps
   before scoping.
+- Option F: do compact teammate variants (`*-compact.md`) get the same
+  cold-start block, or a one-line pointer to the full role file's list?
 
 ## Where this goes next
 
-→ iteration — promote to a roadmap entry "OpenSpec clarity mechanisms
-(reduce ambiguity waste)" with five candidate tasks (C, D, A, B, E in that
-order); C and D are each ~1 session and can start immediately.
+→ iteration — promote to a roadmap entry "Clarity & self-briefing: reduce
+ambiguity waste" with six candidate tasks (C, F, D, A, B, E in that order);
+C and F are each ~1 session and can start immediately.
