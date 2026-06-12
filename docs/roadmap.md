@@ -8,8 +8,43 @@
 | [T-022](changes/archive/T-022/plan.md) | Fix template→.claude sync (flat skills + rubric/hook coverage) + auto-commit log tail at stop | completed (2026-06-12) | high | — |
 | T-023 | `merge=union` gitattribute for `agent-runs.jsonl` (parallel-PR conflict quick fix) | completed (2026-06-12) | medium | — |
 | [T-024](changes/archive/T-024/plan.md) | Write-fence + derived shared views (parallel-PR conflicts in roadmap/status) | completed (2026-06-12) | high | — |
+| T-031 | Task-ID allocation race in parallel lanes: reserve IDs through the claims mechanism (or hard-rule fetch-fresh-trunk-before-allocate) in `create-task-spec` / `plan-feature` | pending | medium | — |
+
+**Value (T-031)**: parallel planning sessions — human or agent — stop colliding on
+task IDs, eliminating renumber-at-merge churn like the practice pack's T-024→T-025…T-030
+shift; closes the one parallel-lane collision surface the T-024 write-fence does not
+cover (IDs are allocated at planning time against possibly-stale local state, before
+any claim or fence runs).
 
 **Context**: Surfaced 2026-06-12 while fixing OpenUP skill discovery — the live `.claude/skills/` had drifted into nested grouping folders that broke slash-command discovery. Root cause: `scripts/sync-templates-to-claude.sh` expected a nested template layout (templates are flat), copied zero skills, and never synced rubrics/hooks — letting live hooks drift ahead of the shipped templates. T-022 makes the within-repo sync produce correct, complete, flat files and stops `agent-runs.jsonl` dangling uncommitted at session end. T-024 (seeded by [explorations/2026-06-12-multi-worktree-coordination.md](explorations/2026-06-12-multi-worktree-coordination.md)) finishes what T-023 started: the shared views (`roadmap.md` Status cells, `project-status.md` header + Notes) become script-derived (`sync-status.py`, fresh-trunk only), completion notes shard to `docs/status-notes/`, and `scripts/openup-fence.py` + `.githooks/pre-push` fence every lane's diff to its claimed surface — for agents and humans alike. Full model: [docs-eng-process/parallel-lanes.md](../docs-eng-process/parallel-lanes.md).
+
+
+<!-- plan-hook: 2026-06-12 -->
+### Completed: Modern Product Practice Pack
+
+- **Status**: `completed` (2026-06-12 — all of T-025…T-030 delivered)
+- **Plan**: [plans/2026-06-12-modern-product-practice-pack.md](plans/2026-06-12-modern-product-practice-pack.md)
+- **Exploration**: [explorations/2026-06-12-modern-product-practices-on-openup.md](explorations/2026-06-12-modern-product-practices-on-openup.md)
+- **Created**: 2026-06-12
+- **Priority**: high
+- **Goal**: Layer modern product practices on top of OpenUP — product-manager role influencing the mechanical project manager, one falsifiable success measure per feature, flag-controlled rollouts, multi-environment deployment config, and a product-manager challenge pass in `/openup-explore`.
+- **Notes**: Hard guardrail: OpenUP artifacts (`openup-knowledge-base/`, `docs-eng-process/templates/`) are read-only; all deltas land in `docs-eng-process/.claude-templates/` (skills, teammates, teams, rubrics) per owner decision 2026-06-12. KB anchors: Product Owner pattern, metrics concept, Develop Backout Plan, Transition beta-test objective.
+
+**Tasks**
+
+| ID | Title | Status | Priority | Depends on |
+|---|---|---|---|---|
+| T-025 | `product-manager` teammate: value authority over a mechanical project manager (roadmap value rationale, board consumes order as input) | completed (2026-06-12) | high | — |
+| T-026 | Per-feature success measure: one falsifiable expectation (impact/engagement/value prompts) via create-task-spec + rubric criterion 12 | completed (2026-06-12) | high | — |
+| T-027 | Rollout & feature-flag strategy: `## Rollout` authoring step, rubric criterion 13, flag-removal task auto-enqueued at complete-task | completed (2026-06-12) | medium | — |
+| T-028 | `environments:` ordered chain in project-config consumed by `/openup-transition` (per-hop promotion checklists; staging→beta→production as example) | completed (2026-06-12) | medium | T-027 |
+| T-029 | Measure read-back → re-prioritization loop in `/openup-retrospective` + product-manager duty | completed (2026-06-12) | high | T-025, T-026 |
+| T-030 | Product-manager challenge pass in `/openup-explore` (role hat, pushback/complement/refine, vetoable) | completed (2026-06-12) | medium | T-025 |
+
+> **Task-ID renumber (2026-06-12)**: this block was planned as T-024…T-029, but the
+> parallel lane (PR #21, write-fence) allocated T-024 first — IDs shifted +1 at merge.
+> Commit trailers `[T-024]`…`[T-029]` on the pack's branch predate the renumber and
+> map to T-025…T-030 here.
 
 
 <!-- plan-hook: 2026-06-12 -->

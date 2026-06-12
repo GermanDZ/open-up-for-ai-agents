@@ -50,7 +50,7 @@ After this skill completes, ALL of these must be true:
       `docs-eng-process/templates/task-spec.md`.
 - [ ] Front-matter is fully populated (`id`, `title`, `status`, `priority`, `estimate`).
 - [ ] Status is `ready` (not `proposed`) — the rubric grades to all-✅.
-- [ ] All eleven rubric criteria in `.claude/rubrics/task-spec-rubric.md` are ✅.
+- [ ] All thirteen rubric criteria in `.claude/rubrics/task-spec-rubric.md` are ✅.
 - [ ] Every requirement carries a Given/When/Then scenario (standard/full tracks):
       `python3 scripts/openup-spec-scenarios.py check docs/changes/T-XXX/plan.md` exits 0.
 - [ ] `docs/roadmap.md` references the new task with a status entry.
@@ -116,9 +116,10 @@ Brief one analyst-role agent and one architect-role agent in compact form (max
 6 bullets each). Inputs: roadmap line, plan section, use case excerpt.
 
 - **Analyst** drafts: Story (INVEST), Analysis Context, Requirements (each with
-  ≥1 `Given / When / Then` scenario), **Behavior Delta**, Entities.
+  ≥1 `Given / When / Then` scenario), **Behavior Delta**, **Success Measures**,
+  Entities.
 - **Architect** drafts: Approach (3–5 lines), Structure (Add/Modify/Do-not-touch),
-  Safeguards (invariants, no-go zones, token budgets).
+  **Rollout**, Safeguards (invariants, no-go zones, token budgets).
 
 Both write directly to the task-spec file under their respective sections. They
 do NOT inline rules from `conventions.md` or the architecture notebook —
@@ -130,6 +131,40 @@ Modified/Removed entry (`docs/product/use-cases/UC-3.md §main-flow`); a greenfi
 renders `n/a — all Added`. This list is what `/openup-sync-spec` consumes to know exactly
 which Ring-1 artifacts a behavior change must back-propagate to — so a missing or vague
 citation is a real gap, not a formality.
+
+For **Success Measures**, the analyst writes a `## Success Measures` section
+containing **one falsifiable expectation** for the feature:
+
+> We expect **\<measure X\>** to move by **\<direction + magnitude Y\>** within
+> **\<window Z\>** of release. Instrumentation: **\<the event / metric / query
+> that will be read\>**. Read-back: **\<date or "Z after release"\>**.
+
+Use *impact*, *engagement*, and *returned value* as **prompts** to find the right
+measure — they are not three required slots; one honest, checkable expectation
+beats three vanity metrics. A measure nobody will read back is worse than none:
+on the `quick` track (or for genuinely unmeasurable internal work) write
+`n/a — <reason>` instead, and the reason must survive review. Add the section
+when drafting — the OpenUP-derived template at `docs-eng-process/templates/task-spec.md`
+does **not** carry it (OpenUP artifacts are read-only; this section is a
+claude-templates layer concern enforced by rubric criterion 12).
+
+For **Rollout**, the architect writes a `## Rollout` section stating how the
+change reaches users (KB framing: a feature flag is the modern, cheaper
+implementation of OpenUP's *Develop Backout Plan* deployment task — toggling
+off beats redeploying):
+
+- **Flagged?** yes/no **with a reason** either way ("config-read at startup,
+  flag adds no safety" is a fine reason for no).
+- If flagged: **flag name**, **default state per environment** (use the names
+  from `docs/project-config.yaml` `environments:` if defined, else
+  local/production), **kill-switch behavior** (what turning it off does to
+  in-flight users/data), and — **mandatory** — the named **flag-removal
+  follow-up** (one line; `/openup-complete-task` enqueues it into the roadmap,
+  because a flag is temporary debt, not a permanent switch).
+- Not user-facing at all (pure refactor, internal tooling): `n/a — <reason>`.
+
+Add the section when drafting — the OpenUP-derived template does **not** carry
+it (read-only per the guardrail); rubric criterion 13 enforces it.
 
 For **Requirements**, the analyst writes each numbered assertion *with* at least one
 acceptance scenario in `Given / When / Then` form (bold markers `**Given**` / `**When**`
@@ -154,7 +189,7 @@ Brief one developer-role agent with the partially-filled task spec.
 ### 5. Rubric Grading
 
 Run `/openup-assess-completeness artifact: task-spec` (or apply
-`.claude/rubrics/task-spec-rubric.md` inline). Grade each of 11 criteria. That
+`.claude/rubrics/task-spec-rubric.md` inline). Grade each of 13 criteria. That
 skill also runs `scripts/openup-spec-scenarios.py check docs/changes/T-XXX/plan.md`
 — criterion 11 (Scenario Coverage) cannot be ✅ unless the script exits 0 (it is
 auto-skipped on the `quick` track).

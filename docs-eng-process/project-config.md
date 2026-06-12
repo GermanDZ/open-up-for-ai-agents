@@ -26,7 +26,7 @@ and the init emitter.
 
 ## Schema
 
-Two top-level keys, both optional:
+Three top-level keys, all optional:
 
 ```yaml
 context: |            # free-text project facts the framework can't infer
@@ -39,12 +39,28 @@ rules:                # per-artifact criteria, ADDITIVE to the framework rubric
     - Reference a named stakeholder, never the generic "the user"
   task-spec:
     - Any auth-touching task must cite the compliance control it affects
+
+environments:         # ordered deployment chain, first = closest to the team
+  - name: staging
+    promotion: "smoke suite green; no Sev-1 defects open"
+  - name: beta
+    promotion: "beta-user acceptance recorded; success-measure instrumentation emitting"
+  - name: production
 ```
 
 - **`context:`** — a block scalar of project-level facts (stack, domain,
   compliance posture, key stakeholders). Injected verbatim into *every* artifact.
 - **`rules:`** — a mapping keyed by **artifact type**, each value a list of
   short, checkable criteria. Injected only into the matching artifact's prompt.
+- **`environments:`** — an **ordered list** of deployment environments, each with
+  a `name` and (except the last) a free-text, checkable `promotion:` criterion
+  for advancing a release to the next entry. `staging → beta → production` is
+  the documented example, **not** a schema — any ordered chain works. Consumers:
+  `/openup-transition` walks the chain hop by hop (one promotion checklist per
+  hop; OpenUP's beta-test objective maps onto the pre-production entries) and
+  task-spec `## Rollout` sections use the names for per-environment flag default
+  states (rubric criterion 13 flags states naming environments the config
+  doesn't define). Absent → single-hop deployment, unchanged framework default.
 
 Start unvalidated: there is intentionally no schema/linter for this file (add one
 only if the feature is broadly adopted).

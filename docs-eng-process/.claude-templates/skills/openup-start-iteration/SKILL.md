@@ -60,8 +60,16 @@ Read `docs/project-status.md` to establish context:
 Read `docs/roadmap.md` to:
 - Find the task specified by `$ARGUMENTS[task_id]`
 - Extract task details: title, description, task type (feature, bugfix, refactor, etc.)
-- Determine priority and dependencies
+- Determine priority, dependencies, and the `Value` rationale (if present)
 - **If task_id not found**: Ask user to specify which task from the roadmap
+
+**The roadmap's pending order is product-manager input — consume it as given.**
+If the requested task sits below other READY pending entries, that is fine (the
+human chose it), but do not yourself substitute a "more valuable" task or
+re-order entries here: an item may be passed over only for mechanical reasons
+(unmet dependency, collision, lease, missing spec). If the ordering looks wrong,
+surface that to the product-manager role (`.claude/teammates/product-manager.md`)
+— never re-prioritize from inside an execution skill.
 
 ### 3. Select Track
 

@@ -63,6 +63,10 @@ If the user asks to skip, redirect: "Let me run `/openup-quick-task` instead —
 - Use cases, iteration plans, architecture notebook, vision, test plan: changes go through the relevant `/openup-create-*` or `/openup-detail-*` skill so the rubric in `.claude/rubrics/` is re-applied.
 - Direct hand-edits silently bypass rubric criteria; only acceptable for typo-level fixes.
 
+**Value ordering comes from the product manager; execution is mechanical.**
+- The product-manager role (`.claude/teammates/product-manager.md`, grounded in the OpenUP Product Owner pattern) owns the **order** of pending roadmap entries and the one-line `Value` rationale on each.
+- `/openup-next`, the board, and the project-manager consume that order **as given** — an item may be skipped only for mechanical reasons (unmet dependency, collision, lease). Value disagreements are surfaced to the product-manager role, never resolved inline by execution.
+
 **Roles self-brief from the repo — briefs carry deltas, not scope.**
 - Every role has an `## On Start, Read` block (`.claude/teammates/<role>.md`): **status** (`docs/project-status.md` + `docs/roadmap.md`), the **active change folder** (`docs/changes/T-NNN/plan.md`), and **role-relevant guidelines**. An agent assuming a role reads those — no custom briefing required. (The scribe is the exception: it reads only its target file.)
 - A delegation brief therefore carries only the task ID + any *delta* the docs don't already state (usually none). **If you're writing scope or context into a brief, the spec is incomplete — fix it first (fix-spec-first), don't patch it with prose.** A custom briefing is a symptom of an incomplete spec.
@@ -88,7 +92,8 @@ Default cycle:
 - analyst: requirements, use cases
 - architect: architecture decisions
 - developer: implementation, unit tests
-- project-manager: planning, risk list, **orchestration**
+- product-manager: business value, roadmap **value ordering** (influences execution; never executes)
+- project-manager: planning, risk list, **orchestration** (consumes the value order mechanically)
 - tester: test planning and execution
 
 ## Where to Look Next (full docs)

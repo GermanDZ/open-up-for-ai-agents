@@ -31,6 +31,8 @@ Finalize a completed task: commit remaining changes, update docs, create traceab
 After this skill completes, ALL of these must be true:
 
 - [ ] **BLOCKING**: Every spec requirement is graded ✅ against the actual diff (step 1a) — no requirement is unmet, and any ❌ blocks "done"
+- [ ] **BLOCKING (standard/full)**: The spec's Success Measure instrumentation exists in the diff or demonstrably pre-exists (step 1b) — or the section is an argued `n/a`
+- [ ] **BLOCKING (flagged features)**: A flag-removal task row exists in the roadmap Maintenance table (step 4a) — every flag enqueues its own removal
 - [ ] All changes are committed (no uncommitted changes remain)
 - [ ] Commit messages follow canonical format: `type(scope): description [T-XXX]`
 - [ ] **BLOCKING**: Branch is rebased onto the current trunk and the write-fence
@@ -77,6 +79,27 @@ the spec's own quality.
 
 > A requirement that reads ✅ only because "that was the plan" is not verified.
 > Point at the line of the diff (or the green test) that makes it true.
+
+### 1b. Verify Success-Measure Instrumentation — BLOCKING (standard/full)
+
+The spec's `## Success Measures` section (rubric criterion 12) names the
+instrumentation — an event, metric, or query — behind its falsifiable
+expectation. Completing the feature without that instrumentation ships a
+promise nobody can check.
+
+1. Read `## Success Measures` from `docs/changes/{task_id}/plan.md`.
+2. If it is `n/a — <reason>` (quick track or argued-unmeasurable): record
+   `n/a` in `design.md` and move on.
+3. Otherwise, verify the named instrumentation **exists** — in the diff (the
+   event is emitted, the metric is registered, the query is committed) or
+   demonstrably pre-existing (point at where). Grade it like step 1a:
+   - `✅ instrumentation — <where it exists>`
+   - `❌ instrumentation — <what is missing>`
+4. **A ❌ blocks completion** — the feature code being done is not enough.
+   Add the instrumentation, or fix the spec first (re-run
+   `/openup-create-task-spec`) if the measure itself was wrong.
+5. Record the grade and the read-back date in `docs/changes/{task_id}/design.md`
+   so the retrospective can find the expectation when the read-back date passes.
 
 ### 2. Commit Remaining Changes
 
@@ -154,6 +177,28 @@ project-status header on a task branch.
 > `python3 scripts/sync-status.py` — never hand-merge these files. Every
 > field they carry is derived, so the re-run resolves the conflict
 > deterministically.
+
+### 4a. Enqueue the Flag-Removal Task — BLOCKING when flagged
+
+If the spec's `## Rollout` section says the change ships behind a feature flag
+(rubric criterion 13), the flag's removal debt is enqueued **now**, in the same
+completion — a flag whose removal exists only as an intention outlives every
+intention.
+
+1. Read `## Rollout` from `docs/changes/{task_id}/plan.md`. Not flagged or
+   `n/a` → skip this step.
+2. Flagged → add a row to the roadmap's **Maintenance** table. This is roadmap
+   *content* (step 4 point 3 class), not a derived Status cell — author it only
+   **after** the step-3 rebase, so `T-{next free ID}` is read against the
+   current trunk (allocating IDs on a stale base is how parallel lanes collide
+   on task IDs). A scribe may write it:
+
+   ```
+   | T-{next free ID} | Remove feature flag `{flag_name}` ({task_id} fully rolled out) | pending | medium | {task_id} |
+   ```
+
+3. **Completion is blocked until the removal row exists.** Record the new task
+   ID in `docs/changes/{task_id}/design.md` next to the rollout notes.
 
 ### 5. Create Traceability Logs
 

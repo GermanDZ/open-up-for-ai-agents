@@ -71,9 +71,16 @@ Plan iterations, update the roadmap, assess priorities, and coordinate project p
 ### project-manager (Lead)
 - **Model**: haiku
 - **Focus**: Lead planning session, coordinate roadmap updates
-- **Key Activities**: Iteration planning, task prioritization, risk assessment
-- **Collaborates With**: Analyst (requirements scope), Architect (technical feasibility), Developer (estimates)
+- **Key Activities**: Iteration planning, mechanical sequencing within the product-manager's value order, risk assessment
+- **Collaborates With**: Product Manager (consumes value ordering as given), Analyst (requirements scope), Architect (technical feasibility), Developer (estimates)
 - **Reference**: `.claude/teammates/project-manager.md`
+
+### product-manager
+- **Model**: inherit
+- **Focus**: Value ordering of the roadmap — influences the mechanical project manager, never executes
+- **Key Activities**: Rank pending entries by business value, write one-line `Value` rationales, resolve value disagreements
+- **Collaborates With**: Project Manager (hands over ranked order), Analyst (stakeholder needs), Stakeholders (final say)
+- **Reference**: `.claude/teammates/product-manager.md`
 
 ### analyst
 - **Model**: inherit
@@ -116,7 +123,8 @@ Plan iterations, update the roadmap, assess priorities, and coordinate project p
    - Project Manager assesses resource availability
 
 4. **Prioritize Tasks**
-   - Prioritize by value, risk, and dependencies
+   - Product Manager ranks by business value (with a one-line `Value` rationale per entry)
+   - Project Manager sequences within that order by risk and dependencies — never re-prioritizes on value
    - Balance feature work with technical debt
    - Ensure iteration goals are achievable
 
@@ -154,7 +162,8 @@ The architect should assess technical feasibility and identify dependencies.
 - **Requirements analysis** → analyst
 - **Technical feasibility** → architect
 - **Effort estimation** → developer
-- **Prioritization** → project-manager + analyst
+- **Value prioritization** → product-manager (rationale + ordering)
+- **Sequencing within the value order** → project-manager
 - **Risk assessment** → project-manager
 
 ## Collaboration Patterns

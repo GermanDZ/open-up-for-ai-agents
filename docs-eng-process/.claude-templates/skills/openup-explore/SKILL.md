@@ -55,7 +55,36 @@ No rubric. No structure beyond the required end-section. Capture:
 - Options considered and what was ruled in / out
 - Open questions for a future delivery iteration
 
-### 3. Required End-Section: "Where this goes next"
+### 3. Product-Manager Challenge Pass — MANDATORY before the disposition
+
+Exploration must not be passive transcription of human-submitted ideas. Before
+writing the disposition, **assume the product-manager role hat** — read
+`.claude/teammates/product-manager.md` and apply its lens. This is a role hat
+the exploring agent puts on, **not** a team deployment (the no-team rule below
+stands).
+
+Write a `### Product-manager challenge pass` section containing, as applies:
+
+- **Pushback** — which submitted ideas are weak, unsupported, or likely to
+  degrade into ritual, and *why* ("what changes for which user, and how would
+  we notice?"). Silence is not an option when the value case is thin.
+- **Complement** — what the human missed: connections between their ideas,
+  prerequisites, cheaper alternatives.
+- **Refine** — sharpen the question and the options (narrow a vague measure to
+  a falsifiable one, an over-specified solution to its actual constraint).
+
+**Every challenge is then dispositioned in the notes**: accepted (fold it into
+the exploration's options/refinements) or **explicitly rejected with a
+reason** — the human's reason if they vetoed it, yours if evidence killed it.
+An unanswered challenge means the pass isn't done. If the idea survives intact,
+say so — "accepted as-is" with the standing cost named is a valid pass; an
+*empty* pass on a human-submitted idea is not.
+
+Reference example: `docs/explorations/2026-06-12-modern-product-practices-on-openup.md`
+(the pass that produced the falsifiable-expectation refinement and the
+measure→re-prioritization loop).
+
+### 4. Required End-Section: "Where this goes next"
 
 Every exploration **must** end with one of these dispositions:
 
@@ -69,7 +98,7 @@ Every exploration **must** end with one of these dispositions:
 If you cannot pick one, the exploration is not complete. Either narrow the
 question or split the file.
 
-### 4. No Branch, No Team, No Commit Required
+### 5. No Branch, No Team, No Commit Required
 
 - Exploration may stay uncommitted on a working branch indefinitely.
 - An optional `explore/<slug>` branch is fine if the notes are long-running.
@@ -100,6 +129,13 @@ question or split the file.
 
 - <questions a future delivery iteration would need to answer>
 
+### Product-manager challenge pass
+
+- **Pushback:** <weak/unsupported ideas and why — or "none, value case holds">
+- **Complement:** <what the submission missed>
+- **Refine:** <sharpened question/options>
+- Disposition per challenge: accepted into notes / rejected — <reason>
+
 ## Where this goes next
 
 → iteration | quick-task | dropped — <one-sentence justification>
@@ -108,6 +144,10 @@ question or split the file.
 ## Success Criteria
 
 - [ ] File exists at `docs/explorations/YYYY-MM-DD-<slug>.md`
+- [ ] A `### Product-manager challenge pass` section exists, and every
+      challenge in it is either accepted into the notes or explicitly
+      rejected with a reason (no team was deployed to produce it — role
+      hat only)
 - [ ] File ends with a "Where this goes next" section naming exactly one
       disposition: `→ iteration`, `→ quick-task`, or `→ dropped`
 - [ ] If disposition is `→ iteration` or `→ quick-task`, the follow-up is

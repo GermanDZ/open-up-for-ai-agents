@@ -112,6 +112,23 @@ It is the project-owned home for facts + per-artifact rules injected into every
 `/openup-create-*` prompt — see `docs-eng-process/project-config.md`. The file is
 optional: leaving the placeholders means the framework defaults apply unchanged.
 
+After copying, **append** this commented `environments:` starter (the template is
+OpenUP-layer read-only, so the block is added here, not there):
+
+```yaml
+# environments:           # ordered deployment chain, first = closest to the team
+#   - name: staging
+#     promotion: "smoke suite green; no Sev-1 defects open"
+#   - name: beta
+#     promotion: "beta-user acceptance recorded; success-measure instrumentation emitting"
+#   - name: production
+```
+
+Uncommented, the chain is consumed by `/openup-transition` (one promotion
+checklist per hop) and by task-spec `## Rollout` default states. The three names
+are the documented example, **not** a schema — any ordered list works. Left
+commented, deployment behaves as the single-hop framework default.
+
 ### 4. Configure Agent Teams (if not skipped)
 
 **Check if agent teams are enabled:**
