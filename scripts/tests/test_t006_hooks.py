@@ -478,6 +478,8 @@ class SyncStatusTests(unittest.TestCase):
             "--state-dir", str(self.repo.state_dir),
             "--roadmap", str(self.roadmap),
             "--project-status", str(self.ps),
+            # Isolate from the live repo's docs/status-notes/ (T-024).
+            "--notes-dir", str(self.repo.dir / "no-status-notes"),
         ]
         return subprocess.run(cmd, capture_output=True, text=True)
 
@@ -504,7 +506,10 @@ class SyncStatusTests(unittest.TestCase):
         proc = self._run_sync()
         self.assertEqual(proc.returncode, 0)
         rm = self.roadmap.read_text()
-        self.assertRegex(rm, r"\|\s*T-006\s*\|[^|]*\|\s*completed\s*\|")
+        # completed cells are date-stamped to match the roadmap convention (T-024)
+        self.assertRegex(
+            rm, r"\|\s*T-006\s*\|[^|]*\|\s*completed \(\d{4}-\d{2}-\d{2}\)\s*\|"
+        )
         self.assertIn("**Status**: completed", self.ps.read_text())
 
     def test_idempotent(self):

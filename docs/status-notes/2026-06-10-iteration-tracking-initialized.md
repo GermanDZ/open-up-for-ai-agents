@@ -1,0 +1,1 @@
+- Iteration tracking initialized with the Process v2 program (docs/plans/2026-06-10-process-v2-claude-code-harness.md). Prior framework work (PRs #1–#3) predates status tracking.

@@ -32,11 +32,13 @@ After this skill completes, ALL of these must be true:
 
 - [ ] **BLOCKING**: Every spec requirement is graded ✅ against the actual diff (step 1a) — no requirement is unmet, and any ❌ blocks "done"
 - [ ] **BLOCKING (standard/full)**: The spec's Success Measure instrumentation exists in the diff or demonstrably pre-exists (step 1b) — or the section is an argued `n/a`
-- [ ] **BLOCKING (flagged features)**: A flag-removal task row exists in the roadmap Maintenance table (step 3a) — every flag enqueues its own removal
+- [ ] **BLOCKING (flagged features)**: A flag-removal task row exists in the roadmap Maintenance table (step 4a) — every flag enqueues its own removal
 - [ ] All changes are committed (no uncommitted changes remain)
 - [ ] Commit messages follow canonical format: `type(scope): description [T-XXX]`
-- [ ] Roadmap is updated to mark task complete
-- [ ] Project status is updated
+- [ ] **BLOCKING**: Branch is rebased onto the current trunk and the write-fence
+      passes (`openup-fence.py check` exit 0) — no out-of-lane files, no stale views
+- [ ] Iteration note written as a sharded file under `docs/status-notes/`
+- [ ] Roadmap + project status regenerated via `scripts/sync-status.py` (never hand-edited)
 - [ ] Traceability logs are created with commit SHAs
 - [ ] Iteration learnings entry appended to `.claude/memory/iteration-learnings.md`
 - [ ] Iteration gates pass (`openup-state.py check-gates`) and state is archived
@@ -110,31 +112,86 @@ Most changes should already be committed as atomic commits during implementation
    - Use `$ARGUMENTS[commit_message]` if provided
 3. Verify: `git status --porcelain` returns empty
 
-### 3. Update Roadmap
+### 3. Rebase onto the Trunk + Write-Fence — BLOCKING
 
-> **Scribe step** — delegate to the `openup-scribe` agent (Agent tool,
-> subagent_type: "openup-scribe"). You determine the values; the scribe only
-> writes. Brief it with:
->
-> ```
-> Agent(subagent_type="openup-scribe", description="Mark roadmap task completed",
->   prompt="In docs/roadmap.md, find task [task_id] and:
->   1. In the status table/row, change its status from 'in-progress' to 'completed'.
->   2. Add 'Completed [YYYY-MM-DD]' to its Notes or detail section.
->   Report: exact line(s) changed.")
-> ```
+The shared views (`docs/roadmap.md`, `docs/project-status.md`) may only be
+regenerated against the **current** trunk — regenerating them on a stale base
+is what produces parallel-PR conflicts. And the lane's diff must stay inside
+its claimed surface. Both are mechanical checks; run them before any view is
+touched:
 
-### 3a. Enqueue the Flag-Removal Task — BLOCKING when flagged
+```bash
+git fetch origin main
+git rebase origin/main
+
+# Fence: every changed file vs the trunk must be inside the lane —
+# the task's `touches`, its change folder, or a lane-owned audit surface.
+python3 scripts/openup-fence.py check
+```
+
+If the fence exits 8, completion is **blocked**:
+- `OUT OF LANE: <file>` — the diff escaped the lane. Either add the path to
+  the task's frontmatter `touches` and re-claim (`openup-claims.py`), or move
+  the edit to the task that owns that surface.
+- `STALE VIEW: <file>` — should not occur right after the rebase above; if it
+  does, the rebase did not complete. Resolve it and re-run.
+
+(The same check runs for humans via the `.githooks/pre-push` hook — see
+[parallel-lanes.md](../../../../docs-eng-process/parallel-lanes.md).)
+
+### 4. Update Roadmap + Project Status — deterministic, never by hand
+
+The two shared views are **derived**; this step writes the lane-owned inputs
+and lets the harness regenerate the views ("if a step is deterministic, the
+harness does it"). Do NOT hand-edit (or scribe-edit) the Status cells or the
+project-status header on a task branch.
+
+1. Write the iteration note as a **sharded, lane-owned file** (this replaces
+   the old "prepend to project-status `## Notes`" — the shared insertion
+   point was a guaranteed parallel-PR conflict):
+
+   ```
+   docs/status-notes/YYYY-MM-DD-{task_id}.md
+   ```
+
+   Content: the same one-bullet iteration summary previously prepended to
+   `## Notes` (starting `- **Iteration N** (YYYY-MM-DD): …`). One file per
+   completion; add an `-HHMM` suffix before `.md` if the name already exists.
+
+2. Regenerate both views and record the gate in one deterministic step:
+
+   ```bash
+   python3 scripts/sync-status.py
+   ```
+
+   This flips the task's roadmap Status cell (stamped `completed (YYYY-MM-DD)`),
+   regenerates the project-status header, assembles `## Notes` newest-first
+   from `docs/status-notes/`, and sets `gates.roadmap_synced` itself.
+
+3. Roadmap **prose** (a program section's "Next step" narrative, Context
+   paragraphs) is not derived. Update it only if it belongs to this task's
+   scope, and only after the step-3 rebase. A scribe may write it.
+
+> **If the PR later reports conflicts in `docs/roadmap.md` or
+> `docs/project-status.md`:** rebase onto the trunk and re-run
+> `python3 scripts/sync-status.py` — never hand-merge these files. Every
+> field they carry is derived, so the re-run resolves the conflict
+> deterministically.
+
+### 4a. Enqueue the Flag-Removal Task — BLOCKING when flagged
 
 If the spec's `## Rollout` section says the change ships behind a feature flag
 (rubric criterion 13), the flag's removal debt is enqueued **now**, in the same
-roadmap update — a flag whose removal exists only as an intention outlives
-every intention.
+completion — a flag whose removal exists only as an intention outlives every
+intention.
 
 1. Read `## Rollout` from `docs/changes/{task_id}/plan.md`. Not flagged or
    `n/a` → skip this step.
-2. Flagged → add a row to the roadmap's **Maintenance** table (same scribe
-   brief as step 3, or a second scribe call):
+2. Flagged → add a row to the roadmap's **Maintenance** table. This is roadmap
+   *content* (step 4 point 3 class), not a derived Status cell — author it only
+   **after** the step-3 rebase, so `T-{next free ID}` is read against the
+   current trunk (allocating IDs on a stale base is how parallel lanes collide
+   on task IDs). A scribe may write it:
 
    ```
    | T-{next free ID} | Remove feature flag `{flag_name}` ({task_id} fully rolled out) | pending | medium | {task_id} |
@@ -142,28 +199,6 @@ every intention.
 
 3. **Completion is blocked until the removal row exists.** Record the new task
    ID in `docs/changes/{task_id}/design.md` next to the rollout notes.
-
-Once the roadmap is updated, record the gate:
-
-```bash
-python3 scripts/openup-state.py set-gate roadmap_synced true
-```
-
-### 4. Update Project Status
-
-> **Scribe step** — delegate to the `openup-scribe` agent (Agent tool,
-> subagent_type: "openup-scribe"). You determine the values; the scribe only
-> writes. Brief it with:
->
-> ```
-> Agent(subagent_type="openup-scribe", description="Update project-status.md to completed",
->   prompt="In docs/project-status.md:
->   1. Change **Status** to 'completed'.
->   2. Change **Current Task** to 'None'.
->   3. Update **Last Updated** to [YYYY-MM-DD].
->   4. Update **Updated By** to 'openup-complete-task'.
->   Report: each field changed from → to.")
-> ```
 
 ### 5. Create Traceability Logs
 
