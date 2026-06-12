@@ -1,6 +1,9 @@
 # Modern Product Practice Pack
 
-**Status**: `planned`
+**Status**: `completed` (2026-06-12 — all of T-025…T-030 delivered)
+**Task-ID renumber**: planned as T-024…T-029; the parallel lane (PR #21, write-fence)
+allocated T-024 first, so IDs shifted +1 at merge. Commit trailers `[T-024]`…`[T-029]`
+on the pack's branch predate the renumber and map to T-025…T-030 here.
 **Created**: 2026-06-12
 **Priority**: high
 **Goal**: Layer modern product-delivery practices on top of OpenUP — a product-manager role that influences the mechanical project manager, a falsifiable success measure per feature, feature-flagged rollouts, multi-environment deployment config, and a product-manager challenge pass in `/openup-explore`.
@@ -104,7 +107,7 @@ here):
 
 Six tasks. Letters reference the exploration's sketch deltas.
 
-### T-024 (delta 1) — `product-manager` teammate: value authority over a mechanical PM `HIGH / MED`
+### T-025 (delta 1) — `product-manager` teammate: value authority over a mechanical PM `HIGH / MED`
 
 Add `.claude-templates/teammates/product-manager.md` (+ `-compact` variant),
 grounded in the KB Product Owner pattern (cite it; don't copy it). The role:
@@ -113,7 +116,7 @@ grounded in the KB Product Owner pattern (cite it; don't copy it). The role:
   rationale per entry (new `Value` column or a `**Value**:` line per plan
   block — pick whichever survives `openup-board.py` parsing untouched).
 - Self-briefs per the T-016 idiom (`## On Start, Read` block: status, roadmap,
-  vision, and the measures read-back input once T-028 lands).
+  vision, and the measures read-back input once T-029 lands).
 - **Influences, never executes**: the project-manager teammate and
   `/openup-next` consume roadmap order as given. Add one sentence to
   `project-manager.md` and `CLAUDE.md` codifying the boundary: the PM/board
@@ -135,7 +138,16 @@ the roadmap with rationale and that `/openup-next` then claims tasks in the new
 order without re-judging value. Confirm the PM role refuses to re-prioritize.
 **Depends on**: none.
 
-### T-025 (delta 2) — Per-feature success measure: one falsifiable expectation `HIGH / LOW–MED`
+> **Delivered 2026-06-12.** `teammates/product-manager.md` + compact variant
+> created; influence boundary codified in `project-manager.md` (Planning
+> Approach + When-to-Involve), `CLAUDE.md` (new rule + roles list), planning +
+> full team configs; `plan-feature` writes the `**Value**:` rationale on new
+> roadmap entries; `start-iteration` consumes the order as given (mechanical
+> skip reasons only). `scripts/openup-board.py` verified untouched-safe: it
+> derives lanes from change-folder frontmatter only and never parses the
+> roadmap, so the `Value` field cannot break it — no script change shipped.
+
+### T-026 (delta 2) — Per-feature success measure: one falsifiable expectation `HIGH / LOW–MED`
 
 `openup-create-task-spec` skill gains a required authoring step: every
 `standard`/`full`-track spec includes a `## Success Measures` section with **one
@@ -158,7 +170,19 @@ complete-task blocks if `editor_active` instrumentation is absent from the diff.
 **Depends on**: none. Per the guardrail, the section ships via skill+rubric —
 `docs-eng-process/templates/task-spec.md` is **not** edited.
 
-### T-026 (delta 3) — Rollout & feature-flag strategy `MED / LOW–MED`
+> **Delivered 2026-06-12.** `create-task-spec` Round 1 (analyst) now drafts
+> `## Success Measures` with the falsifiable-expectation format (measure,
+> direction+magnitude, window, instrumentation, read-back date) — explicitly
+> noting the section is added at drafting time because the OpenUP-derived
+> template is read-only. Rubric criterion 12 (Success Measure Falsifiability)
+> grades it, incl. unargued-`n/a` and instrumentation-nothing-creates gaps;
+> criteria counts in the skill bumped 11→12. `complete-task` gains BLOCKING
+> step 1b: instrumentation must exist in the diff (or demonstrably pre-exist),
+> grade + read-back date recorded in `design.md` for the retrospective (T-029
+> consumes this). `plan-feature` plan template gains a `## Success Measure`
+> section as the upstream prompt.
+
+### T-027 (delta 3) — Rollout & feature-flag strategy `MED / LOW–MED`
 
 `openup-create-task-spec` gains a `## Rollout` authoring step for
 `standard`/`full` user-facing changes: flagged or not (with reason), default
@@ -179,7 +203,17 @@ complete it; confirm a `T-NNN flag removal` row appears in the roadmap
 maintenance table.
 **Depends on**: none.
 
-### T-027 (delta 4) — `environments:` in project config, consumed by transition `MED / LOW`
+> **Delivered 2026-06-12.** `create-task-spec` Round 1 (architect) drafts
+> `## Rollout` — flagged-or-not with reason, flag name, per-environment
+> default states (project-config `environments:` names when defined — the
+> T-028 hook), kill-switch behavior, and a mandatory named flag-removal
+> follow-up; KB-framed as the modern *Develop Backout Plan*. Rubric
+> criterion 13 (Rollout Strategy) grades it; criteria counts 12→13.
+> `complete-task` gains BLOCKING step 3a: a flagged feature cannot complete
+> until its flag-removal row exists in the roadmap Maintenance table (new
+> task ID recorded in `design.md`).
+
+### T-028 (delta 4) — `environments:` in project config, consumed by transition `MED / LOW`
 
 Document and consume a project-owned `environments:` key in
 `docs/project-config.yaml`: an **ordered list** of environments, each with
@@ -187,7 +221,7 @@ Document and consume a project-owned `environments:` key in
 is `staging → beta → production`. `openup-transition` maps its KB beta-test
 objective onto the configured pre-production environment(s) and walks the chain
 hop by hop (promotion criteria become the hop's checklist) instead of a single
-hop to prod. `openup-create-task-spec`'s Rollout section (T-026) references
+hop to prod. `openup-create-task-spec`'s Rollout section (T-027) references
 environment names from config when present.
 
 **Files**: `skills/openup-transition/SKILL.md`,
@@ -198,12 +232,24 @@ pointer documentation per the guardrail).
 **Verify**: with a 3-env config, run transition planning; confirm one
 promotion checklist per hop and beta-test objectives land on `beta`. With no
 `environments:` key, confirm unchanged single-hop behavior (additive layer).
-**Depends on**: T-026 (Rollout section is the consumer in specs); transition
+**Depends on**: T-027 (Rollout section is the consumer in specs); transition
 side can land independently.
 
-### T-028 (deltas 1+2 closing the loop) — Measure read-back → re-prioritization `HIGH / LOW`
+> **Delivered 2026-06-12.** `openup-transition` gains step 0 (Load the
+> Environment Chain): walks the configured ordered `environments:` hop by hop
+> with one promotion checklist per hop, maps OpenUP's beta-test objective onto
+> the pre-production entries, and `check-status` reports which environment the
+> release sits in; absent key → unchanged single-hop default. `openup-init`
+> **appends** a commented `environments:` starter after copying the example
+> config (the OpenUP-layer template stays read-only per the guardrail).
+> `environments:` documented as the third top-level key in
+> `docs-eng-process/project-config.md` (guide doc — the mechanism's single
+> source). Spec-side consumption (Rollout default states per environment)
+> already landed in T-027.
 
-The loop that makes T-024 and T-025 more than paperwork: each feature's
+### T-029 (deltas 1+2 closing the loop) — Measure read-back → re-prioritization `HIGH / LOW`
+
+The loop that makes T-025 and T-026 more than paperwork: each feature's
 Success Measure carries a read-back date; `openup-retrospective` gains a
 **measure read-back step** — list completed features whose read-back date has
 passed, record actual vs expected in the retro doc — and the product-manager
@@ -217,9 +263,21 @@ completion record so retro can find it).
 **Verify**: complete a feature with a 0-day read-back window; run
 `/openup-retrospective`; confirm the actual-vs-expected entry appears and the
 product-manager pass updates the roadmap value rationale citing it.
-**Depends on**: T-024, T-025.
+**Depends on**: T-025, T-026.
 
-### T-029 (delta 5) — Product-manager challenge pass in `/openup-explore` `MED / LOW`
+> **Delivered 2026-06-12.** `openup-retrospective` gains step 4b (Measure
+> Read-Back): scans `docs/changes/archive/*/design.md` for the grades +
+> read-back dates `/openup-complete-task` step 1b records (T-026), reads the
+> named instrumentation for entries whose date passed, writes
+> expectation/actual/verdict into a new **Measure Read-Back** retro section,
+> and hands it to the product-manager role for the re-rank (evidence-citing
+> `Value` updates; "no re-rank" recorded when honest). Read-backs due before
+> the next retro become owned action items. Product-manager role (full +
+> compact) gains the measure-evidence reading duty in On Start, Read and the
+> consume-read-back responsibility. Complete-task side needed no change —
+> T-026 already persists the date.
+
+### T-030 (delta 5) — Product-manager challenge pass in `/openup-explore` `MED / LOW`
 
 `openup-explore` gains a mandatory step between Notes and disposition: assume
 the product-manager **role hat** (read `teammates/product-manager.md` — *not* a
@@ -235,20 +293,29 @@ The 2026-06-12 exploration's own challenge pass is the reference example.
 **Verify**: run an exploration from a deliberately thin human idea; confirm the
 challenge pass produces ≥1 pushback and the disposition reflects accepted
 refinements; confirm no team is deployed.
-**Depends on**: T-024 (the role file must exist).
+**Depends on**: T-025 (the role file must exist).
+
+> **Delivered 2026-06-12.** `openup-explore` gains mandatory step 3
+> (Product-Manager Challenge Pass) before the disposition: role hat only (the
+> no-team rule stands), pushback / complement / refine, every challenge
+> accepted into the notes or rejected with a reason — "accepted as-is with the
+> standing cost named" is valid, an empty pass is not. File template gains the
+> section; success criteria gain the checkbox; the 2026-06-12 exploration is
+> cited as the reference example. Product-manager role (full + compact) gains
+> the challenge-explorations duty.
 
 ---
 
 ## Dependencies
 
 ```
-T-024 ──► T-028 ◄── T-025      [role + measures close into the read-back loop]
-T-024 ──► T-029                [explore challenge pass needs the role file]
-T-026 ──► T-027 (spec-side consumption only; transition side independent)
+T-025 ──► T-029 ◄── T-026      [role + measures close into the read-back loop]
+T-025 ──► T-030                [explore challenge pass needs the role file]
+T-027 ──► T-028 (spec-side consumption only; transition side independent)
 ```
 
-T-024 and T-025 are the headline pair; T-026/T-027 can run in a parallel lane;
-T-028 and T-029 are short closers.
+T-025 and T-026 are the headline pair; T-027/T-028 can run in a parallel lane;
+T-029 and T-030 are short closers.
 
 ---
 
@@ -264,7 +331,7 @@ T-028 and T-029 are short closers.
 - Gating `/openup-complete-task` on production deployment — "done" semantics
   unchanged (see Open Questions / assumptions).
 - Numeric value-scoring schemes (RICE, WSJF) — qualitative rationale + explicit
-  ordering only, until measure read-back (T-028) gives numbers a basis.
+  ordering only, until measure read-back (T-029) gives numbers a basis.
 
 ---
 
@@ -277,13 +344,13 @@ vetoable assumptions:
    artifact under the new guardrail (even though the REASONS canvas is
    framework-authored and T-015/T-019/T-020 edited it). New sections therefore
    ship via skill instructions + rubric criteria only. *Vetoable — if the owner
-   scopes the rule to the KB + KB-derived templates only, T-025/T-026 simplify
+   scopes the rule to the KB + KB-derived templates only, T-026/T-027 simplify
    to template edits.*
 2. **Assumed:** value scale is a qualitative one-line rationale + explicit
    roadmap ordering — no numeric scoring column. *Vetoable at review.*
 3. **Assumed:** Success Measures / Rollout are required on `standard`+`full`
    tracks, `n/a — reason` on `quick` (mirrors criterion 11's idiom).
-4. **Assumed:** measure read-back lives in `/openup-retrospective` (T-028), not
+4. **Assumed:** measure read-back lives in `/openup-retrospective` (T-029), not
    a new `/openup-measure-impact` skill — fewest moving parts; revisit if retro
    cadence proves too coarse.
 5. **Assumed:** "done" stays at merged + verified + first-environment deploy;

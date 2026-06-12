@@ -1,0 +1,48 @@
+#!/bin/bash
+#
+# Pre-push hook: out-of-lane write-fence (T-024).
+#
+# Blocks pushing a lane branch whose diff vs the trunk leaves the lane's
+# claimed surface (its `touches` + change folder + lane-owned audit trees),
+# or that regenerated the shared views (docs/roadmap.md,
+# docs/project-status.md) against a stale trunk. This is the guardrail that
+# covers humans the same way the /openup-complete-task gate covers agents.
+#
+# Only runs when a lane is in flight in this worktree (.openup/state.json
+# exists) — pushes from the main checkout or exploration branches are not
+# fenced.
+#
+# To enable this hook in a fresh clone:
+#   git config core.hooksPath .githooks
+#
+
+set -e
+
+ROOT="$(git rev-parse --show-toplevel)"
+
+# Only run if the fence script is present.
+if [ ! -f "$ROOT/scripts/openup-fence.py" ]; then
+  exit 0
+fi
+
+# Only fence lane branches: no live iteration state -> nothing to fence.
+if [ ! -f "$ROOT/.openup/state.json" ]; then
+  exit 0
+fi
+
+# Allow opt-out for emergency pushes.
+if [ "${SKIP_OPENUP_FENCE:-}" = "1" ]; then
+  echo "[pre-push] SKIP_OPENUP_FENCE=1 — skipping write-fence check" >&2
+  exit 0
+fi
+
+if ! python3 "$ROOT/scripts/openup-fence.py" check; then
+  echo "" >&2
+  echo "Push blocked by the write-fence. Either:" >&2
+  echo "  - OUT OF LANE: add the path to the task's frontmatter \`touches\`" >&2
+  echo "    and re-claim, or move the edit to the task that owns it." >&2
+  echo "  - STALE VIEW:  git fetch origin main && git rebase origin/main," >&2
+  echo "    then re-run:  python3 scripts/sync-status.py" >&2
+  echo "  - Or set SKIP_OPENUP_FENCE=1 to bypass for this push." >&2
+  exit 1
+fi

@@ -81,9 +81,16 @@ The OpenUP full team consists of all core roles working together to deliver soft
 - **Collaborates With**: Architect (architecture constraints), Analyst (requirements input), Tester (test coverage)
 - **Reference**: `.claude/teammates/developer.md`
 
+### product-manager
+- **Model**: inherit
+- **Focus**: Business value — roadmap value ordering and rationale (influences the project manager; never executes)
+- **Key Work Products**: Roadmap value ordering + `Value` rationales, vision value framing
+- **Collaborates With**: Project Manager (hands over ranked order), Analyst (stakeholder needs), Stakeholders (final say on priorities)
+- **Reference**: `.claude/teammates/product-manager.md`
+
 ### project-manager
 - **Model**: haiku
-- **Focus**: Planning, coordination, risk management, stakeholder communication
+- **Focus**: Planning, coordination, risk management, stakeholder communication — sequences mechanically within the product-manager's value order
 - **Key Work Products**: Project Plan, Iteration Plan, Risk List, Work Items List
 - **Collaborates With**: All roles for planning and status tracking
 - **Reference**: `.claude/teammates/project-manager.md`
@@ -111,7 +118,7 @@ The team works iteratively through these phases:
 To create an OpenUP full team, use this prompt:
 
 ```
-Create an OpenUP agent team with all roles: analyst, architect, developer, project-manager, and tester.
+Create an OpenUP agent team with all roles: analyst, architect, developer, product-manager, project-manager, and tester.
 
 Each teammate should follow their role instructions in .claude/teammates/{role}.md.
 
@@ -119,7 +126,8 @@ Spawn teammates for:
 - analyst: to gather requirements and represent stakeholder concerns
 - architect: to define software architecture and make technical decisions
 - developer: to implement the solution
-- project-manager: to lead planning and coordinate work
+- product-manager: to own the roadmap's value ordering and represent business value
+- project-manager: to lead planning and coordinate work within that value order
 - tester: to design and execute tests
 
 The team should work collaboratively through the OpenUP iterative workflow.
@@ -132,6 +140,7 @@ When assigning tasks to teammates:
 - **Requirements tasks** → analyst
 - **Architecture tasks** → architect
 - **Implementation tasks** → developer
+- **Value prioritization / roadmap ordering** → product-manager
 - **Planning/tracking tasks** → project-manager
 - **Testing tasks** → tester
 - **Cross-cutting tasks** → Assign to primary role, involve others as needed

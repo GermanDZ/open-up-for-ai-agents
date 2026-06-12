@@ -98,6 +98,35 @@ scenario, or a scenario missing one of the three clauses, is a gap. This is what
 `standard` and `full` tracks; a `quick`-track spec is exempt and this criterion
 is marked `n/a (quick track)`.
 
+## 12. Success Measure Falsifiability
+
+**Satisfied when:** The `## Success Measures` section states **one falsifiable
+expectation**: a named measure, a direction **and** magnitude ("weekly active
+editors +10%", not "engagement improves"), a time window, the instrumentation
+that will produce the number (an event, metric, or query — named concretely),
+and a read-back date (absolute, or relative to release). Impact / engagement /
+returned value are prompts, not required slots — one honest expectation
+satisfies this. Gaps: a measure with no direction or magnitude; a vanity
+expectation with no instrumentation ("users will like it"); instrumentation
+that nothing in the Structure/Operations actually creates or already provides;
+no read-back date. A `quick`-track spec — or genuinely unmeasurable internal
+work — may write `n/a — <reason>`; an unargued `n/a`, or `n/a` on user-facing
+`standard`/`full` work without a credible reason, is a gap.
+
+## 13. Rollout Strategy
+
+**Satisfied when:** The `## Rollout` section states how the change reaches
+users: **flagged or not, with a reason either way**. If flagged: the flag name,
+the default state per environment (project-config `environments:` names when
+defined), the kill-switch behavior (what turning it off does to in-flight
+users/data), and a named **flag-removal follow-up** — a flag with no removal
+task is unbounded debt and is a gap. If not user-facing: an explicit
+`n/a — <reason>`. Gaps: a user-facing `standard`/`full` change with no Rollout
+section; "flagged: yes" with no kill-switch behavior or no removal follow-up;
+an unargued flagged/not-flagged choice; default states that name environments
+the project config doesn't define. A `quick`-track spec may write
+`n/a (quick track)`.
+
 ---
 
 ## Grading Instructions
