@@ -57,6 +57,23 @@ After this skill completes, ALL of these must be true:
 
 ## Process
 
+### Load Project Config (context + rules — do this first)
+
+Before drafting, layer in project-owned context and rules so the artifact reflects
+facts and standards the framework can't infer. Full mechanism + precedence:
+`docs-eng-process/project-config.md`.
+
+1. If `docs/project-config.yaml` exists, read it. If it is **absent, skip this
+   step** — framework defaults apply unchanged.
+2. Inject `context:` into your working prompt wrapped in
+   `<project-context>…</project-context>`, and `rules.<TYPE>` (if present) wrapped
+   in `<project-rules>…</project-rules>`. For this skill `<TYPE>` is **`task-spec`**.
+3. Project rules are **additive** to the framework rubric — precedence is
+   **framework rubric → project rules → task-spec safeguards**. A project rule may
+   add a criterion but may **not** waive a framework rubric criterion or a safeguard.
+4. Before marking this artifact complete, confirm every injected `<project-rules>`
+   item is satisfied alongside the framework rubric.
+
 The skill is a two-round multi-role handoff. Use the token-efficiency protocol
 (`.claude/CLAUDE.openup.md`): one orchestrator, compact handoffs, one specialist
 per round.

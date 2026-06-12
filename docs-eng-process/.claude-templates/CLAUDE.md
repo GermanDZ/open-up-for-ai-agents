@@ -123,6 +123,14 @@ Work products are graded against explicit rubrics in `.claude/rubrics/`:
 - `test-plan-rubric.md`, `vision-rubric.md`
 Each criterion is graded ✅ satisfied / ❌ gap — [specific description]. Fix gaps before marking complete.
 
+**Project rules layer on top of the framework rubric.** A project may add its own
+context + per-artifact rules in `docs/project-config.yaml` (optional, project-owned);
+every `/openup-create-*` artifact skill injects them as `<project-context>` /
+`<project-rules>`. Precedence is **framework rubric → project rules → task-spec
+safeguards** — a project rule may *add* a criterion but may **not** waive a framework
+rubric criterion or a safeguard. Mechanism + keys:
+[`docs-eng-process/project-config.md`](../docs-eng-process/project-config.md).
+
 ## Notes
 - `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` is set automatically via settings.json
 - Project state docs: docs/project-status.md, docs/roadmap.md

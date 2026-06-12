@@ -1,6 +1,6 @@
 # Clarity, Self-Briefing, and the Sequential Continue-Loop
 
-**Status**: `planned`
+**Status**: `completed` (2026-06-12 — T-015…T-021 all delivered)
 **Created**: 2026-06-12
 **Priority**: high
 **Goal**: Reduce development waste caused by unclear objectives and misunderstandings, by making specs unambiguous, roles self-briefing from the repo, and the execution loop a mechanical "read the next task and execute."

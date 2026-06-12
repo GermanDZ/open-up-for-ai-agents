@@ -103,6 +103,15 @@ docs/
 **Description**: [To be defined]
 ```
 
+#### Project Config (`docs/project-config.yaml`)
+
+Emit a starter `docs/project-config.yaml` by copying
+`docs-eng-process/templates/project-config.example.yaml`, then prompt the user to
+fill in the `context:` block (stack, domain, key stakeholders) for this project.
+It is the project-owned home for facts + per-artifact rules injected into every
+`/openup-create-*` prompt — see `docs-eng-process/project-config.md`. The file is
+optional: leaving the placeholders means the framework defaults apply unchanged.
+
 ### 4. Configure Agent Teams (if not skipped)
 
 **Check if agent teams are enabled:**
