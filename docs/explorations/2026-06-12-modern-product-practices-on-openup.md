@@ -142,6 +142,47 @@ rule needs to change.
    per hop). Deployment-plan/transition skills read it; `/openup-transition`
    maps its beta-test objective onto the `beta` environment instead of
    treating transition as a single hop to prod.
+5. **Product manager as an involved role in `/openup-explore`** (owner
+   decision, 2026-06-12): exploration must not be passive transcription of
+   human-submitted ideas. The explore skill gains a mandatory
+   **product-manager challenge pass** before the disposition is written:
+   push back (which submitted ideas are weak or unsupported, and why),
+   complement (what the human missed), and refine (sharpen the question and
+   the options). The pass is recorded as a section in the exploration file so
+   the human can see — and veto — each challenge. Constraint to respect: the
+   skill currently mandates "no team, no rubrics" for explorations; this
+   stays a *role hat* the single exploring agent assumes (reading
+   `teammates/product-manager.md`), not a team deployment. The skill's
+   success criteria gain one checkbox: challenge pass present, each
+   pushback either accepted into the notes or explicitly rejected with a
+   reason.
+
+### Product-manager challenge pass (demonstrating the proposed behavior)
+
+Applying delta 5 to this very exploration — pushback, complement, and
+refinement on the four human-submitted themes:
+
+- **Pushback (theme 2):** "every feature includes a way to measure impact,
+  engagement and returned value" — required-three-metrics easily degrades
+  into ritual: agents will fill the boxes with vanity metrics to pass the
+  rubric. Refinement: require **one falsifiable expectation** per feature
+  ("we expect *measure X* to move by *Y* within *Z* of release") rather than
+  three checkbox categories; impact/engagement/value become prompts, not
+  slots. A measure nobody will read back is worse than "n/a — reason".
+- **Pushback (theme 4):** hard-coding staging/beta/production as *the* chain
+  over-fits one topology. Keep the framework rule as "an ordered
+  `environments:` list with promotion criteria"; staging/beta/production is
+  the documented example, not the schema.
+- **Complement (themes 1+2 together):** the human submission treats
+  prioritization and measurement as separate items, but they only pay off as
+  a **loop**: the measures defined in theme 2 are what the product manager
+  reads to re-rank the roadmap in theme 1. Without that read-back step,
+  value prioritization stays opinion-based. This promotes the "who reads
+  back the measures?" open question from nice-to-have to core scope.
+- **Accepted as-is (theme 3):** feature flags need no pushback, but carry a
+  standing cost — every flag added must enqueue its own removal task
+  (already in the sketch; the rubric must enforce it, or flag debt
+  accumulates silently).
 
 ## Options Considered
 
@@ -193,7 +234,7 @@ framework stays project-agnostic.
 
 → iteration — promote to a roadmap entry **"Modern product practice pack
 (product-manager role, per-feature success measures, rollout/flag strategy,
-multi-environment deployment config)"**, scoped as ~4 tasks per the sketch
-above (likely graduating to a `docs/plans/` plan, following the
-T-015…T-021 pattern), with the open questions above resolved during
-`/openup-create-task-spec`.
+multi-environment deployment config, product-manager challenge pass in
+`/openup-explore`)"**, scoped as ~5 tasks per the sketch above (likely
+graduating to a `docs/plans/` plan, following the T-015…T-021 pattern), with
+the remaining open questions resolved during `/openup-create-task-spec`.
