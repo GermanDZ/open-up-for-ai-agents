@@ -70,6 +70,7 @@ The Project Manager leads the planning of the project, coordinates interactions 
 
 ## When to Involve Other Roles
 
+- **Product Manager**: Value ordering of the roadmap (their call, not yours); any value disagreement another role surfaces
 - **Analyst**: For requirements gathering and prioritization
 - **Architect**: For technical planning and risk assessment
 - **Developer**: For effort estimation and task breakdown
@@ -78,8 +79,13 @@ The Project Manager leads the planning of the project, coordinates interactions 
 
 ## Planning Approach
 
+- **Value order is input, not judgement**: the product-manager role owns the
+  roadmap's value ordering and `Value` rationale — consume it **as given**.
+  You may skip an entry only for mechanical reasons (unmet dependency,
+  collision, lease, missing spec); if you believe the ordering itself is
+  wrong, surface that to the product-manager role — do not re-prioritize.
 - **Iterative planning**: Plan each iteration based on lessons learned
-- **Risk-driven**: Prioritize work that addresses highest risks
+- **Risk-driven**: Within the given value order, sequence work that addresses highest risks
 - **Collaborative**: Involve team in planning and estimation
 - **Adaptive**: Adjust plans based on feedback and changes
 

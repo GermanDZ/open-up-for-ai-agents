@@ -1,6 +1,6 @@
 # Modern Product Practice Pack
 
-**Status**: `planned`
+**Status**: `in-progress` (2026-06-12 — T-024 delivered; T-025…T-029 pending)
 **Created**: 2026-06-12
 **Priority**: high
 **Goal**: Layer modern product-delivery practices on top of OpenUP — a product-manager role that influences the mechanical project manager, a falsifiable success measure per feature, feature-flagged rollouts, multi-environment deployment config, and a product-manager challenge pass in `/openup-explore`.
@@ -134,6 +134,15 @@ roadmap-format change breaks its parsing (verify first).
 the roadmap with rationale and that `/openup-next` then claims tasks in the new
 order without re-judging value. Confirm the PM role refuses to re-prioritize.
 **Depends on**: none.
+
+> **Delivered 2026-06-12.** `teammates/product-manager.md` + compact variant
+> created; influence boundary codified in `project-manager.md` (Planning
+> Approach + When-to-Involve), `CLAUDE.md` (new rule + roles list), planning +
+> full team configs; `plan-feature` writes the `**Value**:` rationale on new
+> roadmap entries; `start-iteration` consumes the order as given (mechanical
+> skip reasons only). `scripts/openup-board.py` verified untouched-safe: it
+> derives lanes from change-folder frontmatter only and never parses the
+> roadmap, so the `Value` field cannot break it — no script change shipped.
 
 ### T-025 (delta 2) — Per-feature success measure: one falsifiable expectation `HIGH / LOW–MED`
 

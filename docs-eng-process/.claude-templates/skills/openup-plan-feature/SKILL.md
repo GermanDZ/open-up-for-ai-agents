@@ -264,6 +264,7 @@ Match the existing format exactly:
 ## {Task ID}: {Title}
 **Status**: pending
 **Priority**: {priority}
+**Value**: {one sentence, product-manager voice: who benefits and what outcome improves}
 **Description**: {1-3 sentence description of the feature}
 - {Key deliverable 1}
 - {Key deliverable 2}
@@ -274,10 +275,18 @@ Match the existing format exactly:
 **See**: `docs/iteration-plans/{filename}.md`
 ```
 
+**Value rationale** (product-manager concern): every new entry carries a one-line
+`**Value**:` rationale — *who* benefits and *what outcome* improves. "High value"
+with no who/what is not a rationale; if you cannot write the sentence, that is a
+fit signal for `/openup-explore`, not a reason to omit it. Where the entry lands
+in the pending order is the **product-manager role's** call (assume that hat, or
+flag the placement for its review) — execution skills consume the order as given.
+
 **Placement rules**:
 - Insert under the correct phase heading (e.g., "## Construction Phase")
 - Place after the last entry in that phase section (before the next phase heading or "---" separator)
 - Pending tasks should appear after completed tasks in the same phase
+- Among pending entries, position reflects the product-manager's value ordering
 
 ### 7. Validate with Team (Optional)
 
