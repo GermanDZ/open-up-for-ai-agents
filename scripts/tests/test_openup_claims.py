@@ -162,5 +162,130 @@ class ClaimTests(unittest.TestCase):
         self.assertEqual(ids, {"T-100", "T-101"})
 
 
+class IdReservationTests(unittest.TestCase):
+    """T-031: task-ID allocation through the claims mechanism.
+
+    Hermetic: a fabricated repo root (roadmap + change folders, NOT a git
+    repo, so the origin/main scan is a silent no-op) plus an isolated
+    claims dir, both injected via --repo-root / --claims-dir.
+    """
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        base = Path(self._tmp.name)
+        self.cdir = base / "claims"
+        self.root = base / "repo"
+        # Roadmap mentions T-007 with no plan folder (maintenance-row case);
+        # a change folder holds T-005.
+        (self.root / "docs").mkdir(parents=True)
+        (self.root / "docs" / "roadmap.md").write_text(
+            "| T-007 | roadmap-only task | pending |\n", encoding="utf-8"
+        )
+        plan = self.root / "docs" / "changes" / "T-005"
+        plan.mkdir(parents=True)
+        (plan / "plan.md").write_text(
+            "---\nid: T-005\ntitle: x\n---\n", encoding="utf-8"
+        )
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def _run(self, args, expect=None):
+        if args[0] in ("next-id", "reserve-id"):  # only these scan the repo
+            args = args + ["--repo-root", str(self.root)]
+        return run(args, self.cdir, expect)
+
+    def reserve(self, session="S1", extra=None, expect=None):
+        return self._run(
+            ["reserve-id", "--session-id", session] + (extra or []), expect
+        )
+
+    # --- allocation sources -----------------------------------------------
+    def test_next_id_unions_roadmap_and_change_folders(self):
+        # Highest used is T-007 (roadmap text), not T-005 (frontmatter).
+        p = self._run(["next-id"], expect=OK)
+        self.assertEqual(p.stdout.strip(), "T-008")
+
+    def test_next_id_writes_nothing(self):
+        self._run(["next-id"], expect=OK)
+        self.assertFalse((self.cdir / "ids").exists())
+
+    def test_reserve_skips_live_reservations(self):
+        self.assertEqual(self.reserve(expect=OK).stdout.strip(), "T-008")
+        self.assertEqual(self.reserve(expect=OK).stdout.strip(), "T-009")
+
+    def test_reservation_file_shape(self):
+        self.reserve(extra=["--title", "my task"], expect=OK)
+        data = json.loads((self.cdir / "ids" / "T-008.json").read_text())
+        self.assertEqual(data["task_id"], "T-008")
+        self.assertEqual(data["session_id"], "S1")
+        self.assertEqual(data["title"], "my task")
+        self.assertIn("reserved_at", data)
+
+    def test_no_tmp_left_behind(self):
+        self.reserve(expect=OK)
+        self.assertEqual(list((self.cdir / "ids").glob(".*.tmp")), [])
+
+    # --- explicit ID ------------------------------------------------------
+    def test_explicit_id_used_in_repo_refused(self):
+        p = self.reserve(extra=["--task-id", "T-007"], expect=OWNER)
+        self.assertIn("already in use", p.stderr)
+
+    def test_explicit_id_other_session_refused_same_session_idempotent(self):
+        self.reserve(extra=["--task-id", "T-050"], expect=OK)
+        self.reserve(session="S1", extra=["--task-id", "T-050"], expect=OK)
+        p = self.reserve(session="S2", extra=["--task-id", "T-050"], expect=OWNER)
+        self.assertIn("S1", p.stderr)
+
+    def test_explicit_id_malformed_refused(self):
+        self.reserve(extra=["--task-id", "TASK-9"], expect=BAD)
+
+    # --- release ----------------------------------------------------------
+    def test_release_id_idempotent_and_frees_the_id(self):
+        self.reserve(expect=OK)  # T-008
+        self._run(["release-id", "--task-id", "T-008"], expect=OK)
+        self._run(["release-id", "--task-id", "T-008"], expect=OK)
+        self.assertEqual(self.reserve(expect=OK).stdout.strip(), "T-008")
+
+    # --- prefix / pad -----------------------------------------------------
+    def test_prefix_namespaces_are_independent(self):
+        p = self.reserve(extra=["--prefix", "C3-"], expect=OK)
+        self.assertEqual(p.stdout.strip(), "C3-001")
+        # T- namespace unaffected by the C3- reservation.
+        self.assertEqual(self.reserve(expect=OK).stdout.strip(), "T-008")
+
+    def test_pad_width(self):
+        p = self.reserve(extra=["--prefix", "C3-", "--pad", "2"], expect=OK)
+        self.assertEqual(p.stdout.strip(), "C3-01")
+
+    # --- the race itself --------------------------------------------------
+    def test_concurrent_reservations_get_distinct_ids(self):
+        # N processes race from the same starting scan; every one must end
+        # up with a unique ID (the exclusive-create loop absorbs the race).
+        n = 8
+        cmd = [sys.executable, str(SCRIPT), "reserve-id",
+               "--session-id", "RACE", "--repo-root", str(self.root),
+               "--claims-dir", str(self.cdir)]
+        procs = [subprocess.Popen(cmd, stdout=subprocess.PIPE, text=True)
+                 for _ in range(n)]
+        ids = [p.communicate()[0].strip() for p in procs]
+        self.assertTrue(all(p.returncode == 0 for p in procs))
+        self.assertEqual(len(set(ids)), n, f"duplicate IDs allocated: {ids}")
+
+    # --- list-ids ---------------------------------------------------------
+    def test_list_ids_reflects_reservations(self):
+        self.reserve(expect=OK)
+        self.reserve(expect=OK)
+        out = self._run(["list-ids"], expect=OK).stdout
+        ids = {r["task_id"] for r in json.loads(out)}
+        self.assertEqual(ids, {"T-008", "T-009"})
+
+    def test_reservations_invisible_to_claim_list(self):
+        # An ID reservation must never read as a surface claim.
+        self.reserve(expect=OK)
+        out = run(["list"], self.cdir, expect=OK).stdout
+        self.assertEqual(json.loads(out), [])
+
+
 if __name__ == "__main__":
     unittest.main()
