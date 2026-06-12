@@ -39,3 +39,5 @@
 {"run_id": "3a8d8f6e59504ad6b2cc696d1b03bc38", "event": "commit", "task_id": "T-002", "branch": "feature/T-002-sync-spec", "sha": "5dd11c8608a8faa063abf58e71d9df36a99d6f41", "model": null, "session_id": null, "ts": "2026-06-11T13:59:32Z"}
 {"run_id": "2ce3d7cc631b4b50b7f7843e5d71f614", "event": "commit", "task_id": "T-002", "branch": "feature/T-002-sync-spec", "sha": "3d4351d75866b024cb3b0f93475425b4898f4ea5", "model": null, "session_id": null, "ts": "2026-06-11T14:00:14Z"}
 {"run_id":"openup-20260611T085621Z-T002","event":"task_complete","task_id":"T-002","branch":"feature/T-002-sync-spec","phase":"construction","track":"full","commits":["3d4351d"],"verification":"tester PASS 7/7","ts":"2026-06-11T14:00:25Z"}
+{"run_id": "22891881c8ec4181b513e8182a7f408a", "event": "commit", "task_id": null, "branch": "main", "sha": "f438877feef4b476f583773b31af1fbe0357cd1f", "model": null, "session_id": null, "ts": "2026-06-11T16:22:41Z"}
+{"run_id": "04ecd29cafe8469196df216fb5fa323a", "event": "commit", "task_id": null, "branch": "main", "sha": "d57cec87c9622d548ea5e55b9b4da999cf5c44b2", "model": null, "session_id": null, "ts": "2026-06-12T00:41:18Z"}
