@@ -31,10 +31,10 @@
 | T-017 | `/openup-next` sequential continue-loop + derived `.openup/board.json` + Operations checkboxes | completed (2026-06-12) | high | T-015, T-016 |
 | T-018 | `docs/project-config.yaml` context/rules injection (from 2026-05-13 #2) | proposed | medium | — |
 | [T-019](changes/T-019/plan.md) | Behavior Delta section in the task spec (Added/Modified/Removed vs Ring 1) | completed (2026-06-12) | high | T-007 |
-| T-020 | Scenario-per-requirement (Given/When/Then) + deterministic validation | proposed | high | T-019 |
-| T-021 | Implementation-vs-spec verify step in `/openup-complete-task` | proposed | medium | T-020 |
+| [T-020](changes/archive/T-020/plan.md) | Scenario-per-requirement (Given/When/Then) + deterministic validation | completed (2026-06-12) | high | T-019 |
+| [T-021](changes/archive/T-021/plan.md) | Implementation-vs-spec verify step in `/openup-complete-task` | completed (2026-06-12) | medium | T-020 |
 
-**Next step**: T-015 ✅, T-016 ✅, T-017 ✅, T-019 ✅ done — the Behavior Delta section now ships in the task-spec template + authoring skill + rubric criterion 10. Remaining open threads: **T-018** (D, `project-config.yaml`) is independent and startable anytime; **T-020 → T-021** spec-self-sufficiency + verify chain (T-020 now unblocked); independent **T-018**.
+**Next step**: T-015 ✅, T-016 ✅, T-017 ✅, T-019 ✅, T-020 ✅, T-021 ✅ done — the spec-self-sufficiency + verify chain has landed: every requirement now carries a Given/When/Then scenario validated by `scripts/openup-spec-scenarios.py` (rubric criterion 11), and `/openup-complete-task` grades each requirement against the diff before "done". Only remaining open thread in this plan: **T-018** (D, `docs/project-config.yaml` context/rules injection) — independent, medium, startable anytime.
 
 
 <!-- plan-hook: 2026-06-10 -->

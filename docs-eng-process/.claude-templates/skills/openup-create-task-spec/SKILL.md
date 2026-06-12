@@ -50,7 +50,9 @@ After this skill completes, ALL of these must be true:
       `docs-eng-process/templates/task-spec.md`.
 - [ ] Front-matter is fully populated (`id`, `title`, `status`, `priority`, `estimate`).
 - [ ] Status is `ready` (not `proposed`) — the rubric grades to all-✅.
-- [ ] All ten rubric criteria in `.claude/rubrics/task-spec-rubric.md` are ✅.
+- [ ] All eleven rubric criteria in `.claude/rubrics/task-spec-rubric.md` are ✅.
+- [ ] Every requirement carries a Given/When/Then scenario (standard/full tracks):
+      `python3 scripts/openup-spec-scenarios.py check docs/changes/T-XXX/plan.md` exits 0.
 - [ ] `docs/roadmap.md` references the new task with a status entry.
 
 ## Process
@@ -96,8 +98,8 @@ explicit pass, not invented doubt.
 Brief one analyst-role agent and one architect-role agent in compact form (max
 6 bullets each). Inputs: roadmap line, plan section, use case excerpt.
 
-- **Analyst** drafts: Story (INVEST), Analysis Context, Requirements,
-  **Behavior Delta**, Entities.
+- **Analyst** drafts: Story (INVEST), Analysis Context, Requirements (each with
+  ≥1 `Given / When / Then` scenario), **Behavior Delta**, Entities.
 - **Architect** drafts: Approach (3–5 lines), Structure (Add/Modify/Do-not-touch),
   Safeguards (invariants, no-go zones, token budgets).
 
@@ -111,6 +113,14 @@ Modified/Removed entry (`docs/product/use-cases/UC-3.md §main-flow`); a greenfi
 renders `n/a — all Added`. This list is what `/openup-sync-spec` consumes to know exactly
 which Ring-1 artifacts a behavior change must back-propagate to — so a missing or vague
 citation is a real gap, not a formality.
+
+For **Requirements**, the analyst writes each numbered assertion *with* at least one
+acceptance scenario in `Given / When / Then` form (bold markers `**Given**` / `**When**`
+/ `**Then**`, inline or split across lines). The scenario must name a concrete
+precondition, action, and observable outcome — drafting it is the test that the
+requirement is unambiguous; if a clean scenario can't be written, the requirement is
+still too vague. (Exempt on the `quick` track only.) `/openup-assess-completeness`
+runs `scripts/openup-spec-scenarios.py` to enforce this deterministically.
 
 ### 4. Round 2 — Developer
 
@@ -127,7 +137,10 @@ Brief one developer-role agent with the partially-filled task spec.
 ### 5. Rubric Grading
 
 Run `/openup-assess-completeness artifact: task-spec` (or apply
-`.claude/rubrics/task-spec-rubric.md` inline). Grade each of 10 criteria.
+`.claude/rubrics/task-spec-rubric.md` inline). Grade each of 11 criteria. That
+skill also runs `scripts/openup-spec-scenarios.py check docs/changes/T-XXX/plan.md`
+— criterion 11 (Scenario Coverage) cannot be ✅ unless the script exits 0 (it is
+auto-skipped on the `quick` track).
 
 - All ✅ → set `status: ready` in front-matter.
 - Any ❌ → keep `status: proposed`, list gaps for revision, loop back to the
