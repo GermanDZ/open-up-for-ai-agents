@@ -218,6 +218,17 @@ es:
 
 ---
 
+## Success Measure
+
+We expect {measure X} to move by {direction + magnitude Y} within {window Z} of release.
+Instrumentation: {event / metric / query}. Read-back: {date or "Z after release"}.
+
+{One falsifiable expectation — use impact, engagement, and returned value as prompts
+to find it, not as three required slots. Write "n/a — <reason>" only for genuinely
+unmeasurable internal work; the task spec (rubric criterion 12) will hold this line.}
+
+---
+
 ## Testing Strategy
 
 - {Test category 1}: {what to test}

@@ -1,6 +1,6 @@
 # Modern Product Practice Pack
 
-**Status**: `in-progress` (2026-06-12 — T-024 delivered; T-025…T-029 pending)
+**Status**: `in-progress` (2026-06-12 — T-024, T-025 delivered; T-026…T-029 pending)
 **Created**: 2026-06-12
 **Priority**: high
 **Goal**: Layer modern product-delivery practices on top of OpenUP — a product-manager role that influences the mechanical project manager, a falsifiable success measure per feature, feature-flagged rollouts, multi-environment deployment config, and a product-manager challenge pass in `/openup-explore`.
@@ -166,6 +166,18 @@ weekly active editors +10% within 30 days, event `editor_active`" → passes;
 complete-task blocks if `editor_active` instrumentation is absent from the diff.
 **Depends on**: none. Per the guardrail, the section ships via skill+rubric —
 `docs-eng-process/templates/task-spec.md` is **not** edited.
+
+> **Delivered 2026-06-12.** `create-task-spec` Round 1 (analyst) now drafts
+> `## Success Measures` with the falsifiable-expectation format (measure,
+> direction+magnitude, window, instrumentation, read-back date) — explicitly
+> noting the section is added at drafting time because the OpenUP-derived
+> template is read-only. Rubric criterion 12 (Success Measure Falsifiability)
+> grades it, incl. unargued-`n/a` and instrumentation-nothing-creates gaps;
+> criteria counts in the skill bumped 11→12. `complete-task` gains BLOCKING
+> step 1b: instrumentation must exist in the diff (or demonstrably pre-exist),
+> grade + read-back date recorded in `design.md` for the retrospective (T-028
+> consumes this). `plan-feature` plan template gains a `## Success Measure`
+> section as the upstream prompt.
 
 ### T-026 (delta 3) — Rollout & feature-flag strategy `MED / LOW–MED`
 

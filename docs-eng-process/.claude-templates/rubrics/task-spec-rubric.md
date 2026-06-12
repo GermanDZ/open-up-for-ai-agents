@@ -98,6 +98,21 @@ scenario, or a scenario missing one of the three clauses, is a gap. This is what
 `standard` and `full` tracks; a `quick`-track spec is exempt and this criterion
 is marked `n/a (quick track)`.
 
+## 12. Success Measure Falsifiability
+
+**Satisfied when:** The `## Success Measures` section states **one falsifiable
+expectation**: a named measure, a direction **and** magnitude ("weekly active
+editors +10%", not "engagement improves"), a time window, the instrumentation
+that will produce the number (an event, metric, or query — named concretely),
+and a read-back date (absolute, or relative to release). Impact / engagement /
+returned value are prompts, not required slots — one honest expectation
+satisfies this. Gaps: a measure with no direction or magnitude; a vanity
+expectation with no instrumentation ("users will like it"); instrumentation
+that nothing in the Structure/Operations actually creates or already provides;
+no read-back date. A `quick`-track spec — or genuinely unmeasurable internal
+work — may write `n/a — <reason>`; an unargued `n/a`, or `n/a` on user-facing
+`standard`/`full` work without a credible reason, is a gap.
+
 ---
 
 ## Grading Instructions

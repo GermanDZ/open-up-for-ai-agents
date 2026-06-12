@@ -31,6 +31,7 @@ Finalize a completed task: commit remaining changes, update docs, create traceab
 After this skill completes, ALL of these must be true:
 
 - [ ] **BLOCKING**: Every spec requirement is graded ✅ against the actual diff (step 1a) — no requirement is unmet, and any ❌ blocks "done"
+- [ ] **BLOCKING (standard/full)**: The spec's Success Measure instrumentation exists in the diff or demonstrably pre-exists (step 1b) — or the section is an argued `n/a`
 - [ ] All changes are committed (no uncommitted changes remain)
 - [ ] Commit messages follow canonical format: `type(scope): description [T-XXX]`
 - [ ] Roadmap is updated to mark task complete
@@ -75,6 +76,27 @@ the spec's own quality.
 
 > A requirement that reads ✅ only because "that was the plan" is not verified.
 > Point at the line of the diff (or the green test) that makes it true.
+
+### 1b. Verify Success-Measure Instrumentation — BLOCKING (standard/full)
+
+The spec's `## Success Measures` section (rubric criterion 12) names the
+instrumentation — an event, metric, or query — behind its falsifiable
+expectation. Completing the feature without that instrumentation ships a
+promise nobody can check.
+
+1. Read `## Success Measures` from `docs/changes/{task_id}/plan.md`.
+2. If it is `n/a — <reason>` (quick track or argued-unmeasurable): record
+   `n/a` in `design.md` and move on.
+3. Otherwise, verify the named instrumentation **exists** — in the diff (the
+   event is emitted, the metric is registered, the query is committed) or
+   demonstrably pre-existing (point at where). Grade it like step 1a:
+   - `✅ instrumentation — <where it exists>`
+   - `❌ instrumentation — <what is missing>`
+4. **A ❌ blocks completion** — the feature code being done is not enough.
+   Add the instrumentation, or fix the spec first (re-run
+   `/openup-create-task-spec`) if the measure itself was wrong.
+5. Record the grade and the read-back date in `docs/changes/{task_id}/design.md`
+   so the retrospective can find the expectation when the read-back date passes.
 
 ### 2. Commit Remaining Changes
 
