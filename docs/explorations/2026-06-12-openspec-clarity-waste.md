@@ -258,6 +258,62 @@ One skill that makes "read the next task and execute" literally sufficient:
 5. End the session. The outer loop (Claude Code `/loop`, cron, or a human
    re-invoking) provides repetition; the skill owns exactly one cycle.
 
+### G's data layer — the execution board (user refinement, same day)
+
+Requirement: a cycle must not "read many docs and think about who/what/how."
+Selection and continuation should be a **lookup against one simple-to-parse
+file** that supports many active items (lanes), and every cycle must update
+it on exit so the next cycle knows how to continue.
+
+Two coordinated pieces:
+
+1. **`.openup/board.json` — the materialized queue (one file, many lanes).**
+   A machine-readable array, one entry per active/ready task:
+
+   ```json
+   {
+     "generated_at": "<iso>",
+     "items": [
+       {
+         "task": "T-021",
+         "title": "…",
+         "track": "standard",
+         "state": "in-progress",
+         "lease": {"by": "session-abc", "since": "<iso>"},
+         "hat": "developer",
+         "next_action": "Operations step 4 of 7: <verbatim step text>",
+         "plan": "docs/changes/T-021/plan.md",
+         "collides_with": [],
+         "depends_ok": true
+       }
+     ]
+   }
+   ```
+
+   Crucially the board is **derived, never authored**: a deterministic script
+   (`.claude/scripts/openup-board.py`) regenerates it from the existing
+   sources of truth — change-folder frontmatter, roadmap, leases, checklist
+   state (below). The model never edits the board; it runs the script and
+   reads `items[0]` that is collision-free and unleased. This follows
+   Process v2's own rule ("if a step is deterministic, the harness does it")
+   and kills the staleness risk a hand-maintained queue would have.
+
+2. **Within-task progress = checkboxes in the spec's Operations section.**
+   The task-spec template's `## Operations` is already an ordered step list;
+   change the convention from `1. <step>` to `- [ ] <step>`. A cycle checks
+   off the steps it completed before exiting — that single edit is the
+   within-task handover, and it is trivially parseable (the board script
+   derives `next_action` from the first unchecked box, and `hat` from which
+   artifact/phase the unchecked work belongs to). This is OpenSpec's
+   `tasks.md` checklist pattern, grafted onto the existing REASONS spec
+   instead of adding a new artifact.
+
+The cycle then becomes mechanical at both ends:
+**refresh board → take top item → do `next_action` → tick boxes (+ design.md
+notes if decisions were made) → refresh board → exit.** Reading stays scoped
+to the one change folder plus whatever Ring 1 artifacts the spec links —
+never "scan docs/ and decide."
+
 Pro: collapses the PM-orchestration overhead to zero for the common case;
 makes progress resumable from any cold session; the noisy-handover problem
 disappears because there is no *receiver* mid-task — the next cycle reads
@@ -287,7 +343,14 @@ self-sufficiency; E closes the verify gap at task completion.
   "deploy team as step 3" gate in `/openup-start-iteration` — does the gate
   become track-conditional (full only)?
 - Option G: what does state.json record between hats within one cycle, so a
-  crash mid-cycle resumes at the right hat?
+  crash mid-cycle resumes at the right hat? (Largely answered by the board +
+  Operations checkboxes — remaining question is whether state.json keeps any
+  role beyond the lease.)
+- Board: is `.openup/board.json` committed (shared across machines/lanes) or
+  local-only with the script as the sync point? Leases argue for committed;
+  regeneration-on-read argues it barely matters.
+- Board: does the script live as a `PostToolUse`/`Stop` hook refresh, or
+  only inside `/openup-next`? Hook = always fresh; skill-only = simpler.
 
 ## Where this goes next
 
