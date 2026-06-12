@@ -112,11 +112,19 @@ rule needs to change.
 ### Sketch of the concrete deltas (if promoted)
 
 1. **Product Manager role**: add `teammates/product-manager.md`
-   (+ compact variant), grounded in the KB Product Owner pattern. Owns the
-   roadmap's value ordering; PM keeps orchestration/risk. Roadmap table gains
-   a `Value` column (or a one-line value rationale per entry); start-iteration
-   reads it when picking the next item. The existing stakeholder-decides rule
-   is preserved — the product-manager role *represents* that voice.
+   (+ compact variant), grounded in the KB Product Owner pattern. The
+   relationship is directional: the **product manager influences, the project
+   manager executes mechanically**. The product manager owns the roadmap's
+   value ordering and the value rationale per entry; the project manager
+   (and the derived `.openup/board.json` / `/openup-next` loop) consumes that
+   ordering as an *input* — it never re-prioritizes, it sequences within the
+   given order using only mechanical constraints (dependencies, readiness,
+   collisions, risk). Roadmap table gains a `Value` column (or a one-line
+   value rationale per entry) that the product manager writes and
+   start-iteration reads when picking the next item. The existing
+   stakeholder-decides rule is preserved — the product-manager role
+   *represents* that voice, mirroring the KB split where the stakeholder/PO
+   has final say on *what* and the project manager facilitates *how*.
 2. **Success measures per feature**: task-spec template (and feature-level
    use-case template) gains a required `## Success Measures` section with
    three prompts — impact, engagement, returned value — each a concrete,
@@ -165,10 +173,10 @@ framework stays project-agnostic.
 
 ## Open Questions
 
-- Does `product-manager` **replace** `project-manager` in the default team, or
-  sit alongside it? (KB treats Product Owner and PM as distinct; leaning
-  *alongside*, with product-manager owning roadmap order and PM owning
-  execution — replacing would change base-process role semantics.)
+- ~~Does `product-manager` **replace** `project-manager`?~~ **Resolved
+  (2026-06-12, owner decision):** it sits alongside and *influences* the more
+  mechanical project manager — product-manager owns value ordering as input;
+  project-manager mechanically sequences and orchestrates within it.
 - What's the minimal value scale for prioritization that an agent can apply
   without inventing numbers — qualitative rationale per roadmap entry, or a
   scored column (e.g., value/effort)?
