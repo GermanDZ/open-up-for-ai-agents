@@ -1,6 +1,6 @@
 # Modern Product Practice Pack
 
-**Status**: `in-progress` (2026-06-12 — T-024, T-025 delivered; T-026…T-029 pending)
+**Status**: `in-progress` (2026-06-12 — T-024…T-026 delivered; T-027…T-029 pending)
 **Created**: 2026-06-12
 **Priority**: high
 **Goal**: Layer modern product-delivery practices on top of OpenUP — a product-manager role that influences the mechanical project manager, a falsifiable success measure per feature, feature-flagged rollouts, multi-environment deployment config, and a product-manager challenge pass in `/openup-explore`.
@@ -199,6 +199,16 @@ flagged ⇒ removal task named), `skills/openup-complete-task/SKILL.md`
 complete it; confirm a `T-NNN flag removal` row appears in the roadmap
 maintenance table.
 **Depends on**: none.
+
+> **Delivered 2026-06-12.** `create-task-spec` Round 1 (architect) drafts
+> `## Rollout` — flagged-or-not with reason, flag name, per-environment
+> default states (project-config `environments:` names when defined — the
+> T-027 hook), kill-switch behavior, and a mandatory named flag-removal
+> follow-up; KB-framed as the modern *Develop Backout Plan*. Rubric
+> criterion 13 (Rollout Strategy) grades it; criteria counts 12→13.
+> `complete-task` gains BLOCKING step 3a: a flagged feature cannot complete
+> until its flag-removal row exists in the roadmap Maintenance table (new
+> task ID recorded in `design.md`).
 
 ### T-027 (delta 4) — `environments:` in project config, consumed by transition `MED / LOW`
 

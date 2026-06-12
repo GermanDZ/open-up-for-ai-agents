@@ -32,6 +32,7 @@ After this skill completes, ALL of these must be true:
 
 - [ ] **BLOCKING**: Every spec requirement is graded ✅ against the actual diff (step 1a) — no requirement is unmet, and any ❌ blocks "done"
 - [ ] **BLOCKING (standard/full)**: The spec's Success Measure instrumentation exists in the diff or demonstrably pre-exists (step 1b) — or the section is an argued `n/a`
+- [ ] **BLOCKING (flagged features)**: A flag-removal task row exists in the roadmap Maintenance table (step 3a) — every flag enqueues its own removal
 - [ ] All changes are committed (no uncommitted changes remain)
 - [ ] Commit messages follow canonical format: `type(scope): description [T-XXX]`
 - [ ] Roadmap is updated to mark task complete
@@ -122,6 +123,25 @@ Most changes should already be committed as atomic commits during implementation
 >   2. Add 'Completed [YYYY-MM-DD]' to its Notes or detail section.
 >   Report: exact line(s) changed.")
 > ```
+
+### 3a. Enqueue the Flag-Removal Task — BLOCKING when flagged
+
+If the spec's `## Rollout` section says the change ships behind a feature flag
+(rubric criterion 13), the flag's removal debt is enqueued **now**, in the same
+roadmap update — a flag whose removal exists only as an intention outlives
+every intention.
+
+1. Read `## Rollout` from `docs/changes/{task_id}/plan.md`. Not flagged or
+   `n/a` → skip this step.
+2. Flagged → add a row to the roadmap's **Maintenance** table (same scribe
+   brief as step 3, or a second scribe call):
+
+   ```
+   | T-{next free ID} | Remove feature flag `{flag_name}` ({task_id} fully rolled out) | pending | medium | {task_id} |
+   ```
+
+3. **Completion is blocked until the removal row exists.** Record the new task
+   ID in `docs/changes/{task_id}/design.md` next to the rollout notes.
 
 Once the roadmap is updated, record the gate:
 

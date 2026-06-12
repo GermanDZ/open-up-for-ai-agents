@@ -113,6 +113,20 @@ no read-back date. A `quick`-track spec — or genuinely unmeasurable internal
 work — may write `n/a — <reason>`; an unargued `n/a`, or `n/a` on user-facing
 `standard`/`full` work without a credible reason, is a gap.
 
+## 13. Rollout Strategy
+
+**Satisfied when:** The `## Rollout` section states how the change reaches
+users: **flagged or not, with a reason either way**. If flagged: the flag name,
+the default state per environment (project-config `environments:` names when
+defined), the kill-switch behavior (what turning it off does to in-flight
+users/data), and a named **flag-removal follow-up** — a flag with no removal
+task is unbounded debt and is a gap. If not user-facing: an explicit
+`n/a — <reason>`. Gaps: a user-facing `standard`/`full` change with no Rollout
+section; "flagged: yes" with no kill-switch behavior or no removal follow-up;
+an unargued flagged/not-flagged choice; default states that name environments
+the project config doesn't define. A `quick`-track spec may write
+`n/a (quick track)`.
+
 ---
 
 ## Grading Instructions
