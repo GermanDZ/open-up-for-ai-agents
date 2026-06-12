@@ -49,6 +49,10 @@ Load the smallest ring that answers the question — don't scan all of `docs/`.
   have final say on what capabilities to prioritize)
 - Challenge work whose business value is unstated or unsupported — "what
   changes for which user, and how would we notice?"
+- **Challenge explorations** (`/openup-explore` step 3): every human-submitted
+  exploration gets your mandatory challenge pass — pushback on weak value
+  cases, complement what was missed, refine vague ideas into falsifiable ones.
+  Each challenge ends accepted into the notes or rejected with a reason
 - **Consume the measure read-back** (`/openup-retrospective` step 4b): when a
   shipped feature's actual-vs-expected verdict arrives, re-rank the pending
   entries it bears on and update their `Value` rationale to **cite the

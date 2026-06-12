@@ -1,6 +1,6 @@
 # Modern Product Practice Pack
 
-**Status**: `in-progress` (2026-06-12 — T-024…T-028 delivered; T-029 pending)
+**Status**: `completed` (2026-06-12 — all of T-024…T-029 delivered)
 **Created**: 2026-06-12
 **Priority**: high
 **Goal**: Layer modern product-delivery practices on top of OpenUP — a product-manager role that influences the mechanical project manager, a falsifiable success measure per feature, feature-flagged rollouts, multi-environment deployment config, and a product-manager challenge pass in `/openup-explore`.
@@ -291,6 +291,15 @@ The 2026-06-12 exploration's own challenge pass is the reference example.
 challenge pass produces ≥1 pushback and the disposition reflects accepted
 refinements; confirm no team is deployed.
 **Depends on**: T-024 (the role file must exist).
+
+> **Delivered 2026-06-12.** `openup-explore` gains mandatory step 3
+> (Product-Manager Challenge Pass) before the disposition: role hat only (the
+> no-team rule stands), pushback / complement / refine, every challenge
+> accepted into the notes or rejected with a reason — "accepted as-is with the
+> standing cost named" is valid, an empty pass is not. File template gains the
+> section; success criteria gain the checkbox; the 2026-06-12 exploration is
+> cited as the reference example. Product-manager role (full + compact) gains
+> the challenge-explorations duty.
 
 ---
 

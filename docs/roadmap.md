@@ -12,9 +12,9 @@
 
 
 <!-- plan-hook: 2026-06-12 -->
-### Planned: Modern Product Practice Pack
+### Completed: Modern Product Practice Pack
 
-- **Status**: `planned`
+- **Status**: `completed` (2026-06-12 — all of T-024…T-029 delivered)
 - **Plan**: [plans/2026-06-12-modern-product-practice-pack.md](plans/2026-06-12-modern-product-practice-pack.md)
 - **Exploration**: [explorations/2026-06-12-modern-product-practices-on-openup.md](explorations/2026-06-12-modern-product-practices-on-openup.md)
 - **Created**: 2026-06-12
@@ -31,7 +31,7 @@
 | T-026 | Rollout & feature-flag strategy: `## Rollout` authoring step, rubric criterion 13, flag-removal task auto-enqueued at complete-task | completed (2026-06-12) | medium | — |
 | T-027 | `environments:` ordered chain in project-config consumed by `/openup-transition` (per-hop promotion checklists; staging→beta→production as example) | completed (2026-06-12) | medium | T-026 |
 | T-028 | Measure read-back → re-prioritization loop in `/openup-retrospective` + product-manager duty | completed (2026-06-12) | high | T-024, T-025 |
-| T-029 | Product-manager challenge pass in `/openup-explore` (role hat, pushback/complement/refine, vetoable) | pending | medium | T-024 |
+| T-029 | Product-manager challenge pass in `/openup-explore` (role hat, pushback/complement/refine, vetoable) | completed (2026-06-12) | medium | T-024 |
 
 
 <!-- plan-hook: 2026-06-12 -->

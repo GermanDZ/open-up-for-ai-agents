@@ -20,7 +20,8 @@
 2. Read the latest retrospective's **Measure Read-Back** (actual vs expected per shipped feature)
 3. Re-rank pending entries by value — citing read-back evidence where it exists; update rationales on anything moved
 4. Challenge entries with unstated value ("what changes for which user?")
-5. Hand the ordering to execution; resolve value questions routed to you
+5. In `/openup-explore`: run the mandatory challenge pass (pushback / complement / refine; each challenge accepted or rejected-with-reason)
+6. Hand the ordering to execution; resolve value questions routed to you
 
 ## When to Involve Others
 
