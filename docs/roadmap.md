@@ -1,6 +1,32 @@
 # Roadmap
 
 
+<!-- plan-hook: 2026-06-12 -->
+### Planned: Clarity, Self-Briefing, and the Sequential Continue-Loop
+
+- **Status**: `planned`
+- **Plan**: [plans/2026-06-12-clarity-self-briefing-continue-loop.md](plans/2026-06-12-clarity-self-briefing-continue-loop.md)
+- **Exploration**: [explorations/2026-06-12-openspec-clarity-waste.md](explorations/2026-06-12-openspec-clarity-waste.md)
+- **Created**: 2026-06-12
+- **Priority**: high
+- **Goal**: Reduce waste from unclear objectives and misunderstandings — unambiguous specs, roles that self-brief from the repo, and a mechanical "read the next task and execute" loop.
+- **Notes**: Follow-up to the 2026-05-13 OpenSpec plan re-focused on intent-clarity waste; absorbs that plan's one un-implemented item (#2, `project-config.yaml`) as T-018. Headline deliverable is T-017 (`/openup-next` continue-loop + derived `.openup/board.json`). Parallelism reframed as per-lane (T-009 machinery re-scoped, not removed); teams demote to opt-in for `full` track.
+
+**Tasks**
+
+| ID | Title | Status | Priority | Depends on |
+|---|---|---|---|---|
+| T-015 | Mandatory ambiguity gate in spec authoring (assumptions made visible/vetoable) | proposed | high | — |
+| T-016 | Self-briefing roles: per-role cold-start reading lists + pointer-only PM delegation | proposed | high | T-015 |
+| T-017 | `/openup-next` sequential continue-loop + derived `.openup/board.json` + Operations checkboxes | proposed | high | T-015, T-016 |
+| T-018 | `docs/project-config.yaml` context/rules injection (from 2026-05-13 #2) | proposed | medium | — |
+| T-019 | Behavior Delta section in the task spec (Added/Modified/Removed vs Ring 1) | proposed | high | T-007 |
+| T-020 | Scenario-per-requirement (Given/When/Then) + deterministic validation | proposed | high | T-019 |
+| T-021 | Implementation-vs-spec verify step in `/openup-complete-task` | proposed | medium | T-020 |
+
+**Next step**: T-015 (C) and T-018 (D) are each ~1 session with no dependencies — start either. Headline path is T-015 → T-016 → T-017.
+
+
 <!-- plan-hook: 2026-06-10 -->
 ### Planned: Process v2 — Mechanize OpenUP for the Claude Code Harness
 
