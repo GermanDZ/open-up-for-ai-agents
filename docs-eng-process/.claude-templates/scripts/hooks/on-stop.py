@@ -132,6 +132,27 @@ def main() -> None:
                 file=sys.stderr,
             )
             sys.exit(2)
+        else:
+            # Only the hook-managed log tail is dirty (no real work pending) —
+            # otherwise `non_exempt` above would have blocked. Sweep it into a
+            # log-only [openup-skip] commit so the session ends on a CLEAN tree
+            # instead of leaving the tail dangling until the next code commit.
+            # This commit runs via subprocess (not the Bash tool), so the
+            # PostToolUse auto-log-commit hook does not fire on it — there is no
+            # new record and therefore no tail-chase. Fail open on any git error
+            # (e.g. missing identity): a stop hook must never trap the session.
+            code, _ = run(
+                "git add docs/agent-logs/agent-runs.jsonl && "
+                'git commit -m "chore(process): sweep agent-runs.jsonl log tail '
+                '[openup-skip]"',
+                cwd,
+            )
+            if code == 0:
+                print(
+                    "[on-stop] ✓ Swept the agent-runs.jsonl log tail into a "
+                    "log-only commit — tree is clean.",
+                    file=sys.stderr,
+                )
 
     # 2. Unmet-gate block (only when an iteration is active) ──────────────────
     try:
