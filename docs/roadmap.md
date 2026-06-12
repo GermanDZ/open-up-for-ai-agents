@@ -51,11 +51,8 @@
 | [T-001](changes/archive/T-001/plan.md) | REASONS task spec — template, skill, rubric | done | high |
 | [T-002](changes/T-002/plan.md) | `/openup-sync-spec` — refactor back-propagation | completed (2026-06-11) | medium |
 | [T-003](changes/archive/T-003/plan.md) | Suitability "fit" metadata in workflow skills | done | low |
-
-**Done (out-of-band, in `.claude/` — gitignored)**
-
-- ✅ Plan item #2 — Fix-spec-first rule in `CLAUDE.openup.md` + dev/architect teammates
-- ✅ Plan item #5 — "Edit artifacts through their skill" rule in `CLAUDE.openup.md`
+| [T-013](changes/archive/T-013/plan.md) | Fix-spec-first rule for behavior changes (plan item #2) | done (backfilled 2026-06-12) | high |
+| [T-014](changes/archive/T-014/plan.md) | Edit artifacts through their skill, not by hand (plan item #5) | done (backfilled 2026-06-12) | low |
 
 **Next step**: pick T-003 (smallest, exercises the new format), then T-001.
 T-002 (`/openup-sync-spec`) completed 2026-06-11 — implemented when T-008's readiness DAG un-blocked it.
