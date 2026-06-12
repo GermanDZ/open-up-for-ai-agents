@@ -44,6 +44,7 @@ EXEMPT_PREFIXES = (
     ".openup/",
     ".claude/memory/",
     "docs/agent-logs/",
+    "docs/iteration-retrospectives/",
 )
 
 

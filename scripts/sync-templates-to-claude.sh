@@ -115,6 +115,10 @@ copy_item() {
     return
   fi
 
+  # Ensure the destination's parent exists — file-level copies below target
+  # paths like .claude/skills/openup-next/SKILL.md whose parent may not exist.
+  mkdir -p "$(dirname "$dest")"
+
   if [ -e "$dest" ]; then
     # Check if files are different
     if ! diff -q "$src" "$dest" > /dev/null 2>&1; then
@@ -146,31 +150,73 @@ echo "Source: $DEV_PROCESS_DIR"
 echo "Destination: $CLAUDE_DIR"
 echo ""
 
-# Sync skills
+# Sync skills — FLAT layout.
+#   Each templates/skills/openup-<name>/SKILL.md maps to .claude/skills/openup-<name>/SKILL.md
+#   (one level under .claude/skills/). Claude Code only discovers skills a single level
+#   deep, so grouping subdirectories (openup-phases/, openup-artifacts/, openup-workflow/)
+#   must NOT be created — doing so is exactly what broke slash-command discovery (T-022).
+#   The templates are already flat; this mirrors scripts/sync-from-framework.sh.
 log_info "Syncing skills..."
 echo ""
+src_dir="$DEV_PROCESS_DIR/skills"
+if [ -d "$src_dir" ]; then
+  for skill_src in "$src_dir"/*/; do
+    [ -d "$skill_src" ] || continue
+    skill_name=$(basename "$skill_src")
+    skill_file="$skill_src/SKILL.md"
+    if [ -f "$skill_file" ]; then
+      copy_item "$skill_file" "$CLAUDE_DIR/skills/$skill_name/SKILL.md" "skills/$skill_name"
+    fi
+  done
+fi
 
-# Sync all skill categories
-for skill_category in openup-phases openup-artifacts openup-workflow; do
-  src_dir="$DEV_PROCESS_DIR/skills/$skill_category"
-  if [ -d "$src_dir" ]; then
-    dest_dir="$CLAUDE_DIR/skills/$skill_category"
-    mkdir -p "$dest_dir"
+# Sync rubrics — quality rubrics the skills' grading steps read.
+log_info "Syncing rubrics..."
+echo ""
+src_dir="$DEV_PROCESS_DIR/rubrics"
+if [ -d "$src_dir" ]; then
+  for rubric in "$src_dir"/*.md; do
+    [ -f "$rubric" ] || continue
+    name=$(basename "$rubric")
+    copy_item "$rubric" "$CLAUDE_DIR/rubrics/$name" "rubrics/$name"
+  done
+fi
 
-    log_verbose "Processing category: $skill_category"
+# Sync hook scripts — automation hooks wired via settings.json.
+log_info "Syncing hooks..."
+echo ""
+src_dir="$DEV_PROCESS_DIR/scripts/hooks"
+if [ -d "$src_dir" ]; then
+  for hook in "$src_dir"/*.py; do
+    [ -f "$hook" ] || continue
+    name=$(basename "$hook")
+    copy_item "$hook" "$CLAUDE_DIR/scripts/hooks/$name" "scripts/hooks/$name"
+  done
+fi
 
-    # Copy each skill directory
-    for skill_src in "$src_dir"/*; do
-      if [ -d "$skill_src" ]; then
-        skill_name=$(basename "$skill_src")
-        copy_item "$skill_src" "$dest_dir/$skill_name" "skills/$skill_category/$skill_name"
-      elif [ -f "$skill_src" ]; then
-        skill_name=$(basename "$skill_src")
-        copy_item "$skill_src" "$dest_dir/$skill_name" "skills/$skill_category/$skill_name"
-      fi
-    done
-  fi
-done
+# Sync config files (if present).
+log_info "Syncing config..."
+echo ""
+src_dir="$DEV_PROCESS_DIR/config"
+if [ -d "$src_dir" ]; then
+  for cfg in "$src_dir"/*; do
+    [ -f "$cfg" ] || continue
+    name=$(basename "$cfg")
+    copy_item "$cfg" "$CLAUDE_DIR/config/$name" "config/$name"
+  done
+fi
+
+# Sync agents (if present).
+log_info "Syncing agents..."
+echo ""
+src_dir="$DEV_PROCESS_DIR/agents"
+if [ -d "$src_dir" ]; then
+  for agent in "$src_dir"/*.md; do
+    [ -f "$agent" ] || continue
+    name=$(basename "$agent")
+    copy_item "$agent" "$CLAUDE_DIR/agents/$name" "agents/$name"
+  done
+fi
 
 # Sync teammates
 log_info "Syncing teammates..."

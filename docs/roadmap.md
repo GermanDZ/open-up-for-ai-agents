@@ -1,6 +1,15 @@
 # Roadmap
 
 
+### Maintenance (standalone fixes)
+
+| ID | Title | Status | Priority | Depends on |
+|---|---|---|---|---|
+| [T-022](changes/T-022/plan.md) | Fix template→.claude sync (flat skills + rubric/hook coverage) + auto-commit log tail at stop | completed (2026-06-12) | high | — |
+
+**Context**: Surfaced 2026-06-12 while fixing OpenUP skill discovery — the live `.claude/skills/` had drifted into nested grouping folders that broke slash-command discovery. Root cause: `scripts/sync-templates-to-claude.sh` expected a nested template layout (templates are flat), copied zero skills, and never synced rubrics/hooks — letting live hooks drift ahead of the shipped templates. T-022 makes the within-repo sync produce correct, complete, flat files and stops `agent-runs.jsonl` dangling uncommitted at session end.
+
+
 <!-- plan-hook: 2026-06-12 -->
 ### Planned: Clarity, Self-Briefing, and the Sequential Continue-Loop
 
