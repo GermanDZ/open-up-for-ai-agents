@@ -50,7 +50,7 @@ After this skill completes, ALL of these must be true:
       `docs-eng-process/templates/task-spec.md`.
 - [ ] Front-matter is fully populated (`id`, `title`, `status`, `priority`, `estimate`).
 - [ ] Status is `ready` (not `proposed`) — the rubric grades to all-✅.
-- [ ] All eight rubric criteria in `.claude/rubrics/task-spec-rubric.md` are ✅.
+- [ ] All ten rubric criteria in `.claude/rubrics/task-spec-rubric.md` are ✅.
 - [ ] `docs/roadmap.md` references the new task with a status entry.
 
 ## Process
@@ -96,13 +96,21 @@ explicit pass, not invented doubt.
 Brief one analyst-role agent and one architect-role agent in compact form (max
 6 bullets each). Inputs: roadmap line, plan section, use case excerpt.
 
-- **Analyst** drafts: Story (INVEST), Analysis Context, Requirements, Entities.
+- **Analyst** drafts: Story (INVEST), Analysis Context, Requirements,
+  **Behavior Delta**, Entities.
 - **Architect** drafts: Approach (3–5 lines), Structure (Add/Modify/Do-not-touch),
   Safeguards (invariants, no-go zones, token budgets).
 
 Both write directly to the task-spec file under their respective sections. They
 do NOT inline rules from `conventions.md` or the architecture notebook —
 references only.
+
+For **Behavior Delta**, the analyst groups every change to *existing* Ring-1 product
+behavior under Added / Modified / Removed, citing the Ring-1 artifact + section on each
+Modified/Removed entry (`docs/product/use-cases/UC-3.md §main-flow`); a greenfield task
+renders `n/a — all Added`. This list is what `/openup-sync-spec` consumes to know exactly
+which Ring-1 artifacts a behavior change must back-propagate to — so a missing or vague
+citation is a real gap, not a formality.
 
 ### 4. Round 2 — Developer
 
@@ -119,7 +127,7 @@ Brief one developer-role agent with the partially-filled task spec.
 ### 5. Rubric Grading
 
 Run `/openup-assess-completeness artifact: task-spec` (or apply
-`.claude/rubrics/task-spec-rubric.md` inline). Grade each of 9 criteria.
+`.claude/rubrics/task-spec-rubric.md` inline). Grade each of 10 criteria.
 
 - All ✅ → set `status: ready` in front-matter.
 - Any ❌ → keep `status: proposed`, list gaps for revision, loop back to the

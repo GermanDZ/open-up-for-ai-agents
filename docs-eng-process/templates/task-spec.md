@@ -43,6 +43,25 @@ Numbered, testable assertions. Each one should be checkable post-implementation.
 1. <requirement>
 2. <requirement>
 
+## Behavior Delta
+
+How this task changes **existing product behavior** (Ring 1: `docs/product/`). Group every
+behavioural change under **Added** / **Modified** / **Removed**. Each **Modified** or
+**Removed** entry must name the Ring-1 artifact **and section** it changes, so a reviewer can
+catch a misread of current behavior and `/openup-sync-spec` gets an exact update list.
+
+A greenfield task with no pre-existing behavior renders the whole section as
+`n/a — all Added` (optionally with the Added list below it).
+
+**Added** — behavior that did not exist before (no prior Ring-1 artifact):
+- <new behavior>
+
+**Modified** — behavior that changes; cite the Ring-1 artifact + section:
+- <behavior> — `docs/product/use-cases/UC-3.md §main-flow`
+
+**Removed** — behavior that no longer holds; cite the Ring-1 artifact + section:
+- <behavior> — `docs/product/use-cases/UC-3.md §alt-flow-2`
+
 ## Entities
 
 Domain concepts, files, and types the task touches. Not exhaustive — load-bearing only.

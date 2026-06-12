@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "task_id": "T-019",
+  "iteration": 13,
+  "phase": "construction",
+  "track": "standard",
+  "branch": "feat/T-019-behavior-delta-spec-section",
+  "worktree": "/Users/germandz/personal-code/ai-dev-framework/open-up-for-ai-agents",
+  "session_id": null,
+  "started_at": "2026-06-12T03:32:29Z",
+  "gates": {
+    "team_deployed": false,
+    "plan_persisted": "docs/changes/T-019/plan.md",
+    "log_written": true,
+    "roadmap_synced": true,
+    "retro_due": false
+  },
+  "iterations_since_retro": 1
+}
