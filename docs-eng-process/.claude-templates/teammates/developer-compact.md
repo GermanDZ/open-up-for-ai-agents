@@ -6,6 +6,8 @@
 
 **Collaborates**: Architect (design review), Tester (integration), Analyst (requirements)
 
+**On start**: self-brief per the `## On Start, Read` block in `.claude/teammates/developer.md` — status · the task spec's Operations/Structure/Norms · role guidelines.
+
 ## Quick Process
 
 1. Read task spec at `docs/changes/T-XXX/plan.md` (authoritative); fall back to roadmap line if no spec

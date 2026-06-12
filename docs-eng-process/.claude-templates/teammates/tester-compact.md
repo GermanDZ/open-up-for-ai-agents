@@ -6,6 +6,8 @@
 
 **Collaborates**: Developer (unit tests), Analyst (acceptance criteria), PM (quality goals)
 
+**On start**: self-brief per the `## On Start, Read` block in `.claude/teammates/tester.md` — status · the task spec's Requirements/Verification · role guidelines.
+
 ## Quick Process
 
 1. Review requirements/acceptance criteria
