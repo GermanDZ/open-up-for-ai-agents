@@ -1,6 +1,6 @@
 # Modern Product Practice Pack
 
-**Status**: `in-progress` (2026-06-12 — T-024…T-026 delivered; T-027…T-029 pending)
+**Status**: `in-progress` (2026-06-12 — T-024…T-027 delivered; T-028, T-029 pending)
 **Created**: 2026-06-12
 **Priority**: high
 **Goal**: Layer modern product-delivery practices on top of OpenUP — a product-manager role that influences the mechanical project manager, a falsifiable success measure per feature, feature-flagged rollouts, multi-environment deployment config, and a product-manager challenge pass in `/openup-explore`.
@@ -231,6 +231,18 @@ promotion checklist per hop and beta-test objectives land on `beta`. With no
 `environments:` key, confirm unchanged single-hop behavior (additive layer).
 **Depends on**: T-026 (Rollout section is the consumer in specs); transition
 side can land independently.
+
+> **Delivered 2026-06-12.** `openup-transition` gains step 0 (Load the
+> Environment Chain): walks the configured ordered `environments:` hop by hop
+> with one promotion checklist per hop, maps OpenUP's beta-test objective onto
+> the pre-production entries, and `check-status` reports which environment the
+> release sits in; absent key → unchanged single-hop default. `openup-init`
+> **appends** a commented `environments:` starter after copying the example
+> config (the OpenUP-layer template stays read-only per the guardrail).
+> `environments:` documented as the third top-level key in
+> `docs-eng-process/project-config.md` (guide doc — the mechanism's single
+> source). Spec-side consumption (Rollout default states per environment)
+> already landed in T-026.
 
 ### T-028 (deltas 1+2 closing the loop) — Measure read-back → re-prioritization `HIGH / LOW`
 

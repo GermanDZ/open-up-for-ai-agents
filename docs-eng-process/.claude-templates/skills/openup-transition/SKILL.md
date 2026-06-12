@@ -63,6 +63,29 @@ After using this skill, verify:
 
 ## Process
 
+### 0. Load the Environment Chain (project config)
+
+If `docs/project-config.yaml` defines an ordered `environments:` list (see
+`docs-eng-process/project-config.md`), Transition walks that chain **hop by
+hop** instead of a single hop to production:
+
+- Each entry has a `name` and (except the last) a `promotion:` criterion — a
+  free-text, checkable statement of what must be true before the release moves
+  to the next environment.
+- Build **one promotion checklist per hop** into the deployment checklist
+  (step 2 `initiate`): the hop's `promotion:` criterion + the relevant
+  completion criteria above.
+- OpenUP's Transition beta-test objective ("beta test to validate that user
+  expectations are met") maps onto the configured **pre-production**
+  environment(s) — e.g. a `beta` entry — rather than being an unanchored
+  activity. Per-environment flag default states come from each task's
+  `## Rollout` section.
+- `check-status` reports **which environment the release currently sits in**
+  and which promotion criteria block the next hop.
+
+If the key is absent, skip this step — single-hop deployment to production,
+unchanged framework default.
+
 ### 1. Read Project Status
 
 Read `docs/project-status.md` to:
@@ -75,7 +98,8 @@ Read `docs/project-status.md` to:
 **`initiate`**: Start Transition phase
 - Update `docs/project-status.md` to set `phase: transition`
 - Review test results from construction
-- Create deployment checklist
+- Create deployment checklist — one promotion checklist **per hop** of the
+  `environments:` chain when configured (step 0), single-hop otherwise
 - Update `docs/roadmap.md` with transition tasks
 
 **`check-status`**: Review progress
