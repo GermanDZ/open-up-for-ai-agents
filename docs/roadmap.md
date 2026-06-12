@@ -12,6 +12,29 @@
 
 
 <!-- plan-hook: 2026-06-12 -->
+### Planned: Modern Product Practice Pack
+
+- **Status**: `planned`
+- **Plan**: [plans/2026-06-12-modern-product-practice-pack.md](plans/2026-06-12-modern-product-practice-pack.md)
+- **Exploration**: [explorations/2026-06-12-modern-product-practices-on-openup.md](explorations/2026-06-12-modern-product-practices-on-openup.md)
+- **Created**: 2026-06-12
+- **Priority**: high
+- **Goal**: Layer modern product practices on top of OpenUP — product-manager role influencing the mechanical project manager, one falsifiable success measure per feature, flag-controlled rollouts, multi-environment deployment config, and a product-manager challenge pass in `/openup-explore`.
+- **Notes**: Hard guardrail: OpenUP artifacts (`openup-knowledge-base/`, `docs-eng-process/templates/`) are read-only; all deltas land in `docs-eng-process/.claude-templates/` (skills, teammates, teams, rubrics) per owner decision 2026-06-12. KB anchors: Product Owner pattern, metrics concept, Develop Backout Plan, Transition beta-test objective.
+
+**Tasks**
+
+| ID | Title | Status | Priority | Depends on |
+|---|---|---|---|---|
+| T-024 | `product-manager` teammate: value authority over a mechanical project manager (roadmap value rationale, board consumes order as input) | pending | high | — |
+| T-025 | Per-feature success measure: one falsifiable expectation (impact/engagement/value prompts) via create-task-spec + rubric criterion 12 | pending | high | — |
+| T-026 | Rollout & feature-flag strategy: `## Rollout` authoring step, rubric criterion 13, flag-removal task auto-enqueued at complete-task | pending | medium | — |
+| T-027 | `environments:` ordered chain in project-config consumed by `/openup-transition` (per-hop promotion checklists; staging→beta→production as example) | pending | medium | T-026 |
+| T-028 | Measure read-back → re-prioritization loop in `/openup-retrospective` + product-manager duty | pending | high | T-024, T-025 |
+| T-029 | Product-manager challenge pass in `/openup-explore` (role hat, pushback/complement/refine, vetoable) | pending | medium | T-024 |
+
+
+<!-- plan-hook: 2026-06-12 -->
 ### Completed: Clarity, Self-Briefing, and the Sequential Continue-Loop
 
 - **Status**: `completed` (2026-06-12 — all of T-015…T-021 delivered)
