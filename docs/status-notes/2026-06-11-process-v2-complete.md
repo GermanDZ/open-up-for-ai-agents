@@ -1,0 +1,1 @@
+- **Process v2 complete** (2026-06-10 to 2026-06-11): All readiness gates, graded tracks, worktree-per-task, sync-spec skill, retro cadence operational. Next: promote OpenSpec ideas plan or backfill SPDD out-of-band work.
