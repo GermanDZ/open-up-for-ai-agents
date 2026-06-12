@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "task_id": "T-022",
+  "iteration": 14,
+  "phase": "construction",
+  "track": "standard",
+  "branch": "fix/T-022-sync-flat-layout-log-tail",
+  "worktree": "/Users/germandz/personal-code/ai-dev-framework/open-up-for-ai-agents",
+  "session_id": null,
+  "started_at": "2026-06-12T03:49:30Z",
+  "gates": {
+    "team_deployed": false,
+    "plan_persisted": "docs/changes/T-022/plan.md",
+    "log_written": true,
+    "roadmap_synced": true,
+    "retro_due": false
+  },
+  "iterations_since_retro": 2
+}
