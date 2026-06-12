@@ -1,8 +1,8 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 15
-**Iteration Goal**: T-020 + T-021 — spec self-sufficiency: scenario-per-requirement with deterministic validation, and implementation-vs-spec verify at task completion
+**Iteration**: 16
+**Iteration Goal**: T-018 — `docs/project-config.yaml` context/rules injection into the artifact create skills (closes the Clarity/Self-Briefing/Continue-Loop plan)
 **Status**: completed
 **Current Task**: None
 **Iteration Started**: 2026-06-12
@@ -10,6 +10,8 @@
 **Updated By**: openup-complete-task
 
 ## Notes
+
+- **Iteration 16** (2026-06-12): T-018 project-config injection — the surviving 2026-05-13 OpenSpec item #2, and the last open thread of the Clarity/Self-Briefing/Continue-Loop plan (now `completed`). Added a project-owned `docs/project-config.yaml` layer: a `context:` block + a `rules:` map keyed by artifact type (the `/openup-create-<type>` suffix), injected as `<project-context>`/`<project-rules>` into every artifact create prompt. Single-sourced the mechanism in `docs-eng-process/project-config.md` (location, schema, keys, wrappers, precedence, consuming skills) + a starter `templates/project-config.example.yaml`; each of the seven *spec* artifact skills (vision, use-case, architecture-notebook, iteration-plan, task-spec, test-plan, risk-list) gained a uniform absence-safe "Load Project Config" step naming its own key; `/openup-init` emits a starter; `CLAUDE.md` documents the precedence `framework rubric → project rules → task-spec safeguards` (additive — a project rule may add a criterion, never waive a framework one or a safeguard). No rubric edits, no YAML schema (both out of scope per the source plan). Solo, standard track, no team. T-018 spec self-graded 11/11; scenario validator exit 0.
 
 - **Iteration 15** (2026-06-12): T-020 + T-021 (paired, standard track, solo, no team) — the spec self-sufficiency + verify chain from the Clarity plan. **T-020**: every `## Requirements` entry now carries ≥1 `Given / When / Then` scenario (bold markers), validated deterministically by a new stdlib-only `scripts/openup-spec-scenarios.py check <plan>` (exit 0/1/2, `quick`-exempt, imports `openup-claims.py` for shared `parse_frontmatter`/track) with 11 hermetic tests; added rubric criterion 11 (Scenario Coverage), wired authoring into `/openup-create-task-spec` and enforcement into `/openup-assess-completeness`. **T-021**: added a BLOCKING `### 1a. Verify Implementation Against Spec` step to `/openup-complete-task` that grades each requirement (and its scenarios, if present) ✅/❌ against the actual `git diff` before commit — any ❌ blocks "done" and routes to finish-the-work or fix-spec-first; the grade persists to the change folder's `design.md`. Both specs dog-food the scenario convention (validator exits 0 on each; the scenario-less archived T-019 is the negative control, exit 1). `.claude/` ↔ `.claude-templates/` parity green (61 files). Closes the Clarity plan except independent T-018.
 

@@ -14,7 +14,7 @@
 <!-- plan-hook: 2026-06-12 -->
 ### Planned: Clarity, Self-Briefing, and the Sequential Continue-Loop
 
-- **Status**: `planned`
+- **Status**: `completed` (2026-06-12 — all of T-015…T-021 delivered)
 - **Plan**: [plans/2026-06-12-clarity-self-briefing-continue-loop.md](plans/2026-06-12-clarity-self-briefing-continue-loop.md)
 - **Exploration**: [explorations/2026-06-12-openspec-clarity-waste.md](explorations/2026-06-12-openspec-clarity-waste.md)
 - **Created**: 2026-06-12
@@ -29,12 +29,12 @@
 | T-015 | Mandatory ambiguity gate in spec authoring (assumptions made visible/vetoable) | completed (2026-06-12) | high | — |
 | T-016 | Self-briefing roles: per-role cold-start reading lists + pointer-only PM delegation | completed (2026-06-12) | high | T-015 |
 | T-017 | `/openup-next` sequential continue-loop + derived `.openup/board.json` + Operations checkboxes | completed (2026-06-12) | high | T-015, T-016 |
-| T-018 | `docs/project-config.yaml` context/rules injection (from 2026-05-13 #2) | proposed | medium | — |
+| [T-018](changes/archive/T-018/plan.md) | `docs/project-config.yaml` context/rules injection (from 2026-05-13 #2) | completed (2026-06-12) | medium | — |
 | [T-019](changes/T-019/plan.md) | Behavior Delta section in the task spec (Added/Modified/Removed vs Ring 1) | completed (2026-06-12) | high | T-007 |
 | [T-020](changes/archive/T-020/plan.md) | Scenario-per-requirement (Given/When/Then) + deterministic validation | completed (2026-06-12) | high | T-019 |
 | [T-021](changes/archive/T-021/plan.md) | Implementation-vs-spec verify step in `/openup-complete-task` | completed (2026-06-12) | medium | T-020 |
 
-**Next step**: T-015 ✅, T-016 ✅, T-017 ✅, T-019 ✅, T-020 ✅, T-021 ✅ done — the spec-self-sufficiency + verify chain has landed: every requirement now carries a Given/When/Then scenario validated by `scripts/openup-spec-scenarios.py` (rubric criterion 11), and `/openup-complete-task` grades each requirement against the diff before "done". Only remaining open thread in this plan: **T-018** (D, `docs/project-config.yaml` context/rules injection) — independent, medium, startable anytime.
+**Next step**: T-015 ✅, T-016 ✅, T-017 ✅, T-018 ✅, T-019 ✅, T-020 ✅, T-021 ✅ done — **the Clarity, Self-Briefing, and Continue-Loop plan is fully delivered.** T-018 added the project-config layer: a project-owned `docs/project-config.yaml` (`context:` + per-artifact `rules:`) injected as `<project-context>`/`<project-rules>` into every `/openup-create-*` prompt, precedence framework rubric → project rules → task-spec safeguards, mechanism in `docs-eng-process/project-config.md`. No open threads remain in this plan.
 
 
 <!-- plan-hook: 2026-06-10 -->

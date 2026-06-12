@@ -1,0 +1,33 @@
+# docs/project-config.yaml — project-owned context + rules, injected into every
+# /openup-create-* artifact prompt. Copy this file to docs/project-config.yaml and
+# edit it for your project. It is OPTIONAL: if the file is absent, the framework
+# defaults apply unchanged.
+#
+# Full mechanism + precedence: docs-eng-process/project-config.md
+#
+# Two top-level keys:
+#   context: project-level facts the framework can't infer. Injected verbatim as
+#            <project-context> into every create-* prompt.
+#   rules:   per-artifact criteria, ADDITIVE to the framework rubric (they may add
+#            a criterion, never waive one). Keyed by artifact type = the
+#            /openup-create-<type> skill suffix. Injected as <project-rules> into
+#            that artifact's prompt only.
+
+context: |
+  Tech stack: <e.g. TypeScript, React, Node.js, Postgres>
+  Domain: <e.g. B2B payments — PCI-DSS in scope>
+  Key stakeholders: <names/roles the specs should reference by name>
+
+rules:
+  vision:
+    - <e.g. State the single business metric this vision is meant to move>
+  use-case:
+    - <e.g. Reference a named stakeholder, never the generic "the user">
+  architecture-notebook:
+    - <e.g. Record the data-residency decision for any new datastore>
+  iteration-plan: []
+  task-spec:
+    - <e.g. Any auth-touching task must cite the compliance control it affects>
+  test-plan:
+    - <e.g. Include at least one negative / abuse-case test per feature>
+  risk-list: []
