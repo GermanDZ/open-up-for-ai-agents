@@ -20,11 +20,11 @@
 | T-016 | Self-briefing roles: per-role cold-start reading lists + pointer-only PM delegation | completed (2026-06-12) | high | T-015 |
 | T-017 | `/openup-next` sequential continue-loop + derived `.openup/board.json` + Operations checkboxes | completed (2026-06-12) | high | T-015, T-016 |
 | T-018 | `docs/project-config.yaml` context/rules injection (from 2026-05-13 #2) | proposed | medium | — |
-| T-019 | Behavior Delta section in the task spec (Added/Modified/Removed vs Ring 1) | proposed | high | T-007 |
+| [T-019](changes/T-019/plan.md) | Behavior Delta section in the task spec (Added/Modified/Removed vs Ring 1) | completed (2026-06-12) | high | T-007 |
 | T-020 | Scenario-per-requirement (Given/When/Then) + deterministic validation | proposed | high | T-019 |
 | T-021 | Implementation-vs-spec verify step in `/openup-complete-task` | proposed | medium | T-020 |
 
-**Next step**: T-015 ✅, T-016 ✅, T-017 ✅ done — the headline clarity → self-brief → continue-loop path is complete (`scripts/openup-board.py` + `/openup-next` + checkbox Operations). Remaining: **T-018** (D, `project-config.yaml`) is independent and startable anytime; the **T-019 → T-020 → T-021** spec-self-sufficiency + verify chain is the other open thread (T-019 unblocked via done T-007).
+**Next step**: T-015 ✅, T-016 ✅, T-017 ✅, T-019 ✅ done — the Behavior Delta section now ships in the task-spec template + authoring skill + rubric criterion 10. Remaining open threads: **T-018** (D, `project-config.yaml`) is independent and startable anytime; **T-020 → T-021** spec-self-sufficiency + verify chain (T-020 now unblocked); independent **T-018**.
 
 
 <!-- plan-hook: 2026-06-10 -->

@@ -75,6 +75,17 @@ Requirements depend on an unstated judgement call — no assumption named, no
 question raised — is a gap. "No open questions" is acceptable only when the
 request is genuinely unambiguous.
 
+## 10. Behavior Delta Completeness
+
+**Satisfied when:** The Behavior Delta section accounts for how the task changes
+*existing* Ring-1 product behavior, grouped under Added / Modified / Removed. Every
+**Modified** and **Removed** entry cites the Ring-1 artifact **and section** it changes
+(e.g. `docs/product/use-cases/UC-3.md §main-flow`) — a bare behavior description with no
+citation is a gap, because `/openup-sync-spec` relies on that citation to locate the
+artifact to update. A genuinely greenfield task is explicitly marked `n/a — all Added`
+rather than left blank. Listing a Modified/Removed behavior whose cited artifact does not
+exist, or omitting a behavior the Structure/Requirements clearly change, is a gap.
+
 ---
 
 ## Grading Instructions
