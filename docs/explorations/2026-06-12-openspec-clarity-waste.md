@@ -186,6 +186,79 @@ C and F are mutually reinforcing and both cheap: C makes specs complete
 enough to brief from; F removes the briefing layer that was compensating.
 Revised order: **C → F → D → A → B → E.**
 
+## 2026-06-12 (later still) — Principle: sequential execution, repo-persisted handover
+
+Second user-stated principle: **team-based work produces noisy handovers and
+parallel agents are not actually wanted.** Preference: sequential execution
+with clean handovers based on information persisted in the repo. The ideal
+operating mode is a loop whose body is one simple instruction — *"read the
+next task and execute"* — with no per-cycle human authoring.
+
+This is OpenSpec's `/opsx:continue` idea, which the 2026-05-13 plan noted
+("deterministically picks the next READY node") but adopted only the *state*
+half of (the readiness DAG), not the *executor* half.
+
+### What this changes in the framework's posture
+
+- **Teams demote from default to opt-in.** Today `CLAUDE.openup.md` says
+  teams are "active by default" and `/openup-start-iteration` deploys one as
+  mandatory step 3. Under this principle the default is one agent assuming
+  roles *sequentially* (analyst hat → developer hat → tester hat), with the
+  role transition recorded in repo artifacts, not in inter-agent messages.
+  Teams remain available for `full`-track work that genuinely needs
+  independent review — opt-in, not ambient.
+- **Handover channel = the repo, exclusively.** Rule: *no information needed
+  to continue the work may live only in a conversation.* The Ring 2 change
+  folder (`plan.md`, `design.md`, `test-notes.md`), `.openup/state.json`,
+  the run log, and `/openup-create-handoff` output are the handover. Teammate
+  message traffic is at most a notification that the repo changed.
+- **T-009's parallelism machinery is re-scoped, not removed.** Worktree-per-
+  task + lease claims + collision pre-flight were built for parallel agents.
+  Sequential-by-default makes them safety rails (a stale lease from a crashed
+  session, an accidental second session) rather than a throughput feature.
+  No code change needed; the *docs framing* changes.
+
+### What already exists for the loop (the gap is composition)
+
+| Loop step | Existing piece |
+|---|---|
+| "what's next?" | `/openup-readiness` — READY/BLOCKED/collision report |
+| "brief myself" | Option F cold-start lists + Ring 1 + change folder |
+| "execute under right ceremony" | graded tracks (T-010) + track skills |
+| "persist the handover" | change folder + `/openup-log-run` + `/openup-create-handoff` + state.json |
+| "mark done, archive" | `/openup-complete-task` + archive flow |
+| **compose the above** | **missing** |
+
+### Option G — `/openup-next`: sequential continue-loop entry point (HIGH value / MED effort)
+
+One skill that makes "read the next task and execute" literally sufficient:
+
+1. Run readiness; pick the single best READY task (priority, then DAG depth;
+   if nothing is READY, print why and stop cleanly — a no-op cycle is a valid
+   result).
+2. Self-brief per Option F (role implied by the task's next ready artifact:
+   spec missing → analyst hat; spec ready → developer hat; impl done →
+   tester hat).
+3. Execute under the task's track ceremony (quick/standard/full).
+4. Persist: spec deltas, design.md decisions, run log, state.json; finish
+   via `/openup-complete-task` or write a `/openup-create-handoff` brief if
+   stopping mid-task (the *only* two legal exits).
+5. End the session. The outer loop (Claude Code `/loop`, cron, or a human
+   re-invoking) provides repetition; the skill owns exactly one cycle.
+
+Pro: collapses the PM-orchestration overhead to zero for the common case;
+makes progress resumable from any cold session; the noisy-handover problem
+disappears because there is no *receiver* mid-task — the next cycle reads
+the repo. Con: one-cycle-one-task assumes specs are executable cold —
+sequence after C and F; and `CLAUDE.openup.md`'s team-by-default language
+must be revised in the same change or the skill contradicts the guidelines.
+
+### Effect on sequencing (revised again)
+
+**C → F → G → D → A → B → E.** C makes specs unambiguous, F makes roles
+self-briefing, G composes them into the loop; D/A/B deepen spec
+self-sufficiency; E closes the verify gap at task completion.
+
 ## Open Questions
 
 - Should Option B's scenario requirement apply to `standard` track or only
@@ -198,9 +271,15 @@ Revised order: **C → F → D → A → B → E.**
   before scoping.
 - Option F: do compact teammate variants (`*-compact.md`) get the same
   cold-start block, or a one-line pointer to the full role file's list?
+- Option G: how does role-hat sequencing interact with the mandatory
+  "deploy team as step 3" gate in `/openup-start-iteration` — does the gate
+  become track-conditional (full only)?
+- Option G: what does state.json record between hats within one cycle, so a
+  crash mid-cycle resumes at the right hat?
 
 ## Where this goes next
 
-→ iteration — promote to a roadmap entry "Clarity & self-briefing: reduce
-ambiguity waste" with six candidate tasks (C, F, D, A, B, E in that order);
-C and F are each ~1 session and can start immediately.
+→ iteration — promote to a roadmap entry "Clarity, self-briefing, and the
+sequential continue-loop" with seven candidate tasks (C, F, G, D, A, B, E in
+that order); C and F are each ~1 session and unblock G, which is the
+headline deliverable ("read the next task and execute" becomes sufficient).
