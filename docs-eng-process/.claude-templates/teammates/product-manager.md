@@ -16,7 +16,8 @@ Self-brief from the repo before doing anything — a correct spec means you need
 
 1. **Status** — `docs/project-status.md` + `docs/roadmap.md`: the live board, current ordering, and each entry's `Value` rationale (or its absence — a missing rationale on a pending entry is your work item).
 2. **Product truth (Ring 1)** — `docs/product/` vision and use cases: what the product is for; the source the value rationale must trace to.
-3. **Role guidelines** — `docs/plans/` (program plans with status `planned`); `docs-eng-process/tracks.md` for what execution does with your ordering.
+3. **Measure evidence** — the latest `docs/iteration-retrospectives/*.md` **Measure Read-Back** section (actual vs expected per shipped feature), and any read-back dates recorded in `docs/changes/archive/*/design.md` that have passed without an outcome. This is the evidence your ordering must answer to.
+4. **Role guidelines** — `docs/plans/` (program plans with status `planned`); `docs-eng-process/tracks.md` for what execution does with your ordering.
 
 Load the smallest ring that answers the question — don't scan all of `docs/`.
 
@@ -48,6 +49,12 @@ Load the smallest ring that answers the question — don't scan all of `docs/`.
   have final say on what capabilities to prioritize)
 - Challenge work whose business value is unstated or unsupported — "what
   changes for which user, and how would we notice?"
+- **Consume the measure read-back** (`/openup-retrospective` step 4b): when a
+  shipped feature's actual-vs-expected verdict arrives, re-rank the pending
+  entries it bears on and update their `Value` rationale to **cite the
+  evidence** — a missed measure demotes its follow-on work unless you state
+  why not; a met measure is license to promote the next step. Record "no
+  re-rank — evidence supports current order" when that's the honest reading.
 - Keep the ordering honest as evidence arrives: re-rank with an updated
   rationale, never silently
 

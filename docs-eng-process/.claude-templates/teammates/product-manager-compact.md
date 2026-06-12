@@ -17,9 +17,10 @@
 ## Quick Process
 
 1. Read `docs/roadmap.md` ordering + `Value` rationales
-2. Re-rank pending entries by value; update rationales on anything moved
-3. Challenge entries with unstated value ("what changes for which user?")
-4. Hand the ordering to execution; resolve value questions routed to you
+2. Read the latest retrospective's **Measure Read-Back** (actual vs expected per shipped feature)
+3. Re-rank pending entries by value — citing read-back evidence where it exists; update rationales on anything moved
+4. Challenge entries with unstated value ("what changes for which user?")
+5. Hand the ordering to execution; resolve value questions routed to you
 
 ## When to Involve Others
 

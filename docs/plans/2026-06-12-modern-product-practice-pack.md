@@ -1,6 +1,6 @@
 # Modern Product Practice Pack
 
-**Status**: `in-progress` (2026-06-12 — T-024…T-027 delivered; T-028, T-029 pending)
+**Status**: `in-progress` (2026-06-12 — T-024…T-028 delivered; T-029 pending)
 **Created**: 2026-06-12
 **Priority**: high
 **Goal**: Layer modern product-delivery practices on top of OpenUP — a product-manager role that influences the mechanical project manager, a falsifiable success measure per feature, feature-flagged rollouts, multi-environment deployment config, and a product-manager challenge pass in `/openup-explore`.
@@ -261,6 +261,18 @@ completion record so retro can find it).
 `/openup-retrospective`; confirm the actual-vs-expected entry appears and the
 product-manager pass updates the roadmap value rationale citing it.
 **Depends on**: T-024, T-025.
+
+> **Delivered 2026-06-12.** `openup-retrospective` gains step 4b (Measure
+> Read-Back): scans `docs/changes/archive/*/design.md` for the grades +
+> read-back dates `/openup-complete-task` step 1b records (T-025), reads the
+> named instrumentation for entries whose date passed, writes
+> expectation/actual/verdict into a new **Measure Read-Back** retro section,
+> and hands it to the product-manager role for the re-rank (evidence-citing
+> `Value` updates; "no re-rank" recorded when honest). Read-backs due before
+> the next retro become owned action items. Product-manager role (full +
+> compact) gains the measure-evidence reading duty in On Start, Read and the
+> consume-read-back responsibility. Complete-task side needed no change —
+> T-025 already persists the date.
 
 ### T-029 (delta 5) — Product-manager challenge pass in `/openup-explore` `MED / LOW`
 

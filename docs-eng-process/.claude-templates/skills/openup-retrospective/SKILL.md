@@ -41,6 +41,32 @@ Review these sources for patterns and issues:
 - `docs/roadmap.md` - Velocity (completed vs planned), blocked items
 - Git commit messages
 
+### 4b. Measure Read-Back (success measures whose date has passed)
+
+This is the step that closes the loop between per-feature success measures
+(task-spec `## Success Measures`, rubric criterion 12) and value
+prioritization — without it, measures are write-only and the roadmap ordering
+stays opinion-based.
+
+1. Scan archived change folders (`docs/changes/archive/T-NNN/design.md`) for
+   recorded success-measure grades + read-back dates (written by
+   `/openup-complete-task` step 1b). Skip `n/a` entries.
+2. For each entry whose **read-back date has passed** and has no recorded
+   outcome yet: read the instrumentation named in the expectation (the event /
+   metric / query) and record **actual vs expected** — including "instrumentation
+   exists but nobody can produce the number" (that is a finding, not a skip).
+3. Write the results into the retrospective document's **Measure Read-Back**
+   section (see step 6): expectation, actual, verdict (met / missed / can't
+   tell), one-line interpretation.
+4. **Hand the section to the product-manager role** (`.claude/teammates/product-manager.md`):
+   it consumes these verdicts to re-rank pending roadmap entries, updating each
+   moved entry's `Value` rationale to cite the evidence ("UC-12's measure
+   missed by 80% — demoting the follow-on entries below the X work"). The
+   re-rank is the product-manager's call; the retrospective only delivers the
+   evidence.
+5. Note read-backs that come due **before** the next expected retrospective as
+   action items with owners, so they aren't silently skipped.
+
 ### 5. Collect Metrics (if `$ARGUMENTS[include_metrics] == "true"`)
 
 ```bash
@@ -63,6 +89,7 @@ Create `docs/iteration-retrospectives/iteration-{n}-retrospective.md` with secti
 - **Summary**: overall assessment, key achievements, major challenges
 - **What Went Well**: process, technical, collaboration successes
 - **What to Improve**: process issues, technical challenges, gaps
+- **Measure Read-Back**: for each success measure due (step 4b) — expectation, actual, verdict (met / missed / can't tell), interpretation; plus the product-manager's resulting re-rank decisions (entries moved + updated `Value` rationale), or "no re-rank — evidence supports current order"
 - **Action Items**: specific action, owner, due date, priority for each improvement
 - **Metrics** (if included): task completion stats, git stats
 - **Next Iteration Considerations**: carry forward, changes, risks to monitor
