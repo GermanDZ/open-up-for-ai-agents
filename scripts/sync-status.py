@@ -10,8 +10,18 @@ views agree with machine state:
   2. Regenerates the header fields of ``docs/project-status.md`` (Iteration,
      Current Task, Status, Iteration Goal, Last Updated, Phase) from state +
      roadmap so the two documents can never disagree.
+  3. Regenerates the ``## Notes`` section of ``docs/project-status.md`` from
+     the sharded note files in ``docs/status-notes/`` (T-024): one file per
+     completion, newest-first by filename. Lanes write their own note file
+     (conflict-free by construction) instead of prepending to the shared doc;
+     this script derives the view. Skipped when the directory is absent or
+     empty, so repos without sharded notes keep their hand-written section.
 
 On success, sets ``gates.roadmap_synced true`` via openup-state.py.
+
+Because every field this script writes is derived, the resolution for a merge
+conflict in either view is never a hand-merge: rebase onto the trunk and
+re-run this script.
 
 Design rules (match openup-state.py):
   * Deterministic, Python standard library only.
@@ -67,6 +77,12 @@ def project_status_path(args) -> Path:
     return REPO_ROOT / "docs" / "project-status.md"
 
 
+def notes_dir(args) -> Path:
+    if getattr(args, "notes_dir", None):
+        return Path(args.notes_dir).expanduser().resolve()
+    return REPO_ROOT / "docs" / "status-notes"
+
+
 def read_state(args):
     p = state_dir(args) / "state.json"
     if not p.exists():
@@ -88,8 +104,24 @@ def derive_status(state: dict) -> str:
 # --------------------------------------------------------------------------
 # Roadmap table editing
 # --------------------------------------------------------------------------
-def update_roadmap(text: str, task_id: str, status: str) -> tuple[str, str | None]:
+def _id_cell_matches(cell: str, task_id: str) -> bool:
+    """The ID cell may be bare (``T-024``) or a markdown link
+    (``[T-024](changes/archive/T-024/plan.md)``) — match both."""
+    cell = cell.strip()
+    if cell == task_id:
+        return True
+    if cell.startswith("[") and "](" in cell:
+        return cell[1:cell.index("](")].strip() == task_id
+    return False
+
+
+def update_roadmap(text: str, task_id: str, status: str,
+                   today: str) -> tuple[str, str | None]:
     """Flip the Status cell for ``task_id`` in the first matching table row.
+
+    A ``completed`` status is stamped ``completed (YYYY-MM-DD)`` to match the
+    roadmap's hand-written convention; the stamp is idempotent (re-running on
+    an already-stamped cell keeps its original date).
 
     Returns (new_text, title) where title is the task's Title column value
     (used to seed the project-status Iteration Goal), or None if not found.
@@ -104,10 +136,16 @@ def update_roadmap(text: str, task_id: str, status: str) -> tuple[str, str | Non
         # A table row split on '|' has a leading and trailing empty cell.
         if len(cells) < 4:
             continue
-        first = cells[1].strip()
-        if first == task_id:
+        if _id_cell_matches(cells[1], task_id):
             title = cells[2].strip() if len(cells) > 2 else None
-            cells[3] = f" {status} "
+            cell = status
+            if status == "completed":
+                current = cells[3].strip()
+                if current.startswith("completed ("):
+                    cell = current  # keep the original completion date
+                else:
+                    cell = f"completed ({today})"
+            cells[3] = f" {cell} "
             lines[i] = "|".join(cells)
             break
     return "".join(lines), title
@@ -138,6 +176,47 @@ def update_project_status(text: str, state: dict, status: str,
     return text
 
 
+# --------------------------------------------------------------------------
+# Sharded status notes -> ## Notes section (T-024)
+# --------------------------------------------------------------------------
+def assemble_notes(ndir: Path) -> str | None:
+    """Concatenate docs/status-notes/*.md newest-first (filename descending —
+    files are date-prefixed). None when the directory is absent/empty."""
+    if not ndir.is_dir():
+        return None
+    chunks = []
+    for fp in sorted(ndir.glob("*.md"), key=lambda p: p.name, reverse=True):
+        body = fp.read_text(encoding="utf-8").strip()
+        if body:
+            chunks.append(body)
+    if not chunks:
+        return None
+    return "\n\n".join(chunks) + "\n"
+
+
+def update_notes_section(text: str, notes_block: str) -> str:
+    """Replace the body of ``## Notes`` (up to the next ``## `` heading or
+    EOF) with the assembled block; append the section if it is missing."""
+    lines = text.splitlines(keepends=True)
+    start = None
+    for i, line in enumerate(lines):
+        if line.rstrip("\n").strip() == "## Notes":
+            start = i
+            break
+    if start is None:
+        if not text.endswith("\n"):
+            text += "\n"
+        return text + "\n## Notes\n\n" + notes_block
+    end = len(lines)
+    for j in range(start + 1, len(lines)):
+        if lines[j].startswith("## "):
+            end = j
+            break
+    head = "".join(lines[: start + 1])
+    tail = "".join(lines[end:])
+    return head + "\n" + notes_block + ("\n" if tail else "") + tail
+
+
 def set_gate_roadmap_synced(args) -> None:
     cmd = [sys.executable, str(STATE_CLI), "set-gate", "roadmap_synced", "true"]
     if getattr(args, "state_dir", None):
@@ -154,6 +233,9 @@ def main(argv=None) -> int:
     parser.add_argument("--roadmap", help="Override docs/roadmap.md path.")
     parser.add_argument(
         "--project-status", help="Override docs/project-status.md path."
+    )
+    parser.add_argument(
+        "--notes-dir", help="Override docs/status-notes/ path."
     )
     parser.add_argument(
         "--no-gate",
@@ -180,7 +262,7 @@ def main(argv=None) -> int:
         return EXIT_NO_DOC
 
     rm_text = rm_path.read_text(encoding="utf-8")
-    new_rm, title = update_roadmap(rm_text, task_id, status)
+    new_rm, title = update_roadmap(rm_text, task_id, status, today)
     if new_rm != rm_text:
         rm_path.write_text(new_rm, encoding="utf-8")
 
@@ -190,6 +272,9 @@ def main(argv=None) -> int:
 
     ps_text = ps_path.read_text(encoding="utf-8")
     new_ps = update_project_status(ps_text, state, status, goal, today)
+    notes_block = assemble_notes(notes_dir(args))
+    if notes_block is not None:
+        new_ps = update_notes_section(new_ps, notes_block)
     if new_ps != ps_text:
         ps_path.write_text(new_ps, encoding="utf-8")
 
