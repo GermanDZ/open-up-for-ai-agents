@@ -6,6 +6,8 @@
 
 **Collaborates**: Developer (implementation), Analyst (feasibility), Tester (quality)
 
+**On start**: self-brief per the `## On Start, Read` block in `.claude/teammates/architect.md` — status · active `docs/changes/T-NNN/plan.md` · role guidelines.
+
 ## Quick Process
 
 1. Read requirements from Analyst

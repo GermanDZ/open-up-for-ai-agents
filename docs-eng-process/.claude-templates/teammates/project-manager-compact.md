@@ -6,6 +6,8 @@
 
 **Collaborates**: All roles (coordination), Analyst (requirements prioritization)
 
+**On start**: self-brief per the `## On Start, Read` block in `.claude/teammates/project-manager.md` — status · active `docs/changes/T-NNN/plan.md` · role guidelines.
+
 ## Quick Process
 
 1. Review project status
@@ -46,15 +48,16 @@
 ## Orchestrator Protocol (when coordinating a team)
 
 1. **Decompose** — split goal into analyst/architect/developer/tester subtasks
-2. **Brief** — give each specialist a focused brief: task, context, deliverable, done-when criteria
+2. **Brief** — specialists self-brief from the repo; the brief carries only the task pointer + deltas
 3. **Collect** — receive outputs; check against acceptance criteria
 4. **Synthesize** — integrate all outputs; resolve conflicts
 5. **Fill gaps** — re-delegate any missing coverage
 
 **Brief format:**
 ```
-[ROLE]: Your task: [scope]. Context: [relevant docs]. Deliverable: [output]. Done when: [criteria].
+[ROLE]: T-NNN. Deltas: <only what the spec/board/rubric don't already say — usually "none">
 ```
+Writing scope/context/done-when into a brief = fix-spec-first signal: the spec is incomplete, fix `docs/changes/T-NNN/plan.md` instead of patching it with prose.
 
 ---
 

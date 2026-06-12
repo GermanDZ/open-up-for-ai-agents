@@ -6,6 +6,8 @@
 
 **Collaborates**: Architect (feasibility), PM (prioritization), Tester (acceptance criteria)
 
+**On start**: self-brief per the `## On Start, Read` block in `.claude/teammates/analyst.md` — status · active `docs/changes/T-NNN/plan.md` · role guidelines.
+
 ## Quick Process
 
 1. Read `docs/project-status.md` for context
