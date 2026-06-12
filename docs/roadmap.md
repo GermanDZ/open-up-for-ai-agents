@@ -5,14 +5,14 @@
 
 | ID | Title | Status | Priority | Depends on |
 |---|---|---|---|---|
-| [T-022](changes/T-022/plan.md) | Fix template→.claude sync (flat skills + rubric/hook coverage) + auto-commit log tail at stop | completed (2026-06-12) | high | — |
+| [T-022](changes/archive/T-022/plan.md) | Fix template→.claude sync (flat skills + rubric/hook coverage) + auto-commit log tail at stop | completed (2026-06-12) | high | — |
 | T-023 | `merge=union` gitattribute for `agent-runs.jsonl` (parallel-PR conflict quick fix) | completed (2026-06-12) | medium | — |
 
 **Context**: Surfaced 2026-06-12 while fixing OpenUP skill discovery — the live `.claude/skills/` had drifted into nested grouping folders that broke slash-command discovery. Root cause: `scripts/sync-templates-to-claude.sh` expected a nested template layout (templates are flat), copied zero skills, and never synced rubrics/hooks — letting live hooks drift ahead of the shipped templates. T-022 makes the within-repo sync produce correct, complete, flat files and stops `agent-runs.jsonl` dangling uncommitted at session end.
 
 
 <!-- plan-hook: 2026-06-12 -->
-### Planned: Clarity, Self-Briefing, and the Sequential Continue-Loop
+### Completed: Clarity, Self-Briefing, and the Sequential Continue-Loop
 
 - **Status**: `completed` (2026-06-12 — all of T-015…T-021 delivered)
 - **Plan**: [plans/2026-06-12-clarity-self-briefing-continue-loop.md](plans/2026-06-12-clarity-self-briefing-continue-loop.md)
@@ -30,7 +30,7 @@
 | T-016 | Self-briefing roles: per-role cold-start reading lists + pointer-only PM delegation | completed (2026-06-12) | high | T-015 |
 | T-017 | `/openup-next` sequential continue-loop + derived `.openup/board.json` + Operations checkboxes | completed (2026-06-12) | high | T-015, T-016 |
 | [T-018](changes/archive/T-018/plan.md) | `docs/project-config.yaml` context/rules injection (from 2026-05-13 #2) | completed (2026-06-12) | medium | — |
-| [T-019](changes/T-019/plan.md) | Behavior Delta section in the task spec (Added/Modified/Removed vs Ring 1) | completed (2026-06-12) | high | T-007 |
+| [T-019](changes/archive/T-019/plan.md) | Behavior Delta section in the task spec (Added/Modified/Removed vs Ring 1) | completed (2026-06-12) | high | T-007 |
 | [T-020](changes/archive/T-020/plan.md) | Scenario-per-requirement (Given/When/Then) + deterministic validation | completed (2026-06-12) | high | T-019 |
 | [T-021](changes/archive/T-021/plan.md) | Implementation-vs-spec verify step in `/openup-complete-task` | completed (2026-06-12) | medium | T-020 |
 
@@ -38,9 +38,9 @@
 
 
 <!-- plan-hook: 2026-06-10 -->
-### Planned: Process v2 — Mechanize OpenUP for the Claude Code Harness
+### Completed: Process v2 — Mechanize OpenUP for the Claude Code Harness
 
-- **Status**: `in-progress` (Wave 1 started 2026-06-10)
+- **Status**: `completed` (2026-06-11 — all of T-004…T-011 + T-002 delivered)
 - **Plan**: [plans/2026-06-10-process-v2-claude-code-harness.md](plans/2026-06-10-process-v2-claude-code-harness.md)
 - **Created**: 2026-06-10
 - **Evidence base**: Kaze webapp empirical audit (2026-06-10) + 2026 AI-agent SDLC research (AI-DLC, Spec Kit, OpenSpec, BMAD, Kiro)
@@ -63,9 +63,9 @@
 
 
 <!-- plan-hook: 2026-05-13 -->
-### Proposed: OpenSpec Ideas Worth Adopting in OpenUP
+### Completed: OpenSpec Ideas Worth Adopting in OpenUP
 
-- **Status**: `proposed` (analysis only; no tasks created yet)
+- **Status**: `completed` (2026-06-12 — all five items landed: #1/#3/#4 via Process v2, #5 via `/openup-explore`, #2 as T-018)
 - **Plan**: [plans/2026-05-13-openspec-ideas-for-openup.md](plans/2026-05-13-openspec-ideas-for-openup.md)
 - **Evaluation**: [plans/2026-05-13-openspec-evaluation.md](plans/2026-05-13-openspec-evaluation.md) (SPDD self-grading)
 - **Created**: 2026-05-13
@@ -73,9 +73,9 @@
 
 
 <!-- plan-hook: 2026-04-28 -->
-### In Progress: SPDD Ideas Worth Adopting in OpenUP
+### Completed: SPDD Ideas Worth Adopting in OpenUP
 
-- **Status**: `in-progress` (decomposed into tasks; partial implementation)
+- **Status**: `completed` (2026-06-12 — T-001/T-002/T-003 delivered; T-013/T-014 backfilled)
 - **Plan**: [plans/2026-04-28-spdd-ideas-worth-adopting-in-openup.md](plans/2026-04-28-spdd-ideas-worth-adopting-in-openup.md)
 - **Evaluation**: [plans/2026-04-28-spdd-evaluation.md](plans/2026-04-28-spdd-evaluation.md) (SPDD self-grading)
 - **Created**: 2026-04-28
@@ -85,10 +85,10 @@
 | ID | Title | Status | Priority |
 |---|---|---|---|
 | [T-001](changes/archive/T-001/plan.md) | REASONS task spec — template, skill, rubric | done | high |
-| [T-002](changes/T-002/plan.md) | `/openup-sync-spec` — refactor back-propagation | completed (2026-06-11) | medium |
+| [T-002](changes/archive/T-002/plan.md) | `/openup-sync-spec` — refactor back-propagation | completed (2026-06-11) | medium |
 | [T-003](changes/archive/T-003/plan.md) | Suitability "fit" metadata in workflow skills | done | low |
 | [T-013](changes/archive/T-013/plan.md) | Fix-spec-first rule for behavior changes (plan item #2) | done (backfilled 2026-06-12) | high |
 | [T-014](changes/archive/T-014/plan.md) | Edit artifacts through their skill, not by hand (plan item #5) | done (backfilled 2026-06-12) | low |
 
-**Next step**: pick T-003 (smallest, exercises the new format), then T-001.
-T-002 (`/openup-sync-spec`) completed 2026-06-11 — implemented when T-008's readiness DAG un-blocked it.
+**Next step**: program complete. T-001/T-003 delivered, T-013/T-014 backfilled, and
+T-002 (`/openup-sync-spec`) completed 2026-06-11 once T-008's readiness DAG un-blocked it.
