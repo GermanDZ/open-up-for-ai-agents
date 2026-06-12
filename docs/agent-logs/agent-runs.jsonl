@@ -50,3 +50,6 @@
 {"run_id": "6e34d2a4fd73427ab0b194e77e174401", "event": "commit", "task_id": null, "branch": "main", "sha": "ddb101d8acb1a6538c5ac88823dc5d2b98ae3b24", "model": null, "session_id": null, "ts": "2026-06-12T01:15:31Z"}
 {"run_id": "75158a5cdc91470caa589ac4aa816157", "event": "commit", "task_id": null, "branch": "main", "sha": "5d4968ab8256a7b3ca9f2879af352c3e020bd4be", "model": null, "session_id": null, "ts": "2026-06-12T01:21:20Z"}
 {"run_id": "bb9f5f3ea99c408ebb3d4c2c691b2005", "event": "commit", "task_id": null, "branch": "main", "sha": "68b21de2f568bedaac15a0e2073b960d5090fbdd", "model": null, "session_id": null, "ts": "2026-06-12T01:49:47Z"}
+{"run_id": "c87c9a3066f2425a8a3225e2cfed2b0b", "event": "commit", "task_id": "T-015", "branch": "feat/T-015-ambiguity-gate", "sha": "ede9b0c95f5daddb98d1a4246cc5eec8979108f1", "model": null, "session_id": null, "ts": "2026-06-12T02:00:02Z"}
+{"run_id": "e837d90edcb6495d88ea6883a5be52e8", "event": "commit", "task_id": "T-015", "branch": "feat/T-015-ambiguity-gate", "sha": "4094151f971ae5c2af4893823293b5057259f1cc", "model": null, "session_id": null, "ts": "2026-06-12T02:00:48Z"}
+{"run_id": "75f92b159af34866ba6222118e49f8fd", "event": "commit", "task_id": null, "branch": "feat/T-015-ambiguity-gate", "sha": "031cd2b511d51338d6cacd2fe42d3552b50c6dc4", "model": null, "session_id": null, "ts": "2026-06-12T02:01:08Z"}
