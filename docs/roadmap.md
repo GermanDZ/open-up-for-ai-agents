@@ -8,6 +8,13 @@
 | [T-022](changes/archive/T-022/plan.md) | Fix template→.claude sync (flat skills + rubric/hook coverage) + auto-commit log tail at stop | completed (2026-06-12) | high | — |
 | T-023 | `merge=union` gitattribute for `agent-runs.jsonl` (parallel-PR conflict quick fix) | completed (2026-06-12) | medium | — |
 | [T-024](changes/archive/T-024/plan.md) | Write-fence + derived shared views (parallel-PR conflicts in roadmap/status) | completed (2026-06-12) | high | — |
+| T-031 | Task-ID allocation race in parallel lanes: reserve IDs through the claims mechanism (or hard-rule fetch-fresh-trunk-before-allocate) in `create-task-spec` / `plan-feature` | pending | medium | — |
+
+**Value (T-031)**: parallel planning sessions — human or agent — stop colliding on
+task IDs, eliminating renumber-at-merge churn like the practice pack's T-024→T-025…T-030
+shift; closes the one parallel-lane collision surface the T-024 write-fence does not
+cover (IDs are allocated at planning time against possibly-stale local state, before
+any claim or fence runs).
 
 **Context**: Surfaced 2026-06-12 while fixing OpenUP skill discovery — the live `.claude/skills/` had drifted into nested grouping folders that broke slash-command discovery. Root cause: `scripts/sync-templates-to-claude.sh` expected a nested template layout (templates are flat), copied zero skills, and never synced rubrics/hooks — letting live hooks drift ahead of the shipped templates. T-022 makes the within-repo sync produce correct, complete, flat files and stops `agent-runs.jsonl` dangling uncommitted at session end. T-024 (seeded by [explorations/2026-06-12-multi-worktree-coordination.md](explorations/2026-06-12-multi-worktree-coordination.md)) finishes what T-023 started: the shared views (`roadmap.md` Status cells, `project-status.md` header + Notes) become script-derived (`sync-status.py`, fresh-trunk only), completion notes shard to `docs/status-notes/`, and `scripts/openup-fence.py` + `.githooks/pre-push` fence every lane's diff to its claimed surface — for agents and humans alike. Full model: [docs-eng-process/parallel-lanes.md](../docs-eng-process/parallel-lanes.md).
 
