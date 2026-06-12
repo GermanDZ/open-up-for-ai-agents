@@ -8,7 +8,7 @@ fit:
   poor: [trivial doc-only edits (overhead exceeds value), exploratory spikes]
 arguments:
   - name: task_id
-    description: Task ID (T-XXX). Auto-allocates next free ID if not provided.
+    description: Task ID (T-XXX). Reserves the next free ID via `openup-claims.py reserve-id` if not provided.
     required: false
   - name: title
     description: One-line task title. Required if task_id is new; reads from roadmap if existing.
@@ -78,10 +78,29 @@ The skill is a two-round multi-role handoff. Use the token-efficiency protocol
 (`.claude/CLAUDE.openup.md`): one orchestrator, compact handoffs, one specialist
 per round.
 
-### 1. Allocate Task ID and Read Context
+### 1. Reserve Task ID and Read Context
 
-- If `task_id` is missing, scan `docs/changes/*/plan.md` and
-  `docs/changes/archive/*/plan.md` for the highest existing ID and allocate `T-{n+1}`.
+- If `task_id` is missing, **reserve** the next free ID through the claims
+  mechanism — never scan-and-increment yourself (a local scan races with
+  parallel planning lanes and stale checkouts; that race is what forced the
+  T-024→T-025…T-030 renumber — T-031):
+
+  ```bash
+  python3 scripts/openup-claims.py reserve-id --session-id <session> --title "<title>"
+  ```
+
+  The printed `T-NNN` is yours repo-wide: the reservation lives in the shared
+  claims dir (visible to every worktree) and the allocator unions live
+  reservations with the IDs already used in change folders, `docs/roadmap.md`,
+  and `origin/main`'s roadmap.
+- If `task_id` IS provided (e.g. pre-allocated by `/openup-plan-feature`), pin
+  it with the same command plus `--task-id T-NNN` — it exits 6 if the ID is
+  already used or reserved by another session; stop and re-reserve without
+  `--task-id` in that case.
+- If planning is abandoned before the spec lands, free the ID:
+  `python3 scripts/openup-claims.py release-id --task-id T-NNN`. Once the spec
+  or roadmap row is committed the reservation is redundant (the allocator also
+  scans the repo) — releasing it then is optional tidiness, never required.
 - Read `docs/roadmap.md`, the originating plan (if `plan_ref` provided), and the
   use case(s) implicated.
 - Generate path: `docs/changes/<task_id>/plan.md`; create the `docs/changes/<task_id>/`

@@ -8,7 +8,7 @@
 | [T-022](changes/archive/T-022/plan.md) | Fix template→.claude sync (flat skills + rubric/hook coverage) + auto-commit log tail at stop | completed (2026-06-12) | high | — |
 | T-023 | `merge=union` gitattribute for `agent-runs.jsonl` (parallel-PR conflict quick fix) | completed (2026-06-12) | medium | — |
 | [T-024](changes/archive/T-024/plan.md) | Write-fence + derived shared views (parallel-PR conflicts in roadmap/status) | completed (2026-06-12) | high | — |
-| T-031 | Task-ID allocation race in parallel lanes: reserve IDs through the claims mechanism (or hard-rule fetch-fresh-trunk-before-allocate) in `create-task-spec` / `plan-feature` | pending | medium | — |
+| [T-031](changes/archive/T-031/plan.md) | Task-ID allocation race in parallel lanes: reserve IDs through the claims mechanism in `create-task-spec` / `plan-feature` | completed (2026-06-12) | medium | — |
 
 **Value (T-031)**: parallel planning sessions — human or agent — stop colliding on
 task IDs, eliminating renumber-at-merge churn like the practice pack's T-024→T-025…T-030

@@ -81,6 +81,35 @@ a shared insertion point every completing lane fought over. Now:
   descending = chronological descending). The section body between `## Notes`
   and the next `## ` heading is generated — do not edit it.
 
+## Task-ID reservation: `openup-claims.py reserve-id` (T-031)
+
+IDs are allocated at **planning** time — before any surface claim or fence
+runs — so a "scan local files for the highest ID, add 1" rule was the one
+parallel-lane collision the machinery above never saw: two planning lanes
+(or one lane on a stale checkout) both allocate `T-{n+1}` and collide at
+merge, forcing renumber churn. Reservation closes it:
+
+```bash
+python3 scripts/openup-claims.py reserve-id --session-id <s> --title "<t>"   # prints T-NNN
+python3 scripts/openup-claims.py next-id                                     # dry-run, writes nothing
+python3 scripts/openup-claims.py release-id --task-id T-NNN                  # free an abandoned ID
+python3 scripts/openup-claims.py list-ids                                    # live reservations
+```
+
+- One reservation file per ID under `<git-common-dir>/openup/claims/ids/` —
+  shared across worktrees like the surface claims, never committed.
+- The candidate is `max(used ∪ reserved) + 1`, where *used* unions change-folder
+  frontmatter ids, the full `docs/roadmap.md` text, **and**
+  `origin/main:docs/roadmap.md` when that ref exists (stale-checkout guard;
+  pure local read). Creation is atomic (exclusive hard-link); a lost race
+  advances to the next number, so concurrent reservations always get
+  distinct IDs.
+- Reservation rules mirror claims: no expiry, `release-id`/`rm` to free one.
+  A reservation whose ID has landed on trunk is redundant, not wrong — the
+  allocator's repo scan already counts it.
+- `--prefix`/`--pad` cover phase-iteration ID schemes (`C3-001` …) for
+  `/openup-plan-feature`; the default `T-`/3 serves `/openup-create-task-spec`.
+
 ## Conflict recovery recipe
 
 If a PR reports conflicts in `docs/roadmap.md` or `docs/project-status.md`:
@@ -98,8 +127,9 @@ inputs (frontmatter, state, status-notes), so the re-run is always correct.
 
 ## See Also
 
-- `scripts/openup-claims.py` — leases + collision pre-flight (T-009); the fence
-  imports its parsing and path-match logic.
+- `scripts/openup-claims.py` — leases + collision pre-flight (T-009) and
+  task-ID reservation (T-031); the fence imports its parsing and path-match
+  logic.
 - `scripts/openup-board.py` — the derived execution queue (T-017); same
   "derive, don't author" principle applied to scheduling.
 - [state-file.md](state-file.md) — `.openup/state.json` and the gate lifecycle.

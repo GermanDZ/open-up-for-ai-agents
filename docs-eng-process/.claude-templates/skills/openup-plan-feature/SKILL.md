@@ -11,7 +11,7 @@ arguments:
     description: The feature idea or requirements to plan (e.g., "Add PDF export for chat conversations")
     required: true
   - name: task_id
-    description: Override auto-detected task ID (e.g., C3-004). Auto-detected from roadmap if not provided.
+    description: Override the task ID (e.g., C3-004). Reserved via `openup-claims.py reserve-id` if not provided.
     required: false
   - name: priority
     description: Task priority — critical, high, or medium (default medium)
@@ -57,7 +57,7 @@ After using this skill, verify:
 ## Process Summary
 
 1. Read project context (status, roadmap, architecture)
-2. Auto-detect task ID from roadmap
+2. Reserve task ID through the claims mechanism
 3. Explore codebase for relevant code
 4. Ambiguity gate — classify open questions (blocking → ask, non-blocking → record)
 5. Generate iteration plan document
@@ -80,18 +80,33 @@ Record:
 - Current iteration number
 - Naming conventions for task IDs in the current phase
 
-### 2. Auto-Detect Task ID
+### 2. Reserve Task ID
 
 If `$ARGUMENTS[task_id]` is provided, use it directly.
 
-Otherwise, auto-detect by scanning `docs/roadmap.md`:
-1. Identify the current phase prefix from `docs/project-status.md` (e.g., `C` for Construction, `E` for Elaboration, `T` for Inception)
-2. Find all task IDs matching the pattern `{prefix}{iteration}-{sequence}` (e.g., `C3-001`, `C3-002`, `C3-003`)
-3. Extract the highest sequence number in the current iteration
-4. Increment by 1 to get the next ID (e.g., if highest is `C3-003`, next is `C3-004`)
-5. If no tasks exist for the current iteration, start at `001`
+Otherwise, **reserve** the next ID through the claims mechanism — do not
+scan-and-increment yourself (a local roadmap scan races with parallel planning
+lanes and stale checkouts; T-031):
 
-**Important**: Also scan the "Future / Backlog Features" section for any `T-0XX` IDs to avoid collisions.
+1. Identify the current phase prefix from `docs/project-status.md` (e.g., `C`
+   for Construction, `E` for Elaboration, `T` for Inception) and the current
+   iteration number — together they form the ID prefix (e.g., `C3-`).
+2. Reserve atomically:
+
+   ```bash
+   python3 scripts/openup-claims.py reserve-id --session-id <session> \
+       --prefix "C3-" --title "<topic>"
+   ```
+
+   The printed ID (e.g., `C3-004`) is allocated repo-wide: the reservation
+   file in the shared claims dir blocks every other lane, and the allocator
+   unions live reservations with IDs found in change folders,
+   `docs/roadmap.md` (including the "Future / Backlog Features" section), and
+   `origin/main`'s roadmap. If no tasks exist yet for the iteration, it
+   starts at `001`.
+3. If the plan is abandoned before this skill commits, free the ID with
+   `python3 scripts/openup-claims.py release-id --task-id <id>`; once the
+   roadmap entry lands, the reservation is redundant.
 
 ### 3. Explore Codebase
 
@@ -402,7 +417,7 @@ Returns a summary of:
 
 | Error | Cause | Solution |
 |-------|-------|----------|
-| Task ID collision | Auto-detected ID already exists | Provide explicit `task_id` argument |
+| `reserve-id` exits 6 | Requested ID already used or reserved by another lane | Re-run `reserve-id` without `--task-id` to get a fresh one |
 | Roadmap parse error | Unexpected roadmap format | Verify `docs/roadmap.md` follows standard format |
 | No relevant code found | Feature is entirely new | Plan will have minimal "Current State" — focus on "Proposed Design" |
 | Team spawn failed | Agent teams not enabled | Set `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` for validation |

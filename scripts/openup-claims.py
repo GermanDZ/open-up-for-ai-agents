@@ -18,6 +18,16 @@ Design rules (mirror scripts/openup-state.py):
     task is never collision-evaluated.
   * Collision uses the T-008 path-segment-prefix algorithm (T-008 design D2).
 
+Task-ID reservation (T-031) lives here too: parallel planning lanes used to
+allocate IDs by scanning local state for the highest existing ID — two lanes
+scanning concurrently (or against a stale trunk) both got ``T-{n+1}`` and
+collided at merge. ``reserve-id`` closes that race: one reservation file per
+ID under ``<claims-dir>/ids/``, created atomically (exclusive hard-link), with
+the candidate drawn from max(repo scan ∪ origin/main roadmap ∪ live
+reservations) + 1. Reservations follow claim rules: never expire, harmless
+once the ID lands on trunk (allocation also scans the repo), ``release-id``
+or ``rm`` frees an abandoned one.
+
 Usage:
   python3 scripts/openup-claims.py <subcommand> [options]
 
@@ -28,6 +38,10 @@ Subcommands:
   list        Print all live claims (JSON array).
   get         Print one task's claim (or exit 5 if absent).
   dir         Print the resolved claims directory.
+  reserve-id  Atomically reserve the next free task ID (or a requested one).
+  next-id     Print the ID reserve-id would allocate; writes nothing.
+  release-id  Delete an ID reservation (idempotent).
+  list-ids    Print all live ID reservations (JSON array).
 
 Exit codes:
   0  success / pre-flight passed
@@ -35,13 +49,15 @@ Exit codes:
   3  refused: an unmet dependency (pre-flight, deps first)
   4  refused: a touches collision with a live claim
   5  claim not found (get)
-  6  refused: task already claimed by a DIFFERENT session
-  7  bad input (e.g. cannot resolve task touches)
+  6  refused: task already claimed/reserved by a DIFFERENT session, or a
+     requested ID is already in use in the repo
+  7  bad input (e.g. cannot resolve task touches, malformed task ID)
 """
 
 import argparse
 import json
 import os
+import re
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -306,6 +322,103 @@ def write_claim_atomic(path: Path, payload: dict):
 
 
 # --------------------------------------------------------------------------
+# Task-ID reservation (T-031)
+# --------------------------------------------------------------------------
+def ids_dir(cdir: Path) -> Path:
+    """Reservations live in a subdir so ``live_claims`` (cdir/*.json) never
+    mistakes a reservation for a surface claim."""
+    return cdir / "ids"
+
+
+def _id_re(prefix: str):
+    return re.compile(re.escape(prefix) + r"(\d+)")
+
+
+def used_seqs_in_repo(root: Path, prefix: str):
+    """Every ID sequence number already used in the repo.
+
+    Sources (union — an ID seen anywhere is taken):
+      * ``docs/changes/*/plan.md`` + ``docs/changes/archive/*/plan.md``
+        frontmatter ``id`` (the canonical spec location);
+      * ``docs/roadmap.md`` full text (IDs exist there before any spec
+        folder does — maintenance rows, backlog mentions);
+      * ``origin/main:docs/roadmap.md`` when that ref exists locally
+        (stale-checkout guard: an ID merged to trunk is taken even if this
+        worktree hasn't rebased; pure local read, never fetches).
+    """
+    pat = _id_re(prefix)
+    seqs = set()
+    changes = root / "docs" / "changes"
+    if changes.exists():
+        for plan in changes.rglob("plan.md"):
+            m = pat.fullmatch(parse_frontmatter(plan).get("id") or "")
+            if m:
+                seqs.add(int(m.group(1)))
+    texts = []
+    rm = root / "docs" / "roadmap.md"
+    if rm.exists():
+        try:
+            texts.append(rm.read_text(encoding="utf-8"))
+        except OSError:
+            pass
+    trunk_view = _git(["show", "origin/main:docs/roadmap.md"], cwd=root)
+    if trunk_view:
+        texts.append(trunk_view)
+    for text in texts:
+        for m in pat.finditer(text):
+            seqs.add(int(m.group(1)))
+    return seqs
+
+
+def reserved_seqs(idir: Path, prefix: str):
+    """Sequence numbers held by live reservation files (any session's)."""
+    pat = _id_re(prefix)
+    seqs = set()
+    if not idir.exists():
+        return seqs
+    for fp in idir.glob("*.json"):
+        m = pat.fullmatch(fp.stem)
+        if m:
+            seqs.add(int(m.group(1)))
+    return seqs
+
+
+def reservation_file(task_id: str, idir: Path) -> Path:
+    return idir / f"{task_id}.json"
+
+
+def create_reservation_exclusive(path: Path, payload: dict) -> bool:
+    """Atomically create the reservation WITH its content, or fail.
+
+    Write to a tmp file, then hard-link it to the final name: the link either
+    materializes the complete file or raises FileExistsError — a concurrent
+    reader can never observe a half-written reservation, and two racing
+    writers can never both win the same ID.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.parent / f".{path.stem}.{os.getpid()}.tmp"
+    with tmp.open("w", encoding="utf-8") as fh:
+        json.dump(payload, fh, indent=2)
+        fh.write("\n")
+    try:
+        os.link(tmp, path)
+        return True
+    except FileExistsError:
+        return False
+    finally:
+        tmp.unlink(missing_ok=True)
+
+
+def next_free_seq(root: Path, idir: Path, prefix: str) -> int:
+    taken = used_seqs_in_repo(root, prefix) | reserved_seqs(idir, prefix)
+    return max(taken, default=0) + 1
+
+
+def format_id(prefix: str, seq: int, pad: int) -> str:
+    return f"{prefix}{seq:0{pad}d}"
+
+
+# --------------------------------------------------------------------------
 # Pre-flight
 # --------------------------------------------------------------------------
 def resolve_task_inputs(args, root: Path):
@@ -450,6 +563,98 @@ def cmd_get(args):
     return EXIT_OK
 
 
+def _id_root(args) -> Path:
+    return Path(args.repo_root).resolve() if args.repo_root else repo_root()
+
+
+def cmd_next_id(args):
+    root = _id_root(args)
+    idir = ids_dir(claims_dir(override=args.claims_dir))
+    seq = next_free_seq(root, idir, args.prefix)
+    print(format_id(args.prefix, seq, args.pad))
+    return EXIT_OK
+
+
+def cmd_reserve_id(args):
+    root = _id_root(args)
+    idir = ids_dir(claims_dir(override=args.claims_dir))
+
+    def payload(task_id):
+        return {
+            "task_id": task_id,
+            "session_id": args.session_id,
+            "title": args.title or "",
+            "reserved_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        }
+
+    if args.task_id:
+        # Explicit ID: validate the shape, refuse if the repo or another
+        # session already holds it; idempotent for the same session.
+        m = _id_re(args.prefix).fullmatch(args.task_id)
+        if not m:
+            sys.stderr.write(
+                f"BAD ID: {args.task_id!r} does not match prefix "
+                f"{args.prefix!r} + digits.\n"
+            )
+            return EXIT_BAD_INPUT
+        if int(m.group(1)) in used_seqs_in_repo(root, args.prefix):
+            sys.stderr.write(
+                f"REFUSED: {args.task_id} is already in use in the repo "
+                f"(changes folder, roadmap, or origin/main roadmap).\n"
+            )
+            return EXIT_OTHER_OWNER
+        fp = reservation_file(args.task_id, idir)
+        if create_reservation_exclusive(fp, payload(args.task_id)):
+            print(f"Reserved {args.task_id} -> {fp}")
+            return EXIT_OK
+        existing = read_claim(fp)
+        if existing and existing.get("session_id") == args.session_id:
+            print(f"Reserved {args.task_id} -> {fp} (already ours)")
+            return EXIT_OK
+        owner = (existing or {}).get("session_id") or "unknown-session"
+        sys.stderr.write(
+            f"REFUSED: {args.task_id} already reserved by session {owner}. "
+            f"Free it with: rm {fp}\n"
+        )
+        return EXIT_OTHER_OWNER
+
+    # Auto-allocate: candidate from the union scan, exclusive-create, and on
+    # a lost race simply advance — the loop terminates because every loss
+    # means another lane permanently holds that sequence number.
+    seq = next_free_seq(root, idir, args.prefix)
+    while True:
+        task_id = format_id(args.prefix, seq, args.pad)
+        fp = reservation_file(task_id, idir)
+        if create_reservation_exclusive(fp, payload(task_id)):
+            print(task_id)
+            return EXIT_OK
+        seq += 1
+
+
+def cmd_release_id(args):
+    idir = ids_dir(claims_dir(override=args.claims_dir))
+    fp = reservation_file(args.task_id, idir)
+    if fp.exists():
+        fp.unlink()
+        print(f"Released ID {args.task_id}")
+    else:
+        print(f"No reservation for {args.task_id} (already released)")  # idempotent
+    return EXIT_OK
+
+
+def cmd_list_ids(args):
+    idir = ids_dir(claims_dir(override=args.claims_dir))
+    out = []
+    if idir.exists():
+        for fp in sorted(idir.glob("*.json")):
+            data = read_claim(fp)
+            if data is None:
+                data = {"task_id": fp.stem, "session_id": None, "_corrupt": True}
+            out.append(data)
+    print(json.dumps(out, indent=2))
+    return EXIT_OK
+
+
 # --------------------------------------------------------------------------
 # Argument parsing
 # --------------------------------------------------------------------------
@@ -515,6 +720,50 @@ def build_parser():
     p_gt.add_argument("--task-id", required=True)
     add_common(p_gt)
     p_gt.set_defaults(func=cmd_get)
+
+    def add_id_common(sp):
+        add_common(sp)
+        sp.add_argument(
+            "--prefix", default="T-",
+            help="ID prefix to allocate under (default: 'T-'; e.g. 'C3-' for "
+                 "phase-iteration IDs).",
+        )
+        sp.add_argument(
+            "--pad", type=int, default=3,
+            help="Zero-pad width for the sequence number (default: 3 -> T-031).",
+        )
+        sp.add_argument(
+            "--repo-root", default=None,
+            help="Override the repo root scanned for used IDs (tests).",
+        )
+
+    p_ni = sub.add_parser(
+        "next-id", help="Print the ID reserve-id would allocate; writes nothing."
+    )
+    add_id_common(p_ni)
+    p_ni.set_defaults(func=cmd_next_id)
+
+    p_ri = sub.add_parser(
+        "reserve-id",
+        help="Atomically reserve the next free task ID (or a requested one).",
+    )
+    p_ri.add_argument("--session-id", required=True)
+    p_ri.add_argument(
+        "--task-id", default=None,
+        help="Reserve this specific ID instead of auto-allocating.",
+    )
+    p_ri.add_argument("--title", default=None, help="One-line task title (recorded).")
+    add_id_common(p_ri)
+    p_ri.set_defaults(func=cmd_reserve_id)
+
+    p_li = sub.add_parser("release-id", help="Delete an ID reservation (idempotent).")
+    p_li.add_argument("--task-id", required=True)
+    add_common(p_li)
+    p_li.set_defaults(func=cmd_release_id)
+
+    p_ls_ids = sub.add_parser("list-ids", help="Print all live ID reservations.")
+    add_common(p_ls_ids)
+    p_ls_ids.set_defaults(func=cmd_list_ids)
 
     return parser
 
