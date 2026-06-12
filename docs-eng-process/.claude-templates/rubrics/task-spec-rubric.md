@@ -63,6 +63,18 @@ section names invariants specific to this task (token budgets, reversibility,
 no-go zones) without restating architecture-notebook content. Inline duplication
 of rules from referenced sources is a gap (silent drift hazard, per SPDD).
 
+## 9. Ambiguity Resolution
+
+**Satisfied when:** The Ambiguity Gate was applied — open questions the request
+left unanswered are accounted for, not silently guessed. Any **blocking**
+question (one whose answer would change scope, requirements, or acceptance
+criteria) was raised via `/openup-request-input` rather than assumed; any
+**non-blocking** default appears as an explicit `**Assumption:**` line in
+Analysis Context (stating the choice, marked vetoable). A spec whose
+Requirements depend on an unstated judgement call — no assumption named, no
+question raised — is a gap. "No open questions" is acceptable only when the
+request is genuinely unambiguous.
+
 ---
 
 ## Grading Instructions

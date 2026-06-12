@@ -28,6 +28,15 @@ State the *why* the spec needs but the code can't show:
 - **Scope boundaries.** What this task does NOT cover (cuts the long tail).
 - **Definition of done.** Concrete, observable end state.
 
+Record any **non-blocking** open questions resolved by a default choice as
+`**Assumption:**` lines here — one per line, each stating the choice and (in
+parens) that it is vetoable at review. This makes a silent guess a visible,
+overridable decision. *Blocking* questions (whose answer would change scope or
+requirements) do not belong here — raise them via `/openup-request-input` before
+drafting. See the Ambiguity Gate step in the authoring skill.
+
+> **Assumption:** <the default chosen>. *(Vetoable at review.)*
+
 ## Requirements
 
 Numbered, testable assertions. Each one should be checkable post-implementation.

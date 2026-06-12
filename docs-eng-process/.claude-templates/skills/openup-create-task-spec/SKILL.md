@@ -69,7 +69,29 @@ per round.
   folder if it does not exist.
 - Copy `docs-eng-process/templates/task-spec.md` to that path.
 
-### 2. Round 1 — Analyst + Architect
+### 2. Ambiguity Gate — MANDATORY before drafting
+
+Before any role drafts, list the open questions the request leaves unanswered
+and classify each:
+
+- **Blocking** — the answer would change scope, requirements, or acceptance
+  criteria (you would build a different thing depending on it). **Stop.** Raise
+  it via `/openup-request-input` (related_task = this task ID) and do not draft
+  the affected sections until it is answered. Guessing here is the exact waste
+  this gate exists to prevent.
+- **Non-blocking** — a default is reasonable and the cost of being wrong is low.
+  Pick the default and record it as a `**Assumption:**` line in the spec's
+  **Analysis Context** (state the choice; note it is vetoable at review). Do not
+  silently bake it into Requirements without naming it.
+
+If there are no open questions, say so in one line and proceed. The point is an
+explicit pass, not invented doubt.
+
+> A blocking question silently guessed is rework discovered after code. A
+> non-blocking question silently guessed is a decision no one got to veto. The
+> gate converts both into something the requester can see and correct.
+
+### 3. Round 1 — Analyst + Architect
 
 Brief one analyst-role agent and one architect-role agent in compact form (max
 6 bullets each). Inputs: roadmap line, plan section, use case excerpt.
@@ -82,23 +104,23 @@ Both write directly to the task-spec file under their respective sections. They
 do NOT inline rules from `conventions.md` or the architecture notebook —
 references only.
 
-### 3. Round 2 — Developer
+### 4. Round 2 — Developer
 
 Brief one developer-role agent with the partially-filled task spec.
 
 - **Developer** drafts: Operations (ordered, 3–8 testable steps).
 - Developer also fills the Norms section with file references only (no copies).
 
-### 4. Rubric Grading
+### 5. Rubric Grading
 
 Run `/openup-assess-completeness artifact: task-spec` (or apply
-`.claude/rubrics/task-spec-rubric.md` inline). Grade each of 8 criteria.
+`.claude/rubrics/task-spec-rubric.md` inline). Grade each of 9 criteria.
 
 - All ✅ → set `status: ready` in front-matter.
 - Any ❌ → keep `status: proposed`, list gaps for revision, loop back to the
   responsible role for fixes.
 
-### 5. Roadmap Update
+### 6. Roadmap Update
 
 Add or update the roadmap row for this task ID with status `ready` and a link
 to the spec file.

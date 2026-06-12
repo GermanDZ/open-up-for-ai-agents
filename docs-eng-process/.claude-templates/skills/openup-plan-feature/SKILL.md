@@ -59,11 +59,12 @@ After using this skill, verify:
 1. Read project context (status, roadmap, architecture)
 2. Auto-detect task ID from roadmap
 3. Explore codebase for relevant code
-4. Generate iteration plan document
-5. Update roadmap with new entry
-6. Optionally validate with analyst + architect team
-7. Optionally create branch, commit, push, and PR
-8. Present summary
+4. Ambiguity gate — classify open questions (blocking → ask, non-blocking → record)
+5. Generate iteration plan document
+6. Update roadmap with new entry
+7. Optionally validate with analyst + architect team
+8. Optionally create branch, commit, push, and PR
+9. Present summary
 
 ## Detailed Steps
 
@@ -109,7 +110,23 @@ Based on the feature topic (`$ARGUMENTS[topic]`), explore:
 
 Extract actual code snippets (with file paths and line numbers) for the "Current State" section of the plan.
 
-### 4. Generate Iteration Plan
+### 4. Ambiguity Gate — MANDATORY before generating the plan
+
+Now that you understand the request and the code, list the open questions and
+classify each before drafting the plan:
+
+- **Blocking** — the answer would change the feature's scope, acceptance
+  criteria, or design direction. **Stop.** Raise it via `/openup-request-input`
+  (related_task = this task ID) and do not generate the plan for the affected
+  area until it is answered.
+- **Non-blocking** — a default is reasonable. Pick it and record it under the
+  plan's **Open Questions** section as a resolved assumption (`Assumed: <choice>
+  — vetoable at review`), so the requester can override it.
+
+If the request is unambiguous, note that in one line and proceed. This gate is
+why the generated plan reflects the requester's intent, not the author's guess.
+
+### 5. Generate Iteration Plan
 
 Write the iteration plan to `docs/iteration-plans/{task_id_lower}-{slug}.md` where:
 - `{task_id_lower}` is the lowercase task ID (e.g., `c3-004`)
@@ -235,7 +252,7 @@ es:
 2. {Question 2}
 ```
 
-### 5. Update Roadmap
+### 6. Update Roadmap
 
 Insert a new entry in `docs/roadmap.md` under the correct phase section.
 
@@ -262,7 +279,7 @@ Match the existing format exactly:
 - Place after the last entry in that phase section (before the next phase heading or "---" separator)
 - Pending tasks should appear after completed tasks in the same phase
 
-### 6. Validate with Team (Optional)
+### 7. Validate with Team (Optional)
 
 Only if `$ARGUMENTS[validate]` is `"true"`:
 
@@ -283,7 +300,7 @@ Only if `$ARGUMENTS[validate]` is `"true"`:
 5. **Incorporate feedback** — update the iteration plan with any valid suggestions
 6. **Shut down team** — send shutdown requests to both teammates, then delete team
 
-### 7. Create Branch and PR (Optional)
+### 8. Create Branch and PR (Optional)
 
 Only if `$ARGUMENTS[create_pr]` is not `"false"` (default is true):
 
@@ -330,7 +347,7 @@ Only if `$ARGUMENTS[create_pr]` is not `"false"` (default is true):
    )"
    ```
 
-### 8. Present Summary
+### 9. Present Summary
 
 Output a summary to the user:
 

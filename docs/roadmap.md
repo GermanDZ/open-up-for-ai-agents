@@ -16,7 +16,7 @@
 
 | ID | Title | Status | Priority | Depends on |
 |---|---|---|---|---|
-| T-015 | Mandatory ambiguity gate in spec authoring (assumptions made visible/vetoable) | proposed | high | — |
+| T-015 | Mandatory ambiguity gate in spec authoring (assumptions made visible/vetoable) | completed (2026-06-12) | high | — |
 | T-016 | Self-briefing roles: per-role cold-start reading lists + pointer-only PM delegation | proposed | high | T-015 |
 | T-017 | `/openup-next` sequential continue-loop + derived `.openup/board.json` + Operations checkboxes | proposed | high | T-015, T-016 |
 | T-018 | `docs/project-config.yaml` context/rules injection (from 2026-05-13 #2) | proposed | medium | — |
