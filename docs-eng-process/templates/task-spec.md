@@ -39,9 +39,21 @@ drafting. See the Ambiguity Gate step in the authoring skill.
 
 ## Requirements
 
-Numbered, testable assertions. Each one should be checkable post-implementation.
+Numbered, testable assertions. Each one should be checkable post-implementation
+and **carries at least one acceptance scenario** in `Given / When / Then` form —
+writing the concrete scenario is where a vague requirement breaks down, so the
+scenario *is* the testability proof rather than a restatement of the assertion.
+Use the bold markers `**Given**` / `**When**` / `**Then**` (inline on one line,
+or split across three); a requirement may carry more than one scenario.
+
+`scripts/openup-spec-scenarios.py check <plan>` validates this deterministically
+and is wired into `/openup-assess-completeness`. It is enforced on the `standard`
+and `full` tracks; the `quick` track is exempt.
+
 1. <requirement>
+   - **Given** <precondition> **When** <action> **Then** <observable outcome>
 2. <requirement>
+   - **Given** <precondition> **When** <action> **Then** <observable outcome>
 
 ## Behavior Delta
 

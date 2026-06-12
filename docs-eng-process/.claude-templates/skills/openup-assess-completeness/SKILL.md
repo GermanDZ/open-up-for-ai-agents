@@ -46,12 +46,29 @@ If the task involves a work product artifact, load the appropriate rubric and gr
 - If `docs/iteration-plan.md` was modified → `iteration-plan` rubric
 - If `docs/test-plan.md` was modified → `test-plan` rubric
 - If `docs/vision.md` was modified → `vision` rubric
+- If `docs/changes/*/plan.md` is the artifact (or `$ARGUMENTS[artifact] == "task-spec"`) → `task-spec` rubric
 
 **Load rubric from** `.claude/rubrics/<artifact-type>-rubric.md`
 
 **Grade each criterion** in the rubric:
 - `✅ [criterion name]` — fully satisfied
 - `❌ [criterion name] — [specific gap description]` — what exactly is missing
+
+**Deterministic pre-check for `task-spec`** — before grading criterion 11
+(Scenario Coverage) by reading, run the structure validator and let its exit
+code decide the criterion:
+
+```bash
+python3 scripts/openup-spec-scenarios.py check docs/changes/<task_id>/plan.md
+# exit 0 → every requirement carries a Given/When/Then scenario (or quick track, exempt)
+# exit 1 → a requirement lacks a scenario (criterion 11 is ❌; the offending requirements
+#          are listed on stderr — fix the spec, do not grade around it)
+# exit 2 → malformed spec (no ## Requirements section, or file missing)
+```
+
+Pass `--track <track>` (read from `.openup/state.json`) when the spec's
+frontmatter has no `track`. A `quick`-track spec is exempt — criterion 11 is then
+marked `n/a (quick track)`, not ❌.
 
 **Rubric result:**
 - `satisfied` — all criteria are ✅ → proceed

@@ -86,6 +86,18 @@ artifact to update. A genuinely greenfield task is explicitly marked `n/a — al
 rather than left blank. Listing a Modified/Removed behavior whose cited artifact does not
 exist, or omitting a behavior the Structure/Requirements clearly change, is a gap.
 
+## 11. Scenario Coverage
+
+**Satisfied when:** Every numbered requirement carries at least one acceptance
+scenario in `Given / When / Then` form, written with the bold markers
+`**Given**` / `**When**` / `**Then**` (inline or split across lines). The
+scenario must be *concrete* — naming the precondition, the action, and an
+observable outcome — not a restatement of the requirement. A requirement with no
+scenario, or a scenario missing one of the three clauses, is a gap. This is what
+`scripts/openup-spec-scenarios.py check <plan>` enforces deterministically on the
+`standard` and `full` tracks; a `quick`-track spec is exempt and this criterion
+is marked `n/a (quick track)`.
+
 ---
 
 ## Grading Instructions

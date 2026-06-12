@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "task_id": "T-020",
+  "iteration": 15,
+  "phase": "construction",
+  "track": "standard",
+  "branch": "claude/determined-archimedes-nvjsqh",
+  "worktree": "/home/user/open-up-for-ai-agents",
+  "session_id": null,
+  "started_at": "2026-06-12T06:30:13Z",
+  "gates": {
+    "team_deployed": false,
+    "plan_persisted": "docs/changes/T-020/plan.md",
+    "log_written": true,
+    "roadmap_synced": true,
+    "retro_due": false
+  },
+  "iterations_since_retro": 0
+}

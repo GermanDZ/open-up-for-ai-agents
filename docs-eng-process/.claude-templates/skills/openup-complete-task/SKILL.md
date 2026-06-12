@@ -30,6 +30,7 @@ Finalize a completed task: commit remaining changes, update docs, create traceab
 
 After this skill completes, ALL of these must be true:
 
+- [ ] **BLOCKING**: Every spec requirement is graded ✅ against the actual diff (step 1a) — no requirement is unmet, and any ❌ blocks "done"
 - [ ] All changes are committed (no uncommitted changes remain)
 - [ ] Commit messages follow canonical format: `type(scope): description [T-XXX]`
 - [ ] Roadmap is updated to mark task complete
@@ -47,6 +48,33 @@ Before marking a task as complete, verify:
 - All implementation work is done
 - All tests pass
 - Documentation is updated
+
+### 1a. Verify Implementation Against Spec — BLOCKING
+
+The completion-time counterpart to the spec's `## Verification` section: prove the
+diff actually satisfies the spec, requirement by requirement, *before* anything is
+committed. This is OpenUP's equivalent of OpenSpec `/opsx:verify` — same
+per-criterion ✅/❌ idiom the rubrics use, applied to the requirements rather than
+the spec's own quality.
+
+1. Read the requirements from `docs/changes/{task_id}/plan.md` `## Requirements`.
+2. For **each** numbered requirement, grade it against the **actual diff**
+   (`git diff <trunk>...HEAD`) and the working tree — not against intentions:
+   - `✅ [requirement n] — <where in the diff it is satisfied>`
+   - `❌ [requirement n] — <what the diff is missing>`
+3. If the requirement carries `Given / When / Then` scenarios (T-020), grade each
+   scenario's **Then** as the observable check — run it where it is mechanically
+   checkable (a command, a file existence test, a passing unit test), read the
+   diff where it is not.
+4. **Any ❌ blocks completion.** Do not commit, do not update the roadmap, do not
+   archive. Either finish the missing work and re-grade, or — if the requirement
+   is genuinely out of scope — fix the spec first (`/openup-create-task-spec`
+   re-run; per fix-spec-first) so the spec and the diff agree, then re-grade.
+5. Record the grade in `docs/changes/{task_id}/design.md` (it is part of the
+   traceability trail, not conversation-only state).
+
+> A requirement that reads ✅ only because "that was the plan" is not verified.
+> Point at the line of the diff (or the green test) that makes it true.
 
 ### 2. Commit Remaining Changes
 

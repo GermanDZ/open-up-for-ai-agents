@@ -1,8 +1,8 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 14
-**Iteration Goal**: T-022 — Fix template→.claude sync (flat skills + rubric/hook coverage) + auto-commit log tail at stop
+**Iteration**: 15
+**Iteration Goal**: T-020 + T-021 — spec self-sufficiency: scenario-per-requirement with deterministic validation, and implementation-vs-spec verify at task completion
 **Status**: completed
 **Current Task**: None
 **Iteration Started**: 2026-06-12
@@ -10,6 +10,8 @@
 **Updated By**: openup-complete-task
 
 ## Notes
+
+- **Iteration 15** (2026-06-12): T-020 + T-021 (paired, standard track, solo, no team) — the spec self-sufficiency + verify chain from the Clarity plan. **T-020**: every `## Requirements` entry now carries ≥1 `Given / When / Then` scenario (bold markers), validated deterministically by a new stdlib-only `scripts/openup-spec-scenarios.py check <plan>` (exit 0/1/2, `quick`-exempt, imports `openup-claims.py` for shared `parse_frontmatter`/track) with 11 hermetic tests; added rubric criterion 11 (Scenario Coverage), wired authoring into `/openup-create-task-spec` and enforcement into `/openup-assess-completeness`. **T-021**: added a BLOCKING `### 1a. Verify Implementation Against Spec` step to `/openup-complete-task` that grades each requirement (and its scenarios, if present) ✅/❌ against the actual `git diff` before commit — any ❌ blocks "done" and routes to finish-the-work or fix-spec-first; the grade persists to the change folder's `design.md`. Both specs dog-food the scenario convention (validator exits 0 on each; the scenario-less archived T-019 is the negative control, exit 1). `.claude/` ↔ `.claude-templates/` parity green (61 files). Closes the Clarity plan except independent T-018.
 
 - **Iteration 14** (2026-06-12): T-022 sync correctness — rewrote `scripts/sync-templates-to-claude.sh` to the flat skill layout (one level under `.claude/skills/`, the discovery requirement) and added rubric/hook/config/agent coverage it was missing (root cause of the nested-skill discovery break). Back-propagated two drifted hooks (`check-unfinished-tasks.py`, `gate-edits.py`) live→template. Added an `on-stop.py` step that auto-commits a lone dirty `agent-runs.jsonl` as a log-only `[openup-skip]` commit so sessions end on a clean tree (verified: lone-jsonl→commit, non-log→block exit 2, clean→noop). Solo, standard track, no team.
 - **Iteration 13** (2026-06-12): T-019 Behavior Delta section — added a `## Behavior Delta` section (Added/Modified/Removed, each Modified/Removed citing a Ring-1 artifact §section; greenfield renders `n/a — all Added`) to the task-spec template, an analyst authoring step + sync-spec consumer note to `/openup-create-task-spec`, and rubric criterion 10 (Behavior Delta Completeness). Mirrored skill+rubric to `.claude-templates/` (`check-claude-sync.sh` exit 0, 62 files). Spec self-graded 10/10. Solo, standard track, no team. Unblocks T-020.
