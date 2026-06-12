@@ -212,11 +212,19 @@ half of (the readiness DAG), not the *executor* half.
   folder (`plan.md`, `design.md`, `test-notes.md`), `.openup/state.json`,
   the run log, and `/openup-create-handoff` output are the handover. Teammate
   message traffic is at most a notification that the repo changed.
-- **T-009's parallelism machinery is re-scoped, not removed.** Worktree-per-
-  task + lease claims + collision pre-flight were built for parallel agents.
-  Sequential-by-default makes them safety rails (a stale lease from a crashed
-  session, an accidental second session) rather than a throughput feature.
-  No code change needed; the *docs framing* changes.
+- **Parallelism is per-*lane*, not per-role.** (User refinement, same day.)
+  Parallel work IS wanted — but across **disjoint work streams** (a new
+  feature in one lane, an unrelated refactor in another), never as multiple
+  teammates inside one task. The unit of parallelism is the independent
+  task/lane; within a lane, execution is strictly sequential with
+  repo-persisted handover.
+- **T-009's machinery is the lane enabler, not dead weight.** Worktree-per-
+  task + lease claims + collision pre-flight are exactly what makes two
+  concurrent lanes safe: the collision pre-flight (already part of
+  `/openup-readiness`'s collision set = READY ∪ IN-PROGRESS) decides whether
+  a second lane may open; the lease marks the task claimed; the worktree
+  isolates the lane's files. What changes is the *framing*: one agent per
+  lane, lanes proven disjoint before opening — not N teammates on one task.
 
 ### What already exists for the loop (the gap is composition)
 
@@ -233,9 +241,13 @@ half of (the readiness DAG), not the *executor* half.
 
 One skill that makes "read the next task and execute" literally sufficient:
 
-1. Run readiness; pick the single best READY task (priority, then DAG depth;
-   if nothing is READY, print why and stop cleanly — a no-op cycle is a valid
-   result).
+1. Run readiness; pick the single best READY task **that does not collide
+   with any in-progress lane** (priority, then DAG depth; readiness's
+   collision set is the gate). If nothing is READY-and-collision-free, print
+   why and stop cleanly — a no-op cycle is a valid result. Claim the task
+   (lease) and work in its worktree, so a second `/openup-next` loop in
+   another session naturally picks a disjoint task — that is how cross-lane
+   parallelism happens, with no coordination protocol beyond the repo.
 2. Self-brief per Option F (role implied by the task's next ready artifact:
    spec missing → analyst hat; spec ready → developer hat; impl done →
    tester hat).
