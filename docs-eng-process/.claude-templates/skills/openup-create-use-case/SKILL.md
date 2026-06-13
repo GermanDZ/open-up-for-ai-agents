@@ -86,7 +86,16 @@ Update the use case specification with:
 - **Alternative flows**: Alternative paths and edge cases
 - **Postconditions**: What is true after completion
 
-### 5. Validate Completeness
+### 5. Self-Critique
+
+Apply the **Self-Critique SOP** (`docs-eng-process/agent-workflow.md`) before
+validating: take a hostile-reviewer stance, surface every load-bearing
+assumption into the use case, and confirm each flow step is observable and the
+pre/postconditions are checkable — not narrative prose. Fix or explicitly flag
+each genuine weakness, then record the weakest point and its resolution in one
+line.
+
+### 6. Validate Completeness
 
 Ensure the use case includes:
 - Clear name and description

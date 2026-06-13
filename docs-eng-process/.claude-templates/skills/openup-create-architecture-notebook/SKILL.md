@@ -88,7 +88,16 @@ Update with:
 - **Quality attributes**: Performance, security, scalability requirements
 - **Subsystem decomposition**: Major system components
 
-### 5. Validate Completeness
+### 5. Self-Critique
+
+Apply the **Self-Critique SOP** (`docs-eng-process/agent-workflow.md`) before
+validating: take a hostile-reviewer stance, surface every load-bearing
+assumption into the notebook, and confirm each architectural decision records
+the rejected alternatives and the constraint that forced it — not just the
+choice made. Fix or explicitly flag each genuine weakness, then record the
+weakest point and its resolution in one line.
+
+### 6. Validate Completeness
 
 Ensure the architecture notebook includes:
 - System overview and context

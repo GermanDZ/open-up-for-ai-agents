@@ -50,6 +50,7 @@ After using this skill, verify:
 4. Document technical assumptions and constraints
 5. Record key technical decisions
 6. Identify open questions
+7. Self-critique the document (sharp IN/OUT scope; decisions record trade-offs)
 
 ## Detailed Steps
 
@@ -155,6 +156,15 @@ Add a reference in `docs/vision.md`:
 
 See [Shared Vision](shared-vision.md) for detailed technical objectives, scope, and decisions.
 ```
+
+### 10. Self-Critique
+
+Apply the **Self-Critique SOP** (`docs-eng-process/agent-workflow.md`) before
+returning: take a hostile-reviewer stance, surface every load-bearing assumption
+into the document, and confirm the IN/OUT scope boundaries are sharp enough to
+settle a real dispute and that each key decision records what it trades away. Fix
+or explicitly flag each genuine weakness, then record the weakest point and its
+resolution in one line.
 
 ## Output
 

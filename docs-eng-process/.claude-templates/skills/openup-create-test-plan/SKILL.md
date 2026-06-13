@@ -94,7 +94,16 @@ For each test script, document:
 - **Test procedures**: Detailed test execution steps
 - **Cleanup**: How to clean up after test
 
-### 6. Validate Coverage
+### 6. Self-Critique
+
+Apply the **Self-Critique SOP** (`docs-eng-process/agent-workflow.md`) before
+validating coverage: take a hostile-reviewer stance, surface every load-bearing
+assumption into the plan, and confirm the suite genuinely exercises error and
+edge paths — not happy-path restatements — and that every case is written so it
+can actually fail. Fix or explicitly flag each genuine weakness, then record the
+weakest point and its resolution in one line.
+
+### 7. Validate Coverage
 
 Ensure test coverage includes:
 - Happy path scenarios

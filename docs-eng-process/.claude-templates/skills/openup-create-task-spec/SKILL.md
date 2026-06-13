@@ -205,7 +205,17 @@ Brief one developer-role agent with the partially-filled task spec.
   not a heading. (Legacy numbered steps still parse but yield no `next_action`.)
 - Developer also fills the Norms section with file references only (no copies).
 
-### 5. Rubric Grading
+### 5. Self-Critique
+
+Apply the **Self-Critique SOP** (`docs-eng-process/agent-workflow.md`) before
+rubric grading: take a hostile-reviewer stance, surface every load-bearing
+assumption into the spec, and confirm the Behaviour Delta names what *observably*
+changes and that every acceptance criterion and scenario is failable — not
+"review and approve". This precedes (does not replace) the rubric: fix the
+weaknesses first so step 6 grades a stronger spec. Record the weakest point and
+its resolution in one line.
+
+### 6. Rubric Grading
 
 Run `/openup-assess-completeness artifact: task-spec` (or apply
 `.claude/rubrics/task-spec-rubric.md` inline). Grade each of 13 criteria. That
@@ -217,7 +227,7 @@ auto-skipped on the `quick` track).
 - Any ❌ → keep `status: proposed`, list gaps for revision, loop back to the
   responsible role for fixes.
 
-### 6. Roadmap Update
+### 7. Roadmap Update
 
 Add or update the roadmap row for this task ID with status `ready` and a link
 to the spec file.

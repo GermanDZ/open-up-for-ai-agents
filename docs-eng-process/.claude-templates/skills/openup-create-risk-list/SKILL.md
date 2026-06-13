@@ -83,7 +83,16 @@ Update with:
   - Mitigation strategy
   - Owner/responsible party
 
-### 5. Validate Completeness
+### 5. Self-Critique
+
+Apply the **Self-Critique SOP** (`docs-eng-process/agent-workflow.md`) before
+validating: take a hostile-reviewer stance, surface every load-bearing
+assumption into the list, and confirm each risk has a concrete trigger and a
+mitigation you could actually verify was carried out — not a restatement of the
+risk itself. Fix or explicitly flag each genuine weakness, then record the
+weakest point and its resolution in one line.
+
+### 6. Validate Completeness
 
 Ensure the risk list includes:
 - Clear risk descriptions
