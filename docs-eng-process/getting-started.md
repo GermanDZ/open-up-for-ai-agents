@@ -61,6 +61,14 @@ If you want an AI agent to handle the technical setup and initial scaffolding, s
 
 If you prefer to initialize manually, follow the steps below.
 
+> **If an agent runs these steps:** a fresh project has no `.openup/state.json`,
+> so the `gate-edits.py` hook blocks the `Write`/`Edit` tools on
+> `docs/project-status.md`, `docs/roadmap.md`, and other non-exempt paths. Create
+> the initial docs with the gate-exempt **`Bash`** tool (`cp` for templates,
+> `cat > FILE << 'EOF'` heredocs for generated files) — or just run the
+> `/openup-init` skill, which does this for you. Humans editing files directly are
+> unaffected (the hook only gates the agent's editing tools).
+
 ## Initial Setup
 
 ### 1. Copy Essential Templates
