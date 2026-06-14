@@ -158,6 +158,36 @@ else
     test_fail "Skills directory" ".claude/skills directory not created"
 fi
 
+# Test 4b: Bootstrap ships the process CLIs so the workflow can actually run (T-032)
+test_start "Bootstrap installs the process CLIs (scripts/openup-*.py)"
+MANIFEST="$PROJECT_ROOT/scripts/process-manifest.txt"
+if [ ! -f "$MANIFEST" ]; then
+    test_fail "Process CLI manifest" "scripts/process-manifest.txt not found"
+elif [ ! -d "$TEST_DIR/test-project/scripts" ]; then
+    test_fail "Process CLIs" "bootstrapped project has no scripts/ directory"
+else
+    MISSING=0
+    # Read the manifest (strip #-comments and blank lines) so the assertion
+    # tracks the single source of truth automatically.
+    while IFS= read -r cli; do
+        cli="$(echo "$cli" | sed -e 's/#.*//' -e 's/[[:space:]]//g')"
+        [ -n "$cli" ] || continue
+        if [ ! -f "$TEST_DIR/test-project/scripts/$cli" ]; then
+            test_fail "Process CLI" "Missing from bootstrapped scripts/: $cli"
+            MISSING=1
+        fi
+    done < "$MANIFEST"
+
+    if [ $MISSING -eq 0 ]; then
+        # The headline CLI must be runnable end to end.
+        if python3 "$TEST_DIR/test-project/scripts/openup-state.py" --help >/dev/null 2>&1; then
+            test_pass "All process CLIs shipped and openup-state.py --help exits 0"
+        else
+            test_fail "Process CLI runnable" "openup-state.py --help did not exit 0"
+        fi
+    fi
+fi
+
 # Test 5: Setup agent teams script (standalone)
 test_start "Setup agent teams script"
 SETUP_TEST_DIR="/tmp/openup-test-setup"

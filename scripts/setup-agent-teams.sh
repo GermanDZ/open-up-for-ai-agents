@@ -378,6 +378,22 @@ PYEOF
     fi
 fi
 
+# Install the OpenUP process CLIs (scripts/openup-*.py) into the project's
+# scripts/ so the workflow skills can run. Sourced from the framework's scripts/
+# (next to this script); a no-op when run from a project that doesn't have the
+# framework's root scripts/ available (e.g. when invoked by bootstrap, which
+# installs the CLIs itself).
+CLI_HELPER="$TEMPLATE_ROOT/scripts/lib/install-process-clis.sh"
+if [ -f "$CLI_HELPER" ] && [ -f "$TEMPLATE_ROOT/scripts/process-manifest.txt" ]; then
+    info "Installing OpenUP process CLIs..."
+    # shellcheck source=scripts/lib/install-process-clis.sh
+    source "$CLI_HELPER"
+    if [ "$DRY_RUN" = false ]; then
+        mkdir -p "$PROJECT_ROOT/scripts"
+    fi
+    install_process_clis "$TEMPLATE_ROOT/scripts" "$PROJECT_ROOT/scripts" "$DRY_RUN" false
+fi
+
 # Copy OpenUP instructions
 info "Setting up CLAUDE.openup.md..."
 copy_file "$CLAUDE_TEMPLATE" "$CLAUDE_OPENUP_DEST"

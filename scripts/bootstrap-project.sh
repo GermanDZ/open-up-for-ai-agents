@@ -215,6 +215,22 @@ else
     warn "setup-agent-teams.sh not found in template, skipping agent team setup"
 fi
 
+# Install the OpenUP process CLIs so the workflow skills can actually run
+# (python3 scripts/openup-*.py). Without these a bootstrapped project cannot
+# run /openup-start-iteration, /openup-next, or /openup-complete-task.
+echo ""
+echo "Installing OpenUP process CLIs..."
+CLI_HELPER="$TEMPLATE_ROOT/scripts/lib/install-process-clis.sh"
+if [ -f "$CLI_HELPER" ]; then
+    # shellcheck source=scripts/lib/install-process-clis.sh
+    source "$CLI_HELPER"
+    mkdir -p "$PROJECT_PATH/scripts"
+    install_process_clis "$TEMPLATE_ROOT/scripts" "$PROJECT_PATH/scripts" false false
+    success "Process CLIs installed"
+else
+    warn "install-process-clis.sh not found in template, skipping process CLI install"
+fi
+
 # Print success message
 echo ""
 success "✅ Project '$PROJECT_NAME' initialized at $PROJECT_PATH"
