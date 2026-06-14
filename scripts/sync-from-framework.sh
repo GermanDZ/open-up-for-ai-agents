@@ -329,6 +329,23 @@ if [ -d "$src_dir" ]; then
   done
 fi
 
+# Sync the OpenUP process CLIs (scripts/openup-*.py) into the project's scripts/
+# so the workflow skills can run. The list ships from the framework's
+# scripts/process-manifest.txt; the helper backs up locally-modified files.
+log_info "Syncing process CLIs from framework..."
+echo ""
+CLI_HELPER="$FRAMEWORK_PATH/scripts/lib/install-process-clis.sh"
+if [ -f "$CLI_HELPER" ]; then
+  # shellcheck source=/dev/null
+  source "$CLI_HELPER"
+  if [ "$DRY_RUN" = false ]; then
+    mkdir -p "$PROJECT_ROOT/scripts"
+  fi
+  install_process_clis "$FRAMEWORK_PATH/scripts" "$PROJECT_ROOT/scripts" "$DRY_RUN" false
+else
+  log_warn "install-process-clis.sh not found in framework — skipping process CLI sync"
+fi
+
 # Create cache directory if it doesn't exist
 log_info "Ensuring cache directory exists..."
 echo ""

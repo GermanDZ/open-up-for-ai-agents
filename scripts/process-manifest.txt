@@ -1,0 +1,21 @@
+# OpenUP process CLIs — single source of truth.
+#
+# These are the runtime scripts the workflow skills invoke as
+# `python3 scripts/<name>` (openup-start-iteration, openup-next,
+# openup-complete-task, the board/fence/claims machinery, etc.). Every
+# install/update path (bootstrap-project.sh, setup-agent-teams.sh,
+# sync-from-framework.sh, update-from-template.sh) ships exactly this set into a
+# target project's scripts/ via scripts/lib/install-process-clis.sh.
+#
+# Add a CLI here once and it ships everywhere — no edits to the install scripts.
+# One filename per line, relative to scripts/. Blank lines and #-comments ignored.
+
+openup-state.py
+openup-state.schema.json
+openup-board.py
+openup-claims.py
+openup-fence.py
+openup-spec-scenarios.py
+sync-status.py
+openup-scribe.py
+openup-input.py

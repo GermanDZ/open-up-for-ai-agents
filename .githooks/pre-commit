@@ -52,3 +52,14 @@ if [ -x "$ROOT/scripts/check-model-tiers.py" ] && command -v python3 >/dev/null 
     exit 1
   fi
 fi
+
+# Enforce that docs-eng-process/skills-guide.md stays in sync with the live
+# skill files (the per-skill reference + index are generated, not authored).
+if [ -x "$ROOT/scripts/check-skills-guide.py" ] && command -v python3 >/dev/null 2>&1; then
+  if ! python3 "$ROOT/scripts/check-skills-guide.py" --check --quiet; then
+    echo "" >&2
+    echo "Commit blocked: skills-guide.md is out of sync with the skill files." >&2
+    echo "  - Run:  python3 scripts/check-skills-guide.py --write" >&2
+    exit 1
+  fi
+fi

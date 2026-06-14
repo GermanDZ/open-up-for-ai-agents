@@ -1,7 +1,7 @@
 ---
 id: T-032
 title: "Install scripts must ship the process CLIs"
-status: proposed
+status: done   # proposed → ready → in-progress → done → verified
 track: standard
 depends-on: []
 blocks: []

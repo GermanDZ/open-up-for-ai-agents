@@ -117,3 +117,32 @@ When processing an answered input request:
 - `pending` → User fills out the document
 - `answered` → User updates status and saves (agent processes this)
 - `processed` → Agent has processed the answers and archived the document
+
+## Suspend / Resume in the Continue-Loop
+
+When a request names a `related_task`, the request is also a **suspend signal**
+for that delivery lane, so the autonomous continue-loop (`/openup-next`) can stop
+on a question and resume deterministically once it is answered — without grepping
+or reasoning each cycle. The wiring uses only the primitives above plus two
+deterministic CLIs:
+
+1. **Suspend**: when the request is created, the lane's
+   `docs/changes/<related_task>/plan.md` frontmatter gets an
+   `awaiting-input: <request-path>` coordination line (set by
+   `/openup-request-input`). While the request is `pending`,
+   `scripts/openup-board.py` reports the lane as **`suspended`** — a distinct,
+   never-pickable state (not generic `blocked`), so the question cannot be
+   silently re-selected.
+2. **Detect the answer**: `scripts/openup-input.py resumable` lists every
+   `answered` request that names a `related_task` (mapping answer → suspended
+   lane) for the loop to act on. It is the deterministic form of
+   [Start-of-Run SOP](start-of-run.md) Step 0.
+3. **Resume**: `/openup-next` runs that check **before** claiming any new lane.
+   It folds the answers into the spec (fix-spec-first — never auto-merging code),
+   removes the `awaiting-input` line (un-suspending the lane), then runs the
+   "Processing Completed Requests" steps above (status → `processed`, archive).
+
+This makes suspend-on-question / resume-on-answer first-class rather than
+agent-remembered. The `awaiting-input` line is coordination state, not a spec
+behavior change, so setting or clearing it does not require a
+`/openup-create-task-spec` re-run.

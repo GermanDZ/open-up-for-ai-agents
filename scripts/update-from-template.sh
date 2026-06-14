@@ -448,6 +448,20 @@ EOF
     fi
 fi
 
+# Update the OpenUP process CLIs (scripts/openup-*.py) so the workflow skills
+# stay runnable. The list ships from the template's scripts/process-manifest.txt;
+# the helper backs up locally-modified files before overwriting.
+CLI_HELPER="$TEMPLATE_DIR/scripts/lib/install-process-clis.sh"
+if [ -f "$CLI_HELPER" ]; then
+    header "Updating process CLIs"
+    # shellcheck source=/dev/null
+    source "$CLI_HELPER"
+    if [ "$DRY_RUN" = false ]; then
+        mkdir -p "$PROJECT_PATH/scripts"
+    fi
+    install_process_clis "$TEMPLATE_DIR/scripts" "$PROJECT_PATH/scripts" "$DRY_RUN" false
+fi
+
 # Update version file
 if [ "$DRY_RUN" = false ]; then
     echo "$TEMPLATE_VERSION" > "$PROJECT_PATH/docs-eng-process/.template-version"

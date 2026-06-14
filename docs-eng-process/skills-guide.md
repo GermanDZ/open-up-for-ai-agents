@@ -34,987 +34,1077 @@ All OpenUP skills use the `openup-` namespace prefix to avoid conflicts:
 - Artifact skills: `openup-create-vision`, `openup-create-use-case`, etc.
 - Workflow skills: `openup-start-iteration`, `openup-complete-task`, etc.
 
+## Skill Reference
+
+> Generated from the skill files by `scripts/check-skills-guide.py` — do not
+> hand-edit between the markers. Each entry is sourced from its
+> `.claude-templates/skills/<name>/SKILL.md` frontmatter and body; to change an
+> entry, edit that SKILL.md and run `python3 scripts/check-skills-guide.py --write`.
+
+<!-- BEGIN GENERATED: skill-reference (scripts/check-skills-guide.py) -->
 ## Phase Skills
 
 Phase skills guide you through each OpenUP phase, providing context-specific activities and completion criteria.
 
+### /openup-construction
+
+Initialize and manage Construction phase activities - build the system incrementally
+
+**Model**: `haiku`
+
+**When to Use**
+
+Use this skill when:
+- Elaboration is complete and architecture baseline is established
+- Ready to build the system iteratively
+- Implementing features incrementally
+- Preparing for beta testing
+- Checking if Construction phase is complete
+- Getting guidance on next steps in Construction
+
+**When NOT to Use**
+
+Do NOT use this skill when:
+- Architecture is not yet stable (use `/openup-elaboration`)
+- System is ready for deployment (use `/openup-transition`)
+- Need to create specific artifacts (use artifact skills)
+- Looking for iteration planning (use `/openup-create-iteration-plan`)
+
+**Success Criteria**
+
+After using this skill, verify:
+- [ ] Phase status is clearly understood (initiated, in-progress, or complete)
+- [ ] Implementation progress is tracked
+- [ ] Test coverage is adequate
+- [ ] Next iteration tasks are identified
+- [ ] Beta readiness is assessed
+
+**Arguments**:
+- `activity` (optional) — Specific activity to perform (initiate, check-status, next-steps)
+
+**See Also**: `openup-complete-task` · `openup-create-test-plan` · `openup-elaboration` · `openup-transition`
+
+### /openup-elaboration
+
+Initialize and manage Elaboration phase activities - establish architecture baseline
+
+**Model**: `haiku`
+
+**When to Use**
+
+Use this skill when:
+- Inception is complete and need to establish architecture baseline
+- Need to design and validate system architecture
+- Resolving high-risk technical elements
+- Implementing architectural prototypes
+- Checking if Elaboration phase is complete
+- Getting guidance on next steps in Elaboration
+
+**When NOT to Use**
+
+Do NOT use this skill when:
+- Still defining project vision and scope (use `/openup-inception`)
+- Architecture is stable and ready for incremental build (move to Construction)
+- Need to create specific artifacts (use artifact skills)
+- Looking for iteration planning (use `/openup-create-iteration-plan`)
+
+**Success Criteria**
+
+After using this skill, verify:
+- [ ] Phase status is clearly understood (initiated, in-progress, or complete)
+- [ ] Architecture notebook is created or updated
+- [ ] Technical risks are identified and mitigated
+- [ ] Critical use cases are detailed
+- [ ] Next steps are clearly defined
+
+**Arguments**:
+- `activity` (optional) — Specific activity to perform (initiate, check-status, next-steps)
+
+**See Also**: `openup-create-architecture-notebook` · `openup-shared-vision` · `openup-create-use-case` · `openup-detail-use-case` · `openup-inception` · `openup-construction`
+
 ### /openup-inception
 
-Initialize and manage Inception phase activities.
+Initialize and manage Inception phase activities - define scope, vision, and feasibility
 
-**Purpose**: Define scope, vision, and feasibility
+**Model**: `haiku`
 
-**When to Use**:
+**When to Use**
+
+Use this skill when:
 - Starting a new project and need to define scope and vision
 - Need to identify key stakeholders and risks
 - Preparing to move from idea to validated business case
 - Checking if Inception phase is complete
+- Getting guidance on next steps in Inception
 
-**When NOT to Use**:
-- Currently in later phases (use appropriate phase skill)
-- Need to create specific artifacts (use artifact skills)
-- Already have clear vision and architecture baseline
+**When NOT to Use**
 
-**Arguments**:
-- `activity` (optional): `initiate`, `check-status`, or `next-steps`
+Do NOT use this skill when:
+- Currently in Elaboration, Construction, or Transition phase (use appropriate phase skill)
+- Need to create specific artifacts like vision documents or use cases (use artifact skills)
+- Already have clear vision and architecture baseline (move to Elaboration)
+- Looking for iteration planning (use `/openup-create-iteration-plan`)
 
-**Example**:
-```
-/openup-inception activity: initiate
-```
+**Success Criteria**
 
-**Success Criteria**:
-- [ ] Phase status is clearly understood
-- [ ] Key artifacts are identified or created
+After using this skill, verify:
+- [ ] Phase status is clearly understood (initiated, in-progress, or complete)
+- [ ] Key artifacts are identified or created (vision, risk list, roadmap)
 - [ ] Next steps are clearly defined
 - [ ] Stakeholders and risks are documented
 
-**See Also**: `openup-create-vision`, `openup-create-risk-list`, `openup-elaboration`
-
-### /openup-elaboration
-
-Initialize and manage Elaboration phase activities.
-
-**Purpose**: Establish architecture baseline
-
-**When to Use**:
-- Inception is complete and need to establish architecture baseline
-- Need to design and validate system architecture
-- Resolving high-risk technical elements
-
-**When NOT to Use**:
-- Still defining project vision and scope
-- Architecture is stable and ready for incremental build
-
 **Arguments**:
-- `activity` (optional): `initiate`, `check-status`, or `next-steps`
+- `activity` (optional) — Specific activity to perform (initiate, check-status, next-steps)
 
-**Example**:
-```
-/openup-elaboration activity: initiate
-```
-
-**Success Criteria**:
-- [ ] Phase status is clearly understood
-- [ ] Architecture notebook is created or updated
-- [ ] Technical risks are identified and mitigated
-- [ ] Critical use cases are detailed
-
-**See Also**: `openup-create-architecture-notebook`, `openup-create-use-case`, `openup-inception`
-
-### /openup-construction
-
-Initialize and manage Construction phase activities.
-
-**Purpose**: Build the system incrementally
-
-**When to Use**:
-- Elaboration is complete and architecture baseline is established
-- Ready to build the system iteratively
-- Implementing features incrementally
-
-**When NOT to Use**:
-- Architecture is not yet stable
-- System is ready for deployment
-
-**Arguments**:
-- `activity` (optional): `initiate`, `check-status`, or `next-steps`
-
-**Example**:
-```
-/openup-construction activity: next-steps
-```
-
-**Success Criteria**:
-- [ ] Phase status is clearly understood
-- [ ] Implementation progress is tracked
-- [ ] Test coverage is adequate
-- [ ] Next iteration tasks are identified
-
-**See Also**: `openup-complete-task`, `openup-create-test-plan`, `openup-elaboration`
+**See Also**: `openup-create-vision` · `openup-shared-vision` · `openup-create-risk-list` · `openup-elaboration` · `openup-start-iteration`
 
 ### /openup-transition
 
-Initialize and manage Transition phase activities.
+Initialize and manage Transition phase activities - deploy to users
 
-**Purpose**: Deploy to users
+**Model**: `haiku`
 
-**When to Use**:
+**When to Use**
+
+Use this skill when:
 - Construction is complete and system is ready for deployment
 - Preparing for beta or production release
 - Conducting final testing and user acceptance
+- Training users and support staff
+- Checking if Transition phase is complete
+- Getting guidance on next steps in Transition
 
-**When NOT to Use**:
-- Still implementing features
-- System is not stable enough for testing
+**When NOT to Use**
 
-**Arguments**:
-- `activity` (optional): `initiate`, `check-status`, or `next-steps`
+Do NOT use this skill when:
+- Still implementing features (use `/openup-construction`)
+- System is not stable enough for testing (continue Construction)
+- Need to create specific artifacts (use artifact skills)
+- Looking for deployment procedures (use DevOps/ops documentation)
 
-**Example**:
-```
-/openup-transition activity: initiate
-```
+**Success Criteria**
 
-**Success Criteria**:
-- [ ] Phase status is clearly understood
+After using this skill, verify:
+- [ ] Phase status is clearly understood (initiated, in-progress, or complete)
 - [ ] Deployment readiness is assessed
 - [ ] Support materials are prepared
 - [ ] User acceptance is documented
+- [ ] Release decision is clear
 
-**See Also**: `openup-phase-review`, `openup-create-test-plan`, `openup-construction`
+**Arguments**:
+- `activity` (optional) — Specific activity to perform (initiate, check-status, next-steps)
+
+**See Also**: `openup-phase-review` · `openup-create-test-plan` · `openup-construction` · `openup-log-run`
 
 ## Artifact Skills
 
 Artifact skills create OpenUP work products from templates.
 
-### /openup-create-vision
-
-Generate a vision document from template.
-
-**When to Use**:
-- Starting a new project and need to define the vision
-- In Inception phase and need to document project scope
-- Stakeholders need a clear understanding of project goals
-
-**When NOT to Use**:
-- Vision document already exists
-- Need detailed requirements (use use case skills)
-- Looking for technical architecture
-
-**Arguments**:
-- `project_name` (required): Name of the project
-- `problem_statement` (required): Brief description of the problem
-
-**Example**:
-```
-/openup-create-vision project_name: "TaskManager" problem_statement: "Teams need a better way to track and prioritize work"
-```
-
-**Success Criteria**:
-- [ ] Vision document exists at `docs/vision.md`
-- [ ] Project name and problem statement are filled in
-- [ ] Stakeholders are identified
-- [ ] Key features are listed
-
-**See Also**: `openup-inception`, `openup-create-use-case`, `openup-create-risk-list`
-
-### /openup-create-use-case
-
-Create a use case specification from template.
-
-**When to Use**:
-- Need to document user interactions with the system
-- In Inception or Elaboration phase defining requirements
-- Capturing functional requirements from user perspective
-
-**When NOT to Use**:
-- Need non-functional requirements
-- Looking for technical specifications
-- Use case already exists
-
-**Arguments**:
-- `use_case_name` (required): Name of the use case
-- `primary_actor` (required): The primary actor
-- `description` (required): Brief description
-
-**Example**:
-```
-/openup-create-use-case use_case_name: "Create Task" primary_actor: "User" description: "User creates a new task in the system"
-```
-
-**Success Criteria**:
-- [ ] Use case file exists in `docs/use-cases/`
-- [ ] Use case name and primary actor are defined
-- [ ] Basic flow is documented
-- [ ] Alternative flows are identified
-
-**See Also**: `openup-create-vision`, `openup-detail-use-case`, `openup-create-test-plan`, `openup-elaboration`
-
-### /openup-detail-use-case
-
-Transform a high-level use case into detailed scenarios with test cases.
-
-**Purpose**: Add detailed scenarios, Gherkin acceptance criteria, and test case generation
-
-**When to Use**:
-- A high-level use case exists but lacks detailed scenarios
-- Need to document happy paths, alternative flows, and error cases
-- Ready to create Gherkin acceptance criteria for automation
-- Preparing to generate test cases from use cases
-
-**When NOT to Use**:
-- The use case doesn't exist (use `/openup-create-use-case` first)
-- The use case is already fully detailed with scenarios
-- Just need to create a new use case from scratch
-
-**Arguments**:
-- `use_case_name` (required): Name of the use case to detail
-- `generate_tests` (optional): Generate test cases from scenarios (true/false)
-
-**Example**:
-```
-/openup-detail-use-case use_case_name: "user-login" generate_tests: true
-```
-
-**Success Criteria**:
-- [ ] Use case is updated with detailed scenarios
-- [ ] Happy path, alternative paths, and error paths are documented
-- [ ] Gherkin acceptance criteria are written for each scenario
-- [ ] Test cases are generated (if generate_tests=true)
-
-**See Also**: `openup-create-use-case`, `openup-create-test-plan`, `openup-elaboration`
-
-### /openup-create-task-spec
-
-Produce a REASONS-Canvas task spec — the per-task executable blueprint a developer-role agent reads verbatim before generating code.
-
-**Purpose**: Bridge the gap between coarse roadmap lines / use cases and code generation; format adopted from Martin Fowler's "Structured Prompt-Driven Development".
-
-**When to Use**:
-- A roadmap task is about to enter implementation and has no spec yet
-- A plan item needs decomposition before assignment
-- Existing in-progress work needs a retroactive spec for handoff
-
-**When NOT to Use**:
-- Trivial typo / config tweaks (use `/openup-quick-task`)
-- Spec already exists at `docs/changes/T-XXX/plan.md` (re-run this skill — never hand-edit)
-- Idea-stage work with no requirements yet (run `/openup-plan-feature` first)
-
-**Arguments**:
-- `task_id` (optional): T-XXX. Auto-allocated if not provided.
-- `title` (optional): One-line task title. Read from roadmap if existing.
-- `source` (optional): `roadmap` | `plan` | `adhoc` (default `roadmap`)
-- `plan_ref` (optional): Path + section to originating plan
-
-**Example**:
-```
-/openup-create-task-spec title: "Refactor auth middleware" plan_ref: "docs/plans/2026-05-01-auth.md#2"
-```
-
-**Success Criteria**:
-- [ ] File at `docs/changes/T-XXX/plan.md` matches `docs-eng-process/templates/task-spec.md`
-- [ ] All eight criteria in `.claude/rubrics/task-spec-rubric.md` are ✅
-- [ ] Front-matter `status: ready`
-- [ ] Roadmap entry references the spec
-
-**See Also**: `openup-create-iteration-plan`, `openup-assess-completeness`, `openup-orchestrate`
-
-### /openup-shared-vision
-
-Create shared technical vision for team alignment.
-
-**Purpose**: Document technical objectives, IN/OUT scope, and key technical decisions
-
-**When to Use**:
-- Vision document exists but needs technical elaboration
-- Need to define IN/OUT scope clearly
-- Starting Elaboration phase and need technical alignment
-- Team members have different understanding of technical direction
-
-**When NOT to Use**:
-- No vision document exists (use `/openup-create-vision` first)
-- In late Construction or Transition phases
-- Only need architecture details
-
-**Arguments**:
-- `technical_objectives` (optional): Key technical objectives to address
-- `scope_focus` (optional): Focus area for IN/OUT scope definition
-
-**Example**:
-```
-/openup-shared-vision technical_objectives: "scalability, security" scope_focus: "user authentication"
-```
-
-**Success Criteria**:
-- [ ] Technical objectives are clearly documented
-- [ ] IN/OUT scope is well-defined
-- [ ] Technical assumptions and constraints are listed
-- [ ] Key technical decisions have rationale
-
-**See Also**: `openup-create-vision`, `openup-create-architecture-notebook`, `openup-elaboration`
-
 ### /openup-create-architecture-notebook
 
-Generate or update architecture documentation.
+Generate or update architecture documentation from template
 
-**When to Use**:
+**Model**: `sonnet`
+
+**When to Use**
+
+Use this skill when:
 - Starting Elaboration phase and need to document architecture
 - Making significant architectural decisions
 - Need to document system design and constraints
+- Establishing architecture baseline
+- Reviewing or updating existing architecture
 
-**When NOT to Use**:
-- In Inception phase before architecture is defined
-- Need detailed component design
-- Architecture notebook exists and only minor updates needed
+**When NOT to Use**
 
-**Arguments**:
-- `system_name` (required): Name of the system
-- `architectural_concerns` (optional): Key concerns to address
+Do NOT use this skill when:
+- In Inception phase before architecture is defined (use `/openup-create-vision`)
+- Need detailed component design (use design documents)
+- Looking for implementation details (use code documentation)
+- Architecture notebook exists and only minor updates needed (edit directly)
 
-**Example**:
-```
-/openup-create-architecture-notebook system_name: "TaskManager" architectural_concerns: "scalability, security, performance"
-```
+**Success Criteria**
 
-**Success Criteria**:
+After using this skill, verify:
 - [ ] Architecture notebook exists at `docs/architecture-notebook.md`
 - [ ] System name and context are defined
 - [ ] Key architectural decisions are documented
 - [ ] Architectural constraints are listed
-
-**See Also**: `openup-elaboration`, `openup-create-vision`, `openup-create-risk-list`
-
-### /openup-create-risk-list
-
-Create or update risk assessment document.
-
-**When to Use**:
-- Starting a new project and need to identify risks
-- In Inception phase documenting major risks
-- New risks emerge during project
-
-**When NOT to Use**:
-- Risk list exists and only minor updates needed
-- Looking for issue tracking
-- Risks have been realized and are now issues
+- [ ] Quality attributes are specified
 
 **Arguments**:
-- `risks` (optional): JSON array of risks to add
+- `system_name` (required) — Name of the system
+- `architectural_concerns` (optional) — Key architectural concerns to address
 
-**Example**:
-```
-/openup-create-risk-list risks: '[{"description": "Database scaling", "probability": "high", "impact": "high"}]'
-```
+**See Also**: `openup-elaboration` · `openup-create-vision` · `openup-create-risk-list`
 
-**Success Criteria**:
-- [ ] Risk list exists at `docs/risk-list.md`
-- [ ] Risks are documented with descriptions
-- [ ] Probability and impact are assessed
-- [ ] Mitigation strategies are defined
+### /openup-create-documentation
 
-**See Also**: `openup-inception`, `openup-create-vision`, `openup-create-architecture-notebook`
+Generate human-readable documentation from code and artifacts
+
+**Model**: `sonnet`
+
+**Arguments**:
+- `doc_type` (required) — Type of documentation (user-guide, api-reference, troubleshooting, tutorial)
+- `feature` (required) — Feature or component to document
+- `output_path` (optional) — Output path for documentation (optional, defaults to docs/user-guides/)
+
+**See Also**: `openup-create-use-case` · `openup-detail-use-case`
 
 ### /openup-create-iteration-plan
 
-Plan iteration based on current state and roadmap.
+Plan iteration based on current state and roadmap
 
-**When to Use**:
+**Model**: `sonnet`
+
+**When to Use**
+
+Use this skill when:
 - Starting a new iteration and need to plan work
 - In Construction phase planning iterations
 - Need to select tasks from roadmap for iteration
+- Assigning tasks to team members
+- Defining iteration success criteria
 
-**When NOT to Use**:
-- Looking to start iteration (use `openup-start-iteration`)
-- Need to create roadmap
-- Iteration plan exists and only minor updates needed
+**When NOT to Use**
 
-**Arguments**:
-- `iteration_number` (optional): Iteration number to plan
+Do NOT use this skill when:
+- Looking to start iteration (use `/openup-start-iteration`)
+- Need to create roadmap (use project management)
+- Iteration plan exists and only minor updates needed (edit directly)
+- In Inception phase (use phase activities instead)
 
-**Example**:
-```
-/openup-create-iteration-plan iteration_number: 3
-```
+**Success Criteria**
 
-**Success Criteria**:
+After using this skill, verify:
 - [ ] Iteration plan file exists
 - [ ] Iteration goal is clearly defined
 - [ ] Tasks are selected from roadmap
 - [ ] Task assignments are made
+- [ ] Success criteria are specified
 
-**See Also**: `openup-start-iteration`, `openup-complete-task`, `openup-construction`
+**Arguments**:
+- `iteration_number` (optional) — Iteration number to plan
+
+**See Also**: `openup-start-iteration` · `openup-complete-task` · `openup-construction`
+
+### /openup-create-risk-list
+
+Create or update risk assessment document from template
+
+**Model**: `sonnet`
+
+**When to Use**
+
+Use this skill when:
+- Starting a new project and need to identify risks
+- In Inception phase documenting major risks
+- New risks emerge during project
+- Need to update risk probability or impact
+- Planning risk mitigation strategies
+
+**When NOT to Use**
+
+Do NOT use this skill when:
+- Risk list exists and only minor updates needed (edit directly)
+- Looking for issue tracking (use issue tracker)
+- Risks have been realized and are now issues (manage as issues)
+- Need detailed risk analysis (use risk management process)
+
+**Success Criteria**
+
+After using this skill, verify:
+- [ ] Risk list exists at `docs/risk-list.md`
+- [ ] Risks are documented with descriptions
+- [ ] Probability and impact are assessed
+- [ ] Mitigation strategies are defined
+- [ ] Risk owners are assigned
+
+**Arguments**:
+- `risks` (optional) — JSON array of risks to add (optional)
+
+**See Also**: `openup-inception` · `openup-create-vision` · `openup-create-architecture-notebook`
+
+### /openup-create-task-spec
+
+Produce a REASONS-Canvas task spec from a roadmap line or feature description, ready for developer-role consumption
+
+**Model**: `sonnet`
+
+**When to Use**
+
+Use this skill when:
+- A roadmap task is about to enter implementation and has no spec yet.
+- A plan item needs to be decomposed before assignment.
+- Existing in-progress work needs a retroactive spec for handoff.
+
+**When NOT to Use**
+
+Do NOT use this skill when:
+- The change is a trivial typo / config tweak — use `/openup-quick-task`.
+- The task spec already exists at `docs/changes/T-XXX/plan.md` — update via this
+  skill (re-run), do not hand-edit (per the spec-first rule in `CLAUDE.openup.md`).
+- You're at the *idea* stage and don't yet have requirements — run
+  `/openup-plan-feature` first.
+
+**Success Criteria**
+
+After this skill completes, ALL of these must be true:
+- [ ] File exists at `docs/changes/T-XXX/plan.md` matching the template at
+      `docs-eng-process/templates/task-spec.md`.
+- [ ] Front-matter is fully populated (`id`, `title`, `status`, `priority`, `estimate`).
+- [ ] Status is `ready` (not `proposed`) — the rubric grades to all-✅.
+- [ ] All thirteen rubric criteria in `.claude/rubrics/task-spec-rubric.md` are ✅.
+- [ ] Every requirement carries a Given/When/Then scenario (standard/full tracks):
+      `python3 scripts/openup-spec-scenarios.py check docs/changes/T-XXX/plan.md` exits 0.
+- [ ] `docs/roadmap.md` references the new task with a status entry.
+
+**Fit**:
+- Great fit: decomposing iteration-plan tasks into executable specs, formalizing ad-hoc work before coding starts
+- OK fit: retrofitting specs onto in-progress work that lacks one
+- Poor fit: trivial doc-only edits (overhead exceeds value), exploratory spikes
+
+**Arguments**:
+- `task_id` (optional) — Task ID (T-XXX). Reserves the next free ID via `openup-claims.py reserve-id` if not provided.
+- `title` (optional) — One-line task title. Required if task_id is new; reads from roadmap if existing.
+- `source` (optional) — Where the task comes from: 'roadmap' (default), 'plan' (with plan path), or 'adhoc'.
+- `plan_ref` (optional) — Path + section to the originating plan, e.g. 'docs/plans/2026-04-28-foo.md#3
+
+**See Also**: `openup-create-iteration-plan` · `openup-assess-completeness` · `openup-orchestrate`
 
 ### /openup-create-test-plan
 
-Generate test cases and scripts from use cases and requirements.
+Generate test cases and test plan from use cases and requirements
 
-**When to Use**:
+**Model**: `sonnet`
+
+**When to Use**
+
+Use this skill when:
 - Need to create test cases for features or use cases
 - In Elaboration or Construction phase planning tests
 - Starting testing for a new feature
+- Need to document test procedures
+- Creating test scripts for automation
 
-**When NOT to Use**:
-- Looking to execute tests
-- Need to debug test failures
-- Test plan exists and only minor updates needed
+**When NOT to Use**
 
-**Arguments**:
-- `scope` (required): What to test
+Do NOT use this skill when:
+- Looking to execute tests (use test runner)
+- Need to debug test failures (use debugging tools)
+- Test plan exists and only minor updates needed (edit directly)
+- Looking for test reports (use test reporting)
 
-**Example**:
-```
-/openup-create-test-plan scope: "user authentication"
-```
+**Success Criteria**
 
-**Success Criteria**:
+After using this skill, verify:
 - [ ] Test cases exist in `docs/test-cases/`
 - [ ] Test scripts exist in `docs/test-scripts/`
 - [ ] Test coverage includes happy path and edge cases
 - [ ] Expected results are defined
-
-**See Also**: `openup-create-use-case`, `openup-construction`, `openup-phase-review`
-
-### /openup-create-documentation
-
-Generate human-readable documentation from code and artifacts.
-
-**Purpose**: Create user guides, API references, troubleshooting guides, and tutorials
-
-**When to Use**:
-- Feature implementation is complete and needs user documentation
-- Creating API reference for external or internal developers
-- Documenting common issues and solutions
-- Creating tutorial content for onboarding
-
-**When NOT to Use**:
-- Feature is still under active development
-- Design is likely to change significantly
-- Documentation already exists and just needs updates
-
-**Multi-file Structure**:
-- `SKILL.md` - Main entry point
-- `user-guide.md` - User guide generation process
-- `api-reference.md` - API reference generation process
-- `troubleshooting.md` - Troubleshooting guide generation
-- `tutorial.md` - Tutorial creation process
+- [ ] Test procedures are documented
 
 **Arguments**:
-- `doc_type` (required): Type (user-guide, api-reference, troubleshooting, tutorial)
-- `feature` (required): Feature or component to document
-- `output_path` (optional): Output path for documentation
+- `scope` (required) — What to test (e.g., specific feature, use case)
 
-**Example**:
-```
-/openup-create-documentation doc_type: user-guide feature: user-authentication
-```
+**See Also**: `openup-create-use-case` · `openup-construction` · `openup-phase-review`
 
-**Success Criteria**:
-- [ ] Documentation file is created at the specified location
-- [ ] Content is accurate based on use cases and code
-- [ ] Examples are clear and tested
-- [ ] Structure follows the appropriate template
+### /openup-create-use-case
 
-**See Also**: `openup-create-use-case`, `openup-detail-use-case`, `openup-transition`
+Create a use case specification from template
+
+**Model**: `sonnet`
+
+**When to Use**
+
+Use this skill when:
+- Need to document user interactions with the system
+- In Inception or Elaboration phase defining requirements
+- Capturing functional requirements from user perspective
+- Need to specify preconditions, flows, and postconditions
+- Creating test scenarios from requirements
+
+**When NOT to Use**
+
+Do NOT use this skill when:
+- Need non-functional requirements (use architecture notebook)
+- Looking for technical specifications (use design documents)
+- Documenting internal system behavior (use technical design)
+- Use case already exists (update existing file)
+
+**Success Criteria**
+
+After using this skill, verify:
+- [ ] Use case file exists in `docs/use-cases/`
+- [ ] Use case name and primary actor are defined
+- [ ] Basic flow is documented
+- [ ] Alternative flows are identified
+- [ ] Pre/postconditions are specified
+
+**Arguments**:
+- `use_case_name` (required) — Name of the use case
+- `primary_actor` (required) — The primary actor for this use case
+- `description` (required) — Brief description of what the use case accomplishes
+
+**See Also**: `openup-create-vision` · `openup-detail-use-case` · `openup-create-test-plan` · `openup-elaboration`
+
+### /openup-create-vision
+
+Generate a vision document from template
+
+**Model**: `sonnet`
+
+**When to Use**
+
+Use this skill when:
+- Starting a new project and need to define the vision
+- In Inception phase and need to document project scope
+- Stakeholders need a clear understanding of project goals
+- Need to define problem statement and proposed solution
+- Creating initial project artifacts
+
+**When NOT to Use**
+
+Do NOT use this skill when:
+- Vision document already exists (update it directly or use revision process)
+- Need detailed requirements (use use case skills instead)
+- Looking for technical architecture (use `/openup-create-architecture-notebook`)
+- In later phases (Elaboration+) when vision should be stable
+
+**Success Criteria**
+
+After using this skill, verify:
+- [ ] Vision document exists at `docs/vision.md`
+- [ ] Project name and problem statement are filled in
+- [ ] Stakeholders are identified
+- [ ] Key features are listed
+- [ ] Success criteria are defined
+
+**Arguments**:
+- `project_name` (required) — Name of the project
+- `problem_statement` (required) — Brief description of the problem to be solved
+
+**See Also**: `openup-inception` · `openup-create-use-case` · `openup-create-risk-list`
+
+### /openup-detail-use-case
+
+Transform a high-level use case into detailed scenarios with test cases
+
+**Model**: `sonnet`
+
+**When to Use**
+
+Use this skill when:
+- A high-level use case exists but lacks detailed scenarios
+- Need to document happy paths, alternative flows, and error cases
+- Ready to create Gherkin acceptance criteria for automation
+- Preparing to generate test cases from use cases
+- In Elaboration phase when detailing requirements
+
+**When NOT to Use**
+
+Do NOT use this skill when:
+- The use case doesn't exist (use `/openup-create-use-case` first)
+- The use case is already fully detailed with scenarios
+- Just need to create a new use case from scratch
+- Working on non-functional requirements (use architecture notebook)
+
+**Success Criteria**
+
+After using this skill, verify:
+- [ ] Use case is updated with detailed scenarios
+- [ ] Happy path, alternative paths, and error paths are documented
+- [ ] Gherkin acceptance criteria are written for each scenario
+- [ ] Test cases are generated (if generate_tests=true)
+- [ ] All actors are identified (primary and secondary)
+- [ ] Preconditions and postconditions are clear
+
+**Arguments**:
+- `use_case_name` (required) — Name of the use case to detail (file name without .md)
+- `generate_tests` (optional) — Generate test cases from scenarios (true/false, default: true)
+
+**See Also**: `openup-create-use-case` · `openup-create-test-plan` · `openup-elaboration`
+
+### /openup-shared-vision
+
+Create shared technical vision for team alignment
+
+**Model**: `sonnet`
+
+**When to Use**
+
+Use this skill when:
+- Vision document exists but needs technical elaboration
+- Need to define IN/OUT scope clearly
+- Starting Elaboration phase and need technical alignment
+- Team members have different understanding of technical direction
+- Need to document key technical decisions and constraints
+
+**When NOT to Use**
+
+Do NOT use this skill when:
+- No vision document exists (use `/openup-create-vision` first)
+- In late Construction or Transition phases (should already exist)
+- Only need architecture details (use `/openup-create-architecture-notebook`)
+- Vision is already well-defined and understood
+
+**Success Criteria**
+
+After using this skill, verify:
+- [ ] Technical objectives are clearly documented
+- [ ] IN/OUT scope is well-defined
+- [ ] Technical assumptions and constraints are listed
+- [ ] Key technical decisions have rationale
+- [ ] Open questions are tracked for elaboration
+- [ ] Document is linked from main vision
+
+**Arguments**:
+- `technical_objectives` (optional) — Key technical objectives to address (comma-separated)
+- `scope_focus` (optional) — Focus area for IN/OUT scope definition
+
+**See Also**: `openup-create-vision` · `openup-create-architecture-notebook` · `openup-elaboration`
 
 ## Workflow Skills
 
 Workflow skills automate common workflow operations.
 
-### /openup-start-iteration
+### /openup-assess-completeness
 
-Begin a new iteration with proper phase context, task selection, and team deployment.
+Rubric-based readiness assessment before task completion or phase transition
 
-**When to Use**:
-- Starting a new iteration in any phase
-- Need to create iteration branch
-- Ready to begin iteration work
+**Model**: `inherit`
 
-**When NOT to Use**:
-- Current iteration is still in progress
-- Need to plan iteration without starting
-- Looking to complete iteration
+**Fit**:
+- Great fit: pre-merge quality gate, phase transitions, artifact rubric grading
+- OK fit: mid-iteration sanity checks on partially-built artifacts
+- Poor fit: pure code changes with no rubric to grade against, exploratory work
 
 **Arguments**:
-- `task_id` (required): Task ID from roadmap to work on
-- `iteration_number` (optional): The iteration number (auto-increments if not provided)
-- `goal` (optional): The iteration goal
-- `team` (optional): Team type override (feature, construction, elaboration, inception, transition, investigation, planning, full, none)
-- `deploy_team` (optional): `false` to skip team deployment (default: `true` — team is deployed automatically)
+- `scope` (optional) — Assessment scope (task, iteration, phase)
+- `artifact` (optional) — Work product type to assess against its rubric (use-case, architecture-notebook, iteration-plan, test-plan, vision). Auto-detected if not provided.
+- `strict` (optional) — Fail on any missing items (true/false, default: false)
 
-**Team Auto-Selection**: A team is deployed automatically based on the current phase unless `deploy_team: false` is passed. Pass `team: none` to skip, or override with a specific team type.
-
-**Example**:
-```
-/openup-start-iteration task_id: T-007
-/openup-start-iteration task_id: T-007 team: feature
-/openup-start-iteration task_id: T-007 deploy_team: false
-```
-
-**Success Criteria**:
-- [ ] Project status is updated with new iteration
-- [ ] Iteration branch is created
-- [ ] Iteration goal is defined
-- [ ] Answered input requests are processed
-- [ ] Team deployed (unless opted out)
-
-**See Also**: `openup-orchestrate`, `openup-create-iteration-plan`, `openup-complete-task`, `openup-request-input`
+**See Also**: `openup-complete-task` · `openup-retrospective` · `openup-phase-review`
 
 ### /openup-complete-task
 
-Mark a task as complete, update roadmap, commit changes, and prepare logs.
+Mark a task as complete, update roadmap, commit changes, and prepare traceability logs
 
-**When to Use**:
-- A task implementation is complete and ready to commit
-- All tests pass for the task
-- Documentation has been updated
+**Model**: `inherit`
 
-**When NOT to Use**:
-- Still implementing the task
-- Tests are failing
-- Just need to commit without updating roadmap
+**Success Criteria**
 
-**Multi-file Structure**:
-- `SKILL.md` - Main entry point
-- `commit-procedure.md` - Detailed commit steps
-- `traceability-logs.md` - Logging procedures
-- `pr-handling.md` - PR creation flow
+After this skill completes, ALL of these must be true:
+
+- [ ] **BLOCKING**: Every spec requirement is graded ✅ against the actual diff (step 1a) — no requirement is unmet, and any ❌ blocks "done"
+- [ ] **BLOCKING (standard/full)**: The spec's Success Measure instrumentation exists in the diff or demonstrably pre-exists (step 1b) — or the section is an argued `n/a`
+- [ ] **BLOCKING (flagged features)**: A flag-removal task row exists in the roadmap Maintenance table (step 4a) — every flag enqueues its own removal
+- [ ] All changes are committed (no uncommitted changes remain)
+- [ ] Commit messages follow canonical format: `type(scope): description [T-XXX]`
+- [ ] **BLOCKING**: Branch is rebased onto the current trunk and the write-fence
+      passes (`openup-fence.py check` exit 0) — no out-of-lane files, no stale views
+- [ ] Iteration note written as a sharded file under `docs/status-notes/`
+- [ ] Roadmap + project status regenerated via `scripts/sync-status.py` (never hand-edited)
+- [ ] Traceability logs are created with commit SHAs
+- [ ] Iteration learnings entry appended to `.claude/memory/iteration-learnings.md`
+- [ ] Iteration gates pass (`openup-state.py check-gates`) and state is archived
+- [ ] PR is created (unless `create_pr` was explicitly `"false"`)
+
+**Fit**:
+- Great fit: finishing a roadmap-tracked task, ending an iteration cleanly
+- OK fit: closing out ad-hoc work that needs commit + roadmap update
+- Poor fit: mid-task checkpoints, abandoning work-in-progress
 
 **Arguments**:
-- `task_id` (required): Task ID (e.g., T-001)
-- `commit_message` (optional): Custom commit message
-- `create_pr` (optional): Create a pull request after completing the task
+- `task_id` (required) — The task ID to mark as complete (e.g., T-001)
+- `commit_message` (optional) — Custom commit message (optional, auto-generates if not provided)
+- `create_pr` (optional) — Create a pull request after completing the task (default: true — set to 'false' to skip)
 
-**Examples**:
-```
-/openup-complete-task task_id: T-003
-/openup-complete-task task_id: T-003 create_pr: true
-```
+**See Also**: `openup-create-pr` · `openup-log-run` · `openup-start-iteration`
 
-**Success Criteria**:
-- [ ] All changes are committed with descriptive message
-- [ ] No uncommitted changes remain
-- [ ] Roadmap is updated to mark task complete
-- [ ] Project status is updated
-- [ ] Traceability logs are created with commit SHAs
-- [ ] Iteration learnings appended to `.claude/memory/iteration-learnings.md`
+### /openup-create-handoff
 
-**Closure Path Rule**:
-- Prefer `/openup-complete-task` as the single closeout path for normal tasks
-- Do not run `/openup-log-run` again after a successful `/openup-complete-task` unless recovering from logging failure
+Produce a handoff brief (acceptance criteria, test cases, troubleshooting, open questions) for a change, so the next owner can pick it up cold
 
-**See Also**: `openup-create-pr`, `openup-log-run`, `openup-start-iteration`
+**Model**: `haiku`
+
+**Fit**:
+- Great fit: pausing mid-task for another owner, end-of-iteration handoff, "someone else finishes this" moments
+- OK fit: recording how to exercise a finished feature before completion, capturing open questions surfaced during work
+- Poor fit: the durable run log (use openup-log-run), the spec itself (that is the change-folder plan.md)
+
+**Arguments**:
+- `task_id` (required) — The task ID whose change folder to summarize (e.g., T-011). Required.
+- `audience` (optional) — Optional. Who is receiving the handoff (e.g. 'next session', 'tester', 'reviewer') — tunes emphasis. Defaults to the next agent/owner.
+
+**See Also**: `openup-complete-task` · `openup-log-run` · `openup-readiness`
 
 ### /openup-create-pr
 
-Create a pull request with proper description linking to roadmap task context.
+Create a pull request with proper description linking to roadmap task context
 
-**When to Use**:
-- Ready to share changes for review
-- Need to create PR from current branch
-- Want PR description linked to roadmap task
+**Model**: `sonnet`
 
-**When NOT to Use**:
-- No unmerged commits exist
-- Looking to update existing PR
-- Need to push branch without PR
-
-**Multi-file Structure**:
-- `SKILL.md` - Main entry point
-- `detection.md` - State detection procedures
-- `generation.md` - PR title and description generation
+**Fit**:
+- Great fit: shipping a finished task, opening a review-ready PR
+- OK fit: WIP / draft PRs for early feedback
+- Poor fit: pre-merge to local-only branches, work not yet committed
 
 **Arguments**:
-- `task_id` (optional): Task ID from roadmap (e.g., T-001). Auto-detected from branch name if not provided.
-- `branch` (optional): Branch to create PR from. Uses current branch if not provided.
-- `title` (optional): Custom PR title. Auto-generated from task if not provided.
-- `base` (optional): Base branch to merge into. Auto-detected if not provided.
+- `task_id` (optional) — The task ID from roadmap (e.g., T-001). Auto-detected from branch name if not provided.
+- `branch` (optional) — The branch to create PR from. Uses current branch if not provided.
+- `title` (optional) — Custom PR title. Auto-generated from task if not provided.
+- `base` (optional) — Base branch to merge into (e.g., main, develop). Auto-detected if not provided.
 
-**Examples**:
-```
-/openup-create-pr task_id: T-005
-/openup-create-pr task_id: T-005 base: develop
-/openup-create-pr
-```
+**See Also**: `openup-complete-task` · `openup-start-iteration`
 
-**Success Criteria**:
-- [ ] PR is created with proper title and description
-- [ ] PR links to roadmap task context
-- [ ] PR includes task label for traceability
-- [ ] Branch is pushed to remote
+### /openup-deploy-team
 
-**Error Handling**:
-- No unmerged commits: Informs user branch is up to date
-- No remote configured: Prompts user to add remote
-- CLI not installed: Provides installation instructions
+Deploy an OpenUP agent team to work on the current iteration
 
-**See Also**: `openup-complete-task`, `openup-start-iteration`
+**Model**: `haiku`
 
-### /openup-request-input
+**When to Use**
 
-Create an input request document for asynchronous stakeholder communication.
+Use this skill **after** `/openup-start-iteration` has completed:
+- Iteration is initialized
+- Branch is created
+- Project status is updated
+- Roadmap has the task
 
-**When to Use**:
-- The question requires stakeholder consultation
-- Multiple related questions need to be answered together
-- The input may take time to gather
+Then use this skill to deploy the team.
 
-**When NOT to Use**:
-- Question can be answered immediately by user
-- Need real-time interaction
-- Question is simple and quick to answer
+**When NOT to Use**
+
+Do NOT use this skill:
+- Before `/openup-start-iteration` has been called
+- Without knowing the iteration goal
+- For non-OpenUP work
 
 **Arguments**:
-- `title` (required): Descriptive title
-- `questions` (required): JSON array of questions
-- `context` (required): Additional context
-- `related_task` (optional): Roadmap task ID
+- `team_type` (optional) — Type of team to create (feature, investigation, construction, elaboration, inception, transition, planning, full)
+- `roles` (optional) — Specific roles to include (analyst, architect, developer, tester, project-manager). Comma-separated.
 
-**Example**:
-```
-/openup-request-input title: "Vision Scope" context: "Need to clarify project scope" questions: '[{"type": "text", "question": "What are the core features?"}]'
-```
+**See Also**: `openup-start-iteration` · `openup-complete-task` · `Team configurations`
 
-**Success Criteria**:
-- [ ] Input request document exists in `docs/input-requests/`
-- [ ] All questions are clearly formatted
-- [ ] Context explains why input is needed
-- [ ] Instructions for filling and resuming are included
+### /openup-explore
 
-**See Also**: `openup-start-iteration`, `openup-complete-task`
+Sanctioned pre-iteration mode — think through ideas, investigate problems, sketch options before committing to delivery
+
+**Model**: `inherit`
+
+**When to Use**
+
+- Investigating whether a problem is real before scoping a fix
+- Comparing two or three approaches before picking one
+- Reading an external framework / codebase and capturing what's worth borrowing
+- Drafting an RFC-style argument that may not survive review
+
+**When NOT to Use**
+
+- Known small change → `/openup-quick-task`
+- Scoped delivery work → `/openup-start-iteration`
+- Anything that produces code intended to ship (exploration code is throwaway)
+
+**Success Criteria**
+
+- [ ] File exists at `docs/explorations/YYYY-MM-DD-<slug>.md`
+- [ ] A `### Product-manager challenge pass` section exists, and every
+      challenge in it is either accepted into the notes or explicitly
+      rejected with a reason (no team was deployed to produce it — role
+      hat only)
+- [ ] File ends with a "Where this goes next" section naming exactly one
+      disposition: `→ iteration`, `→ quick-task`, or `→ dropped`
+- [ ] If disposition is `→ iteration` or `→ quick-task`, the follow-up is
+      named in one sentence
+- [ ] If disposition is `→ dropped`, the reason is stated
+
+**Fit**:
+- Great fit: is this problem real?, comparing approaches before scoping, ruling out designs, evaluating external frameworks
+- OK fit: reproducing an ambiguous bug before filing it, drafting RFC-style notes that may or may not lead to work
+- Poor fit: known small change (use /openup-quick-task), scoped delivery work (use /openup-start-iteration), running experiments that produce code intended to ship
+
+**Arguments**:
+- `slug` (required) — Short kebab-case slug for the exploration topic (e.g. "openspec-borrow-analysis"). Used in the filename.
+- `append` (optional) — If true, append to today's existing exploration file with this slug instead of creating a new one (default: false)
+
+**See Also**: `openup-start-iteration` · `openup-quick-task`
+
+### /openup-init
+
+One-command project setup for OpenUP - interactive initialization wizard
+
+**Model**: `inherit`
+
+**When to Use**
+
+Use this skill when:
+- Starting a new OpenUP project
+- Setting up OpenUP in an existing repository
+- Need quick project initialization without manual steps
+
+**When NOT to Use**
+
+Do NOT use this skill when:
+- Project is already initialized (use phase skills instead)
+- Need to customize individual components (manual setup recommended)
+
+**Success Criteria**
+
+After using this skill, verify:
+- [ ] Project structure is created
+- [ ] Initial documents are generated
+- [ ] Agent teams are configured (if enabled)
+- [ ] Git is initialized (if needed)
+
+**Arguments**:
+- `project_name` (optional) — The project name (optional, will prompt if not provided)
+- `project_type` (optional) — Type of project: web, api, library, mobile (optional, will prompt if not provided)
+- `skip_teams` (optional) — Skip agent team setup (default: false)
+
+**See Also**: `openup-inception` · `openup-create-vision` · `Agent Teams Setup`
+
+### /openup-log-run
+
+Create traceability logs (markdown + JSONL) for the current agent run
+
+**Model**: `haiku`
+
+**Fit**:
+- Great fit: end-of-session wrap-up after commits, audit-required workflows
+- OK fit: mid-session checkpoints when commits exist
+- Poor fit: pre-commit runs (no SHAs to log), trivial sessions handled by hooks
+
+**Arguments**:
+- `run_id` (optional) — Unique identifier for this run (optional, auto-generates if not provided)
+
+**See Also**: `openup-complete-task` · `openup-start-iteration`
+
+### /openup-next
+
+Run ONE OpenUP delivery cycle — read the derived board, claim the top READY lane, execute it, tick its progress, and exit through a legal exit. The sequential continue-loop.
+
+**Model**: `inherit`
+
+**Success Criteria**
+
+After this skill completes, ALL of these must be true:
+- [ ] `openup-input.py resumable` was checked **first**; any answered-input lane
+      was resumed (answers folded into the spec, lane un-suspended, request
+      archived) before a new lane was claimed.
+- [ ] Exactly one lane was claimed (lease written) and worked, OR the skill
+      stopped cleanly because no lane was pickable.
+- [ ] The Operations checkboxes for completed steps are ticked in the lane's
+      `plan.md`.
+- [ ] The cycle exited through `/openup-complete-task` **or**
+      `/openup-create-handoff` — never a raw commit, never a third path.
+- [ ] No information required to resume lives only in the conversation.
+
+**Fit**:
+- Great fit: driving delivery one session at a time, an outer /loop or cron repeatedly advancing the roadmap, "just do the next thing"
+- OK fit: resuming a mid-cycle task whose progress is already persisted in its Operations checkboxes
+- Poor fit: authoring a brand-new spec (use /openup-create-task-spec first), exploratory work (use /openup-explore), picking a SPECIFIC task by id (use /openup-start-iteration directly)
+
+**Arguments**:
+- `task_id` (optional) — Optional. Force a specific lane instead of the board's top pick (must still be pickable). Omit to take the top READY collision-free lane.
+
+**See Also**: `openup-start-iteration` · `openup-complete-task` · `openup-create-handoff` · `openup-readiness` · `openup-request-input`
+
+### /openup-orchestrate
+
+Run a full orchestrated iteration — PM decomposes the goal, delegates to specialist roles, collects outputs, and synthesizes results
+
+**Model**: `inherit`
+
+**Fit**:
+- Great fit: complex multi-role tasks, architecture+impl+test cycles, anything benefiting from role isolation
+- OK fit: medium tasks where decomposition aids token-efficiency
+- Poor fit: trivial changes, single-role work, hotfixes — heavyweight overkill
+
+**Arguments**:
+- `task_id` (required) — The task ID to orchestrate (must match a task in docs/roadmap.md)
+- `team` (optional) — Team type to use (feature, construction, elaboration, inception, transition, investigation, planning, full). Auto-selected from phase if not provided.
+- `dry_run` (optional) — Preview the orchestration plan without spawning teammates (true/false, default: false)
+
+**See Also**: `openup-start-iteration` · `openup-assess-completeness` · `openup-complete-task` · `openup-deploy-team`
 
 ### /openup-phase-review
 
-Check phase completion criteria and prepare for phase review.
+Check phase completion criteria and prepare for phase review
 
-**When to Use**:
+**Model**: `inherit`
+
+**When to Use**
+
+Use this skill when:
 - Nearing end of a phase and need to check completion
 - Preparing for phase review meeting with stakeholders
 - Assessing readiness to move to next phase
+- Generating phase summary documentation
+- Need to demonstrate phase accomplishments
 
-**When NOT to Use**:
-- Just starting a phase
-- Need to complete iteration tasks
-- Phase is clearly not complete
+**When NOT to Use**
 
-**Arguments**:
-- `phase` (optional): Phase to review
+Do NOT use this skill when:
+- Just starting a phase (use phase skill instead)
+- Need to complete iteration tasks (use `/openup-complete-task`)
+- Looking for iteration planning (use `/openup-create-iteration-plan`)
+- Phase is clearly not complete (continue work first)
 
-**Example**:
-```
-/openup-phase-review
-```
+**Success Criteria**
 
-**Success Criteria**:
+After using this skill, verify:
 - [ ] All phase completion criteria are checked
 - [ ] Missing items are clearly identified
 - [ ] Phase review summary is generated
 - [ ] Recommendations for next phase are provided
+- [ ] User knows what decisions are needed
 
-**See Also**: `openup-inception`, `openup-elaboration`, `openup-construction`, `openup-transition`
-
-### /openup-log-run
-
-Create traceability logs for the current agent run.
-
-**When to Use**:
-- Completing work that should be logged for traceability
-- Need to document agent activities for audit trail
-- After committing all changes
-
-**When NOT to Use**:
-- Changes are not yet committed
-- Looking to commit changes
-- Run is incomplete and will continue
+**Fit**:
+- Great fit: end-of-phase milestone evaluation, transition gate decisions
+- OK fit: mid-phase sanity check on completion criteria
+- Poor fit: within-iteration progress checks, single-task decisions
 
 **Arguments**:
-- `run_id` (optional): Unique identifier
+- `phase` (optional) — The phase to review (inception, elaboration, construction, transition)
 
-**Example**:
-```
-/openup-log-run
-```
+**See Also**: `openup-inception` · `openup-elaboration` · `openup-construction` · `openup-transition`
 
-**Success Criteria**:
-- [ ] Markdown log exists with all required fields
-- [ ] JSONL entry is valid and appended
-- [ ] Commit SHAs are correctly recorded
-- [ ] Log files are in correct directory structure
+### /openup-plan-feature
 
-**IMPORTANT**: Must be called AFTER all changes are committed.
+Generate iteration plan and roadmap entry for a feature idea
 
-**Use carefully**:
-- Use directly when you are not using `/openup-complete-task`
-- If `/openup-complete-task` already created logs, do not call this again in the same closeout flow
+**Model**: `sonnet`
 
-**See Also**: `openup-complete-task`, `openup-start-iteration`
+**When to Use**
 
-### /openup-create-handoff
+Use this skill when:
+- You have a new feature idea and need a detailed implementation plan
+- You want to add a feature to the roadmap with a plan document
+- You need to explore the codebase to understand what a feature will touch before coding
+- Planning an iteration task from a high-level description
 
-Produce a handoff brief so the next owner can resume a change cold (Process v2 WS6c).
+**When NOT to Use**
 
-**When to Use**:
-- Pausing a task mid-flight for another session/owner to finish
-- End-of-iteration handoff to a reviewer or tester
-- Capturing how to exercise a feature + open questions before completion
+Do NOT use this skill when:
+- The feature already has an iteration plan (edit it directly)
+- You need to start implementing (use `/openup-start-iteration`)
+- The task is a quick fix or bug fix (use `/openup-quick-task`)
+- You only need to update the roadmap without a plan (edit `docs/roadmap.md` directly)
 
-**When NOT to Use**:
-- For the durable run log (use `/openup-log-run`)
-- To write the spec itself (that is the change folder's `plan.md`)
+**Success Criteria**
 
-**Arguments**:
-- `task_id` (required): the change folder to summarize (e.g. `T-011`)
-- `audience` (optional): who receives it (tunes emphasis)
+After using this skill, verify:
+- [ ] Iteration plan file exists at `docs/iteration-plans/{task_id}-{slug}.md`
+- [ ] Plan includes Current State with actual code excerpts from the codebase
+- [ ] Plan includes Proposed Design with concrete code examples
+- [ ] Plan includes Acceptance Criteria, Dependencies, and Key Files
+- [ ] Roadmap entry exists in `docs/roadmap.md` with correct format
+- [ ] PR is created (if `create_pr` is true)
 
-**Example**:
-```
-/openup-create-handoff task_id: T-011
-```
-
-**Success Criteria**:
-- [ ] `docs/changes/{task_id}/handoff.md` written with the four sections
-      (acceptance criteria, test cases, troubleshooting, open questions)
-- [ ] Concrete artifacts carried (commands, paths, IDs) — not prose restatements
-- [ ] Empty sections stated explicitly rather than invented
-
-**See Also**: `openup-complete-task`, `openup-log-run`, `openup-readiness`
-
-### /openup-sync-spec
-
-Refactor → artifact back-propagation: diff code against each artifact's `last-synced`
-ref, classify it, propose targeted section edits for the stale ones. Read-only by
-default — refuses behaviour-changing diffs and routes them spec-first to the originating
-`/openup-create-*` skill.
-
-**When to Use**:
-- After a pure refactor (rename / extract / move) that may have left a use-case,
-  architecture notebook, iteration plan, or task spec naming the old symbols
-- To set or check a `last-synced` baseline on an artifact
-
-**When NOT to Use**:
-- Authoring new behaviour — that goes spec-first through `/openup-create-*`
-- Wholesale doc regeneration (this skill only proposes targeted edits)
+**Fit**:
+- Great fit: turning a fresh feature idea into a roadmap entry + plan
+- OK fit: re-planning when scope shifts mid-flight
+- Poor fit: already-scoped tasks with a plan (skip to start-iteration), trivial fixes
 
 **Arguments**:
-- `since` (optional): diff baseline — a git ref or `"last commit"`; defaults to each
-  artifact's own `last-synced`
-- `artifact` (optional): restrict to one type (`use-case-specification` |
-  `architecture-notebook` | `iteration-plan` | `task-spec`)
+- `topic` (required) — The feature idea or requirements to plan (e.g., "Add PDF export for chat conversations")
+- `task_id` (optional) — Override the task ID (e.g., C3-004). Reserved via `openup-claims.py reserve-id` if not provided.
+- `priority` (optional) — Task priority — critical, high, or medium (default medium)
+- `validate` (optional) — Spawn analyst + architect team to review the plan before finalizing (default false)
+- `create_pr` (optional) — Create branch, commit, push, and open a PR (default true)
 
-**Example**:
-```
-/openup-sync-spec
-/openup-sync-spec since: last commit artifact: architecture-notebook
-```
-
-**See Also**: `openup-complete-task`, `openup-readiness`, `openup-create-use-case`, `openup-create-architecture-notebook`
+**See Also**: `openup-start-iteration` · `openup-create-iteration-plan` · `openup-complete-task` · `openup-create-pr`
 
 ### /openup-quick-task
 
-Fast path for tiny, low-risk changes with minimal overhead.
+Fast iteration mode for small changes - simplified workflow with minimal overhead
 
-**When to Use**:
-- Small bug fixes or docs/config updates
-- Single-file or low-complexity edits
-- Time-sensitive fixes where full workflow overhead is unnecessary
+**Model**: `inherit`
 
-**When NOT to Use**:
-- New features or major refactors
-- Multi-hour tasks needing full traceability artifacts
-- Work requiring architecture review or broader coordination
+**When to Use**
 
-**Example**:
-```
-/openup-quick-task task: "Fix typo in setup docs"
-```
+Use Quick Task for:
+- Small bug fixes (< 50 lines changed)
+- Documentation updates
+- Configuration changes
+- Quick experiments
+- Hot fixes
 
-**Success Criteria**:
-- [ ] Change completed and verified
-- [ ] Commit/log behavior follows selected quick-task options
-- [ ] Result is communicated concisely
+**Target**: Complete tasks in 50% less time than standard workflow.
 
-**See Also**: `openup-start-iteration`, `openup-complete-task`
+**When NOT to Use**
 
-### /openup-assess-completeness
+Do NOT use for:
+- New features (use standard workflow)
+- Major refactoring (use `/openup-start-iteration`)
+- Tasks requiring architecture review (use full team)
+- Multi-hour development work
 
-Rubric-based readiness assessment before task completion or phase transition.
+**Success Criteria**
 
-**Purpose**: Grade work products against explicit quality criteria and verify all required work is complete before moving forward. For work product artifacts (use cases, architecture notebooks, iteration plans, test plans, vision), produces a per-criterion breakdown with specific gaps rather than a generic pass/fail.
+- [ ] Task completed
+- [ ] Changes verified
+- [ ] Branch created (if not skipped)
+- [ ] Committed (if not skipped)
+- [ ] Logged (if not skipped)
 
-**When to Use**:
-- After creating or updating a work product artifact (use case, architecture notebook, etc.)
-- About to complete a task and want to verify readiness
-- Approaching end of iteration and need to assess completion
-- Considering phase transition and need to verify criteria
-
-**When NOT to Use**:
-- Mid-iteration and just checking progress (not ready for assessment yet)
-- Looking for code review feedback (different skill)
+**Fit**:
+- Great fit: typo fixes, doc updates, single-file config tweaks, hotfixes
+- OK fit: small bug fixes under ~50 LOC, single-component refactors
+- Poor fit: new features, multi-role work, architectural changes, anything needing a rubric
 
 **Arguments**:
-- `scope` (optional): Assessment scope (task, iteration, phase)
-- `artifact` (optional): Work product type to assess (use-case, architecture-notebook, iteration-plan, test-plan, vision). Auto-detected from modified files if not provided.
-- `strict` (optional): Fail on any missing items (true/false)
+- `task` (required) — Brief description of the task to complete
+- `task_id` (optional) — Roadmap task ID (optional, creates task if not provided)
+- `skip_branch` (optional) — Skip branch creation (default: false)
+- `skip_commit` (optional) — Skip auto-commit (default: false)
+- `skip_logging` (optional) — Skip traceability logging (default: false)
 
-**Rubric grading output format**:
-```
-✅ [criterion name]  — satisfied
-❌ [criterion name] — [specific gap description]
-Result: satisfied | needs_revision
-```
+**See Also**: `openup-start-iteration` · `openup-complete-task` · `openup-tdd-workflow`
 
-If `needs_revision`: the skill identifies the specific gaps. Address them and re-run until `satisfied`.
+### /openup-readiness
 
-**Example**:
-```
-/openup-assess-completeness scope: task artifact: use-case
-/openup-assess-completeness scope: iteration strict: true
-```
+Compute the change-folder dependency DAG and print READY/BLOCKED/collision report for PM intake
 
-**Success Criteria**:
-- [ ] Rubric assessment completed for any work product artifacts
-- [ ] All process checks performed
-- [ ] Per-criterion gaps identified (if any)
-- [ ] Pass/fail status is clear with specific action items
+**Model**: `haiku`
 
-**See Also**: `openup-orchestrate`, `openup-complete-task`, `openup-retrospective`, `openup-phase-review`
+**Fit**:
+- Great fit: PM intake "what can I start next", dependency-reason lookups, collision pre-flight before claiming
+- OK fit: mid-iteration "is T-NNN unblocked yet" checks
+- Poor fit: editing frontmatter (this skill is read-only), live worktree-claim enforcement (that is T-009)
+
+**Arguments**:
+- `task_id` (optional) — Optional. If given, report only this task's readiness and the reason chain; otherwise report all tasks.
+
+**See Also**: `openup-start-iteration` · `openup-complete-task`
+
+### /openup-request-input
+
+Create an input request document for asynchronous stakeholder communication
+
+**Model**: `haiku`
+
+**Fit**:
+- Great fit: blocked tasks needing a human decision, ambiguous requirements
+- OK fit: scope/priority clarifications mid-iteration
+- Poor fit: questions with obvious answers, internal-only decisions, urgent same-session needs
+
+**Arguments**:
+- `title` (required) — Descriptive title for the request
+- `questions` (required) — JSON array of questions (type, question_text, options for multiple-choice)
+- `context` (required) — Additional context about what the agent is doing
+- `related_task` (optional) — Optional roadmap task ID (e.g., T-001)
+
+**See Also**: `openup-start-iteration` · `openup-complete-task`
 
 ### /openup-retrospective
 
-Generate iteration retrospective with feedback and action items.
+Generate iteration retrospective with feedback and action items
 
-**Purpose**: Capture what went well, what to improve, and action items for continuous improvement
+**Model**: `haiku`
 
-**When to Use**:
-- Completing an iteration
-- Need to capture lessons learned
-- Preparing for next iteration planning
-- Implementing continuous improvement
-
-**When NOT to Use**:
-- Mid-iteration and just checking progress
-- Iteration hasn't started yet
-- Looking for project status update
+**Fit**:
+- Great fit: end-of-iteration reflection, capturing patterns to feed forward
+- OK fit: mid-iteration when blockers pile up and a reset is needed
+- Poor fit: single-task wrap-ups (use complete-task notes), trivial iterations
 
 **Arguments**:
-- `iteration_number` (optional): Iteration to review (defaults to current)
-- `include_metrics` (optional): Include git metrics (true/false)
+- `iteration_number` (optional) — Iteration to review (optional, defaults to current)
+- `include_metrics` (optional) — Include git metrics (true/false, default: true)
 
-**Example**:
-```
-/openup-retrospective include_metrics: true
-```
+**See Also**: `openup-start-iteration` · `openup-complete-task` · `openup-assess-completeness` · `openup-create-iteration-plan`
 
-**Success Criteria**:
-- [ ] Retrospective document is created
-- [ ] What went well is documented
-- [ ] What to improve is identified
-- [ ] Action items are defined with owners
-- [ ] Metrics are included (if requested)
+### /openup-start-iteration
 
-**See Also**: `openup-start-iteration`, `openup-complete-task`, `openup-assess-completeness`
+Begin a new OpenUP iteration with proper phase context and task selection
 
-### /openup-deploy-team
+**Model**: `haiku`
 
-Deploy an OpenUP agent team to work on the current iteration or custom task.
+**Success Criteria**
 
-**Purpose**: Create and configure agent teams with proper role assignments for specific work
+After this skill completes, ALL of these must be true:
 
-**When to Use**:
-- After `/openup-start-iteration` has completed to deploy a team
-- Need to create a custom team for a specific task
-- Want to quickly spawn teammates without full iteration setup
-- Working on tasks that don't require full iteration initialization
+- [ ] **BLOCKING (full track only, when a team is requested)**: If the `full` track (or an explicit `team:` / `deploy_team: true`) calls for a team, it is deployed and coordinating before implementation begins. `quick` and `standard` default to solo sequential work — no team required.
+- [ ] Project status is updated with new iteration
+- [ ] **BLOCKING**: `git rev-parse --abbrev-ref HEAD` returns a non-trunk branch name. If it returns trunk, the skill has FAILED — do not proceed.
+- [ ] Iteration goal is defined
+- [ ] Answered input requests are processed
+- [ ] Log entry is created
+- [ ] `.openup/state.json` created
 
-**When NOT to Use**:
-- Before `/openup-start-iteration` has been called (for iteration work)
-- Without knowing the iteration goal or task context
-- For non-OpenUP work
-- When iteration initialization with automatic team deployment is preferred
+**Fit**:
+- Great fit: feature work, multi-step tasks, anything needing a deployed team
+- OK fit: single-component changes that benefit from explicit iteration framing
+- Poor fit: typo fixes, hotfixes, exploratory spikes, throwaway scripts
 
 **Arguments**:
-- `team_type` (optional): Type of team (feature, investigation, construction, elaboration, inception, transition, planning, full)
-- `roles` (optional): Specific roles to include as comma-separated list (analyst, architect, developer, tester, project-manager)
+- `iteration_number` (optional) — The iteration number (optional, auto-increments if not provided)
+- `goal` (optional) — The iteration goal (optional, reads from project-status if not provided)
+- `task_id` (required) — The task ID from roadmap to work on (required for task-based branching)
+- `track` (optional) — Ceremony track (quick|standard|full). Optional — auto-selected from scope when omitted. quick = docs/config/typo/≤~50 LOC single file (state + auto-log only, no plan gate, no team, no readiness); standard = single-feature (plan gate + scribe + /openup-readiness, solo by default — team opt-in); full = multi-role/architectural (standard + team default-on, opt-out + rubric at complete-task). See tracks.md.
+- `team` (optional) — Team type to automatically deploy after initialization (feature, investigation, construction, elaboration, inception, transition, planning, full, or none)
+- `deploy_team` (optional) — Whether to deploy a team after iteration initialization (true/false/auto, default: auto — deploy only on the full track; skip on quick/standard. Pass 'true' to force a team, 'false' to force solo)
+- `worktree` (optional) — Whether to create an isolated git worktree for this task (true/false, default: true — pass 'false' for a legacy in-place checkout). See T-009 / parallel-work.md.
 
-**Examples**:
-```
-/openup-deploy-team team_type: feature
-/openup-deploy-team roles: analyst,developer,tester
-```
+**See Also**: `openup-next` · `openup-complete-task` · `openup-create-iteration-plan`
 
-**Success Criteria**:
-- [ ] Team is created with appropriate roles
-- [ ] Team members are briefed with iteration/task context
-- [ ] Coordination channels are established
-- [ ] Team lead is ready to assign work
+### /openup-sync-spec
 
-**See Also**: `openup-start-iteration`, `openup-orchestrate`, `openup-complete-task`, Team configurations
+Back-propagate pure refactors to stale artifacts; classify the diff, refuse behaviour-changes, propose targeted edits for approval (read-only by default)
 
-### /openup-orchestrate
+**Model**: `inherit`
 
-Run a full orchestrated iteration — PM decomposes the goal, delegates to specialist roles, collects outputs, and synthesizes results.
+**Success Criteria**
 
-**Purpose**: Implements the coordinator + specialist pattern. The Project Manager acts as an orchestrator: it decomposes the iteration goal into role-specific subtasks, briefs each specialist with focused context (not the full project), collects their outputs, and synthesizes a coherent result verified against the iteration's acceptance criteria.
+After this skill runs, ALL of these must be true:
 
-**When to Use**:
-- Iteration involves multiple work product types requiring different expertise (e.g., implementation + architecture decision + test plan)
-- Quality requires independent review by specialists
-- Running a multi-role team and want the PM to coordinate explicitly
+- [ ] The diff was classified REFACTOR or BEHAVIOUR-CHANGE by the documented heuristic.
+- [ ] A BEHAVIOUR-CHANGE (or ambiguous) verdict produced the refusal + routing and
+      wrote nothing.
+- [ ] For a REFACTOR, only sections naming changed files/symbols were flagged; no whole
+      document was regenerated.
+- [ ] No artifact was written without explicit user approval.
+- [ ] `last-synced` was bumped to `HEAD` **only** on artifacts whose edits were applied
+      this run, in the same approved scribe batch as the section edits.
+- [ ] Never-synced artifacts were reported (no auto-edit) unless the user asked to set a
+      baseline.
 
-**When NOT to Use**:
-- Task is single-role in scope (use the role directly instead)
-- Quick task that doesn't need full team coordination
-- Team isn't active yet (run `/openup-start-iteration` first)
+**Fit**:
+- Great fit: reconciling artifacts after a rename/extract/move refactor, "did my cleanup leave the spec stale", detecting + routing behaviour-changes back to spec-first
+- OK fit: setting a fresh last-synced baseline on a never-synced artifact, single-artifact sync after a targeted diff
+- Poor fit: authoring new behaviour spec-first (use the originating /openup-create-* skill), wholesale doc regeneration, applying writes without user approval
 
 **Arguments**:
-- `task_id` (required): Task ID to orchestrate (must match `docs/roadmap.md`)
-- `team` (optional): Team type override (same options as `/openup-start-iteration`)
-- `dry_run` (optional): Preview the orchestration plan without spawning teammates (`true/false`)
+- `since` (optional) — Optional. Diff baseline — a git ref or \"last commit\". Defaults to each artifact's own last-synced front-matter SHA; falls back to never-synced handling when unset.
+- `artifact` (optional) — Optional. Restrict the run to one artifact type (use-case-specification | architecture-notebook | iteration-plan | task-spec). Defaults to all four candidates.
 
-**Orchestration Flow**:
-1. Load iteration context + past learnings from `.claude/memory/iteration-learnings.md`
-2. Decompose goal → role subtasks with deliverables and done-when criteria
-3. Spawn team (if not active)
-4. Brief each specialist with focused context only
-5. Collect outputs; re-brief on gaps
-6. Synthesize; run rubric assessment
-7. Save orchestration learnings
-
-**Examples**:
-```
-/openup-orchestrate task_id: T-007
-/openup-orchestrate task_id: T-007 team: feature
-/openup-orchestrate task_id: T-007 dry_run: true
-```
-
-**Success Criteria**:
-- [ ] Orchestration plan documented before spawning
-- [ ] Each specialist briefed with focused context only
-- [ ] All specialist outputs collected and checked
-- [ ] Rubric assessment returns `satisfied`
-- [ ] Orchestration learnings saved to `.claude/memory/iteration-learnings.md`
-
-**See Also**: `openup-start-iteration`, `openup-assess-completeness`, `openup-complete-task`, `openup-deploy-team`
+**See Also**: `openup-complete-task` · `openup-readiness`
 
 ### /openup-tdd-workflow
 
-Guide Test-Driven Development cycle adapted for AI agents.
+Guide Test-Driven Development cycle adapted for AI agents with a pragmatic approach
 
-**Purpose**: Follow red-green-refactor TDD cycle for feature implementation
+**Model**: `inherit`
 
-**When to Use**:
-- Starting feature implementation
-- Practicing test-driven development
-- Need to ensure test coverage for new code
-- Implementing complex logic that benefits from test-first approach
+**Success Criteria**
 
-**When NOT to Use**:
-- Adding tests after implementation is complete
-- Doing simple bug fixes or trivial changes
-- Exploratory coding or prototyping
+- [ ] Tests are written (preferably before implementation)
+- [ ] Implementation makes tests pass
+- [ ] Code is reasonably clean and functional
+- [ ] Tests pass before commit
 
-**Multi-file Structure**:
-- `SKILL.md` - Main entry point
-- `red-phase.md` - Write failing test
-- `green-phase.md` - Implement to make test pass
-- `refactor-phase.md` - Improve code quality
+**Fit**:
+- Great fit: well-specified features with a clear test surface, regression bug fixes (start with failing repro)
+- OK fit: refactors with strong existing test coverage
+- Poor fit: exploratory spikes, prototyping, UI-only tweaks, throwaway scripts
 
 **Arguments**:
-- `phase` (optional): TDD phase (red, green, refactor, full)
-- `feature` (required): Feature or component to implement
+- `phase` (optional) — TDD phase (red, green, refactor, full)
+- `feature` (required) — Feature or component to implement
 
-**Example**:
-```
-/openup-tdd-workflow feature: user-authentication phase: red
-```
-
-**Success Criteria**:
-- [ ] Test is written first (RED phase)
-- [ ] Implementation makes test pass (GREEN phase)
-- [ ] Code is refactored while tests pass (REFACTOR phase)
-- [ ] All tests still pass
-
-**See Also**: `openup-create-test-plan`, `openup-complete-task`, `openup-detail-use-case`
+**See Also**: `openup-create-test-plan` · `openup-complete-task` · `openup-detail-use-case`
+<!-- END GENERATED: skill-reference -->
 
 ## Executable Scripts
 
@@ -1064,31 +1154,47 @@ Create an OpenUP agent team for feature implementation.
 /openup-log-run
 ```
 
-## When to Use Each Skill
+## Skill Index
 
-| Situation | Use This Skill |
-|-----------|----------------|
-| Starting a new phase | `/openup-inception`, `/openup-elaboration`, `/openup-construction`, `/openup-transition` |
-| Checking phase progress | `/openup-{phase} activity: check-status` |
-| Need project vision | `/openup-create-vision` |
-| Defining requirements | `/openup-create-use-case` |
-| Architecture work needed | `/openup-create-architecture-notebook` |
-| Identifying risks | `/openup-create-risk-list` |
-| Planning iteration | `/openup-create-iteration-plan` |
-| Starting iteration | `/openup-start-iteration` |
-| Finishing task | `/openup-complete-task` |
-| Creating pull request | `/openup-create-pr` |
-| Need stakeholder input | `/openup-request-input` |
-| Phase nearly complete | `/openup-phase-review` |
-| Ending agent run | `/openup-log-run` |
-| Testing needed | `/openup-create-test-plan` |
-| Detailing use cases | `/openup-detail-use-case` |
-| Creating documentation | `/openup-create-documentation` |
-| Assessing readiness | `/openup-assess-completeness` |
-| Orchestrating a full team iteration | `/openup-orchestrate` |
-| End of iteration | `/openup-retrospective` |
-| Test-driven development | `/openup-tdd-workflow` |
-| Deploying agent teams | `/openup-deploy-team` |
+Every available skill, grouped. Generated by `scripts/check-skills-guide.py`.
+
+<!-- BEGIN GENERATED: skill-index (scripts/check-skills-guide.py) -->
+| Skill | Group | What it does |
+|-------|-------|--------------|
+| `/openup-construction` | Phase | Initialize and manage Construction phase activities - build the system incrementally |
+| `/openup-elaboration` | Phase | Initialize and manage Elaboration phase activities - establish architecture baseline |
+| `/openup-inception` | Phase | Initialize and manage Inception phase activities - define scope, vision, and feasibility |
+| `/openup-transition` | Phase | Initialize and manage Transition phase activities - deploy to users |
+| `/openup-create-architecture-notebook` | Artifact | Generate or update architecture documentation from template |
+| `/openup-create-documentation` | Artifact | Generate human-readable documentation from code and artifacts |
+| `/openup-create-iteration-plan` | Artifact | Plan iteration based on current state and roadmap |
+| `/openup-create-risk-list` | Artifact | Create or update risk assessment document from template |
+| `/openup-create-task-spec` | Artifact | Produce a REASONS-Canvas task spec from a roadmap line or feature description, ready for developer-role consumption |
+| `/openup-create-test-plan` | Artifact | Generate test cases and test plan from use cases and requirements |
+| `/openup-create-use-case` | Artifact | Create a use case specification from template |
+| `/openup-create-vision` | Artifact | Generate a vision document from template |
+| `/openup-detail-use-case` | Artifact | Transform a high-level use case into detailed scenarios with test cases |
+| `/openup-shared-vision` | Artifact | Create shared technical vision for team alignment |
+| `/openup-assess-completeness` | Workflow | Rubric-based readiness assessment before task completion or phase transition |
+| `/openup-complete-task` | Workflow | Mark a task as complete, update roadmap, commit changes, and prepare traceability logs |
+| `/openup-create-handoff` | Workflow | Produce a handoff brief (acceptance criteria, test cases, troubleshooting, open questions) for a change, so the next owner can pick it up cold |
+| `/openup-create-pr` | Workflow | Create a pull request with proper description linking to roadmap task context |
+| `/openup-deploy-team` | Workflow | Deploy an OpenUP agent team to work on the current iteration |
+| `/openup-explore` | Workflow | Sanctioned pre-iteration mode — think through ideas, investigate problems, sketch options before committing to delivery |
+| `/openup-init` | Workflow | One-command project setup for OpenUP - interactive initialization wizard |
+| `/openup-log-run` | Workflow | Create traceability logs (markdown + JSONL) for the current agent run |
+| `/openup-next` | Workflow | Run ONE OpenUP delivery cycle — read the derived board, claim the top READY lane, execute it, tick its progress, and exit through a legal exit. The sequential continue-loop. |
+| `/openup-orchestrate` | Workflow | Run a full orchestrated iteration — PM decomposes the goal, delegates to specialist roles, collects outputs, and synthesizes results |
+| `/openup-phase-review` | Workflow | Check phase completion criteria and prepare for phase review |
+| `/openup-plan-feature` | Workflow | Generate iteration plan and roadmap entry for a feature idea |
+| `/openup-quick-task` | Workflow | Fast iteration mode for small changes - simplified workflow with minimal overhead |
+| `/openup-readiness` | Workflow | Compute the change-folder dependency DAG and print READY/BLOCKED/collision report for PM intake |
+| `/openup-request-input` | Workflow | Create an input request document for asynchronous stakeholder communication |
+| `/openup-retrospective` | Workflow | Generate iteration retrospective with feedback and action items |
+| `/openup-start-iteration` | Workflow | Begin a new OpenUP iteration with proper phase context and task selection |
+| `/openup-sync-spec` | Workflow | Back-propagate pure refactors to stale artifacts; classify the diff, refuse behaviour-changes, propose targeted edits for approval (read-only by default) |
+| `/openup-tdd-workflow` | Workflow | Guide Test-Driven Development cycle adapted for AI agents with a pragmatic approach |
+<!-- END GENERATED: skill-index -->
 
 ## References
 

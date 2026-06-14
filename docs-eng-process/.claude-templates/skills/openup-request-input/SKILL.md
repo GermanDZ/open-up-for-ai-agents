@@ -66,6 +66,24 @@ Add instructions for respondent:
 3. Save the file
 4. Tell the agent to continue
 
+### 5.5 Suspend the Related Lane (if `related_task` given)
+
+If `$ARGUMENTS[related_task]` is set, **suspend that lane** so the continue-loop
+will not re-pick it before the question is answered: add one coordination line
+to `docs/changes/<related_task>/plan.md` frontmatter —
+
+```yaml
+awaiting-input: docs/input-requests/<this-request-file>.md
+```
+
+This is a coordination-frontmatter update (like the lease/`claimed-by`), **not**
+a spec behavior change — so it does not need a `/openup-create-task-spec` re-run.
+While the request stays `pending`, `scripts/openup-board.py` reports the lane as
+`suspended` (never pickable). When the request is later answered,
+`/openup-next` step 0 (`scripts/openup-input.py resumable`) resumes it: folds the
+answers into the spec, removes this `awaiting-input` line, and archives the
+request. See [Asynchronous Input SOP](docs-eng-process/sops/async-input.md).
+
 ### 6. Notify User
 
 Inform user of document location and how to proceed.

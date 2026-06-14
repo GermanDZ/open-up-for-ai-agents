@@ -89,7 +89,8 @@ class BoardTests(unittest.TestCase):
         lane = by_task(run(self.root, self.cdir, "refresh", expect=OK))["T-100"]
         self.assertEqual(set(lane), {
             "task", "title", "track", "state", "lease", "hat",
-            "next_action", "plan", "collides_with", "depends_ok"})
+            "next_action", "plan", "collides_with", "depends_ok",
+            "awaiting_input"})
         self.assertEqual(lane["state"], "ready")
         self.assertEqual(lane["track"], "standard")
         self.assertEqual(lane["lease"], None)
