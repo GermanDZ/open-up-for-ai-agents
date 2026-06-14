@@ -30,6 +30,9 @@ session ends; an outer loop (`/loop`, cron, or a human) runs it again.
 ## Success Criteria
 
 After this skill completes, ALL of these must be true:
+- [ ] `openup-input.py resumable` was checked **first**; any answered-input lane
+      was resumed (answers folded into the spec, lane un-suspended, request
+      archived) before a new lane was claimed.
 - [ ] Exactly one lane was claimed (lease written) and worked, OR the skill
       stopped cleanly because no lane was pickable.
 - [ ] The Operations checkboxes for completed steps are ticked in the lane's
@@ -39,6 +42,38 @@ After this skill completes, ALL of these must be true:
 - [ ] No information required to resume lives only in the conversation.
 
 ## Process
+
+### 0. Resume any answered-input lane first (before claiming anything new)
+
+A prior cycle may have **suspended** a lane on a question it could not resolve,
+recording it as an input-request. Before touching the board, check whether a
+human has answered — this is [Start-of-Run SOP](docs-eng-process/sops/start-of-run.md)
+Step 0, made first-class for the loop:
+
+```bash
+python3 scripts/openup-input.py resumable   # prints "<task>\t<request>" lines; nothing = none
+```
+
+- **Nothing printed** → no suspended lane is answered; continue to step 1.
+- **One or more lines** → resume the **first** task *before claiming any new
+  lane*:
+  1. Read the answers in the named request file.
+  2. **Fold the answers into the spec, not into code.** Re-run
+     `/openup-create-task-spec task_id: <task>` so the answers land in
+     `docs/changes/<task>/plan.md` through the rubric (fix-spec-first). An
+     answered request never auto-merges a behavior change — it only un-suspends
+     the lane and surfaces the answers.
+  3. **Un-suspend the lane**: remove the `awaiting-input:` line from that
+     plan.md's frontmatter (the board reports the lane `suspended` only while it
+     points at a `pending` request).
+  4. **Close the request**: set its frontmatter `status: processed` and move the
+     file to `docs/input-requests/archive/`.
+  5. That task is now this cycle's lane — skip the board's top pick and go
+     straight to step 2 (claim + work it).
+
+The board models a lane with a still-`pending` request as `suspended` (not
+generic `blocked`) and never picks it, so a question you raised cannot be
+silently re-selected before it is answered.
 
 ### 1. Refresh the board and take the top pickable lane
 
@@ -122,4 +157,6 @@ taken.
 - [openup-complete-task](../complete-task/SKILL.md) — legal exit #1.
 - [openup-create-handoff](../create-handoff/SKILL.md) — legal exit #2.
 - [openup-readiness](../readiness/SKILL.md) — the human-readable DAG report; `openup-board.py` is its machine-readable superset.
+- [openup-request-input](../request-input/SKILL.md) — how a cycle suspends on a question (creates the input-request + sets `awaiting-input`).
 - `scripts/openup-board.py` — the deterministic board generator (`refresh` / `top`).
+- `scripts/openup-input.py` — maps answered input-requests back to resumable lanes (`resumable` / `list`).

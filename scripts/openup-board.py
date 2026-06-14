@@ -62,7 +62,8 @@ STATE_RANK = {
     "in-progress": 1,
     "colliding": 2,
     "blocked": 3,
-    "deferred": 4,
+    "suspended": 4,
+    "deferred": 5,
 }
 
 
@@ -127,6 +128,27 @@ def lease_for(task_id: str, live):
     return None
 
 
+def request_status(req_rel: str, root: Path):
+    """Status of the input-request at ``req_rel`` (path relative to ``root``), or
+    ``None`` if the field is empty or the file is missing/unreadable. A stale
+    pointer (request already processed + archived) reads as ``None``."""
+    if not req_rel:
+        return None
+    p = root / req_rel
+    if not p.is_file():
+        return None
+    fm = claims.parse_frontmatter(p)
+    return (fm.get("status") or "").lower() or None
+
+
+def is_suspended(awaiting_input: str, root: Path) -> bool:
+    """A lane is suspended iff its ``awaiting-input`` request is still ``pending``
+    (an open question for a human). Once the request is ``answered`` the lane is
+    no longer suspended — it is resumable, and /openup-next picks it up via the
+    Step-0 answered-check (see openup-input.py resumable)."""
+    return request_status(awaiting_input, root) == "pending"
+
+
 def collider_for(task_id: str, touches, live):
     """Task id of a live lease (owned by another task) whose ``touches`` overlap
     this lane's, or ``None``. Mirrors the pre-flight collision rule."""
@@ -160,9 +182,12 @@ def build_lane(plan_path: Path, root: Path, live):
     lease = lease_for(task_id, live)
     collides_with = collider_for(task_id, touches, live)
 
+    awaiting_input = fm.get("awaiting-input")
+    suspended = is_suspended(awaiting_input, root)
+
     next_action, hat = parse_operations(plan_path.read_text(encoding="utf-8"))
 
-    state = classify(status, lease, depends_ok, collides_with)
+    state = classify(status, lease, depends_ok, collides_with, suspended)
 
     lane = {
         "task": task_id,
@@ -175,16 +200,23 @@ def build_lane(plan_path: Path, root: Path, live):
         "plan": str(plan_path.relative_to(root)).replace("\\", "/"),
         "collides_with": collides_with,
         "depends_ok": depends_ok,
+        # The open input-request blocking this lane (only while suspended);
+        # None otherwise.
+        "awaiting_input": awaiting_input if suspended else None,
     }
     # Carried only for sorting; not part of the lane payload.
     lane["_priority"] = (fm.get("priority") or "medium").lower()
     return lane
 
 
-def classify(status: str, lease, depends_ok: bool, collides_with):
+def classify(status: str, lease, depends_ok: bool, collides_with, suspended=False):
     """Deterministic lane-state classification (see plan §Requirements 3)."""
     if status == "deferred":
         return "deferred"
+    if suspended:
+        # An open input-request (awaiting a human answer) outranks every other
+        # not-pickable reason — it is the specific, actionable signal.
+        return "suspended"
     if status == "blocked":
         return "blocked"  # author-asserted block; surfaced, never auto-promoted
     if lease is not None or status == "in-progress":

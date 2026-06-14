@@ -18,3 +18,4 @@ openup-fence.py
 openup-spec-scenarios.py
 sync-status.py
 openup-scribe.py
+openup-input.py
