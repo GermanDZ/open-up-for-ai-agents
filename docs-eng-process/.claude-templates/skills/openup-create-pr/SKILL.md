@@ -51,7 +51,7 @@ Create a PR with a structured description linked to roadmap task context.
 
 ### 4. Detect Trunk Branch
 
-Use `$ARGUMENTS[base]` if provided; otherwise follow trunk detection in `docs-eng-process/agent-workflow.md` (Branching SOP). Record detected trunk in run log.
+Use `$ARGUMENTS[base]` if provided; otherwise follow trunk detection in `docs-eng-process/sops/branching.md` (Branching SOP). Record detected trunk in run log.
 
 ### 5. Generate PR Description
 
@@ -88,7 +88,7 @@ glab mr create --base <base> --title "<title>" --description "<description>" --l
 
 ## References
 
-- Branching SOP: `docs-eng-process/agent-workflow.md`
+- Branching SOP: `docs-eng-process/sops/branching.md`
 - PR Description Template: `docs-eng-process/templates/pr-description.md`
 - Roadmap: `docs/roadmap.md`
 

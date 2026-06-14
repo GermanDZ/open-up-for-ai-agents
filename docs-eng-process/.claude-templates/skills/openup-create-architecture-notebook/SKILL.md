@@ -82,7 +82,7 @@ Update with:
 
 ### 5. Self-Critique
 
-Apply the **Self-Critique SOP** (`docs-eng-process/agent-workflow.md`) before
+Apply the **Self-Critique SOP** (`docs-eng-process/sops/self-critique.md`) before
 validating: take a hostile-reviewer stance, surface every load-bearing
 assumption into the notebook, and confirm each architectural decision records
 the rejected alternatives and the constraint that forced it — not just the

@@ -126,4 +126,4 @@ A: Yes, you can share it via email and consolidate responses. Make sure all answ
 
 ---
 
-For agent procedures, see [agent-workflow.md](agent-workflow.md#asynchronous-input-sop).
+For agent procedures, see [the Asynchronous Input SOP](sops/async-input.md).

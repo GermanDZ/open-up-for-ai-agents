@@ -77,7 +77,7 @@ Update with:
 
 ### 5. Self-Critique
 
-Apply the **Self-Critique SOP** (`docs-eng-process/agent-workflow.md`) before
+Apply the **Self-Critique SOP** (`docs-eng-process/sops/self-critique.md`) before
 validating: take a hostile-reviewer stance, surface every load-bearing
 assumption into the list, and confirm each risk has a concrete trigger and a
 mitigation you could actually verify was carried out — not a restatement of the

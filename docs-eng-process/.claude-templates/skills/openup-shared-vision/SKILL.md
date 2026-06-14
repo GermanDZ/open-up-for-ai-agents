@@ -159,7 +159,7 @@ See [Shared Vision](shared-vision.md) for detailed technical objectives, scope, 
 
 ### 10. Self-Critique
 
-Apply the **Self-Critique SOP** (`docs-eng-process/agent-workflow.md`) before
+Apply the **Self-Critique SOP** (`docs-eng-process/sops/self-critique.md`) before
 returning: take a hostile-reviewer stance, surface every load-bearing assumption
 into the document, and confirm the IN/OUT scope boundaries are sharp enough to
 settle a real dispute and that each key decision records what it trades away. Fix

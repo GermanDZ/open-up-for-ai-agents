@@ -135,7 +135,7 @@ Update the existing use case file with:
 
 ### 7. Self-Critique
 
-Apply the **Self-Critique SOP** (`docs-eng-process/agent-workflow.md`) before
+Apply the **Self-Critique SOP** (`docs-eng-process/sops/self-critique.md`) before
 returning: take a hostile-reviewer stance, surface every load-bearing assumption
 into the scenarios, and confirm each Gherkin scenario is independently failable
 and that the alternative and error flows are covered — not just the happy path.

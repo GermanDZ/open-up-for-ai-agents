@@ -199,7 +199,7 @@ Brief one developer-role agent with the partially-filled task spec.
 
 ### 5. Self-Critique
 
-Apply the **Self-Critique SOP** (`docs-eng-process/agent-workflow.md`) before
+Apply the **Self-Critique SOP** (`docs-eng-process/sops/self-critique.md`) before
 rubric grading: take a hostile-reviewer stance, surface every load-bearing
 assumption into the spec, and confirm the Behaviour Delta names what *observably*
 changes and that every acceptance criterion and scenario is failable — not

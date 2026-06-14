@@ -88,7 +88,7 @@ For each test script, document:
 
 ### 6. Self-Critique
 
-Apply the **Self-Critique SOP** (`docs-eng-process/agent-workflow.md`) before
+Apply the **Self-Critique SOP** (`docs-eng-process/sops/self-critique.md`) before
 validating coverage: take a hostile-reviewer stance, surface every load-bearing
 assumption into the plan, and confirm the suite genuinely exercises error and
 edge paths — not happy-path restatements — and that every case is written so it

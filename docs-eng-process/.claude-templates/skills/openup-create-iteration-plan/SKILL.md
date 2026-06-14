@@ -82,7 +82,7 @@ Update with:
 
 ### 6. Self-Critique
 
-Apply the **Self-Critique SOP** (`docs-eng-process/agent-workflow.md`) before
+Apply the **Self-Critique SOP** (`docs-eng-process/sops/self-critique.md`) before
 validating: take a hostile-reviewer stance, surface every load-bearing
 assumption into the plan, and confirm the iteration goal and each task's success
 criteria could actually fail — and that the selected work realistically fits the

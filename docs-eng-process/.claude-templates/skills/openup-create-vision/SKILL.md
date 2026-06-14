@@ -75,7 +75,7 @@ Update the vision document with:
 
 ### 4. Self-Critique
 
-Apply the **Self-Critique SOP** (`docs-eng-process/agent-workflow.md`) before
+Apply the **Self-Critique SOP** (`docs-eng-process/sops/self-critique.md`) before
 validating: take a hostile-reviewer stance, surface every load-bearing
 assumption into the document, and confirm the problem statement and success
 criteria are falsifiable — not aspirational claims that could never fail. Fix or
