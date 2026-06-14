@@ -1,7 +1,7 @@
 ---
 name: openup-shared-vision
 description: Create shared technical vision for team alignment
-model: inherit
+model: sonnet
 arguments:
   - name: technical_objectives
     description: Key technical objectives to address (comma-separated)

@@ -1,7 +1,7 @@
 ---
 name: openup-create-task-spec
 description: Produce a REASONS-Canvas task spec from a roadmap line or feature description, ready for developer-role consumption
-model: inherit
+model: sonnet
 fit:
   great: [decomposing iteration-plan tasks into executable specs, formalizing ad-hoc work before coding starts]
   ok: [retrofitting specs onto in-progress work that lacks one]

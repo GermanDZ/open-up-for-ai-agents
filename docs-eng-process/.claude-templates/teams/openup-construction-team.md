@@ -90,7 +90,7 @@ For proper tracking and traceability, the team lead should start an iteration be
 - **Reference**: `.claude/teammates/architect.md`
 
 ### analyst (As needed)
-- **Model**: inherit
+- **Model**: sonnet
 - **Focus**: Requirements clarification, acceptance criteria
 - **Key Work Products**: Requirements updates, Use case clarifications
 - **Collaborates With**: Tester (acceptance criteria), Developer (requirements understanding)

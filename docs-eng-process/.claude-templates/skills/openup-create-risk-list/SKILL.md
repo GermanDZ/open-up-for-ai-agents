@@ -1,7 +1,7 @@
 ---
 name: openup-create-risk-list
 description: Create or update risk assessment document from template
-model: inherit
+model: sonnet
 arguments:
   - name: risks
     description: JSON array of risks to add (optional)

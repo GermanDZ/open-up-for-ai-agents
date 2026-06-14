@@ -1,7 +1,7 @@
 ---
 name: openup-create-use-case
 description: Create a use case specification from template
-model: inherit
+model: sonnet
 arguments:
   - name: use_case_name
     description: Name of the use case

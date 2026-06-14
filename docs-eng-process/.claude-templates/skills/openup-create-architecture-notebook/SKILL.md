@@ -1,7 +1,7 @@
 ---
 name: openup-create-architecture-notebook
 description: Generate or update architecture documentation from template
-model: inherit
+model: sonnet
 arguments:
   - name: system_name
     description: Name of the system

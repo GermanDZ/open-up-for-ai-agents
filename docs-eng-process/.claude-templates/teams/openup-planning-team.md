@@ -83,7 +83,7 @@ Plan iterations, update the roadmap, assess priorities, and coordinate project p
 - **Reference**: `.claude/teammates/product-manager.md`
 
 ### analyst
-- **Model**: inherit
+- **Model**: sonnet
 - **Focus**: Review and prioritize requirements
 - **Key Activities**: Requirements analysis, stakeholder input, value assessment
 - **Collaborates With**: Project Manager (prioritization), Architect (feasibility)

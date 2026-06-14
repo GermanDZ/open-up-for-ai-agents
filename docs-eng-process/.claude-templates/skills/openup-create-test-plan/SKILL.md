@@ -1,7 +1,7 @@
 ---
 name: openup-create-test-plan
 description: Generate test cases and test plan from use cases and requirements
-model: inherit
+model: sonnet
 arguments:
   - name: scope
     description: What to test (e.g., specific feature, use case)

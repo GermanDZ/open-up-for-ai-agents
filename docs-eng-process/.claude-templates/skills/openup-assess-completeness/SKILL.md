@@ -1,7 +1,7 @@
 ---
 name: openup-assess-completeness
 description: Rubric-based readiness assessment before task completion or phase transition
-model: haiku
+model: inherit
 fit:
   great: [pre-merge quality gate, phase transitions, artifact rubric grading]
   ok: [mid-iteration sanity checks on partially-built artifacts]

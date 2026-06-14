@@ -1,7 +1,7 @@
 ---
 name: openup-phase-review
 description: Check phase completion criteria and prepare for phase review
-model: haiku
+model: inherit
 fit:
   great: [end-of-phase milestone evaluation, transition gate decisions]
   ok: [mid-phase sanity check on completion criteria]

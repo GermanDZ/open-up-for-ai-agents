@@ -1,7 +1,7 @@
 ---
 name: openup-create-pr
 description: Create a pull request with proper description linking to roadmap task context
-model: inherit
+model: sonnet
 fit:
   great: [shipping a finished task, opening a review-ready PR]
   ok: [WIP / draft PRs for early feedback]

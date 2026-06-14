@@ -1,7 +1,7 @@
 ---
 name: openup-create-vision
 description: Generate a vision document from template
-model: inherit
+model: sonnet
 arguments:
   - name: project_name
     description: Name of the project
