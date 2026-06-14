@@ -69,6 +69,10 @@ class TempRepo:
         git(self.dir, "init", "-q")
         git(self.dir, "config", "user.email", "t@example.com")
         git(self.dir, "config", "user.name", "Tester")
+        # Hermetic: never depend on the host's commit-signing setup. Without
+        # this, a host with commit.gpgsign=true makes every test commit fail
+        # ("failed to write commit object") and the hooks have nothing to log.
+        git(self.dir, "config", "commit.gpgsign", "false")
         git(self.dir, "checkout", "-q", "-b", "main")
         # Mirror production: .openup is runtime state, gitignored.
         (self.dir / ".gitignore").write_text(".openup/\n")

@@ -114,6 +114,8 @@ def main(argv):
                     help="override .claude-templates dir (for tests)")
     ap.add_argument("--doc", default=str(DOC),
                     help="override model-tiers.md path (for tests)")
+    ap.add_argument("-q", "--quiet", action="store_true",
+                    help="suppress the success line (errors still print); for hooks")
     args = ap.parse_args(argv)
 
     templates = Path(args.templates_dir)
@@ -130,8 +132,9 @@ def main(argv):
     if args.write:
         if new_text != doc_text:
             doc.write_text(new_text, encoding="utf-8")
-            print("model-tiers.md tables regenerated.")
-        else:
+            if not args.quiet:
+                print("model-tiers.md tables regenerated.")
+        elif not args.quiet:
             print("model-tiers.md already up to date.")
         return EXIT_OK
 
@@ -142,8 +145,9 @@ def main(argv):
             "frontmatter.\n       Run: python3 scripts/check-model-tiers.py --write\n"
         )
         return EXIT_DRIFT
-    n = len(list((templates / "skills").glob("*/SKILL.md")))
-    print("model-tiers.md is in sync (%d skills, all have model:)." % n)
+    if not args.quiet:
+        n = len(list((templates / "skills").glob("*/SKILL.md")))
+        print("model-tiers.md is in sync (%d skills, all have model:)." % n)
     return EXIT_OK
 
 

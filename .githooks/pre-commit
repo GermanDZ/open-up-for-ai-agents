@@ -45,7 +45,7 @@ fi
 # Enforce that docs-eng-process/model-tiers.md stays in sync with the live
 # `model:` frontmatter (the per-skill/agent tables are generated, not authored).
 if [ -x "$ROOT/scripts/check-model-tiers.py" ] && command -v python3 >/dev/null 2>&1; then
-  if ! python3 "$ROOT/scripts/check-model-tiers.py" --check; then
+  if ! python3 "$ROOT/scripts/check-model-tiers.py" --check --quiet; then
     echo "" >&2
     echo "Commit blocked: model-tiers.md is out of sync with skill/agent model: frontmatter." >&2
     echo "  - Run:  python3 scripts/check-model-tiers.py --write" >&2

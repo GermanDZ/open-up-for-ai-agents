@@ -90,6 +90,17 @@ class FixtureTests(unittest.TestCase):
         proc = run(self.args("--check"), expect_code=1)
         self.assertIn("out of sync", proc.stderr)
 
+    def test_quiet_suppresses_success_output(self):
+        write_skill(self.templates / "skills", "openup-a", "haiku")
+        run(self.args("--write"), expect_code=0)
+        proc = run(self.args("--check") + ["--quiet"], expect_code=0)
+        self.assertEqual(proc.stdout.strip(), "")  # silent on success
+        # ...but still reports drift on stderr and exits nonzero.
+        skill = self.templates / "skills" / "openup-a" / "SKILL.md"
+        skill.write_text(skill.read_text().replace("model: haiku", "model: sonnet"))
+        proc = run(self.args("--check") + ["--quiet"], expect_code=1)
+        self.assertIn("out of sync", proc.stderr)
+
     def test_missing_model_field_is_flagged(self):
         write_skill(self.templates / "skills", "openup-nomodel", None)
         proc = run(self.args("--check"), expect_code=1)
