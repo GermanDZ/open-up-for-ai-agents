@@ -69,7 +69,7 @@ For proper tracking and traceability, the team lead should start an iteration be
 ## Team Members
 
 ### analyst (Lead)
-- **Model**: inherit
+- **Model**: sonnet
 - **Focus**: Requirements gathering, stakeholder communication, vision definition
 - **Key Work Products**: Vision, Use Cases (20-30%), Risk List, Project Plan
 - **Collaborates With**: Project Manager (planning), Architect (feasibility assessment)

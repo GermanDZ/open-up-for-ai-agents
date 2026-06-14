@@ -1,7 +1,7 @@
 ---
 name: openup-detail-use-case
 description: Transform a high-level use case into detailed scenarios with test cases
-model: inherit
+model: sonnet
 arguments:
   - name: use_case_name
     description: Name of the use case to detail (file name without .md)
@@ -135,7 +135,7 @@ Update the existing use case file with:
 
 ### 7. Self-Critique
 
-Apply the **Self-Critique SOP** (`docs-eng-process/agent-workflow.md`) before
+Apply the **Self-Critique SOP** (`docs-eng-process/sops/self-critique.md`) before
 returning: take a hostile-reviewer stance, surface every load-bearing assumption
 into the scenarios, and confirm each Gherkin scenario is independently failable
 and that the alternative and error flows are covered — not just the happy path.

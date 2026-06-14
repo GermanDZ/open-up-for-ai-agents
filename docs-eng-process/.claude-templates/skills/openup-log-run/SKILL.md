@@ -98,7 +98,7 @@ python3 scripts/openup-state.py set-gate log_written true 2>/dev/null || true
 
 ## References
 
-- Traceability Logging SOP: `docs-eng-process/agent-workflow.md`
+- Traceability Logging SOP: `docs-eng-process/sops/traceability-logging.md`
 
 ## See Also
 

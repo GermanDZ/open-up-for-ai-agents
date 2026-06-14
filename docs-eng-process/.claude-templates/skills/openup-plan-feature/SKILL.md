@@ -1,7 +1,7 @@
 ---
 name: openup-plan-feature
 description: Generate iteration plan and roadmap entry for a feature idea
-model: inherit
+model: sonnet
 fit:
   great: [turning a fresh feature idea into a roadmap entry + plan]
   ok: [re-planning when scope shifts mid-flight]
@@ -317,7 +317,7 @@ flag the placement for its review) — execution skills consume the order as giv
 
 ### 7. Self-Critique
 
-Apply the **Self-Critique SOP** (`docs-eng-process/agent-workflow.md`) before any
+Apply the **Self-Critique SOP** (`docs-eng-process/sops/self-critique.md`) before any
 team validation: take a hostile-reviewer stance on the plan you just generated,
 surface every load-bearing assumption into its **Open Questions / Dependencies**,
 and confirm the Acceptance Criteria and Success Measure could actually fail — not

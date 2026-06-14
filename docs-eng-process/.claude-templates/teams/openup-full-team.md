@@ -61,7 +61,7 @@ The OpenUP full team consists of all core roles working together to deliver soft
 ## Team Members
 
 ### analyst
-- **Model**: inherit
+- **Model**: sonnet
 - **Focus**: Requirements gathering, stakeholder communication, understanding problems
 - **Key Work Products**: Vision, Use Cases, System-Wide Requirements, Glossary
 - **Collaborates With**: Architect (technical feasibility), Developer (implementation input), Tester (acceptance criteria)

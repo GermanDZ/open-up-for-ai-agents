@@ -1,7 +1,7 @@
 ---
 name: openup-create-iteration-plan
 description: Plan iteration based on current state and roadmap
-model: inherit
+model: sonnet
 arguments:
   - name: iteration_number
     description: Iteration number to plan
@@ -42,20 +42,12 @@ After using this skill, verify:
 
 ### Load Project Config (context + rules — do this first)
 
-Before drafting, layer in project-owned context and rules so the artifact reflects
-facts and standards the framework can't infer. Full mechanism + precedence:
+If `docs/project-config.yaml` exists, apply it before drafting (skip if
+absent): inject its `context:` as `<project-context>` and its `rules.iteration-plan`
+as `<project-rules>`, then confirm every injected rule holds before marking
+the artifact complete. Rules are *additive* — they may add but never waive a
+framework criterion. Full mechanism + precedence (the single source):
 `docs-eng-process/project-config.md`.
-
-1. If `docs/project-config.yaml` exists, read it. If it is **absent, skip this
-   step** — framework defaults apply unchanged.
-2. Inject `context:` into your working prompt wrapped in
-   `<project-context>…</project-context>`, and `rules.<TYPE>` (if present) wrapped
-   in `<project-rules>…</project-rules>`. For this skill `<TYPE>` is **`iteration-plan`**.
-3. Project rules are **additive** to the framework rubric — precedence is
-   **framework rubric → project rules → task-spec safeguards**. A project rule may
-   add a criterion but may **not** waive a framework rubric criterion or a safeguard.
-4. Before marking this artifact complete, confirm every injected `<project-rules>`
-   item is satisfied alongside the framework rubric.
 
 ### 1. Read Project Status
 
@@ -90,7 +82,7 @@ Update with:
 
 ### 6. Self-Critique
 
-Apply the **Self-Critique SOP** (`docs-eng-process/agent-workflow.md`) before
+Apply the **Self-Critique SOP** (`docs-eng-process/sops/self-critique.md`) before
 validating: take a hostile-reviewer stance, surface every load-bearing
 assumption into the plan, and confirm the iteration goal and each task's success
 criteria could actually fail — and that the selected work realistically fits the

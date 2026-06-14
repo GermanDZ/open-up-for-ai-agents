@@ -53,7 +53,7 @@ docs/{description}
 
 - Every agent run must create a log entry in `docs/agent-logs/`
 - Logs must include: run metadata, tasks performed, commits created, decisions made
-- See [agent-workflow.md](agent-workflow.md#traceability-logging-sop) for complete requirements
+- See [the Traceability Logging SOP](sops/traceability-logging.md) for complete requirements
 
 ## Code Style (Language-Specific)
 

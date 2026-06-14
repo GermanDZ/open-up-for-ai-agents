@@ -80,7 +80,7 @@ Inform user of document location and how to proceed.
 
 ## References
 
-- Asynchronous Input SOP: `docs-eng-process/agent-workflow.md`
+- Asynchronous Input SOP: `docs-eng-process/sops/async-input.md`
 - Input Request Template: `docs-eng-process/templates/input-request.md`
 
 ## See Also

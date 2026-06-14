@@ -90,7 +90,7 @@ For proper tracking and traceability, the team lead should start an iteration be
 - **Reference**: `.claude/teammates/project-manager.md`
 
 ### analyst (As needed)
-- **Model**: inherit
+- **Model**: sonnet
 - **Focus**: User feedback, acceptance, documentation
 - **Key Work Products**: User documentation, Feedback analysis
 - **Collaborates With**: Tester (acceptance criteria)

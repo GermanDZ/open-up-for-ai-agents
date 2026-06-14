@@ -53,7 +53,7 @@ Implement a new feature from requirements through design, implementation, and te
 ## Team Members
 
 ### analyst
-- **Model**: inherit
+- **Model**: sonnet
 - **Focus**: Gather requirements, define acceptance criteria
 - **Key Activities**: Requirements elicitation, use case creation, stakeholder communication
 - **Collaborates With**: Architect (feasibility), Tester (acceptance criteria)

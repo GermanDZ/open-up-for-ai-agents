@@ -9,6 +9,8 @@
 | T-023 | `merge=union` gitattribute for `agent-runs.jsonl` (parallel-PR conflict quick fix) | completed (2026-06-12) | medium | — |
 | [T-024](changes/archive/T-024/plan.md) | Write-fence + derived shared views (parallel-PR conflicts in roadmap/status) | completed (2026-06-12) | high | — |
 | [T-031](changes/archive/T-031/plan.md) | Task-ID allocation race in parallel lanes: reserve IDs through the claims mechanism in `create-task-spec` / `plan-feature` | completed (2026-06-12) | medium | — |
+| T-032 | Install scripts must ship the process CLIs (`scripts/openup-*.py`) so a bootstrapped project can actually run the workflow | proposed | high | — |
+| T-033 | Autonomous continue-loop: suspend a lane on a blocking input-request and auto-resume it when answered (board `suspended` state + `/openup-next` runs Step-0 answered-check first) | proposed | high | — |
 
 **Value (T-031)**: parallel planning sessions — human or agent — stop colliding on
 task IDs, eliminating renumber-at-merge churn like the practice pack's T-024→T-025…T-030

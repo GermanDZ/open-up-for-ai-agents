@@ -51,10 +51,9 @@ Do NOT use for:
 
 ### 1. Quick Context Load
 
-```bash
-# Load minimal context only
-python3 .claude/scripts/batch-context.py --minimal
-```
+Load only the **Ring 1 product truth** the change needs — typically just the
+roadmap row and the single file you are touching. Do **not** scan all of `docs/`
+(see the Three-Ring context scoping in `.claude/CLAUDE.md`).
 
 ### 2. Quick Branch (optional)
 

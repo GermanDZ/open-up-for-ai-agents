@@ -1,7 +1,7 @@
 ---
 name: openup-create-task-spec
 description: Produce a REASONS-Canvas task spec from a roadmap line or feature description, ready for developer-role consumption
-model: inherit
+model: sonnet
 fit:
   great: [decomposing iteration-plan tasks into executable specs, formalizing ad-hoc work before coding starts]
   ok: [retrofitting specs onto in-progress work that lacks one]
@@ -59,20 +59,12 @@ After this skill completes, ALL of these must be true:
 
 ### Load Project Config (context + rules — do this first)
 
-Before drafting, layer in project-owned context and rules so the artifact reflects
-facts and standards the framework can't infer. Full mechanism + precedence:
+If `docs/project-config.yaml` exists, apply it before drafting (skip if
+absent): inject its `context:` as `<project-context>` and its `rules.task-spec`
+as `<project-rules>`, then confirm every injected rule holds before marking
+the artifact complete. Rules are *additive* — they may add but never waive a
+framework criterion. Full mechanism + precedence (the single source):
 `docs-eng-process/project-config.md`.
-
-1. If `docs/project-config.yaml` exists, read it. If it is **absent, skip this
-   step** — framework defaults apply unchanged.
-2. Inject `context:` into your working prompt wrapped in
-   `<project-context>…</project-context>`, and `rules.<TYPE>` (if present) wrapped
-   in `<project-rules>…</project-rules>`. For this skill `<TYPE>` is **`task-spec`**.
-3. Project rules are **additive** to the framework rubric — precedence is
-   **framework rubric → project rules → task-spec safeguards**. A project rule may
-   add a criterion but may **not** waive a framework rubric criterion or a safeguard.
-4. Before marking this artifact complete, confirm every injected `<project-rules>`
-   item is satisfied alongside the framework rubric.
 
 The skill is a two-round multi-role handoff. Use the token-efficiency protocol
 (`.claude/CLAUDE.openup.md`): one orchestrator, compact handoffs, one specialist
@@ -207,7 +199,7 @@ Brief one developer-role agent with the partially-filled task spec.
 
 ### 5. Self-Critique
 
-Apply the **Self-Critique SOP** (`docs-eng-process/agent-workflow.md`) before
+Apply the **Self-Critique SOP** (`docs-eng-process/sops/self-critique.md`) before
 rubric grading: take a hostile-reviewer stance, surface every load-bearing
 assumption into the spec, and confirm the Behaviour Delta names what *observably*
 changes and that every acceptance criterion and scenario is failable — not
