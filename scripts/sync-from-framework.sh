@@ -86,21 +86,6 @@ log_verbose() {
   fi
 }
 
-# Check if this script is outdated
-check_script_version() {
-  local framework_script="$1/scripts/sync-from-framework.sh"
-  local current_script="${BASH_SOURCE[0]}"
-
-  if [ -f "$framework_script" ]; then
-    if ! cmp -s "$current_script" "$framework_script"; then
-      log_warn "Your sync script is outdated!"
-      log_warn "Run the following to update:"
-      log_warn "  cp $framework_script $current_script"
-      echo ""
-    fi
-  fi
-}
-
 # Get script directory and project root
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
@@ -153,8 +138,8 @@ if [ ! -d "$FRAMEWORK_TEMPLATES" ]; then
   exit 1
 fi
 
-# Check if this script needs updating
-check_script_version "$FRAMEWORK_PATH"
+# The updater scripts are refreshed in place at the end of this run (see the
+# "Syncing updater scripts" step), so no manual cp is needed anymore.
 
 # Define project paths
 CLAUDE_DIR="$PROJECT_ROOT/.claude"
@@ -344,6 +329,23 @@ if [ -f "$CLI_HELPER" ]; then
   install_process_clis "$FRAMEWORK_PATH/scripts" "$PROJECT_ROOT/scripts" "$DRY_RUN" false
 else
   log_warn "install-process-clis.sh not found in framework — skipping process CLI sync"
+fi
+
+# Refresh the updater scripts themselves (sync-from-framework.sh,
+# update-from-template.sh) so a project's tooling never drifts. The helper writes
+# via temp + atomic rename, so refreshing THIS running script is safe.
+log_info "Syncing updater scripts from framework..."
+echo ""
+UPDATER_HELPER="$FRAMEWORK_PATH/scripts/lib/install-updater.sh"
+if [ -f "$UPDATER_HELPER" ]; then
+  # shellcheck source=/dev/null
+  source "$UPDATER_HELPER"
+  if [ "$DRY_RUN" = false ]; then
+    mkdir -p "$PROJECT_ROOT/scripts"
+  fi
+  install_updater "$FRAMEWORK_PATH/scripts" "$PROJECT_ROOT/scripts" "$DRY_RUN" false
+else
+  log_warn "install-updater.sh not found in framework — skipping updater sync"
 fi
 
 # Create cache directory if it doesn't exist

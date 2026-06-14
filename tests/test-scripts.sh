@@ -188,6 +188,26 @@ else
     fi
 fi
 
+# Test 4c: Bootstrap ships the updater scripts so the project can self-update
+test_start "Bootstrap installs the updater scripts (scripts/sync-from-framework.sh)"
+if [ ! -d "$TEST_DIR/test-project/scripts" ]; then
+    test_fail "Updater scripts" "bootstrapped project has no scripts/ directory"
+else
+    UPDATER_MISSING=0
+    for updater in sync-from-framework.sh update-from-template.sh; do
+        if [ ! -f "$TEST_DIR/test-project/scripts/$updater" ]; then
+            test_fail "Updater script" "Missing from bootstrapped scripts/: $updater"
+            UPDATER_MISSING=1
+        elif [ ! -x "$TEST_DIR/test-project/scripts/$updater" ]; then
+            test_fail "Updater script" "Not executable in bootstrapped scripts/: $updater"
+            UPDATER_MISSING=1
+        fi
+    done
+    if [ $UPDATER_MISSING -eq 0 ]; then
+        test_pass "Updater scripts shipped and executable"
+    fi
+fi
+
 # Test 5: Setup agent teams script (standalone)
 test_start "Setup agent teams script"
 SETUP_TEST_DIR="/tmp/openup-test-setup"

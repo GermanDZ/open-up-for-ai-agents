@@ -231,6 +231,21 @@ else
     warn "install-process-clis.sh not found in template, skipping process CLI install"
 fi
 
+# Install the OpenUP updater scripts so the new project can update itself later
+# (./scripts/sync-from-framework.sh) without hand-copying the tool first.
+echo ""
+echo "Installing OpenUP updater scripts..."
+UPDATER_HELPER="$TEMPLATE_ROOT/scripts/lib/install-updater.sh"
+if [ -f "$UPDATER_HELPER" ]; then
+    # shellcheck source=scripts/lib/install-updater.sh
+    source "$UPDATER_HELPER"
+    mkdir -p "$PROJECT_PATH/scripts"
+    install_updater "$TEMPLATE_ROOT/scripts" "$PROJECT_PATH/scripts" false false
+    success "Updater scripts installed"
+else
+    warn "install-updater.sh not found in template, skipping updater install"
+fi
+
 # Print success message
 echo ""
 success "✅ Project '$PROJECT_NAME' initialized at $PROJECT_PATH"
@@ -244,6 +259,9 @@ echo ""
 echo "Agent teams are configured! To use them:"
 echo "  export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1"
 echo "  See .claude/CLAUDE.md for team usage instructions"
+echo ""
+echo "To pull later framework updates into this project:"
+echo "  ./scripts/sync-from-framework.sh --framework-path /path/to/open-up-for-ai-agents"
 echo ""
 echo "For manual setup, see: docs-eng-process/getting-started.md"
 echo ""

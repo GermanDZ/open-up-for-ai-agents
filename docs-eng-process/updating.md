@@ -46,8 +46,14 @@ If this is the first time installing OpenUP into an existing project, copy `docs
 Use this when you want the latest OpenUP skills without changing documentation files.
 This also refreshes `.claude/CLAUDE.openup.md` and appends a reference line to `.claude/CLAUDE.md` if needed.
 
+> **Projects created with `bootstrap-project.sh` already ship
+> `scripts/sync-from-framework.sh` and `scripts/update-from-template.sh`** — skip
+> step 1 below. Each updater run also refreshes both updater scripts in place, so
+> your tooling never drifts. You only need the one-time copy when installing
+> OpenUP into a pre-existing project that has never had the updater.
+
 ```bash
-# 1. Copy script to your project (first time only)
+# 1. Copy script to your project (first time only; bootstrapped projects skip this)
 cp /path/to/open-up-for-ai-agents/scripts/sync-from-framework.sh ./scripts/
 chmod +x ./scripts/sync-from-framework.sh
 

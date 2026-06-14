@@ -394,6 +394,18 @@ if [ -f "$CLI_HELPER" ] && [ -f "$TEMPLATE_ROOT/scripts/process-manifest.txt" ];
     install_process_clis "$TEMPLATE_ROOT/scripts" "$PROJECT_ROOT/scripts" "$DRY_RUN" false
 fi
 
+# Install the OpenUP updater scripts so the project can update itself later.
+UPDATER_HELPER="$TEMPLATE_ROOT/scripts/lib/install-updater.sh"
+if [ -f "$UPDATER_HELPER" ]; then
+    info "Installing OpenUP updater scripts..."
+    # shellcheck source=scripts/lib/install-updater.sh
+    source "$UPDATER_HELPER"
+    if [ "$DRY_RUN" = false ]; then
+        mkdir -p "$PROJECT_ROOT/scripts"
+    fi
+    install_updater "$TEMPLATE_ROOT/scripts" "$PROJECT_ROOT/scripts" "$DRY_RUN" false
+fi
+
 # Copy OpenUP instructions
 info "Setting up CLAUDE.openup.md..."
 copy_file "$CLAUDE_TEMPLATE" "$CLAUDE_OPENUP_DEST"

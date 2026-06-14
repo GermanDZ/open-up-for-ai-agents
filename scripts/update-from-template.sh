@@ -462,6 +462,20 @@ if [ -f "$CLI_HELPER" ]; then
     install_process_clis "$TEMPLATE_DIR/scripts" "$PROJECT_PATH/scripts" "$DRY_RUN" false
 fi
 
+# Refresh the OpenUP updater scripts (sync-from-framework.sh, update-from-template.sh)
+# so the project's update tooling never drifts. The helper writes via temp +
+# atomic rename, so refreshing THIS running script is safe.
+UPDATER_HELPER="$TEMPLATE_DIR/scripts/lib/install-updater.sh"
+if [ -f "$UPDATER_HELPER" ]; then
+    header "Updating updater scripts"
+    # shellcheck source=/dev/null
+    source "$UPDATER_HELPER"
+    if [ "$DRY_RUN" = false ]; then
+        mkdir -p "$PROJECT_PATH/scripts"
+    fi
+    install_updater "$TEMPLATE_DIR/scripts" "$PROJECT_PATH/scripts" "$DRY_RUN" false
+fi
+
 # Update version file
 if [ "$DRY_RUN" = false ]; then
     echo "$TEMPLATE_VERSION" > "$PROJECT_PATH/docs-eng-process/.template-version"
