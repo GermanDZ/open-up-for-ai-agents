@@ -148,15 +148,19 @@ project-status header on a task branch.
 
 1. Write the iteration note as a **sharded, lane-owned file** (this replaces
    the old "prepend to project-status `## Notes`" — the shared insertion
-   point was a guaranteed parallel-PR conflict):
+   point was a guaranteed parallel-PR conflict). Compose the one-bullet
+   iteration summary (the content needs judgment), then let the scribe script
+   own the path, dated filename, and collision suffix:
 
-   ```
-   docs/status-notes/YYYY-MM-DD-{task_id}.md
+   ```bash
+   python3 scripts/openup-scribe.py status-note --task-id {task_id} \
+     --body "- **Iteration N** (YYYY-MM-DD): <one-line summary>"
    ```
 
-   Content: the same one-bullet iteration summary previously prepended to
-   `## Notes` (starting `- **Iteration N** (YYYY-MM-DD): …`). One file per
-   completion; add an `-HHMM` suffix before `.md` if the name already exists.
+   It writes `docs/status-notes/YYYY-MM-DD-{task_id}.md` — adding an `-HHMM`
+   suffix before `.md` if that name already exists — and prints the path. You
+   decide the content; the script owns the mechanics, so the layout never
+   drifts run to run.
 
 2. Regenerate both views and record the gate in one deterministic step:
 
@@ -219,30 +223,30 @@ intention.
 
 ### 6. Save Iteration Learnings
 
-> **Scribe step** — summarize the learnings yourself, then delegate the append
-> to the `openup-scribe` agent (Agent tool, subagent_type: "openup-scribe"):
->
-> First, synthesize from the session (your own work):
-> - What worked
-> - Decisions made (key technical/process choices + rationale)
-> - Gotchas (surprises, edge cases)
-> - Conventions established (patterns to reuse)
->
-> Then hand off the write:
->
-> ```
-> Agent(subagent_type="openup-scribe", description="Append iteration learnings",
->   prompt="Append the following to .claude/memory/iteration-learnings.md
->   (create the file if it does not exist):
->
->   ## [YYYY-MM-DD] [task_id]: [task title]
->   - **What worked**: [provided text]
->   - **Decisions made**: [provided text]
->   - **Gotchas**: [provided text]
->   - **Conventions established**: [provided text]
->
->   Report: confirmed append.")
-> ```
+Synthesize the learnings from the session yourself — this needs judgment — then
+let the scribe **script** append them in the canonical block format (no agent
+round-trip; the format can't drift):
+
+First, synthesize from your own work:
+- What worked
+- Decisions made (key technical/process choices + rationale)
+- Gotchas (surprises, edge cases)
+- Conventions established (patterns to reuse)
+
+Then write the entry deterministically:
+
+```bash
+python3 scripts/openup-scribe.py learnings --task-id {task_id} \
+  --title "<task title>" \
+  --what-worked "<text>" \
+  --decisions "<text>" \
+  --gotchas "<text>" \
+  --conventions "<text>"
+```
+
+It appends to `.claude/memory/iteration-learnings.md` (creating it with a single
+`# Iteration Learnings` header if absent). The synthesis is yours; the write is
+mechanical.
 
 ### 7. Check Gates and Archive Iteration State
 

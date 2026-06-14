@@ -186,6 +186,37 @@ chmod +x scripts/update-openup.sh
 
 **Note**: For a one-liner approach, the repository needs to be public. Since this is a private repo, use one of the approaches above.
 
+### check-model-tiers.py
+
+Keep `docs-eng-process/model-tiers.md` in sync with the live `model:`
+frontmatter on every skill and agent. The per-skill/agent tables in that doc are
+**generated** — never hand-edited.
+
+**Usage:**
+```bash
+python3 scripts/check-model-tiers.py --check   # CI: exit nonzero on drift
+python3 scripts/check-model-tiers.py --write    # regenerate the tables in place
+```
+
+Fails the check if the tables disagree with the frontmatter, or if any skill or
+agent is missing a `model:` field. Run `--write` after changing a tier.
+
+### openup-scribe.py
+
+Deterministic scribe writes used by `/openup-complete-task` — the caller decides
+the content, the script owns the path/filename/format so they never drift.
+
+**Usage:**
+```bash
+# Lane-owned iteration-note shard (sync-status.py assembles the shared view)
+python3 scripts/openup-scribe.py status-note --task-id T-001 \
+  --body "- **Iteration N** (YYYY-MM-DD): <summary>"
+
+# Append a dated entry to .claude/memory/iteration-learnings.md
+python3 scripts/openup-scribe.py learnings --task-id T-001 --title "<title>" \
+  --what-worked "..." --decisions "..." --gotchas "..." --conventions "..."
+```
+
 ## Quick Reference
 
 | Task | Script | Context |
@@ -195,6 +226,7 @@ chmod +x scripts/update-openup.sh
 | **Update project (full)** | `update-from-template.sh --template-dir <path>` | In your project |
 | **Sync .claude files only** | `sync-from-framework.sh --framework-path <path>` | In your project |
 | **Update framework's .claude** | `sync-templates-to-claude.sh` | In framework repo only |
+| **Check/regenerate model tiers** | `check-model-tiers.py --check\|--write` | In framework repo |
 
 ## Common Workflows
 
