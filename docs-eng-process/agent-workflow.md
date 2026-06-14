@@ -6,14 +6,15 @@
 
 1. [Start-of-Run SOP](#start-of-run-sop)
 2. [Role-Based Execution SOP](#role-based-execution-sop)
-3. [User Communication SOP](#user-communication-sop)
-4. [Asynchronous Input SOP](#asynchronous-input-sop)
-5. [Branching SOP](#branching-sop)
-6. [Docs Update SOP](#docs-update-sop)
-7. [Traceability Logging SOP](#traceability-logging-sop)
-8. [End-of-Run SOP](#end-of-run-sop)
-9. [Project Status Definition](#project-status-definition)
-10. [Skills and Teams Integration](#skills-and-teams-integration)
+3. [Self-Critique SOP (Planning & Specification)](#self-critique-sop-planning--specification)
+4. [User Communication SOP](#user-communication-sop)
+5. [Asynchronous Input SOP](#asynchronous-input-sop)
+6. [Branching SOP](#branching-sop)
+7. [Docs Update SOP](#docs-update-sop)
+8. [Traceability Logging SOP](#traceability-logging-sop)
+9. [End-of-Run SOP](#end-of-run-sop)
+10. [Project Status Definition](#project-status-definition)
+11. [Skills and Teams Integration](#skills-and-teams-integration)
 
 ---
 
@@ -206,6 +207,62 @@ Role definitions are available in the vendored knowledge base:
 - [Developer](openup-knowledge-base/core/role/roles/developer-11.md)
 - [Tester](openup-knowledge-base/core/role/roles/tester-5.md)
 - [Project Manager](openup-knowledge-base/core/role/roles/project-manager-4.md)
+
+---
+
+## Self-Critique SOP (Planning & Specification)
+
+**Applies to**: every skill that produces a **plan** or a **specification**
+artifact — feature plans, iteration plans, task specs, use cases (and their
+detailed scenarios), vision, shared vision, architecture notebooks, risk lists,
+and test plans. Run it **after drafting the artifact and before the
+completeness/rubric check**.
+
+This is the adversarial counterpart to rubric conformance. The completeness
+check asks *"are the required sections present?"*; the self-critique asks
+*"is what they contain actually sound?"* A plan or spec is the cheapest place to
+catch a flaw: a weakness caught here costs one redraft, while the same weakness
+shipped downstream becomes implementation rework **plus** artifact drift. That
+cost asymmetry is why this step is mandatory, not optional — and why "the rubric
+passed" is never sufficient on its own.
+
+### Procedure
+
+1. **Adopt a hostile-reviewer stance.** Assume the draft is flawed and find its
+   single weakest part. Do not defend the draft — attack it as the role most
+   likely to reject it: the **analyst** for scope/intent, the **architect** for
+   design soundness, the **tester** for verifiability.
+
+2. **Surface load-bearing assumptions.** List every assumption the plan/spec
+   depends on. For each, decide: is it stated explicitly in the artifact, or
+   smuggled in silently? Silent assumptions must be promoted into the artifact's
+   **Assumptions / Open Questions / Dependencies** so the next role inherits
+   them, not discovers them.
+
+3. **Failable-evidence check.** Every acceptance criterion, scenario, or success
+   measure must be something that could actually *fail* — checkable against a
+   test, a diff, or an observable outcome. Reject any criterion phrased as
+   "review and approve", "looks correct", or otherwise unfalsifiable, and rewrite
+   it into a checkable form.
+
+4. **Resolve — don't note-and-move-on.** For each genuine weakness found, either:
+   - **Fix it** in the draft, or
+   - **Flag it explicitly** in the artifact (Open Questions / Risks /
+     Limitations) so it is inherited as a known gap. Routing a *blocking* gap to
+     `/openup-request-input` counts as resolving it.
+
+5. **Record the outcome in one line** in the skill's run output: the weakest
+   point found and how it was resolved (fixed / flagged / routed).
+   *"No genuine weaknesses found"* is valid **only** after steps 1–3 were
+   actually run.
+
+### Relationship to other gates
+
+- The **Ambiguity Gate** (in `plan-feature` / `create-task-spec`) runs *before*
+  drafting — it prevents guessing at intent. The self-critique runs *after*
+  drafting — it stresses the draft you produced. Complementary, not redundant.
+- **Completeness / rubric grading** runs *after* the self-critique, so it grades
+  an artifact whose known weaknesses have already been fixed or flagged.
 
 ---
 

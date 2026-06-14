@@ -88,7 +88,16 @@ Update with:
 - **Success criteria**: How to know the iteration succeeded
 - **Risk assessment**: Any iteration-specific risks
 
-### 6. Validate Completeness
+### 6. Self-Critique
+
+Apply the **Self-Critique SOP** (`docs-eng-process/agent-workflow.md`) before
+validating: take a hostile-reviewer stance, surface every load-bearing
+assumption into the plan, and confirm the iteration goal and each task's success
+criteria could actually fail — and that the selected work realistically fits the
+phase's time box. Fix or explicitly flag each genuine weakness, then record the
+weakest point and its resolution in one line.
+
+### 7. Validate Completeness
 
 Ensure the iteration plan includes:
 - Clear iteration goal

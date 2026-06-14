@@ -62,9 +62,10 @@ After using this skill, verify:
 4. Ambiguity gate — classify open questions (blocking → ask, non-blocking → record)
 5. Generate iteration plan document
 6. Update roadmap with new entry
-7. Optionally validate with analyst + architect team
-8. Optionally create branch, commit, push, and PR
-9. Present summary
+7. Self-critique the plan (hostile review; assumptions surfaced, criteria failable)
+8. Optionally validate with analyst + architect team
+9. Optionally create branch, commit, push, and PR
+10. Present summary
 
 ## Detailed Steps
 
@@ -314,7 +315,17 @@ flag the placement for its review) — execution skills consume the order as giv
 - Pending tasks should appear after completed tasks in the same phase
 - Among pending entries, position reflects the product-manager's value ordering
 
-### 7. Validate with Team (Optional)
+### 7. Self-Critique
+
+Apply the **Self-Critique SOP** (`docs-eng-process/agent-workflow.md`) before any
+team validation: take a hostile-reviewer stance on the plan you just generated,
+surface every load-bearing assumption into its **Open Questions / Dependencies**,
+and confirm the Acceptance Criteria and Success Measure could actually fail — not
+"review and approve". This is mandatory and runs whether or not the optional team
+review below is used. Fix or explicitly flag each genuine weakness, then record
+the weakest point and its resolution in one line.
+
+### 8. Validate with Team (Optional)
 
 Only if `$ARGUMENTS[validate]` is `"true"`:
 
@@ -335,7 +346,7 @@ Only if `$ARGUMENTS[validate]` is `"true"`:
 5. **Incorporate feedback** — update the iteration plan with any valid suggestions
 6. **Shut down team** — send shutdown requests to both teammates, then delete team
 
-### 8. Create Branch and PR (Optional)
+### 9. Create Branch and PR (Optional)
 
 Only if `$ARGUMENTS[create_pr]` is not `"false"` (default is true):
 
@@ -382,7 +393,7 @@ Only if `$ARGUMENTS[create_pr]` is not `"false"` (default is true):
    )"
    ```
 
-### 9. Present Summary
+### 10. Present Summary
 
 Output a summary to the user:
 

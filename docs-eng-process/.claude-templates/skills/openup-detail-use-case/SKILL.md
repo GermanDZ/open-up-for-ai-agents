@@ -50,6 +50,7 @@ After using this skill, verify:
 4. Generate Gherkin acceptance criteria
 5. Create test cases (if requested)
 6. Update the use case file
+7. Self-critique scenarios (independently failable; alternative/error flows covered)
 
 ## Detailed Steps
 
@@ -131,6 +132,15 @@ Update the existing use case file with:
 - Link to test case files
 - Ensure all actors are documented
 - Verify pre/postconditions are complete
+
+### 7. Self-Critique
+
+Apply the **Self-Critique SOP** (`docs-eng-process/agent-workflow.md`) before
+returning: take a hostile-reviewer stance, surface every load-bearing assumption
+into the scenarios, and confirm each Gherkin scenario is independently failable
+and that the alternative and error flows are covered — not just the happy path.
+Fix or explicitly flag each genuine weakness, then record the weakest point and
+its resolution in one line.
 
 ## Output
 
