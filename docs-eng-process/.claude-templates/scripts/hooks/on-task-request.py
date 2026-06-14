@@ -48,12 +48,12 @@ TASK_LANG_RE = re.compile(
     re.IGNORECASE,
 )
 
-# Skip if this is already an OpenUP skill invocation (handled by other hooks)
-OPENUP_SKILL_RE = re.compile(
-    r"/openup-(?:start-iteration|complete-task|quick-task|orchestrate|"
-    r"inception|elaboration|construction|transition|phase-review)",
-    re.IGNORECASE,
-)
+# Skip if this is already an OpenUP skill invocation. ANY /openup-* skill has
+# its own flow (start-iteration, next, create-task-spec, create-vision, explore,
+# …) and must not be bounced back to start-iteration — otherwise authoring the
+# very spec a task needs ("/openup-create-task-spec task_id: T-002") gets blocked
+# because no iteration exists, while no iteration can start without the spec.
+OPENUP_SKILL_RE = re.compile(r"/openup-[a-z][a-z-]*", re.IGNORECASE)
 
 # Track-suggestion heuristics (T-010). Keep these small and pure so the
 # classifier can be unit-tested directly. quick wins over full when both match
