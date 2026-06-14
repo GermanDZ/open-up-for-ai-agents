@@ -1,7 +1,7 @@
 ---
 id: T-033
 title: "Autonomous continue-loop: suspend-on-question, resume-on-answer"
-status: proposed
+status: done   # proposed → ready → in-progress → done → verified
 track: standard
 depends-on: []
 blocks: []
