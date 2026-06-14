@@ -203,5 +203,35 @@ class ExitCodeTests(unittest.TestCase):
             shutil.rmtree(d, ignore_errors=True)
 
 
+# --------------------------------------------------------------------------
+# Skill invocations are never bounced — they own their own flow.
+# --------------------------------------------------------------------------
+class SkillInvocationSkipTests(unittest.TestCase):
+    """Any /openup-* skill invocation must exit 0 even when the prompt carries a
+    task id + task language. Regression: '/openup-create-task-spec task_id: T-002'
+    was bounced to /openup-start-iteration, which dead-ends because no iteration
+    can start without the spec the bounced command would have written."""
+
+    def setUp(self):
+        # No active iteration is the worst case — that branch emits the bounce.
+        self.proj = TempProject(status="planned", current_task="None")
+
+    def tearDown(self):
+        self.proj.cleanup()
+
+    def test_authoring_and_loop_skills_not_bounced(self):
+        for prompt in (
+            "/openup-create-task-spec task_id: T-002",
+            "/openup-next",
+            "/openup-create-vision",
+            "/openup-create-use-case for T-005",
+            "/openup-explore the auth approach",
+            "/openup-plan-feature build the checkout flow",
+        ):
+            proc = run_hook(self.proj.payload(prompt), self.proj.dir)
+            self.assertEqual(proc.returncode, 0, f"{prompt!r} should not be bounced")
+            self.assertEqual(proc.stderr.strip(), "", prompt)
+
+
 if __name__ == "__main__":
     unittest.main()
