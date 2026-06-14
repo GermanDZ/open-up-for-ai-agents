@@ -41,3 +41,14 @@ if ! "$ROOT/scripts/check-claude-sync.sh"; then
   echo "  - Or set SKIP_CLAUDE_SYNC_CHECK=1 to bypass for this commit." >&2
   exit 1
 fi
+
+# Enforce that docs-eng-process/model-tiers.md stays in sync with the live
+# `model:` frontmatter (the per-skill/agent tables are generated, not authored).
+if [ -x "$ROOT/scripts/check-model-tiers.py" ] && command -v python3 >/dev/null 2>&1; then
+  if ! python3 "$ROOT/scripts/check-model-tiers.py" --check; then
+    echo "" >&2
+    echo "Commit blocked: model-tiers.md is out of sync with skill/agent model: frontmatter." >&2
+    echo "  - Run:  python3 scripts/check-model-tiers.py --write" >&2
+    exit 1
+  fi
+fi
