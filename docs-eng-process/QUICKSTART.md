@@ -167,8 +167,7 @@ my-project/
 │   ├── skills/           # Automated operations
 │   ├── teammates/        # Role instructions
 │   ├── teams/            # Team configurations
-│   ├── cache/            # Cached parsed data
-│   └── config/           # Settings (tiered-context.md)
+│   └── rubrics/          # Quality rubrics used by /openup-create-* skills
 ├── docs/
 │   ├── project-status.md # Current iteration state
 │   ├── roadmap.md        # Task backlog
@@ -182,25 +181,24 @@ my-project/
 ## Tips for Success
 
 1. **Always work in iterations** - Use `/openup-start-iteration` before any work
-2. **Use caching** - Scripts cache results automatically for 30-50% token savings
-3. **Choose the right tier** - Use minimal for quick tasks, full for phase reviews
+2. **Scope context to the smallest ring** - Load only the Ring you need (see the
+   Three-Ring scoping in `.claude/CLAUDE.md`); don't scan all of `docs/`
+3. **Pick the lightest track** - `quick` for tiny single-file edits, `full` only
+   for multi-role/architectural work (see `docs-eng-process/tracks.md`)
 4. **Let agents collaborate** - They can message each other directly
 5. **Clean up teams** - Remove teammates when work is complete
 
 ## Token Optimization
 
-Enable these practices to reduce token usage:
+Token efficiency is built into the framework — you do not run separate tooling for it:
 
-```bash
-# Use minimal context for quick tasks
-python3 .claude/scripts/batch-context.py --minimal
-
-# Check token usage
-python3 .claude/scripts/token-tracker.py stats
-
-# Use compact role instructions
-# Set OPENUP_CONTEXT_TIER=minimal in environment
-```
+- **Model tiering** is declared per skill in `model:` frontmatter (mechanical work
+  on `haiku`, authoring on `sonnet`, judgment on the session model). See
+  `docs-eng-process/model-tiers.md`.
+- **Three-Ring context scoping** keeps each unit of work loading only the docs it
+  needs (`.claude/CLAUDE.md` → "Context Scoping").
+- **Graded tracks** (`quick`/`standard`/`full`) keep ceremony proportional to scope
+  (`docs-eng-process/tracks.md`).
 
 ## Getting Help
 
