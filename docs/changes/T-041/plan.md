@@ -6,7 +6,7 @@ track: standard
 priority: high
 depends-on: []
 blocks: []
-touches: [scripts/openup-state.py, scripts/setup-agent-teams.sh, scripts/bootstrap-project.sh, scripts/README.md, scripts/tests/test_openup_state.py, scripts/tests/test_t006_hooks.py, scripts/tests/test_t010_tracks.py, docs-eng-process/script-cli-reference.md, docs-eng-process/.claude-templates]
+touches: [scripts/openup-state.py, scripts/setup-agent-teams.sh, scripts/bootstrap-project.sh, scripts/README.md, scripts/tests/test_openup_state.py, scripts/tests/test_t006_hooks.py, scripts/tests/test_t010_tracks.py, docs-eng-process/script-cli-reference.md, docs-eng-process/.claude-templates, docs/plans/2026-06-15-openup-audit-remediation.md]
 claimed-by: null
 ---
 
