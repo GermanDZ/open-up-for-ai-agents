@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openup-for-ai-agents/docs-meta.schema.json",
+  "title": "OpenUP work-product instance frontmatter (v1)",
+  "description": "Typed traceability frontmatter carried by an authored work-product INSTANCE under a project's docs/ (vision, requirement, work-item, iteration-plan, use-case, test-case, decision). Distinct from template provenance frontmatter (type: Template, source_url, related.workproducts) which describes a template's KB origin and is NOT validated here. Injected by the openup-create-* skills, graded by a rubric, and validated by scripts/check-docs.py. The OpenUP-derived templates are never edited; frontmatter lands on instances only.",
+  "type": "object",
+  "required": [
+    "type"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "type": {
+      "type": "string",
+      "enum": [
+        "vision",
+        "requirement",
+        "work-item",
+        "iteration-plan",
+        "use-case",
+        "test-case",
+        "decision"
+      ],
+      "description": "Work-product type. The only mandatory field. Names align to OpenUP KB work-product slugs (the v1 core spine)."
+    },
+    "id": {
+      "type": "string",
+      "description": "Stable, project-unique identifier, e.g. \"REQ-014\", \"VIS-001\", \"TC-031\". Referenced by other instances' trace fields."
+    },
+    "title": {
+      "type": "string",
+      "description": "Human-readable title."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "approved",
+        "implemented",
+        "verified",
+        "obsolete"
+      ],
+      "description": "Lifecycle state of the work-product instance."
+    },
+    "traces-from": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Ids of the upstream work products this instance satisfies/refines (e.g. a requirement traces-from a vision). The authored, hand-written trace direction."
+    },
+    "verified-by": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Ids of the test-case instances that verify this work product (where the type warrants coverage). Authored on the verified work product, pointing at its tests."
+    },
+    "traced-by": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Derived inverse of traces-from: ids of downstream work products that trace from this one. Written by the index generator (T-037), NOT by hand."
+    },
+    "owner-role": {
+      "type": "string",
+      "description": "OpenUP role accountable for the work product, e.g. \"analyst\", \"architect\", \"tester\"."
+    },
+    "iteration": {
+      "type": "string",
+      "description": "Iteration/phase the work product belongs to, e.g. \"construction-2\"."
+    }
+  }
+}
