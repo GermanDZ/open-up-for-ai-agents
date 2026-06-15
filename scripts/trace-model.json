@@ -1,0 +1,101 @@
+{
+  "coverage_rules": [
+    {
+      "kb_corroborated": false,
+      "relation": "verified-by",
+      "severity": "required",
+      "target": "test-case",
+      "type": "requirement"
+    },
+    {
+      "kb_corroborated": false,
+      "relation": "traces-from",
+      "severity": "required",
+      "target": "requirement",
+      "type": "work-item"
+    }
+  ],
+  "generated_by": "scripts/build-trace-model.py",
+  "kb_associations": [
+    [
+      "requirement",
+      "use-case"
+    ],
+    [
+      "requirement",
+      "vision"
+    ],
+    [
+      "use-case",
+      "vision"
+    ]
+  ],
+  "kb_source": "openup-knowledge-base/manifest.json",
+  "kb_version": "1.0",
+  "schema": 1,
+  "slug_aliases": {
+    "iteration-plan": "iteration-plan",
+    "system-wide-requirements": "requirement",
+    "test-case": "test-case",
+    "test-log": "test-case",
+    "test-script": "test-case",
+    "use-case": "use-case",
+    "use-case-model": "use-case",
+    "use-case-specification": "use-case",
+    "vision": "vision",
+    "work-items-list": "work-item"
+  },
+  "trace_edges": [
+    {
+      "from": "decision",
+      "kb_corroborated": false,
+      "relation": "traces-from",
+      "to": "vision"
+    },
+    {
+      "from": "iteration-plan",
+      "kb_corroborated": false,
+      "relation": "traces-from",
+      "to": "work-item"
+    },
+    {
+      "from": "requirement",
+      "kb_corroborated": true,
+      "relation": "traces-from",
+      "to": "vision"
+    },
+    {
+      "from": "test-case",
+      "kb_corroborated": false,
+      "relation": "traces-from",
+      "to": "requirement"
+    },
+    {
+      "from": "test-case",
+      "kb_corroborated": false,
+      "relation": "traces-from",
+      "to": "use-case"
+    },
+    {
+      "from": "use-case",
+      "kb_corroborated": true,
+      "relation": "traces-from",
+      "to": "requirement"
+    },
+    {
+      "from": "work-item",
+      "kb_corroborated": false,
+      "relation": "traces-from",
+      "to": "requirement"
+    }
+  ],
+  "types": [
+    "decision",
+    "iteration-plan",
+    "requirement",
+    "test-case",
+    "use-case",
+    "vision",
+    "work-item"
+  ]
+}
