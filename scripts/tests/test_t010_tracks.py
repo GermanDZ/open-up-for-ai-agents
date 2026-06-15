@@ -111,6 +111,25 @@ class SuggestTrackTests(unittest.TestCase):
         self.assertEqual(
             self.mod.suggest_track("tiny refactor: rename one symbol"), "quick")
 
+    def test_spine_artifacts_off_quick(self):
+        # T-041: spine artifacts are substantive even when a quick signal
+        # ("docs"/"readme") also matches — they must not land on quick. These
+        # carry no broad-scope word, so they settle on standard (plan + rubric).
+        for p in ("Fill the Vision document (guided Q&A)",
+                  "Draft initial risk list",
+                  "Define top use cases",
+                  "write the test plan docs"):
+            self.assertEqual(self.mod.suggest_track(p), "standard", p)
+
+    def test_architecture_notebook_is_full(self):
+        # "architecture" is itself a full-scope signal, so the architecture
+        # notebook (a spine artifact) escalates past standard to full — still
+        # off quick, which is the point.
+        for p in ("author the architecture notebook",
+                  "update the architecture notebook docs",
+                  "redesign the architecture notebook"):
+            self.assertEqual(self.mod.suggest_track(p), "full", p)
+
 
 # --------------------------------------------------------------------------
 # Intake hook end-to-end — no active iteration

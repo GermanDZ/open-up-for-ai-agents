@@ -175,7 +175,7 @@ if command -v git >/dev/null 2>&1; then
         
         # Create initial commit
         echo "Creating initial commit..."
-        if git commit -m "Initial commit: Bootstrap project from OpenUP template" >/dev/null 2>&1; then
+        if git commit -m "chore(init): bootstrap project from OpenUP template" >/dev/null 2>&1; then
             success "Initial commit created"
             
             # Verify clean working directory

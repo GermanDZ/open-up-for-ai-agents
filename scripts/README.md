@@ -4,6 +4,8 @@ This directory contains utility scripts for working with the OpenUP framework.
 
 **Canonical update guidance lives in** `docs-eng-process/updating.md`. Use that guide to choose the right update path and keep this file for script-level details.
 
+**For exact CLI subcommands and flags** (so skills don't burn turns on `--help`), see [`docs-eng-process/script-cli-reference.md`](../docs-eng-process/script-cli-reference.md).
+
 ## Available Scripts
 
 ### bootstrap-project.sh

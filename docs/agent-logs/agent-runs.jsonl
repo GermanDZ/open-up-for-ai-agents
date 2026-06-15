@@ -69,3 +69,5 @@
 {"run_id":"iter15-T020-complete","event":"iteration_complete","task_id":"T-020","branch":"claude/determined-archimedes-nvjsqh","phase":"construction","ts":"2026-06-12"}
 {"run_id":"iter15-T021-complete","event":"iteration_complete","task_id":"T-021","branch":"claude/determined-archimedes-nvjsqh","phase":"construction","ts":"2026-06-12"}
 {"run_id":"iter17-T024-complete","event":"iteration_complete","task_id":"T-024","branch":"claude/intelligent-curie-j3uce2","phase":"construction","ts":"2026-06-12"}
+{"run_id": "29b3a2c7f16b4c61a57a4f3732234ac9", "event": "commit", "task_id": null, "branch": "main", "sha": "72eeffc18fc24029704522fffb681cabb5b2e2ea", "model": null, "session_id": null, "ts": "2026-06-15T08:38:10Z"}
+{"run_id":"run-T-041-20260615","event":"iteration_start","task_id":"T-041","goal":"OpenUP audit remediation (8 fixes)","branch":"fix/T-041-audit-remediation","phase":"construction","ts":"2026-06-15T09:54:47Z"}

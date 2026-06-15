@@ -119,6 +119,7 @@ Default cycle:
 ## Where to Look Next (full docs)
 - Skills and workflows: docs-eng-process/skills-guide.md
 - Agent workflow: docs-eng-process/agent-workflow.md
+- Script CLI signatures (avoid --help round-trips): docs-eng-process/script-cli-reference.md
 - Parallel lanes, write-fence, shared views: docs-eng-process/parallel-lanes.md
 - Team configs: docs-eng-process/teams-guide.md
 - Quick start guide: docs-eng-process/QUICKSTART.md

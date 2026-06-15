@@ -20,19 +20,31 @@ Create traceability logs for the current agent run. **Call only AFTER all change
 > `openup-scribe` agent (Agent tool, subagent_type: "openup-scribe"). You
 > determine the values; the scribe only writes. Brief it with:
 >
+> **Timestamps come from the clock, never the model**: capture
+> `START=$(python3 scripts/openup-state.py get started_at 2>/dev/null || echo unknown)`
+> and `END=$(date -u +%Y-%m-%dT%H:%M:%SZ)`, and pass those concrete values into
+> the scribe brief for the human-readable `.md`:
+>
 > ```
 > Agent(subagent_type="openup-scribe", description="Write agent run log",
 >   prompt="Write a traceability log entry.
 >   Branch: [branch]. Commits: [sha list]. Phase: [phase]. Task: [task_id].
->   Start: [ts]. End: [ts]. Files changed: [list].
->   1. Create docs/agent-logs/YYYY/MM/DD/<timestamp>-agent-<branch>.md
->      with the run metadata, commits, and key decisions listed below: [decisions].
->   2. Append a JSONL record to docs/agent-logs/agent-runs.jsonl.
->   Report: paths created and JSONL record written.")
+>   Start: $START. End: $END. Files changed: [list].
+>   Create docs/agent-logs/YYYY/MM/DD/<timestamp>-agent-<branch>.md
+>   with the run metadata, commits, and key decisions listed below: [decisions].
+>   Report: path created.")
+> ```
+>
+> Then append the machine-readable record with the **deterministic logger** (it
+> stamps `ts` itself — do not hand-author a JSONL line):
+>
+> ```bash
+> python3 scripts/openup-state.py log-event \
+>   --event run_log --task-id "[task_id]" --branch "[branch]" --phase "[phase]"
 > ```
 >
 > Collect the commit SHAs and metadata yourself (they require git commands), then
-> hand off the write operations to the scribe.
+> hand off the markdown write to the scribe.
 
 ## Prerequisites
 
@@ -49,7 +61,9 @@ If `$ARGUMENTS[run_id]` is not provided, generate: `YYYY-MM-DDTHH:MM:SSZ-agent-b
 
 - Branch: `git branch --show-current`
 - Trunk: detect via `origin/HEAD`, fallback `main`/`master`
-- Start/end timestamps
+- Start/end timestamps — **clock-sourced**: `started_at` from
+  `python3 scripts/openup-state.py get started_at`, end from `date -u`. Never
+  author timestamps by hand.
 - Phase from `docs/project-status.md`
 - Commits: `git log --oneline <since>...HEAD`
 
@@ -66,11 +80,17 @@ Create `docs/agent-logs/YYYY/MM/DD/<timestamp>-<agent>-<branch>.md` with:
 
 ### 4. Append JSONL Entry
 
-Append to `docs/agent-logs/agent-runs.jsonl`:
+Append the record with the **deterministic logger**, which stamps `ts` from the
+system clock — the model never supplies a timestamp:
 
-```json
-{"run_id":"<id>","agent":"claude","branch":"<branch>","trunk":"<trunk>","start":"<ts>","end":"<ts>","phase":"<phase>","iteration_goals":["..."],"prompt_hash":"sha256:...","md_log_path":"<path>","tasks":[{"role":"<role>","objective":"<obj>","start":"<ts>","end":"<ts>","commits":["<sha>"],"docs_updated":["<path>"],"consulting_roles":["<role>"]}],"decisions":["<path>"],"notes":"<summary>"}
+```bash
+python3 scripts/openup-state.py log-event \
+  --event run_log --task-id "<id>" --branch "<branch>" --phase "<phase>"
 ```
+
+This replaces hand-authoring a JSONL line (the source of the fabricated
+round-number times the audit found). The script appends one well-formed record
+to `docs/agent-logs/agent-runs.jsonl`.
 
 ### 5. Record the log gate
 
