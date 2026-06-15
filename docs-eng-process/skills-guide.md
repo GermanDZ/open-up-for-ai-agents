@@ -603,6 +603,9 @@ After this skill completes, ALL of these must be true:
 - [ ] Commit messages follow canonical format: `type(scope): description [T-XXX]`
 - [ ] **BLOCKING**: Branch is rebased onto the current trunk and the write-fence
       passes (`openup-fence.py check` exit 0) — no out-of-lane files, no stale views
+- [ ] **BLOCKING (T-038)**: `python3 scripts/check-docs.py` exits 0 — every
+      authored work-product instance has valid frontmatter, resolvable trace
+      refs, and resolvable relative links
 - [ ] Iteration note written as a sharded file under `docs/status-notes/`
 - [ ] Roadmap + project status regenerated via `scripts/sync-status.py` (never hand-edited)
 - [ ] Traceability logs are created with commit SHAs

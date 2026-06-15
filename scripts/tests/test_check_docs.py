@@ -221,5 +221,116 @@ class LinkTests(_FixtureBase):
         self.assertTrue(data["ok"])
 
 
+# --------------------------------------------------------------------------
+# T-037 — Coverage flag
+# --------------------------------------------------------------------------
+def run_coverage(docs, expect=None, model=None):
+    cmd = [sys.executable, str(SCRIPT), "--docs", str(docs),
+           "--coverage", "--json"]
+    if model is not None:
+        cmd += ["--model", str(model)]
+    proc = subprocess.run(cmd, capture_output=True, text=True)
+    if expect is not None:
+        assert proc.returncode == expect, (
+            f"expected exit {expect}, got {proc.returncode}\n"
+            f"stdout={proc.stdout}\nstderr={proc.stderr}")
+    return proc
+
+
+def write_model(root: Path, rules):
+    """Write a minimal trace-model.json fixture with the given coverage rules."""
+    model = {
+        "schema": 1,
+        "types": ["vision", "requirement", "work-item", "iteration-plan",
+                  "use-case", "test-case", "decision"],
+        "trace_edges": [
+            {"from": "requirement", "to": "vision", "relation": "traces-from"},
+            {"from": "work-item", "to": "requirement", "relation": "traces-from"},
+            {"from": "test-case", "to": "requirement", "relation": "traces-from"},
+        ],
+        "coverage_rules": rules,
+    }
+    p = root / "trace-model.json"
+    p.write_text(json.dumps(model), encoding="utf-8")
+    return p
+
+
+class CoverageTests(_FixtureBase):
+    def test_off_by_default(self):
+        """Without --coverage the validator does not emit coverage-gap findings,
+        even when the project has uncovered requirements."""
+        self.vision()
+        write_instance(self.docs, "changes/REQ-014.md", frontmatter=[
+            "type: requirement", "id: REQ-014", "status: approved",
+            "traces-from: [VIS-001]"])  # no verified-by
+        proc = run(self.docs, expect=OK)
+        data, found = codes(proc)
+        self.assertNotIn("coverage-gap", found)
+
+    def test_approved_requirement_without_test_fails(self):
+        self.vision()
+        write_instance(self.docs, "changes/REQ-014.md", frontmatter=[
+            "type: requirement", "id: REQ-014", "status: approved",
+            "traces-from: [VIS-001]"])  # no verified-by
+        proc = run_coverage(self.docs, expect=FAIL)
+        data, found = codes(proc)
+        self.assertIn("coverage-gap", found)
+        # Severity tag is carried in the message.
+        msgs = [f["message"] for f in data["findings"]
+                if f["code"] == "coverage-gap"]
+        self.assertTrue(any(m.startswith("[required]") for m in msgs))
+
+    def test_draft_requirement_is_excluded_from_coverage(self):
+        self.vision()
+        write_instance(self.docs, "changes/REQ-099.md", frontmatter=[
+            "type: requirement", "id: REQ-099", "status: draft",
+            "traces-from: [VIS-001]"])  # draft -> not yet expected
+        proc = run_coverage(self.docs, expect=OK)
+        _, found = codes(proc)
+        self.assertNotIn("coverage-gap", found)
+
+    def test_obsolete_requirement_is_excluded_from_coverage(self):
+        self.vision()
+        write_instance(self.docs, "changes/REQ-O.md", frontmatter=[
+            "type: requirement", "id: REQ-O", "status: obsolete"])
+        proc = run_coverage(self.docs, expect=OK)
+        _, found = codes(proc)
+        self.assertNotIn("coverage-gap", found)
+
+    def test_advisory_coverage_does_not_fail(self):
+        """An advisory-severity gap is reported but does not change exit code."""
+        self.vision()
+        write_instance(self.docs, "changes/REQ-014.md", frontmatter=[
+            "type: requirement", "id: REQ-014", "status: approved",
+            "traces-from: [VIS-001]"])
+        model = write_model(self.root, [
+            {"type": "requirement", "relation": "verified-by",
+             "target": "test-case", "severity": "advisory"},
+        ])
+        proc = run_coverage(self.docs, expect=OK, model=model)
+        data, found = codes(proc)
+        # The gap is still surfaced…
+        self.assertIn("coverage-gap", found)
+        # …but the run is OK.
+        self.assertTrue(data["ok"])
+
+    def test_covered_requirement_passes_coverage(self):
+        self.vision()
+        self.make_test_case()
+        write_instance(self.docs, "changes/REQ-014.md", frontmatter=[
+            "type: requirement", "id: REQ-014", "status: approved",
+            "traces-from: [VIS-001]", "verified-by: [TC-031]"])
+        proc = run_coverage(self.docs, expect=OK)
+        _, found = codes(proc)
+        self.assertNotIn("coverage-gap", found)
+
+    def test_work_item_without_requirement_fails_coverage(self):
+        write_instance(self.docs, "iter/WI-001.md", frontmatter=[
+            "type: work-item", "id: WI-001", "status: approved"])
+        proc = run_coverage(self.docs, expect=FAIL)
+        _, found = codes(proc)
+        self.assertIn("coverage-gap", found)
+
+
 if __name__ == "__main__":
     unittest.main()

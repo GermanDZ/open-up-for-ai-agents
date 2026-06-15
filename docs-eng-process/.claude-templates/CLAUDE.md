@@ -63,6 +63,26 @@ If the user asks to skip, redirect: "Let me run `/openup-quick-task` instead —
 - Use cases, iteration plans, architecture notebook, vision, test plan: changes go through the relevant `/openup-create-*` or `/openup-detail-*` skill so the rubric in `.claude/rubrics/` is re-applied.
 - Direct hand-edits silently bypass rubric criteria; only acceptable for typo-level fixes.
 
+**Work-product instances carry typed traceability frontmatter (T-038).**
+- Files produced by `/openup-create-vision`, `/openup-create-use-case`,
+  `/openup-create-test-plan`, `/openup-create-iteration-plan`, and
+  `/openup-create-architecture-notebook` land with **instance frontmatter** —
+  `type:` from the v1 spine (vision · requirement · work-item · iteration-plan
+  · use-case · test-case · decision), a stable `id:`, a `status:` from the
+  maturity enum, and `traces-from` / `verified-by` ids linking the work-product
+  into the OpenUP trace web. Distinct from template provenance frontmatter
+  (`type: Template`, `source_url`) which the read-only `docs-eng-process/templates/`
+  files carry.
+- The contract is single-sourced in [`docs-eng-process/doc-frontmatter.md`](../docs-eng-process/doc-frontmatter.md);
+  the cross-cutting [Doc Traceability Rubric](rubrics/doc-traceability-rubric.md) grades
+  every authored instance.
+- The validator (`python3 scripts/check-docs.py`) runs at
+  `/openup-complete-task` (step 3a, BLOCKING) and at `git commit` once the
+  project-side hook is installed. The trace web index
+  (`python3 scripts/docs-index.py`) renders `docs/INDEX.md` as a derived view —
+  same write-fence rule as `docs/roadmap.md` and `docs/project-status.md`:
+  never hand-edit, re-run the generator.
+
 **Value ordering comes from the product manager; execution is mechanical.**
 - The product-manager role (`.claude/teammates/product-manager.md`, grounded in the OpenUP Product Owner pattern) owns the **order** of pending roadmap entries and the one-line `Value` rationale on each.
 - `/openup-next`, the board, and the project-manager consume that order **as given** — an item may be skipped only for mechanical reasons (unmet dependency, collision, lease). Value disagreements are surfaced to the product-manager role, never resolved inline by execution.

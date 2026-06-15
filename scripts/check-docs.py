@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""OpenUP work-product validator core (T-036).
+"""OpenUP work-product validator core (T-036) + coverage mode (T-037).
 
 The mechanical backbone for keeping a project's ``docs/`` linked, traceable, and
 validated. ``check-docs.py`` walks every Markdown work-product *instance* under
@@ -21,9 +21,13 @@ An *instance* is any ``docs/**/*.md`` whose frontmatter ``type`` is one of the
 spine work-product types. Template files (``type: Template``) and untyped notes
 are skipped, so template provenance and instance semantics never collide.
 
-What this tool does NOT do (by design): required-coverage gaps (an ``approved``
-requirement with no test) and the derived index are T-037 (``--coverage``);
-distribution/enforcement is T-039. This is the core that those build on.
+With ``--coverage`` (T-037) the validator additionally evaluates the
+required-coverage rules from ``trace-model.json``: e.g. every non-draft
+``requirement`` needs a ``verified-by`` ``test-case``; every non-draft
+``work-item`` needs to ``traces-from`` a ``requirement``. A coverage gap with
+severity ``required`` is a hard failure (exit 1); ``advisory`` gaps are
+reported but do not fail the run. Project-side tailoring downgrades a rule
+from required to advisory (T-039); the CLI itself never invents rules.
 
 Output:
   human (default)  grouped, file:line-style findings + a one-line summary.
@@ -31,7 +35,8 @@ Output:
 
 Exit codes:
   0  no hard failures
-  1  one or more hard failures (schema / dangling ref / broken link / bad type)
+  1  one or more hard failures (schema / dangling ref / broken link / bad type
+     / required-coverage gap)
   2  usage / environment error
 """
 
@@ -172,8 +177,60 @@ def relative_md_links(path: Path):
             yield base
 
 
-def check(docs_dir: Path, schema: dict, model: dict):
-    """Run all checks. Return (findings, instance_count)."""
+# Statuses for which a coverage rule is evaluated. A draft/obsolete instance
+# does not yet need (or no longer needs) coverage — the gap would be noise.
+# Hardcoded for v1: project tailoring tunes severity (T-039), not the filter.
+COVERED_STATUSES = {"approved", "implemented", "verified"}
+
+
+def coverage_findings(instances, id_index, model):
+    """Evaluate every ``coverage_rules`` entry from ``trace-model.json``.
+
+    A rule ``(type, relation, target, severity)`` says: every covered instance
+    of ``type`` MUST carry at least one ``relation`` id whose target instance
+    has type ``target``. A miss is emitted as ``coverage-gap`` with the rule's
+    severity attached; ``required`` is a hard failure, ``advisory`` is not.
+    """
+    rules = model.get("coverage_rules") or []
+    if not rules:
+        return []
+    out = []
+    for path, fm in instances:
+        rel = path  # already a relpath string in the caller
+        this_type = fm.get("type")
+        status = (fm.get("status") or "").lower()
+        if status and status not in COVERED_STATUSES:
+            continue  # draft/obsolete: no coverage expectation
+        for rule in rules:
+            if rule.get("type") != this_type:
+                continue
+            relation = rule.get("relation")
+            target = rule.get("target")
+            severity = (rule.get("severity") or "required").lower()
+            refs = _as_list(fm.get(relation))
+            covered = False
+            for ref in refs:
+                for ref_type, _ in id_index.get(ref, []):
+                    if ref_type == target:
+                        covered = True
+                        break
+                if covered:
+                    break
+            if not covered:
+                out.append(Finding(
+                    rel, "coverage-gap",
+                    f"[{severity}] {this_type} has no {relation} -> {target} "
+                    f"(status={status or 'unspecified'})"))
+    return out
+
+
+def check(docs_dir: Path, schema: dict, model: dict, coverage: bool = False):
+    """Run all checks. Return (findings, instance_count).
+
+    ``coverage`` adds the ``trace-model.json`` required-coverage evaluation
+    (T-037). The hard exit code only counts ``required``-severity gaps;
+    advisory gaps are visible in output but do not fail the run.
+    """
     spine_types = set(model.get("types") or
                       schema["properties"]["type"]["enum"])
     # allowed (from_type -> to_type) for traces-from edges. When the model is
@@ -256,8 +313,26 @@ def check(docs_dir: Path, schema: dict, model: dict):
                     rel, "broken-link",
                     f"relative link '{link}' points to a missing file"))
 
+    if coverage:
+        # The coverage helper consumes already-relativised paths in Finding.file,
+        # so pass it (rel, fm) pairs instead of (Path, fm).
+        rel_instances = []
+        for path, fm in instances:
+            rel = str(path.relative_to(docs_dir.parent)) \
+                if docs_dir.parent in path.parents else str(path)
+            rel_instances.append((rel, fm))
+        findings.extend(coverage_findings(rel_instances, id_index, model))
+
     findings.sort(key=lambda f: (f.file, f.code, f.message))
     return findings, len(instances)
+
+
+def is_hard(finding) -> bool:
+    """A finding fails the run iff it is NOT an advisory coverage gap."""
+    if finding.code != "coverage-gap":
+        return True
+    # Tagged severity is the first bracketed token of the message.
+    return not finding.message.startswith("[advisory]")
 
 
 def main(argv=None) -> int:
@@ -268,6 +343,11 @@ def main(argv=None) -> int:
     parser.add_argument("--model", help="override trace-model.json path")
     parser.add_argument("--json", action="store_true",
                         help="emit machine-readable JSON instead of text")
+    parser.add_argument("--coverage", action="store_true",
+                        help="also evaluate required-coverage rules from "
+                             "trace-model.json (T-037). Required-severity "
+                             "gaps fail the run; advisory gaps are reported "
+                             "but do not fail.")
     args = parser.parse_args(argv)
 
     docs_dir = Path(args.docs) if args.docs else Path("docs")
@@ -284,24 +364,30 @@ def main(argv=None) -> int:
     except (OSError, json.JSONDecodeError):
         model = {}  # degrade: schema + existence still run, no type-direction
 
-    findings, count = check(docs_dir, schema, model)
+    findings, count = check(docs_dir, schema, model, coverage=args.coverage)
+    hard = [f for f in findings if is_hard(f)]
 
     if args.json:
         print(json.dumps({
-            "ok": not findings,
+            "ok": not hard,
             "instances": count,
             "findings": [f.as_dict() for f in findings],
         }, indent=2, sort_keys=True))
     else:
         for f in findings:
             print(f"{f.file}: [{f.code}] {f.message}")
-        if findings:
-            print(f"\ncheck-docs: {len(findings)} failure(s) across "
+        if hard:
+            extra = f" ({len(findings) - len(hard)} advisory)" \
+                if len(findings) > len(hard) else ""
+            print(f"\ncheck-docs: {len(hard)} failure(s){extra} across "
                   f"{count} instance(s)")
+        elif findings:
+            print(f"\ncheck-docs: OK — {count} instance(s), "
+                  f"{len(findings)} advisory finding(s)")
         else:
             print(f"check-docs: OK — {count} instance(s), no failures")
 
-    return EXIT_FAIL if findings else EXIT_OK
+    return EXIT_FAIL if hard else EXIT_OK
 
 
 if __name__ == "__main__":

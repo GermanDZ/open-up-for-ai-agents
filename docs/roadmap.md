@@ -29,6 +29,28 @@ any claim or fence runs).
 **Context**: Surfaced 2026-06-12 while fixing OpenUP skill discovery — the live `.claude/skills/` had drifted into nested grouping folders that broke slash-command discovery. Root cause: `scripts/sync-templates-to-claude.sh` expected a nested template layout (templates are flat), copied zero skills, and never synced rubrics/hooks — letting live hooks drift ahead of the shipped templates. T-022 makes the within-repo sync produce correct, complete, flat files and stops `agent-runs.jsonl` dangling uncommitted at session end. T-024 (seeded by [explorations/2026-06-12-multi-worktree-coordination.md](explorations/2026-06-12-multi-worktree-coordination.md)) finishes what T-023 started: the shared views (`roadmap.md` Status cells, `project-status.md` header + Notes) become script-derived (`sync-status.py`, fresh-trunk only), completion notes shard to `docs/status-notes/`, and `scripts/openup-fence.py` + `.githooks/pre-push` fence every lane's diff to its claimed surface — for agents and humans alike. Full model: [docs-eng-process/parallel-lanes.md](../docs-eng-process/parallel-lanes.md).
 
 
+<!-- plan-hook: 2026-06-15 -->
+### Completed: Project Docs Traceability & Validation Pack
+
+- **Status**: `completed` (2026-06-15 — all of T-034…T-039 delivered)
+- **Plan**: [plans/2026-06-15-project-docs-traceability-pack.md](plans/2026-06-15-project-docs-traceability-pack.md)
+- **Created**: 2026-06-15
+- **Priority**: medium
+- **Goal**: Give every OpenUP project a `docs/` that stays linked, traceable, and validated — work-product instances carry typed traceability frontmatter (injected by the `openup-create-*` skills, graded by a rubric, never by editing OpenUP templates), a shipped validator checks schema + cross-links + OpenUP trace coverage, and a derived index/board surfaces the trace web — all distributed through `process-manifest.txt` and tailorable via `docs/project-config.yaml`'s new `trace_rules:` block.
+- **Notes**: Hard guardrail respected: no edits to `openup-knowledge-base/**` or `docs-eng-process/templates/**`. Instance frontmatter lands on authored docs only; templates stay pristine. T-034..T-036 (Wave 1+2) landed in PR #29; T-037..T-039 (Wave 3+4) on this branch.
+
+**Tasks**
+
+| ID | Title | Status | Priority | Depends on |
+|---|---|---|---|---|
+| T-034 | Work-product taxonomy + instance-frontmatter spec + `docs-meta.schema.json` | completed (2026-06-15) | medium | — |
+| T-035 | Derive `trace-model.json` from the vendored KB (`build-trace-model.py`) | completed (2026-06-15) | medium | T-034 |
+| T-036 | `check-docs.py` validator core (schema + link/id resolution + bidirectional) | completed (2026-06-15) | high | T-034, T-035 |
+| T-037 | Trace-coverage checks + derived trace index (`docs-index.py`, write-fence) | completed (2026-06-15) | medium | T-036 |
+| T-038 | Author-time frontmatter via `create-*` skills + cross-cutting rubric + complete-task gate | completed (2026-06-15) | high | T-034, T-036 |
+| T-039 | Distribution (`process-manifest`) + project-side hook + `trace_rules:` tailoring + adoption docs | completed (2026-06-15) | medium | T-036, T-037, T-038 |
+
+
 <!-- plan-hook: 2026-06-12 -->
 ### Completed: Modern Product Practice Pack
 

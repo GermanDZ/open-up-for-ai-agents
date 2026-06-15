@@ -19,3 +19,12 @@ openup-spec-scenarios.py
 sync-status.py
 openup-scribe.py
 openup-input.py
+# T-034 / T-035 / T-036 / T-037 — work-product doc-traceability rails.
+# The schema + the KB-derived model are CLI peers because check-docs.py
+# and docs-index.py both import them; build-trace-model.py is shipped
+# so projects can regenerate the model after vendoring a fresh KB.
+docs-meta.schema.json
+trace-model.json
+build-trace-model.py
+check-docs.py
+docs-index.py

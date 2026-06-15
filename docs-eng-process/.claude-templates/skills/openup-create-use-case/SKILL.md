@@ -78,6 +78,35 @@ Update the use case specification with:
 - **Alternative flows**: Alternative paths and edge cases
 - **Postconditions**: What is true after completion
 
+### 4a. Write Instance Frontmatter (T-038 — doc traceability)
+
+Replace the template's provenance frontmatter (`type: Template`,
+`source_url`) with an **instance** block declaring this file as a typed
+work-product instance. The use case must trace from at least one
+`requirement` instance per the v1 spine (`use-case → traces-from →
+requirement`). If no requirement instance exists yet, pause and run
+`/openup-create-task-spec` (or write a `requirement` instance under
+`docs/requirements/`) first — a use case without a governing requirement
+is a content-rubric gap *and* a `check-docs.py --coverage` finding. Grade
+against the cross-cutting
+[Doc Traceability Rubric](../../rubrics/doc-traceability-rubric.md).
+
+Example block:
+
+```yaml
+---
+type: use-case              # required — v1 spine
+id: UC-007                  # stable, project-unique
+title: <Use Case Name>
+status: approved
+traces-from: [REQ-014]      # governing requirement(s)
+owner-role: analyst
+---
+```
+
+Field reference: [`docs-eng-process/doc-frontmatter.md`](../../../docs-eng-process/doc-frontmatter.md).
+Validator: `python3 scripts/check-docs.py`.
+
 ### 5. Self-Critique
 
 Apply the **Self-Critique SOP** (`docs-eng-process/sops/self-critique.md`) before

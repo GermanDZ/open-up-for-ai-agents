@@ -77,6 +77,38 @@ For each test case, document:
 - **Postconditions**: State after test
 - **Priority**: Test priority level
 
+### 4a. Write Instance Frontmatter (T-038 — doc traceability)
+
+Replace each test-case file's template provenance frontmatter (`type:
+Template`, `source_url`) with an **instance** block declaring the file as a
+typed `test-case` work-product instance. Every test-case must trace from
+the requirement or use case it verifies (per the v1 spine: `test-case →
+traces-from → requirement | use-case`). The **upstream** instance ALSO
+gains a `verified-by:` entry pointing at this test-case id — that bidir
+link is what `check-docs.py --coverage` reads when it grades whether a
+requirement has a verifying test. Grade against the cross-cutting
+[Doc Traceability Rubric](../../rubrics/doc-traceability-rubric.md).
+
+Example block:
+
+```yaml
+---
+type: test-case             # required — v1 spine
+id: TC-031                  # stable, project-unique
+title: <Test Case Name>
+status: implemented
+traces-from: [REQ-014]      # or a use-case id; both are valid upstream types
+owner-role: tester
+---
+```
+
+Then add `verified-by: [TC-031, …]` to the upstream requirement / use-case
+instance(s). Doing both halves at the test-plan step keeps the trace
+symmetric in one author-time pass instead of leaving it to a later cleanup.
+
+Field reference: [`docs-eng-process/doc-frontmatter.md`](../../../docs-eng-process/doc-frontmatter.md).
+Validator: `python3 scripts/check-docs.py --coverage`.
+
 ### 5. Fill in Test Scripts
 
 For each test script, document:
