@@ -6,7 +6,7 @@ track: standard
 priority: high
 depends-on: []
 blocks: []
-touches: [scripts/openup-state.py, scripts/setup-agent-teams.sh, scripts/bootstrap-project.sh, scripts/README.md, scripts/tests/test_openup_state.py, scripts/tests/test_t006_hooks.py, scripts/tests/test_t010_tracks.py, docs-eng-process/script-cli-reference.md, docs-eng-process/.claude-templates, docs/plans/2026-06-15-openup-audit-remediation.md]
+touches: [scripts/openup-state.py, scripts/setup-agent-teams.sh, scripts/bootstrap-project.sh, scripts/README.md, scripts/sync-status.py, scripts/tests/test_openup_state.py, scripts/tests/test_t006_hooks.py, scripts/tests/test_t010_tracks.py, scripts/tests/test_sync_status_notes.py, docs-eng-process/script-cli-reference.md, docs-eng-process/.claude-templates, docs/plans/2026-06-15-openup-audit-remediation.md]
 claimed-by: null
 ---
 
@@ -113,5 +113,6 @@ Two facts shaped how this iteration runs (both are themselves findings):
 - [x] Fix 5 — `script-cli-reference.md` + links from README & CLAUDE.openup.md (both copies)
 - [x] Fix 6 — `bootstrap-project.sh` canonical commit message
 - [x] Fix 1 skills (start-iteration, complete-task, log-run) rewired + mirrored to templates
+- [x] F11 (found at completion) — `sync-status.py` `TRACK_REQUIRED["standard"]` dropped `team_deployed` (solo standard could never derive `completed`); + test
 - [x] Full test suite: 233 pass / 1 pre-existing env failure (docs-index `/private`-symlink); all new tests green
 - [ ] `check-claude-sync`: pre-existing red (34 drifts, none mine) — see design.md DD5; out of scope

@@ -77,6 +77,16 @@ the es-invoices probe was an old-session typo, not a framework bug.
   scope for T-041 — flagged for its own cleanup task. I did not worsen it (every
   edit was applied to both copies identically) and net-reduced it by 1 by syncing
   openup-next.
+- **F11 — `sync-status.py` can't complete a solo standard task.**
+  `TRACK_REQUIRED["standard"]` required `team_deployed`, but standard is
+  solo-by-default (T-015+; team opt-in) so that gate stays false — `derive_status`
+  then returns `in-progress` forever. Past standard tasks (T-007/8/9) only show
+  `completed` because they pre-date solo-default and set `team_deployed: true`.
+  This contradicts `/openup-complete-task`'s own check-gates, which uses
+  `log_written,roadmap_synced` for standard. Discovered when T-041's own
+  completion wouldn't stamp. Fixed: standard requires only
+  `log_written,roadmap_synced`; `full` keeps `team_deployed`. (Third bug the
+  remediation itself surfaced, after F9/F10 — the dogfood keeps paying out.)
 - **F-immediate — es-invoices unblock.** es-invoices had no `.claude/agents/` and
   was hitting `Agent type 'openup-scribe' not found` every cycle. Installed the
   two agent definitions into its `.claude/agents/` directly (the framework Fix 2
