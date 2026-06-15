@@ -31,3 +31,12 @@ rules:
   test-plan:
     - <e.g. Include at least one negative / abuse-case test per feature>
   risk-list: []
+
+# trace_rules: project-side knob for the doc-traceability commit hook (T-039).
+# Defaults — enabled, coverage on, severity from trace-model.json — match the
+# framework recommendation; uncomment any sub-key to tailor.
+# trace_rules:
+#   enabled: true                # set false to skip the hook entirely
+#   coverage: true               # set false to drop --coverage from the hook run
+#   severity:                    # per-rule override; key = "type -> relation -> target"
+#     "requirement -> verified-by -> test-case": advisory

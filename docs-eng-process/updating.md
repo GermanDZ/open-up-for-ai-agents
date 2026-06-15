@@ -451,8 +451,91 @@ Make the script executable:
 chmod +x scripts/update-from-template.sh
 ```
 
+## Adopting Doc Traceability (T-039)
+
+`update-from-template.sh` / `sync-from-framework.sh` automatically pick up
+the doc-traceability rails for the *framework* layer (the validator, the
+schema, the KB-derived model, the index generator — registered in
+`scripts/process-manifest.txt`). For an **existing project** to enforce the
+validator at commit time and surface the trace web you need two project
+edits — both small, both safe to do incrementally.
+
+### 1. Wire the commit hook
+
+Copy the project-side hook into your project:
+
+```bash
+cp docs-eng-process/.claude-templates/scripts/hooks/check-docs.py \
+   .claude/scripts/hooks/check-docs.py
+chmod +x .claude/scripts/hooks/check-docs.py
+```
+
+Then add a `PreToolUse` entry in your project's `.claude/settings.json`
+that runs it on Bash invocations. Example shape (yours may already have
+the `hooks:` block — add the entry alongside any existing PreToolUse
+handlers):
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {"type": "command",
+           "command": "python3 .claude/scripts/hooks/check-docs.py"}
+        ]
+      }
+    ]
+  }
+}
+```
+
+The hook is **fail-open**: if the validator script is missing, or anything
+in the YAML / subprocess path errors, it returns 0 and lets the commit
+through. It only blocks on real, surfaced findings.
+
+### 2. (Optional) Tailor strictness in `docs/project-config.yaml`
+
+`trace_rules:` is the project-owned knob — see
+[project-config.md](project-config.md) for the full key spec. Defaults
+match the framework recommendation (enabled, coverage on, severity from
+`trace-model.json`). Examples:
+
+```yaml
+trace_rules:
+  enabled: true                # default true; set false to skip the hook entirely
+  coverage: true               # default true; set false to drop --coverage from the hook run
+  severity:
+    # Per-rule overrides. Format: "type -> relation -> target": required|advisory
+    "requirement -> verified-by -> test-case": advisory  # do not block on missing tests yet
+```
+
+`/openup-complete-task` runs the same validator unconditionally (step 3a,
+BLOCKING) and is **not** subject to `trace_rules:` — completion is the
+strictness floor; the commit hook is the running enforcement.
+
+### 3. Backfill instances as you touch them
+
+The validator only grades files whose frontmatter declares a spine `type:`.
+Untyped legacy docs are ignored. The migration is incremental: when you
+re-run `/openup-create-vision`, `/openup-create-use-case`, etc. on an
+existing artifact, it lands with the instance frontmatter (T-038); the
+next `/openup-complete-task` validates the now-typed set. There is no
+"big bang" — projects adopt at the pace they touch their `docs/`.
+
+If you want to see the current trace web before committing anything,
+regenerate the index:
+
+```bash
+python3 scripts/docs-index.py        # writes docs/INDEX.md
+python3 scripts/docs-index.py --check   # CI/pre-push drift guard
+```
+
 ## Related Documentation
 
 - **[Bootstrap](getting-started.md)** - Creating new projects
 - **[Agent Teams Setup](agent-teams-setup.md)** - Setting up agent teams
 - **[Agent Workflow](agent-workflow.md)** - Operating procedures
+- **[Doc Frontmatter Contract](doc-frontmatter.md)** - Field set for work-product instances
+- **[Project Config](project-config.md)** - `trace_rules:` and the rest of the project-owned knobs

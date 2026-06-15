@@ -26,7 +26,7 @@ and the init emitter.
 
 ## Schema
 
-Three top-level keys, all optional:
+Four top-level keys, all optional:
 
 ```yaml
 context: |            # free-text project facts the framework can't infer
@@ -46,6 +46,12 @@ environments:         # ordered deployment chain, first = closest to the team
   - name: beta
     promotion: "beta-user acceptance recorded; success-measure instrumentation emitting"
   - name: production
+
+trace_rules:          # T-039 — project-side tailoring for the doc-traceability hook
+  enabled: true                       # default true; false skips the commit hook
+  coverage: true                      # default true; false drops --coverage
+  severity:                           # per-rule override map; key = "type -> relation -> target"
+    "requirement -> verified-by -> test-case": advisory
 ```
 
 - **`context:`** — a block scalar of project-level facts (stack, domain,
@@ -61,6 +67,21 @@ environments:         # ordered deployment chain, first = closest to the team
   task-spec `## Rollout` sections use the names for per-environment flag default
   states (rubric criterion 13 flags states naming environments the config
   doesn't define). Absent → single-hop deployment, unchanged framework default.
+- **`trace_rules:`** — project-side tailoring for the doc-traceability commit
+  hook (`.claude/scripts/hooks/check-docs.py`, T-039). Three optional sub-keys:
+  - `enabled:` (bool, default `true`) — set `false` to silence the hook
+    entirely (the validator is still available on the CLI).
+  - `coverage:` (bool, default `true`) — set `false` to drop `--coverage`
+    from the hook's run; schema + ref/link checks still gate the commit.
+  - `severity:` (mapping) — per-rule override. Keys are rule identifiers
+    in the form `"type -> relation -> target"` (matching the messages
+    `check-docs.py --coverage` prints); values are `required` or
+    `advisory`. Downgrading a rule to `advisory` causes the hook to
+    report the gap without blocking the commit. **OpenUP is meant to be
+    tailored through the development case**, so strictness must be
+    project-owned — the framework's `trace-model.json` is never edited.
+    `/openup-complete-task`'s validator gate (step 3a) is **not** subject
+    to these overrides — completion is the strictness floor.
 
 Start unvalidated: there is intentionally no schema/linter for this file (add one
 only if the feature is broadly adopted).
