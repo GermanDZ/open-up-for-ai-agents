@@ -1,7 +1,7 @@
 ---
 id: T-040
 title: "Fix hook-test HOOKS_DIR stale path: tests point at .claude/scripts/hooks/ which no longer exists"
-status: ready
+status: done
 track: quick
 priority: medium
 depends-on: []

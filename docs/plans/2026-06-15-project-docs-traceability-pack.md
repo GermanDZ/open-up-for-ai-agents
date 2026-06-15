@@ -1,6 +1,6 @@
 # Project Docs Traceability & Validation Pack
 
-**Status**: `planned`
+**Status**: `completed` (2026-06-15 — all of T-034…T-039 delivered)
 **Created**: 2026-06-15
 **Priority**: medium
 **Goal**: Give every OpenUP project a `docs/` that stays **linked, traceable, and
