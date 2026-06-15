@@ -23,7 +23,7 @@ import unittest
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-HOOKS_DIR = REPO_ROOT / ".claude" / "scripts" / "hooks"
+HOOKS_DIR = REPO_ROOT / "docs-eng-process" / ".claude-templates" / "scripts" / "hooks"
 SCRIPTS_DIR = REPO_ROOT / "scripts"
 
 STATE_CLI = SCRIPTS_DIR / "openup-state.py"
