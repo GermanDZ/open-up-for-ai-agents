@@ -79,6 +79,17 @@ class SyncStatusNotesTests(unittest.TestCase):
         self.assertEqual(proc.returncode, 0, proc.stderr)
         self.assertIn("hand-written entry", self.ps.read_text())
 
+    def test_single_run_completes_when_gates_met(self):
+        # G3: with log_written set and roadmap_synced still false, ONE sync run
+        # must stamp `completed` — the run sets roadmap_synced itself, so the
+        # status derivation reflects that (no "two-run dance").
+        state_cli(self.state_dir, "set-gate", "log_written", "true")
+        proc = self._run_sync()
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertIn("status=completed", proc.stdout)
+        self.assertRegex(self.roadmap.read_text(),
+                         r"T-200 .*completed \(\d{4}-\d{2}-\d{2}\)")
+
     def test_assembles_newest_first_by_filename(self):
         self._note("2026-06-10-T-198.md", "- **older** entry\n")
         self._note("2026-06-12-T-200.md", "- **newer** entry\n")

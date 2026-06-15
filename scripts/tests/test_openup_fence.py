@@ -216,5 +216,60 @@ class FenceAllowedTests(unittest.TestCase):
         self.assertIn("docs/roadmap.md", payload["views"])
 
 
+class FenceQuickTrackTests(unittest.TestCase):
+    """T-042 G2: a quick-track lane with no declared surface is unfenced."""
+
+    def setUp(self):
+        self.repo = FenceRepo()
+
+    def tearDown(self):
+        self.repo.cleanup()
+
+    def _quick_state(self, task_id="T-101"):
+        # A task with NO change folder + a quick-track live state.
+        self.repo.state.mkdir(parents=True, exist_ok=True)
+        (self.repo.state / "state.json").write_text(
+            json.dumps({"task_id": task_id, "track": "quick"}),
+            encoding="utf-8",
+        )
+
+    def test_quick_no_touches_is_unfenced(self):
+        self.repo.commit("src/anything.py")
+        self._quick_state("T-101")
+        proc = self.repo.fence("--task-id", "T-101")
+        self.assertEqual(proc.returncode, OK, proc.stderr)
+        self.assertIn("unfenced", proc.stdout)
+
+    def test_quick_with_allow_fences_normally(self):
+        # Declaring a surface (--allow) opts back into fencing.
+        self.repo.commit("src/anything.py")
+        self._quick_state("T-101")
+        proc = self.repo.fence("--task-id", "T-101", "--allow", "src/other.py")
+        self.assertEqual(proc.returncode, VIOLATION)
+        self.assertIn("OUT OF LANE", proc.stderr)
+
+    def test_quick_still_flags_stale_views(self):
+        # Quick relaxes lane purity, not view freshness.
+        self.repo.commit("docs/roadmap.md", "# v2\n")
+        self.repo.advance_main()
+        self._quick_state("T-101")
+        proc = self.repo.fence("--task-id", "T-101")
+        self.assertEqual(proc.returncode, VIOLATION)
+        self.assertIn("STALE VIEW", proc.stderr)
+
+    def test_standard_empty_touches_still_blocks(self):
+        # The relaxation is quick-only: a standard lane with empty touches still
+        # fences (guards against the quick-path leaking into standard).
+        self.repo.commit("src/anything.py")
+        self.repo.state.mkdir(parents=True, exist_ok=True)
+        (self.repo.state / "state.json").write_text(
+            json.dumps({"task_id": "T-101", "track": "standard"}),
+            encoding="utf-8",
+        )
+        proc = self.repo.fence("--task-id", "T-101")
+        self.assertEqual(proc.returncode, VIOLATION)
+        self.assertIn("OUT OF LANE", proc.stderr)
+
+
 if __name__ == "__main__":
     unittest.main()
