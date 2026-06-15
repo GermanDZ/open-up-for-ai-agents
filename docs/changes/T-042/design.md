@@ -31,6 +31,27 @@ so it exercised paths the first audit (iterations 1–4) did not.
   a branch match; else cwd (fail-safe). Unlike gate-edits there is no edit-target,
   so resolution is worktree-enumeration, not path-walking.
 
+## Completion verification (step 1a — graded against the diff)
+
+- ✅ **R1 G3** — `sync-status.py:257` forces `roadmap_synced` true in-memory
+  before `derive_status`; `test_single_run_completes_when_gates_met` proves one
+  run → `completed`. `--no-gate` path unchanged (`DeriveStatusTests` still pass).
+- ✅ **R2 G2** — `openup-fence.py` `resolve_track` + `quick_unfenced`;
+  `FenceQuickTrackTests` (4): unfenced when undeclared, fences with `--allow`,
+  stale-views still flagged, standard still blocks.
+- ✅ **R3 Fix-7b** — `resolve_state_root` in both hooks;
+  `test_resolves_task_from_worktree_when_cwd_has_no_state` (auto-log-commit:
+  task_id resolved from worktree, not null). on-stop gate block reads `sroot`.
+  Fail-safe to cwd verified by all existing hook tests (cwd == root) still green.
+- ✅ **R4 G4** — complete-task SKILL (both copies) flips plan.md `status: done`
+  before archive; T-041 retro-flipped → T-042 preflight READY (demonstrated live).
+- ✅ **R5** — suite 242 pass / 1 pre-existing env failure; parity green (62).
+
+**Step 1b — Success Measures**: `n/a`. Internal tooling/process correctness; the
+falsifiable measure is the test suite (+6 tests encoding each fix's behavior) and
+the eliminated frictions (two-run dance, quick re-claims, task_id-null logs,
+dependency-blocks-on-done). No runtime metric to instrument.
+
 ## Decisions log
 
 - **DD1**: Stack on T-041 (unmerged, shares sync-status.py) rather than branch
