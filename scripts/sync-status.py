@@ -255,6 +255,12 @@ def main(argv=None) -> int:
         return EXIT_NO_STATE
 
     task_id = state.get("task_id", "")
+    # This run sets gates.roadmap_synced (unless --no-gate), so derive against the
+    # state it is about to create — otherwise the gate is still false at derive
+    # time and the first run always stamps in-progress, forcing a confusing second
+    # run to reach completed (T-042 G3, the "two-run dance").
+    if not args.no_gate:
+        state.setdefault("gates", {})["roadmap_synced"] = True
     status = derive_status(state)
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 

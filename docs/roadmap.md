@@ -13,6 +13,7 @@
 | [T-033](changes/archive/T-033/plan.md) | Autonomous continue-loop: suspend a lane on a blocking input-request and auto-resume it when answered (board `suspended` state + `/openup-next` runs Step-0 answered-check first) | completed (2026-06-14) | high | — |
 | [T-040](changes/archive/T-040/plan.md) | Fix hook-test `HOOKS_DIR` stale path (`.claude/scripts/hooks/` → `docs-eng-process/.claude-templates/scripts/hooks/` after T-022) | completed (2026-06-15) | medium | — |
 | [T-041](changes/archive/T-041/plan.md) | OpenUP audit remediation: 8 fixes from the es-invoices session/log audit (clock-stamped `log-event`, agent install, spine track, worktree-aware gate, plan-mode exemption, CLI reference, next-loop guidance, canonical bootstrap commit) | completed (2026-06-15) | high | — |
+| [T-042](changes/archive/T-042/plan.md) | Retro-surfaced fixes: sync-status single-pass completion, quick-track unfenced lanes, worktree-aware audit hooks (auto-log-commit + on-stop), complete-task status flip | completed (2026-06-15) | high | T-041 |
 
 **Value (T-032, T-033)**: T-032 makes a bootstrapped/synced project runnable out of
 the box — every install path ships the `scripts/openup-*.py` runtime from one

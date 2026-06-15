@@ -135,6 +135,19 @@ def resolve_task_id(args, root: Path):
     return None
 
 
+def resolve_track(args, root: Path):
+    """Read the active iteration's track from .openup/state.json (or None)."""
+    sdir = Path(args.state_dir).expanduser().resolve() if args.state_dir \
+        else root / ".openup"
+    state = sdir / "state.json"
+    if state.exists():
+        try:
+            return json.loads(state.read_text(encoding="utf-8")).get("track")
+        except (OSError, json.JSONDecodeError):
+            return None
+    return None
+
+
 def task_touches(task_id: str, root: Path, cdir: Path):
     """The task's touches — live claim first (D7), then plan frontmatter."""
     claim = claims.read_claim(claims.claim_file(task_id, cdir))
@@ -200,6 +213,18 @@ def cmd_check(args) -> int:
     allowlist = build_allowlist(task_id, root, cdir, extra)
     fresh_base = base_is_ancestor(base)
 
+    # Quick-track lanes have no plan.md, so their claim `touches` is empty. The
+    # quick track is single-file / no-plan-gate by design, so a quick lane that
+    # declared no surface is *unfenced* — its real edits are not flagged
+    # out-of-lane (T-042 G2). It opts back into fencing by declaring `touches`
+    # (re-claim) or passing `--allow`. View-freshness is orthogonal and still
+    # enforced below.
+    track = resolve_track(args, root)
+    declared = bool(task_touches(task_id, root, cdir)) or any(
+        e.strip() for e in extra
+    )
+    quick_unfenced = track == "quick" and not declared
+
     out_of_lane = []
     stale_views = []
     for f in files:
@@ -210,14 +235,23 @@ def cmd_check(args) -> int:
             if args.allow_views or fresh_base:
                 continue
             stale_views.append(f)
+        elif quick_unfenced:
+            continue
         else:
             out_of_lane.append(f)
 
     if not out_of_lane and not stale_views:
-        print(
-            f"openup-fence: {task_id} — {len(files)} changed file(s) "
-            f"within lane (base {base})."
-        )
+        if quick_unfenced:
+            print(
+                f"openup-fence: {task_id} — quick-track lane, unfenced "
+                f"({len(files)} changed file(s), no declared `touches`; pass "
+                f"`--allow`/declare touches to opt into fencing)."
+            )
+        else:
+            print(
+                f"openup-fence: {task_id} — {len(files)} changed file(s) "
+                f"within lane (base {base})."
+            )
         return EXIT_OK
 
     for f in out_of_lane:

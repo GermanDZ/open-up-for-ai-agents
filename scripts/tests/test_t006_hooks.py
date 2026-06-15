@@ -258,6 +258,40 @@ class AutoLogCommitTests(unittest.TestCase):
         g = state_cli(self.repo.state_dir, "get", "gates.log_written")
         self.assertEqual(g.stdout.strip(), "true")
 
+    def test_resolves_task_from_worktree_when_cwd_has_no_state(self):
+        # T-042 Fix-7b: cwd (main) has no state; a linked worktree does → the
+        # commit record carries the worktree's task_id, not null.
+        repo = TempRepo()  # fresh: scripts present, NO init_state on main
+        wt = repo.dir.parent / (repo.dir.name + "-alc-wt")
+        try:
+            git(repo.dir, "worktree", "add", "-q", str(wt), "-b", "feature/alc")
+            (wt / "scripts").mkdir(parents=True, exist_ok=True)
+            shutil.copy(STATE_CLI, wt / "scripts" / "openup-state.py")
+            shutil.copy(SCHEMA, wt / "scripts" / "openup-state.schema.json")
+            state_cli(wt / ".openup", "init", "--task-id", "T-077",
+                      "--iteration", "1", "--phase", "construction",
+                      "--track", "standard", "--branch", "feature/alc",
+                      "--worktree", str(wt), "--force")
+            # Commit in MAIN (the pinned cwd) while state lives in the worktree.
+            (repo.dir / "f.txt").write_text("x\n")
+            git(repo.dir, "add", "-A")
+            git(repo.dir, "commit", "-q", "-m", "feat: change [T-077]")
+            payload = {
+                "tool_name": "Bash", "cwd": str(repo.dir),
+                "tool_input": {"command": 'git commit -m "feat: change [T-077]"'},
+                "tool_response": {"stdout": "1 file changed", "returncode": 0},
+            }
+            proc = run_hook("auto-log-commit.py", payload, repo.dir)
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            log = repo.dir / "docs" / "agent-logs" / "agent-runs.jsonl"
+            rec = json.loads(
+                [l for l in log.read_text().splitlines() if l.strip()][-1]
+            )
+            self.assertEqual(rec.get("task_id"), "T-077")  # not null
+        finally:
+            git(repo.dir, "worktree", "remove", "--force", str(wt))
+            repo.cleanup()
+
     def test_idempotent_same_sha(self):
         self._make_commit()
         run_hook("auto-log-commit.py", self._commit_payload(), self.repo.dir)

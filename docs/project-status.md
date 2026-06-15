@@ -1,10 +1,10 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 18
-**Iteration Goal**: T-041 — OpenUP audit remediation: 8 fixes from the es-invoices session/log audit (clock-stamped `log-event`, agent install, spine track, worktree-aware gate, plan-mode exemption, CLI reference, next-loop guidance, canonical bootstrap commit)
+**Iteration**: 19
+**Iteration Goal**: T-042 — Retro-surfaced fixes: sync-status single-pass completion, quick-track unfenced lanes, worktree-aware audit hooks (auto-log-commit + on-stop), complete-task status flip
 **Status**: completed
-**Current Task**: T-041
+**Current Task**: T-042
 **Iteration Started**: 2026-06-12
 **Last Updated**: 2026-06-15
 **Updated By**: sync-status.py
@@ -12,6 +12,8 @@
 ## Notes
 
 - **Iteration 18** (2026-06-15): T-037..T-039 — completes the Project Docs Traceability & Validation Pack (T-034..T-036 delivered in PR #29). **T-037**: `scripts/check-docs.py --coverage` evaluates `trace-model.json` coverage rules with severity (required blocks, advisory reports); `scripts/docs-index.py` writes a derived `docs/INDEX.md` (write-fence pattern, `<-- DO NOT EDIT -->` marker, `--check` drift guard) — the work-product-tier analogue of `.openup/board.json`. The `traced-by` inverse is derived in-script and surfaced in INDEX.md only (not written back to instances), keeping cross-lane edits out of the picture. **T-038**: five `openup-create-*` skills (vision, use-case, test-plan, iteration-plan, architecture-notebook) gain an authoring step that writes typed instance frontmatter onto the produced doc; one cross-cutting `.claude-templates/rubrics/doc-traceability-rubric.md` grades all five (no per-skill rubric duplication); `/openup-complete-task` gains BLOCKING step 3a calling `check-docs.py` + `--coverage`; `.claude-templates/CLAUDE.md` carries the convention pointer. Templates remain byte-for-byte unchanged — frontmatter lands on instances only. **T-039**: registers check-docs.py / docs-index.py / build-trace-model.py / docs-meta.schema.json / trace-model.json in `scripts/process-manifest.txt` (every install/update path ships them now, 14 CLIs vs 9 before); adds a fail-open project-side commit hook `.claude-templates/scripts/hooks/check-docs.py` (stdlib-only, hand-rolled YAML reader); documents `trace_rules:` (enabled / coverage / per-rule severity overrides) in `project-config.md` + the example + an adoption walkthrough in `updating.md`. Completion's step 3a is the strictness floor and is not subject to overrides; the hook is the tunable daily-driver enforcement. 31 new hermetic tests; 226 total pass; KB read-only guardrail respected end-to-end. Solo, standard track, no team.
+
+- **Iteration 19** (2026-06-15): T-042 retro-surfaced fixes from es-invoices iteration-1-7 retrospective — G3 sync-status single-pass completion (kills the two-run dance), G2 quick-track lanes unfenced when no `touches` declared, Fix-7b auto-log-commit + on-stop resolve state from the active worktree (not pinned cwd), G4 complete-task flips plan.md `status: done` so dependency resolution sees completed deps. +6 tests, suite 242 pass/1 pre-existing env fail. Solo, standard, in-place. Stacked on T-041 (PR #32 merged).
 
 - **Iteration 18** (2026-06-15): T-041 OpenUP audit remediation — 8 framework fixes from the es-invoices session/log audit. Headline: fabricated traceability timestamps killed via a new `openup-state.py log-event` subcommand (clock-stamps `ts`; start-iteration/complete-task/log-run rewired off `[ts]` placeholders). Also: setup-agent-teams.sh installs .claude/agents/ (scribe/explorer); on-task-request.py keeps spine artifacts off quick track; gate-edits.py resolves state from the edit's worktree root (worktree false-block) and exempts plan-mode plan files; openup-next gains empty-board + phase-review guidance (synced stale live copy to richer template); new script-cli-reference.md; canonical bootstrap commit. +7 tests, suite 233 pass/1 pre-existing env fail. Solo, standard track, in-place. Surfaced F10: pre-existing 34-file .claude↔template drift (reconciled to land green; warrants its own task).
 

@@ -78,3 +78,8 @@
 {"event": "iteration_complete", "task_id": "T-041", "branch": "fix/T-041-audit-remediation", "phase": "construction", "ts": "2026-06-15T11:11:24Z"}
 {"run_id": "2c7f07d318844d298b664fa1118871dc", "event": "commit", "task_id": "T-041", "branch": "fix/T-041-audit-remediation", "sha": "21281ec3c842e3e95135edee54f38589ffcde755", "model": null, "session_id": null, "ts": "2026-06-15T11:15:08Z"}
 {"run_id": "a7ac5f15acb74d348e67aee2c6b09b09", "event": "commit", "task_id": null, "branch": "fix/T-041-audit-remediation", "sha": "fbb97a9098d1ba402557e7f31c89b9b091a737b9", "model": null, "session_id": null, "ts": "2026-06-15T11:20:34Z"}
+{"run_id": "run-T-042-20260615", "event": "iteration_start", "task_id": "T-042", "goal": "Retro-surfaced framework fixes (G3, G2, Fix-7b, G4)", "branch": "fix/T-042-retro-findings", "phase": "construction", "ts": "2026-06-15T11:48:27Z"}
+{"run_id": "da3368fbee3c4dbaabe39f1e727300b1", "event": "commit", "task_id": "T-042", "branch": "fix/T-042-retro-findings", "sha": "e58c29d04e5e01ff5920f5f9c558d30956736867", "model": null, "session_id": null, "ts": "2026-06-15T12:17:43Z"}
+{"run_id": "0a6be078ffea49f1aae96b944ef309d3", "event": "commit", "task_id": "T-042", "branch": "fix/T-042-retro-findings", "sha": "724890cdb8b98df23897533e7511ef4406badeca", "model": null, "session_id": null, "ts": "2026-06-15T12:18:07Z"}
+{"event": "iteration_complete", "task_id": "T-042", "branch": "fix/T-042-retro-findings", "phase": "construction", "ts": "2026-06-15T12:56:49Z"}
+{"run_id": "3cee240dacb54407aef6261f3158bc30", "event": "commit", "task_id": null, "branch": "fix/T-042-retro-findings", "sha": "9a7b80c67d834bf7a692d12a65b1b953891bd32d", "model": null, "session_id": null, "ts": "2026-06-15T13:08:37Z"}

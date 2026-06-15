@@ -60,6 +60,41 @@ def state_get(cwd: str, key: str) -> tuple[int, str]:
     return run(f'python3 "{script}" get {key}', cwd)
 
 
+def resolve_state_root(cwd: str) -> str:
+    """Repo/worktree root that holds the active iteration state.
+
+    With worktree-per-task, .openup/state.json lives in the task worktree while
+    the harness cwd may stay pinned to the main repo — leaving the commit record
+    with task_id null. Prefer cwd if it has state; else scan linked worktrees
+    (`git worktree list`) for one that does, preferring the worktree whose branch
+    matches HEAD. Fail-safe: cwd when nothing resolves (T-042 Fix-7b).
+    """
+    if (Path(cwd) / ".openup" / "state.json").exists():
+        return cwd
+    rc, out = run("git worktree list --porcelain", cwd)
+    if rc != 0 or not out:
+        return cwd
+    candidates, path = [], None
+    for line in out.splitlines():
+        if line.startswith("worktree "):
+            path = line[len("worktree "):].strip()
+        elif line.startswith("branch ") and path:
+            candidates.append((path, line[len("branch "):].strip()))
+            path = None
+        elif not line.strip():
+            path = None
+    with_state = [(p, b) for (p, b) in candidates
+                  if (Path(p) / ".openup" / "state.json").exists()]
+    if not with_state:
+        return cwd
+    _, cur = run("git rev-parse --abbrev-ref HEAD", cwd)
+    cur = cur.strip()
+    for p, b in with_state:
+        if b == cur or b.endswith("/" + cur):
+            return p
+    return with_state[0][0]
+
+
 def set_gate(cwd: str, name: str, value: str) -> None:
     script = Path(cwd) / "scripts" / "openup-state.py"
     run(f'python3 "{script}" set-gate {name} {value}', cwd)
@@ -179,10 +214,13 @@ def main() -> None:
         _, branch = run("git rev-parse --abbrev-ref HEAD", cwd)
         branch = branch.strip()
 
-        scode, task_id = state_get(cwd, "task_id")
+        # Read iteration state from the worktree that owns it, not a cwd pinned
+        # to the main repo (T-042 Fix-7b) — otherwise commits log task_id null.
+        sroot = resolve_state_root(cwd)
+        scode, task_id = state_get(sroot, "task_id")
         task_id = task_id.strip() if scode == 0 else None
 
-        sidcode, session_id = state_get(cwd, "session_id")
+        sidcode, session_id = state_get(sroot, "session_id")
         session_id = session_id.strip() if sidcode == 0 else None
         if session_id in ("null", ""):
             session_id = None
@@ -214,7 +252,7 @@ def main() -> None:
 
         # Flip the log_written gate (best-effort; only if state exists).
         if scode == 0:
-            set_gate(cwd, "log_written", "true")
+            set_gate(sroot, "log_written", "true")
 
         sys.exit(0)
 

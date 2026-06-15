@@ -317,9 +317,18 @@ Once gates pass, archive the iteration state and the **change folder** (Ring 2 �
 **If the task has a change folder** (`docs/changes/{task_id}/` exists — the standard three-ring case):
 
 ```bash
-# 1. Archive .openup/state.json INTO the change folder as state.json (validate, copy, remove live file)
+# 1. Flip the spec's frontmatter status to `done` — dependency resolution
+#    (openup-claims.py preflight) reads this frontmatter, NOT the derived
+#    roadmap, so a dependent task is blocked unless the dep is marked done here.
+python3 - "$PWD/docs/changes/{task_id}/plan.md" <<'PY'
+import re, sys
+p = sys.argv[1]; t = open(p).read()
+t = re.sub(r'(?m)^status:\s*.*$', 'status: done', t, count=1)
+open(p, 'w').write(t)
+PY
+# 2. Archive .openup/state.json INTO the change folder as state.json (validate, copy, remove live file)
 python3 scripts/openup-state.py archive "docs/changes/{task_id}/state.json"
-# 2. Move the whole change folder into the archive ring (preserves history)
+# 3. Move the whole change folder into the archive ring (preserves history)
 git mv "docs/changes/{task_id}" "docs/changes/archive/{task_id}"
 ```
 

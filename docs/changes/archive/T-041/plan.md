@@ -1,7 +1,7 @@
 ---
 id: T-041
 title: "OpenUP audit remediation: 8 fixes surfaced by the es-invoices session/log audit"
-status: in-progress
+status: done
 track: standard
 priority: high
 depends-on: []
