@@ -1,6 +1,6 @@
 # Process v2: Mechanize OpenUP for the Claude Code Harness
 
-**Status**: `planned`
+**Status**: `completed` (2026-06-11 — T-004…T-011 + T-002 delivered)
 **Created**: 2026-06-10
 **Priority**: high
 **Goal**: Replace prose-based process enforcement with harness mechanisms (frontmatter, hooks, state files, worktrees) so adherence stops depending on the model remembering instructions.

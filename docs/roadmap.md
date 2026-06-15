@@ -11,6 +11,7 @@
 | [T-031](changes/archive/T-031/plan.md) | Task-ID allocation race in parallel lanes: reserve IDs through the claims mechanism in `create-task-spec` / `plan-feature` | completed (2026-06-12) | medium | — |
 | [T-032](changes/archive/T-032/plan.md) | Install scripts must ship the process CLIs (`scripts/openup-*.py`) so a bootstrapped project can actually run the workflow | completed (2026-06-14) | high | — |
 | [T-033](changes/archive/T-033/plan.md) | Autonomous continue-loop: suspend a lane on a blocking input-request and auto-resume it when answered (board `suspended` state + `/openup-next` runs Step-0 answered-check first) | completed (2026-06-14) | high | — |
+| [T-040](changes/archive/T-040/plan.md) | Fix hook-test `HOOKS_DIR` stale path (`.claude/scripts/hooks/` → `docs-eng-process/.claude-templates/scripts/hooks/` after T-022) | completed (2026-06-15) | medium | — |
 
 **Value (T-032, T-033)**: T-032 makes a bootstrapped/synced project runnable out of
 the box — every install path ships the `scripts/openup-*.py` runtime from one
