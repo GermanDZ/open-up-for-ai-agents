@@ -73,6 +73,31 @@ Update the vision document with:
 - **Key features**: High-level feature list
 - **Constraints**: Technical, business, or other constraints
 
+### 3a. Write Instance Frontmatter (T-038 — doc traceability)
+
+Replace the template's provenance frontmatter (`type: Template`,
+`source_url`) with an **instance** frontmatter block declaring this file as
+a typed work-product instance under the project's `docs/`. The vision is
+the top of the OpenUP trace spine, so it has no `traces-from`. Grade
+afterward against the cross-cutting
+[Doc Traceability Rubric](../../rubrics/doc-traceability-rubric.md) — every
+authored instance is graded against it, additive to the vision-rubric.
+
+Example block:
+
+```yaml
+---
+type: vision                # required — v1 spine
+id: VIS-001                 # stable, project-unique
+title: <Project Name>
+status: approved            # draft | approved | implemented | verified | obsolete
+owner-role: analyst         # optional
+---
+```
+
+Field reference: [`docs-eng-process/doc-frontmatter.md`](../../../docs-eng-process/doc-frontmatter.md).
+Validator: `python3 scripts/check-docs.py`.
+
 ### 4. Self-Critique
 
 Apply the **Self-Critique SOP** (`docs-eng-process/sops/self-critique.md`) before

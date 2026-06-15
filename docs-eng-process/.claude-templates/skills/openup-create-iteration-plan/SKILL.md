@@ -80,6 +80,38 @@ Update with:
 - **Success criteria**: How to know the iteration succeeded
 - **Risk assessment**: Any iteration-specific risks
 
+### 5a. Write Instance Frontmatter (T-038 — doc traceability)
+
+Replace the template's provenance frontmatter (`type: Template`,
+`source_url`) with an **instance** block declaring this file as a typed
+`iteration-plan` work-product. Per the v1 spine, an iteration-plan
+traces-from one or more `work-item` ids — the work items the iteration
+will deliver. Grade against the cross-cutting
+[Doc Traceability Rubric](../../rubrics/doc-traceability-rubric.md).
+
+Example block:
+
+```yaml
+---
+type: iteration-plan        # required — v1 spine
+id: IP-12                   # stable, project-unique
+title: Iteration 12 — <Theme>
+status: approved
+traces-from: [WI-001, WI-002]   # the work items this iteration delivers
+owner-role: project-manager
+iteration: construction-2
+---
+```
+
+If the project does not yet maintain explicit `work-item` instances under
+`docs/work-items/`, leave `traces-from` empty for this iteration and
+flag the gap in `## Open Questions` — backfilling work-items is a one-time
+cost, and the validator will surface it as a `coverage-gap` for any
+`work-item → traces-from → requirement` rule.
+
+Field reference: [`docs-eng-process/doc-frontmatter.md`](../../../docs-eng-process/doc-frontmatter.md).
+Validator: `python3 scripts/check-docs.py`.
+
 ### 6. Self-Critique
 
 Apply the **Self-Critique SOP** (`docs-eng-process/sops/self-critique.md`) before

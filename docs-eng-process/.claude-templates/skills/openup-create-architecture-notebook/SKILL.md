@@ -80,6 +80,33 @@ Update with:
 - **Quality attributes**: Performance, security, scalability requirements
 - **Subsystem decomposition**: Major system components
 
+### 4a. Write Instance Frontmatter (T-038 — doc traceability)
+
+The architecture notebook holds a *series* of architectural decisions; for
+v1 we tag the notebook file as a single `decision` work-product instance
+that traces back to the project vision (per the v1 spine: `decision →
+traces-from → vision`). Per-decision ADR files are still welcome as
+additional `decision` instances under `docs/decisions/` — each gets the
+same instance frontmatter, with a distinct `id`. Grade against the
+cross-cutting
+[Doc Traceability Rubric](../../rubrics/doc-traceability-rubric.md).
+
+Example block (replaces the template's provenance frontmatter):
+
+```yaml
+---
+type: decision              # required — v1 spine
+id: D-01                    # stable, project-unique (notebook = first decision)
+title: Architecture Notebook — <System Name>
+status: approved
+traces-from: [VIS-001]      # the vision this architecture serves
+owner-role: architect
+---
+```
+
+Field reference: [`docs-eng-process/doc-frontmatter.md`](../../../docs-eng-process/doc-frontmatter.md).
+Validator: `python3 scripts/check-docs.py`.
+
 ### 5. Self-Critique
 
 Apply the **Self-Critique SOP** (`docs-eng-process/sops/self-critique.md`) before

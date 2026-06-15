@@ -37,6 +37,9 @@ After this skill completes, ALL of these must be true:
 - [ ] Commit messages follow canonical format: `type(scope): description [T-XXX]`
 - [ ] **BLOCKING**: Branch is rebased onto the current trunk and the write-fence
       passes (`openup-fence.py check` exit 0) — no out-of-lane files, no stale views
+- [ ] **BLOCKING (T-038)**: `python3 scripts/check-docs.py` exits 0 — every
+      authored work-product instance has valid frontmatter, resolvable trace
+      refs, and resolvable relative links
 - [ ] Iteration note written as a sharded file under `docs/status-notes/`
 - [ ] Roadmap + project status regenerated via `scripts/sync-status.py` (never hand-edited)
 - [ ] Traceability logs are created with commit SHAs
@@ -138,6 +141,39 @@ If the fence exits 8, completion is **blocked**:
 
 (The same check runs for humans via the `.githooks/pre-push` hook — see
 [parallel-lanes.md](../../../../docs-eng-process/parallel-lanes.md).)
+
+### 3a. Validate Work-Product Trace Web — BLOCKING (T-038)
+
+After the rebase, run the work-product validator. Any authored OpenUP
+work-product **instance** under `docs/` (a file whose frontmatter `type:`
+is in the v1 spine: vision · requirement · work-item · iteration-plan ·
+use-case · test-case · decision) must validate against the schema, resolve
+its trace refs, and resolve its relative `.md` links:
+
+```bash
+# Schema + ref/link validation — hard failures block completion.
+# Defaults to ./docs; pass --docs <path> to override.
+python3 scripts/check-docs.py
+
+# Required-coverage gaps (e.g. an approved requirement with no verified-by
+# test). Required-severity gaps fail; advisory gaps are reported only.
+python3 scripts/check-docs.py --coverage
+```
+
+If either exits non-zero, completion is **blocked**. The fix is the
+fix-spec-first rule:
+- `schema` / `bad-ref-type` / `dangling-ref` — re-run the originating
+  `/openup-create-<type>` skill (so its rubric is re-applied) to author the
+  missing field, not a hand-edit of the instance frontmatter.
+- `broken-link` — the relative link target is wrong; either move/rename the
+  target or fix the link.
+- `coverage-gap` (required severity) — author the missing test-case
+  (`/openup-create-test-plan`) or the missing upstream requirement
+  (`/openup-create-task-spec` for the requirement work-product); do not
+  silence the gap by downgrading the rule to advisory mid-task.
+
+Projects with the project-side hook installed (T-039) hit the same check at
+`git commit`; this completion gate is the in-skill equivalent.
 
 ### 4. Update Roadmap + Project Status — deterministic, never by hand
 
