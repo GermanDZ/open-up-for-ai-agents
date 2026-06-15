@@ -82,6 +82,34 @@ the es-invoices probe was an old-session typo, not a framework bug.
   two agent definitions into its `.claude/agents/` directly (the framework Fix 2
   only reaches it on the next bootstrap/sync).
 
+## Completion verification (step 1a — graded against the diff)
+
+- ✅ **R1** log-event clock-stamps ts — `scripts/openup-state.py` `cmd_log_event`
+  + parser; `LogEventTests` (3 tests) assert ISO-8601 ts + monotonicity.
+- ✅ **R2** skills off `[ts]` — start-iteration §9 / complete-task §5 / log-run
+  briefs now call `log-event`; `grep '\[ts\]'` returns nothing in those skills.
+- ✅ **R3** agents installed — `setup-agent-teams.sh` agents block; verified
+  end-to-end into a temp project (both agent files appear).
+- ✅ **R4** spine off quick — `on-task-request.py` `SPINE_RE`; `SuggestTrackTests`
+  spine cases pass (vision/risk/use-case → standard; architecture → full;
+  "fix typo in readme" still quick).
+- ✅ **R5** next guidance — `openup-next` SKILL exit-3 / fully-delivered branches
+  name `/openup-create-task-spec` + `/openup-phase-review`.
+- ✅ **R6** CLI reference — `script-cli-reference.md` exists; synopses taken from
+  live `--help`; linked from README + both CLAUDE copies.
+- ✅ **R7** worktree gate — `gate-edits.py` `resolve_state_root`;
+  `test_worktree_state_resolved_from_target` (state in worktree, cwd in main → allow).
+- ✅ **R8** plan-mode exempt — `gate-edits.py` `is_plan_mode_path`;
+  `test_plan_mode_path_exempt_without_state`.
+- ✅ **R9** no regressions — suite 233 pass / 1 pre-existing env failure
+  (docs-index `/private` symlink, untouched); parity green post-reconcile.
+
+**Step 1b — Success Measures**: `n/a`. This is internal tooling remediation, not a
+user-facing feature; the falsifiable measure is the test suite (the +7 tests
+encode each fix's observable behavior) and the eliminated failure class
+(fabricated timestamps can no longer be authored — the model never supplies a ts).
+No runtime metric/event to instrument.
+
 ## Decisions log
 
 - **DD1**: Track standard (not full) — mechanical, no architecture/multi-role.
