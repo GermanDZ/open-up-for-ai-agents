@@ -2,9 +2,11 @@
 
 Every authored OpenUP **work-product instance** under a project's `docs/` carries
 YAML frontmatter that declares **machine-readable traceability**: what type of
-work product it is, and how it links into the OpenUP trace web (Vision →
-Requirements → Work Items → Iteration Plan → Use Cases → Test Cases). This is the
-work-product-tier analogue of the [coordination
+work product it is, and how it links into the OpenUP trace web — requirements
+refine a vision; use cases and work items refine requirements; iteration plans
+refine work items; test cases verify requirements and use cases. The valid edges
+are not arbitrary; they are defined by the KB-derived `trace-model.json` (see
+T-035). This is the work-product-tier analogue of the [coordination
 frontmatter](coordination-frontmatter.md) that the task tier
 (`docs/changes/T-NNN/plan.md`) already carries.
 

@@ -169,6 +169,41 @@ class ReferenceTests(_FixtureBase):
         self.assertIn("duplicate-id", found)
 
 
+class DegradeModeTests(_FixtureBase):
+    """When trace-model.json can't be loaded, the validator still runs schema +
+    ref-existence checks; it just skips the upstream-type direction check
+    instead of rejecting every traces-from ref."""
+
+    def test_missing_model_still_runs_schema_and_ref_checks(self):
+        self.vision()
+        write_instance(self.docs, "changes/REQ-014.md", frontmatter=[
+            "type: requirement", "id: REQ-014", "status: approved",
+            "traces-from: [VIS-001]"])  # a *valid* edge; must not be flagged
+        cmd = [sys.executable, str(SCRIPT),
+               "--docs", str(self.docs),
+               "--model", str(self.root / "no-such-model.json"),
+               "--json"]
+        proc = subprocess.run(cmd, capture_output=True, text=True)
+        self.assertEqual(proc.returncode, OK,
+                         f"degrade mode should pass a valid set:\n{proc.stdout}")
+        data, found = codes(proc)
+        self.assertTrue(data["ok"])
+        self.assertNotIn("bad-ref-type", found)
+
+    def test_missing_model_still_catches_dangling_refs(self):
+        write_instance(self.docs, "changes/REQ-014.md", frontmatter=[
+            "type: requirement", "id: REQ-014", "status: approved",
+            "traces-from: [VIS-404]"])  # dangling — model-independent
+        cmd = [sys.executable, str(SCRIPT),
+               "--docs", str(self.docs),
+               "--model", str(self.root / "no-such-model.json"),
+               "--json"]
+        proc = subprocess.run(cmd, capture_output=True, text=True)
+        self.assertEqual(proc.returncode, FAIL)
+        _, found = codes(proc)
+        self.assertIn("dangling-ref", found)
+
+
 class LinkTests(_FixtureBase):
     def test_broken_relative_md_link_fails(self):
         self.vision(body="See [the plan](./missing-plan.md) for details.")

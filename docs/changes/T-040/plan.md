@@ -15,7 +15,7 @@ claimed-by: null
 ## Context
 
 Surfaced 2026-06-15 while running the full test suite during T-034…T-036 delivery.
-25 tests fail and 3 error across two files:
+25 tests fail and 3 error out across two files:
 
 - `scripts/tests/test_t006_hooks.py` — 3 ERRORs + 14 FAILs
 - `scripts/tests/test_t010_tracks.py` — 8 FAILs

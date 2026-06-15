@@ -176,12 +176,17 @@ def check(docs_dir: Path, schema: dict, model: dict):
     """Run all checks. Return (findings, instance_count)."""
     spine_types = set(model.get("types") or
                       schema["properties"]["type"]["enum"])
-    # allowed (from_type -> to_type) for traces-from edges.
-    trace_edges = {
-        (e["from"], e["to"])
-        for e in model.get("trace_edges", [])
-        if e.get("relation") == "traces-from"
-    }
+    # allowed (from_type -> to_type) for traces-from edges. When the model is
+    # absent or has no traces-from edges, leave this as None so the upstream-type
+    # check is skipped (schema + ref-existence still run); an empty set would
+    # otherwise reject every traces-from ref as bad-ref-type.
+    trace_edges = None
+    if model.get("trace_edges"):
+        trace_edges = {
+            (e["from"], e["to"])
+            for e in model["trace_edges"]
+            if e.get("relation") == "traces-from"
+        }
 
     findings = []
     instances = list(discover_instances(docs_dir, spine_types))
@@ -221,6 +226,8 @@ def check(docs_dir: Path, schema: dict, model: dict):
                     rel, "dangling-ref",
                     f"traces-from id '{ref}' does not resolve to any instance"))
                 continue
+            if trace_edges is None:
+                continue  # model unavailable: skip type-direction enforcement
             for ref_type, _ in id_index[ref]:
                 if (this_type, ref_type) not in trace_edges:
                     findings.append(Finding(
