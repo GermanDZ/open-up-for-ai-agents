@@ -274,17 +274,20 @@ Check `docs/input-requests/` for files with `status: answered`. Process any answ
 
 ### 9. Log Initialization
 
-> **Scribe step** — delegate to the `openup-scribe` agent (Agent tool,
-> subagent_type: "openup-scribe"). You determine the values; the scribe only
-> writes. Brief it with:
->
-> ```
-> Agent(subagent_type="openup-scribe", description="Log iteration start",
->   prompt="Append a JSONL record to docs/agent-logs/agent-runs.jsonl:
->   {\"run_id\":\"[id]\",\"event\":\"iteration_start\",\"task_id\":\"[task_id]\",
->    \"goal\":\"[goal]\",\"branch\":\"[branch]\",\"phase\":\"[phase]\",\"ts\":\"[ts]\"}
->   Report: record appended.")
-> ```
+Append the `iteration_start` record with the **deterministic logger** — it stamps
+`ts` from the system clock, so the model never authors a timestamp (the cause of
+the fabricated round-number times the audit found). This is a script call, not a
+scribe brief:
+
+```bash
+python3 scripts/openup-state.py log-event \
+  --event iteration_start \
+  --task-id "{task_id}" \
+  --run-id "{run_id}" \
+  --goal "{goal}" \
+  --branch "$(git rev-parse --abbrev-ref HEAD)" \
+  --phase "{phase}"
+```
 
 ## Output
 

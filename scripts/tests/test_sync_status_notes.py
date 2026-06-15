@@ -143,5 +143,39 @@ class SyncStatusNotesTests(unittest.TestCase):
         self.assertEqual(self.roadmap.read_text(), rm)
 
 
+class DeriveStatusTests(unittest.TestCase):
+    """T-041 F11: a solo standard task (team_deployed=false) must derive
+    'completed' once log_written + roadmap_synced are set. Only 'full' gates on
+    team_deployed."""
+
+    @classmethod
+    def setUpClass(cls):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("sync_status", SYNC_STATUS)
+        cls.mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(cls.mod)
+
+    def _state(self, track, **gates):
+        base = {"team_deployed": False, "log_written": False,
+                "roadmap_synced": False}
+        base.update(gates)
+        return {"track": track, "gates": base}
+
+    def test_standard_solo_completes(self):
+        s = self._state("standard", log_written=True, roadmap_synced=True)
+        self.assertEqual(self.mod.derive_status(s), "completed")
+
+    def test_standard_in_progress_until_gates(self):
+        s = self._state("standard", log_written=True)  # roadmap_synced False
+        self.assertEqual(self.mod.derive_status(s), "in-progress")
+
+    def test_full_still_requires_team(self):
+        s = self._state("full", log_written=True, roadmap_synced=True)
+        self.assertEqual(self.mod.derive_status(s), "in-progress")
+        s2 = self._state("full", team_deployed=True, log_written=True,
+                         roadmap_synced=True)
+        self.assertEqual(self.mod.derive_status(s2), "completed")
+
+
 if __name__ == "__main__":
     unittest.main()

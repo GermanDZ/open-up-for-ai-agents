@@ -238,6 +238,7 @@ echo ""
 
 RUBRICS_DIR="$CLAUDE_DIR/rubrics"
 HOOKS_DIR="$CLAUDE_DIR/scripts/hooks"
+AGENTS_DIR="$CLAUDE_DIR/agents"
 
 if [ "$DRY_RUN" = false ]; then
     # Create .claude directory structure
@@ -246,6 +247,7 @@ if [ "$DRY_RUN" = false ]; then
     mkdir -p "$SKILLS_DIR"
     mkdir -p "$RUBRICS_DIR"
     mkdir -p "$HOOKS_DIR"
+    mkdir -p "$AGENTS_DIR"
 fi
 
 # Copy teammate instructions
@@ -262,6 +264,16 @@ if [ -d "$TEMPLATES_DIR/teams" ]; then
     copy_dir "$TEMPLATES_DIR/teams" "$TEAMS_DIR"
 else
     warn "Teams template directory not found: $TEMPLATES_DIR/teams"
+fi
+
+# Copy subagent definitions (openup-scribe, openup-explorer). Without these the
+# Agent/Task tool cannot resolve subagent_type="openup-scribe" and scribe
+# delegations fail with "Agent type not found".
+if [ -d "$TEMPLATES_DIR/agents" ]; then
+    info "Setting up subagent definitions..."
+    copy_dir "$TEMPLATES_DIR/agents" "$AGENTS_DIR"
+else
+    warn "Agents template directory not found: $TEMPLATES_DIR/agents"
 fi
 
 # Copy skills

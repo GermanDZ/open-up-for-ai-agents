@@ -76,13 +76,29 @@ FULL_TRACK_RE = re.compile(
 )
 
 
+# Spine artifacts (vision, risk-list, use-case, architecture notebook, test
+# plan) are substantive even when a quick signal like "docs"/"readme" also
+# matches — they carry the plan gate and a rubric. Keep them off the quick track
+# regardless: standard, or full when a broad-scope signal is also present.
+SPINE_RE = re.compile(
+    r"\b("
+    r"vision|risk[- ]?list|use[- ]?case|"
+    r"architecture(?:\s+notebook)?|test[- ]?plan"
+    r")\b",
+    re.IGNORECASE,
+)
+
+
 def suggest_track(prompt: str) -> str:
     """Classify a task-request prompt into a suggested ceremony track.
 
-    Returns one of ``"quick"``, ``"full"``, ``"standard"``. quick takes
-    precedence over full (a small-scope signal is decisive); full takes
-    precedence over the standard default. Pure and side-effect free.
+    Returns one of ``"quick"``, ``"full"``, ``"standard"``. Spine artifacts are
+    forced off quick (standard, or full if a broad signal is present). Otherwise
+    quick takes precedence over full (a small-scope signal is decisive); full
+    takes precedence over the standard default. Pure and side-effect free.
     """
+    if SPINE_RE.search(prompt):
+        return "full" if FULL_TRACK_RE.search(prompt) else "standard"
     if QUICK_TRACK_RE.search(prompt):
         return "quick"
     if FULL_TRACK_RE.search(prompt):

@@ -24,6 +24,8 @@ Subcommands:
   archive      Validate, copy state to a destination, then remove the original.
   retro        Manage the durable retro-cadence counter (.openup/retro.json).
   validate     Validate .openup/state.json against the schema.
+  log-event    Append a clock-stamped record to docs/agent-logs/agent-runs.jsonl
+               (ts is stamped by this CLI — the model never supplies it).
 
 Exit codes:
   0  success
@@ -326,6 +328,42 @@ def cmd_get(args):
     return EXIT_OK
 
 
+def cmd_log_event(args):
+    """Append one clock-stamped record to docs/agent-logs/agent-runs.jsonl.
+
+    The ``ts`` is stamped here from ``datetime.now(timezone.utc)`` — the model
+    never supplies it. This is the deterministic replacement for skill briefs
+    that previously asked the scribe to fill a ``[ts]`` placeholder (and so
+    invented round-number times that contradicted the real commit clock).
+    """
+    log_dir = (
+        Path(args.log_dir).expanduser().resolve()
+        if getattr(args, "log_dir", None)
+        else REPO_ROOT / "docs" / "agent-logs"
+    )
+    log_dir.mkdir(parents=True, exist_ok=True)
+    log_path = log_dir / "agent-runs.jsonl"
+    ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    # Build the record in the established field order; optional fields appear
+    # only when supplied. task_id is always present (null when omitted).
+    record = {}
+    if args.run_id:
+        record["run_id"] = args.run_id
+    record["event"] = args.event
+    record["task_id"] = args.task_id
+    for key in ("goal", "branch", "phase", "track", "sha"):
+        val = getattr(args, key)
+        if val:
+            record[key] = val
+    record["ts"] = ts
+
+    with log_path.open("a", encoding="utf-8") as fh:
+        fh.write(json.dumps(record) + "\n")
+    print(f"logged {args.event} ts={ts} -> {log_path}")
+    return EXIT_OK
+
+
 def cmd_set(args):
     state = require_state(args)
     dotted_set(state, args.key, coerce_value(args.value))
@@ -536,6 +574,31 @@ def build_parser():
     p_va = sub.add_parser("validate", help="Validate state against the schema.")
     add_state_dir(p_va)
     p_va.set_defaults(func=cmd_validate)
+
+    # log-event
+    p_le = sub.add_parser(
+        "log-event",
+        help="Append a clock-stamped record to docs/agent-logs/agent-runs.jsonl.",
+    )
+    p_le.add_argument(
+        "--event",
+        required=True,
+        help="Event type, e.g. iteration_start | iteration_complete | commit.",
+    )
+    p_le.add_argument(
+        "--task-id", default=None, help='e.g. "T-041" (recorded as null if omitted)'
+    )
+    p_le.add_argument("--run-id", default=None, help="Run/correlation id.")
+    p_le.add_argument("--goal", default=None, help="Iteration goal text.")
+    p_le.add_argument("--branch", default=None)
+    p_le.add_argument("--phase", default=None)
+    p_le.add_argument("--track", default=None)
+    p_le.add_argument("--sha", default=None, help="Commit SHA, for commit events.")
+    p_le.add_argument(
+        "--log-dir",
+        help="Override the agent-logs dir (default: <repo-root>/docs/agent-logs).",
+    )
+    p_le.set_defaults(func=cmd_log_event)
 
     return parser
 

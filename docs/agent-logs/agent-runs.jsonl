@@ -69,3 +69,12 @@
 {"run_id":"iter15-T020-complete","event":"iteration_complete","task_id":"T-020","branch":"claude/determined-archimedes-nvjsqh","phase":"construction","ts":"2026-06-12"}
 {"run_id":"iter15-T021-complete","event":"iteration_complete","task_id":"T-021","branch":"claude/determined-archimedes-nvjsqh","phase":"construction","ts":"2026-06-12"}
 {"run_id":"iter17-T024-complete","event":"iteration_complete","task_id":"T-024","branch":"claude/intelligent-curie-j3uce2","phase":"construction","ts":"2026-06-12"}
+{"run_id": "29b3a2c7f16b4c61a57a4f3732234ac9", "event": "commit", "task_id": null, "branch": "main", "sha": "72eeffc18fc24029704522fffb681cabb5b2e2ea", "model": null, "session_id": null, "ts": "2026-06-15T08:38:10Z"}
+{"run_id":"run-T-041-20260615","event":"iteration_start","task_id":"T-041","goal":"OpenUP audit remediation (8 fixes)","branch":"fix/T-041-audit-remediation","phase":"construction","ts":"2026-06-15T09:54:47Z"}
+{"run_id": "e0780c67ba574908b15528fb90311941", "event": "commit", "task_id": "T-041", "branch": "fix/T-041-audit-remediation", "sha": "306f4268e2938c083ea4c9a4990b4cb22e77dc12", "model": null, "session_id": null, "ts": "2026-06-15T11:02:11Z"}
+{"run_id": "0dc4ddcf97aa49719aff509fdd8eace6", "event": "commit", "task_id": "T-041", "branch": "fix/T-041-audit-remediation", "sha": "08567edb6f7b4341530a03ce6be12a9c464c7305", "model": null, "session_id": null, "ts": "2026-06-15T11:06:01Z"}
+{"run_id": "589473fcb6d447509f833f5a07396f43", "event": "commit", "task_id": "T-041", "branch": "fix/T-041-audit-remediation", "sha": "94992ef76a23815b5c9fa9fb6500d7a4bb5ab35c", "model": null, "session_id": null, "ts": "2026-06-15T11:08:15Z"}
+{"run_id": "3e18b30ff1924c97a98a73966c7b394d", "event": "commit", "task_id": "T-041", "branch": "fix/T-041-audit-remediation", "sha": "c01f4bd88fb8ab8ad91fe3f1962ae8700e5ec7d1", "model": null, "session_id": null, "ts": "2026-06-15T11:09:20Z"}
+{"event": "iteration_complete", "task_id": "T-041", "branch": "fix/T-041-audit-remediation", "phase": "construction", "ts": "2026-06-15T11:11:24Z"}
+{"run_id": "2c7f07d318844d298b664fa1118871dc", "event": "commit", "task_id": "T-041", "branch": "fix/T-041-audit-remediation", "sha": "21281ec3c842e3e95135edee54f38589ffcde755", "model": null, "session_id": null, "ts": "2026-06-15T11:15:08Z"}
+{"run_id": "a7ac5f15acb74d348e67aee2c6b09b09", "event": "commit", "task_id": null, "branch": "fix/T-041-audit-remediation", "sha": "fbb97a9098d1ba402557e7f31c89b9b091a737b9", "model": null, "session_id": null, "ts": "2026-06-15T11:20:34Z"}

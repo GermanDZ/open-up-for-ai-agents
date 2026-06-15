@@ -243,18 +243,30 @@ intention.
 ### 5. Create Traceability Logs
 
 > **Scribe step** — collect commit SHAs and metadata yourself (they require git
-> commands), then delegate the writes to the `openup-scribe` agent (Agent tool,
-> subagent_type: "openup-scribe"). Brief it with:
+> commands). **Timestamps come from the clock, never from the model**: capture
+> `START=$(python3 scripts/openup-state.py get started_at)` (script-stamped at
+> iteration start) and `END=$(date -u +%Y-%m-%dT%H:%M:%SZ)`, and pass those
+> concrete values — not `[ts]` placeholders — into the scribe brief for the
+> human-readable `.md`:
 >
 > ```
 > Agent(subagent_type="openup-scribe", description="Write agent run log",
 >   prompt="Write a traceability log entry.
 >   Branch: [branch]. Task: [task_id]. Commits: [sha list]. Phase: [phase].
->   Start: [ts]. End: [ts]. Files changed: [list]. Decisions: [list].
->   1. Create docs/agent-logs/YYYY/MM/DD/<timestamp>-agent-<branch>.md
->      with the run metadata above.
->   2. Append a JSONL record to docs/agent-logs/agent-runs.jsonl.
->   Report: file paths created.")
+>   Start: $START. End: $END. Files changed: [list]. Decisions: [list].
+>   Create docs/agent-logs/YYYY/MM/DD/<timestamp>-agent-<branch>.md with the
+>   run metadata above. Report: file path created.")
+> ```
+>
+> Then append the machine-readable `iteration_complete` record with the
+> **deterministic logger** — it stamps `ts` itself, keeping the JSONL trail
+> honest (this replaces the old "scribe appends a JSONL record with `[ts]`"
+> step that produced fabricated times):
+>
+> ```bash
+> python3 scripts/openup-state.py log-event \
+>   --event iteration_complete --task-id "[task_id]" \
+>   --branch "[branch]" --phase "[phase]"
 > ```
 
 ### 6. Save Iteration Learnings

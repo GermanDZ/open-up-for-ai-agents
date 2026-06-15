@@ -173,6 +173,45 @@ class GateEditsTests(unittest.TestCase):
         proc = run_hook("gate-edits.py", payload, self.repo.dir)
         self.assertEqual(proc.returncode, 0)
 
+    def test_plan_mode_path_exempt_without_state(self):
+        # T-041 Fix 8: plan-mode plan files (…/.claude/plans/) are process
+        # state — allowed even with no active iteration, even outside the repo.
+        payload = {
+            "tool_name": "Write",
+            "cwd": str(self.repo.dir),
+            "tool_input": {"file_path": "/Users/x/.claude/plans/foo.md"},
+        }
+        proc = run_hook("gate-edits.py", payload, self.repo.dir)
+        self.assertEqual(proc.returncode, 0)
+
+    def test_worktree_state_resolved_from_target(self):
+        # T-041 Fix 7: state is read from the worktree that owns the edit, not
+        # the harness cwd. Here cwd (main repo) has NO state, but the linked
+        # worktree DOES (with a plan) — an edit inside the worktree is allowed.
+        wt = self.repo.dir.parent / (self.repo.dir.name + "-wt")
+        try:
+            git(self.repo.dir, "worktree", "add", "-q", str(wt),
+                "-b", "feature/wt")
+            # Mirror scripts/ + init standard state WITH a plan inside the wt.
+            (wt / "scripts").mkdir(parents=True, exist_ok=True)
+            shutil.copy(STATE_CLI, wt / "scripts" / "openup-state.py")
+            shutil.copy(SCHEMA, wt / "scripts" / "openup-state.schema.json")
+            state_cli(wt / ".openup", "init", "--task-id", "T-007",
+                      "--iteration", "1", "--phase", "construction",
+                      "--track", "standard", "--branch", "feature/wt",
+                      "--worktree", str(wt), "--plan",
+                      "docs/changes/T-007/plan.md", "--force")
+            # cwd is the MAIN repo (no state); target is INSIDE the worktree.
+            payload = {
+                "tool_name": "Edit",
+                "cwd": str(self.repo.dir),
+                "tool_input": {"file_path": str(wt / "src" / "app.py")},
+            }
+            proc = run_hook("gate-edits.py", payload, self.repo.dir)
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+        finally:
+            git(self.repo.dir, "worktree", "remove", "--force", str(wt))
+
 
 # --------------------------------------------------------------------------
 # auto-log-commit.py

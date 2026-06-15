@@ -151,8 +151,13 @@ role's call). Then promote it **by task shape**:
   suspends cleanly (step 0 resumes it once answered) rather than dead-ending.
 
 If the roadmap has **no** pending task to promote either, then there is genuinely
-nothing to do → **stop cleanly** and say so (the roadmap is empty or fully
-delivered).
+nothing to do → **stop cleanly** and say so. Make the stop *actionable*:
+- **Every roadmap row is `completed` and the phase's exit criteria look met** →
+  the phase backlog is delivered. Name the next move explicitly: run
+  `/openup-phase-review` to advance to the next phase, then populate that phase's
+  roadmap section. That re-prioritization is a **product-manager decision** the
+  loop does not make on its own — surface it, do not perform it.
+- **The roadmap is simply empty** → say so and stop.
 
 ### 2. Claim it + create the worktree (delegate to start-iteration)
 

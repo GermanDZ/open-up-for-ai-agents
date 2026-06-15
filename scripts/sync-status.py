@@ -52,9 +52,14 @@ STATE_CLI = SCRIPT_DIR / "openup-state.py"
 
 # Track → required gates (mirrors openup-state.py DEFAULT_REQUIRED_GATES and
 # the quick-track relaxation documented in docs-eng-process/state-file.md).
+# Track-required gates for the derived "completed" status. Mirrors
+# /openup-complete-task's check-gates and the solo-by-default model: only `full`
+# requires a team. `standard` is solo unless a team is explicitly opted in, so
+# requiring team_deployed here would leave every solo standard task permanently
+# "in-progress" (T-041 F11).
 TRACK_REQUIRED = {
     "quick": ["log_written", "roadmap_synced"],
-    "standard": ["team_deployed", "log_written", "roadmap_synced"],
+    "standard": ["log_written", "roadmap_synced"],
     "full": ["team_deployed", "log_written", "roadmap_synced"],
 }
 

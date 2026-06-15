@@ -185,5 +185,56 @@ class OpenupStateTests(unittest.TestCase):
         self.assertIn("INVALID", proc.stderr)
 
 
+class LogEventTests(unittest.TestCase):
+    """T-041 Fix 1: log-event stamps ts from the clock; the model never supplies it."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.log_dir = Path(self._tmp.name)
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def _log(self, *args, expect_code=0):
+        cmd = [sys.executable, str(SCRIPT), "log-event", "--log-dir",
+               str(self.log_dir)] + list(args)
+        proc = subprocess.run(cmd, capture_output=True, text=True)
+        self.assertEqual(proc.returncode, expect_code,
+                         f"{proc.stdout}\n{proc.stderr}")
+        return proc
+
+    def _records(self):
+        path = self.log_dir / "agent-runs.jsonl"
+        return [json.loads(l) for l in path.read_text().splitlines() if l.strip()]
+
+    def test_stamps_iso_utc_ts(self):
+        import re
+        self._log("--event", "iteration_start", "--task-id", "T-007",
+                  "--run-id", "r1", "--goal", "g", "--branch", "b",
+                  "--phase", "construction")
+        recs = self._records()
+        self.assertEqual(len(recs), 1)
+        r = recs[0]
+        self.assertEqual(r["event"], "iteration_start")
+        self.assertEqual(r["task_id"], "T-007")
+        self.assertEqual(r["run_id"], "r1")
+        self.assertRegex(r["ts"], r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
+
+    def test_appends_and_ts_monotonic(self):
+        self._log("--event", "iteration_start", "--task-id", "T-007")
+        self._log("--event", "iteration_complete", "--task-id", "T-007")
+        recs = self._records()
+        self.assertEqual([r["event"] for r in recs],
+                         ["iteration_start", "iteration_complete"])
+        self.assertLessEqual(recs[0]["ts"], recs[1]["ts"])
+
+    def test_task_id_null_when_omitted(self):
+        self._log("--event", "commit", "--sha", "abc123")
+        r = self._records()[0]
+        self.assertIsNone(r["task_id"])
+        self.assertEqual(r["sha"], "abc123")
+        self.assertNotIn("branch", r)  # optional fields omitted when absent
+
+
 if __name__ == "__main__":
     unittest.main()

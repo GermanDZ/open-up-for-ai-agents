@@ -3,14 +3,20 @@
 gate-edits.py — OpenUP hook: fires before every Edit / Write / NotebookEdit.
 
 Gates edits to product/source code on an active OpenUP iteration with a
-persisted plan. Process-state paths (explorations, .openup, memory, agent-logs)
-are always exempt so the harness can manage its own bookkeeping.
+persisted plan. Process-state paths (explorations, .openup, memory, agent-logs,
+plan-mode plans) are always exempt so the harness can manage its own bookkeeping.
+
+State is resolved from the worktree that OWNS the edited file, not the harness
+cwd — so worktree-per-task edits read the task worktree's state.json instead of
+false-blocking on the main repo's.
 
 Decision logic:
   1. Resolve the edit target path from tool_input
      (Edit/Write: file_path; NotebookEdit: notebook_path).
-  2. If the target is an EXEMPT path → allow (exit 0).
-  3. Otherwise the target is product/source code:
+  2. If the target is a plan-mode plan (…/.claude/plans/) → allow (exit 0).
+  3. If the target is an EXEMPT path → allow (exit 0).
+  4. Otherwise the target is product/source code (state read from its
+     worktree root):
        - If .openup/state.json is absent → block (exit 2) with redirect.
        - If state exists but track == "quick" → allow (quick track needs
          state, not a plan); audit the bypass.
@@ -87,6 +93,47 @@ def is_exempt(rel: str) -> bool:
                for pre in EXEMPT_PREFIXES)
 
 
+# Plan-mode plan files (…/.claude/plans/<name>.md) are process state, like
+# docs/explorations/ — they record intent before an iteration exists. The harness
+# writes them under $HOME (outside any repo), so this is an absolute-path segment
+# check rather than a repo-relative prefix.
+PLAN_MODE_SEGMENT = "/.claude/plans/"
+
+
+def abs_target(cwd: str, target: str) -> str:
+    p = Path(target)
+    if not p.is_absolute():
+        p = Path(cwd) / p
+    return str(p).replace(os.sep, "/")
+
+
+def is_plan_mode_path(abs_t: str) -> bool:
+    return PLAN_MODE_SEGMENT in abs_t
+
+
+def resolve_state_root(cwd: str, target: str) -> str:
+    """Repo/worktree root that owns the edited file.
+
+    With worktree-per-task, ``.openup/state.json`` lives in the task worktree
+    while the harness cwd stays pinned to the main repo. Reading state from cwd
+    then false-blocks a legitimate edit *inside* the worktree. Resolve the root
+    from the edit target instead (nearest existing ancestor → ``git
+    rev-parse --show-toplevel``). Falls back to cwd when git can't resolve, in
+    keeping with the hook's fail-open contract.
+    """
+    p = Path(target)
+    if not p.is_absolute():
+        p = Path(cwd) / p
+    d = p.parent
+    while not d.exists() and d != d.parent:
+        d = d.parent
+    if d.exists():
+        code, out = run("git rev-parse --show-toplevel", str(d))
+        if code == 0 and out:
+            return out
+    return cwd
+
+
 def log_bypass(cwd: str, branch: str, msg: str) -> None:
     """Append a bypass record to .claude/memory/bypass-log.md."""
     log_path = Path(cwd) / ".claude" / "memory" / "bypass-log.md"
@@ -141,14 +188,21 @@ def main() -> None:
         if not target:
             sys.exit(0)  # nothing to gate
 
-        rel = rel_path(cwd, target)
+        # Plan-mode plan files are process state (may live under $HOME).
+        if is_plan_mode_path(abs_target(cwd, target)):
+            sys.exit(0)
+
+        # Resolve state from the worktree that owns the edit, not the harness
+        # cwd (worktree-per-task puts state.json in the task worktree).
+        state_root = resolve_state_root(cwd, target)
+        rel = rel_path(state_root, target)
 
         # Exempt process-state paths.
         if is_exempt(rel):
             sys.exit(0)
 
         # Target is product/source code. Read state.
-        code, plan_out = state_get(cwd, "gates.plan_persisted")
+        code, plan_out = state_get(state_root, "gates.plan_persisted")
 
         if code == 3:
             # No state file at all → block.
@@ -160,7 +214,7 @@ def main() -> None:
             sys.exit(0)
 
         # State exists. Check track for the quick-track relaxation.
-        tcode, track = state_get(cwd, "track")
+        tcode, track = state_get(state_root, "track")
         track = track.strip() if tcode == 0 else ""
 
         plan_val = plan_out.strip()
@@ -171,8 +225,8 @@ def main() -> None:
 
         if track == "quick":
             # Quick track requires state, not a plan → allow, but audit.
-            _, branch = run("git rev-parse --abbrev-ref HEAD", cwd)
-            log_bypass(cwd, branch, f"quick-track edit to {rel} (no plan gate)")
+            _, branch = run("git rev-parse --abbrev-ref HEAD", state_root)
+            log_bypass(state_root, branch, f"quick-track edit to {rel} (no plan gate)")
             sys.exit(0)
 
         # State present, not quick, plan not persisted → block.
