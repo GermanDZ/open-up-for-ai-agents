@@ -1,7 +1,7 @@
 ---
 id: T-042
 title: "Retro-surfaced framework fixes: sync-status single-pass, quick-track unfenced, worktree-aware audit hooks"
-status: in-progress
+status: done
 track: standard
 priority: high
 depends-on: [T-041]
