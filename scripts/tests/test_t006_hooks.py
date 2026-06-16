@@ -147,6 +147,27 @@ class GateEditsTests(unittest.TestCase):
                             self._edit_payload(p), self.repo.dir)
             self.assertEqual(proc.returncode, 0, f"{p} should be exempt")
 
+    def test_allows_derived_project_status_without_state(self):
+        # Regression: docs/project-status.md is a fully-derived view written by
+        # sync-status.py + /openup-retrospective step 7. Gating it blocked the
+        # retrospective's own status update. It must be exempt even with no state.
+        proc = run_hook("gate-edits.py",
+                        self._edit_payload("docs/project-status.md"), self.repo.dir)
+        self.assertEqual(proc.returncode, 0)
+
+    def test_allows_path_outside_repo_without_state(self):
+        # Regression: the harness memory dir lives at
+        # ~/.claude/projects/<id>/memory/ — outside the repo. A repo-scoped
+        # iteration gate must never fire on a path it doesn't own.
+        payload = {
+            "tool_name": "Write",
+            "cwd": str(self.repo.dir),
+            "tool_input": {
+                "file_path": "/Users/x/.claude/projects/abc/memory/note.md"},
+        }
+        proc = run_hook("gate-edits.py", payload, self.repo.dir)
+        self.assertEqual(proc.returncode, 0)
+
     def test_allows_quick_track_without_plan(self):
         self.repo.init_state(track="quick")  # plan_persisted = false
         proc = run_hook("gate-edits.py",
