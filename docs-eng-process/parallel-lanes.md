@@ -35,7 +35,8 @@ Two consequences worth stating outright:
   two clones share is the remote: change folders (`docs/changes/T-NNN/`), the
   roadmap, branches, and PRs — and only after a `push`/`pull`, never in real
   time. The local lease is the wrong tool for that case; see
-  [the cross-machine exploration](#see-also) for the git-as-coordination design.
+  [the cross-machine exploration](../docs/explorations/2026-06-16-cross-machine-claim-coordination.md)
+  for the git-as-coordination design under evaluation.
 
 ## The four classes of shared files
 
