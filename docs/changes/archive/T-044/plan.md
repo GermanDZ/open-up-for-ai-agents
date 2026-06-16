@@ -1,7 +1,7 @@
 ---
 id: T-044
 title: "Remote-aware claim preflight for openup-next (Option B: branch-as-claim)"
-status: in-progress
+status: done
 track: standard
 priority: high
 depends-on: [T-009]
