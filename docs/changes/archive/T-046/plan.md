@@ -1,7 +1,7 @@
 ---
 id: T-046
 title: "Shard agent-runs.jsonl into lane-owned files; derive the consolidated view"
-status: ready
+status: done
 track: standard
 priority: medium
 estimate: 1 session

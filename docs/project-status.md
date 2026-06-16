@@ -3,7 +3,7 @@
 **Phase**: construction
 **Iteration**: 21
 **Iteration Goal**: T-046 — Shard `agent-runs.jsonl` into lane-owned files; derive the consolidated view (kills GitHub-side PR conflicts merge=union can't)
-**Status**: in-progress
+**Status**: completed
 **Retrospective**: [iteration-20-retrospective.md](iteration-retrospectives/iteration-20-retrospective.md)
 **Current Task**: T-046
 **Iteration Started**: 2026-06-12
@@ -12,6 +12,8 @@
 **Updated By**: sync-status.py
 
 ## Notes
+
+- **Iteration 21** (2026-06-16): T-046 — sharded the machine-readable run log into lane-owned files `docs/agent-logs/runs/<date>-<lane>.jsonl` and made `agent-runs.jsonl` a gitignored derived view (`openup-state.py runs build`). Root-fixes the recurring GitHub PR conflict that `merge=union` could not (GitHub doesn't run merge drivers server-side). `log-event` + auto-log-commit + on-stop all repointed at shards; counter counts from the shard glob. Matches the T-024 status-notes precedent. +1 disjoint-lanes test; 250 tests (1 pre-existing macOS fail). Solo, standard, in-place.
 
 - **Iteration 20** (2026-06-16): T-044 — remote-aware claim preflight (Option B branch-as-claim). The local lease lives under `.git/` and is never pushed, so parallel `openup-next` across separate clones couldn't see each other (TallyFox #462/#463 dup). New `openup-claims.py remote-check`: token-accurate branch-as-claim against `origin`, exit 9 on duplicate, advisory/fail-open. Wired into start-iteration step 6b before claiming, emitting a clock-stamped `duplicate_start_blocked` counter that gates whether the heavier atomic ref-lock (Option A) is ever built. Seeded by the 2026-06-16 cross-machine exploration. +5 tests, 36/36 claims suite green. Solo, standard, in-place.
 
