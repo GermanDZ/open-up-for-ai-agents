@@ -7,7 +7,7 @@ priority: medium
 estimate: 1 session
 depends-on: [T-023]
 blocks: []
-touches: [scripts/openup-state.py, docs-eng-process/.claude-templates/scripts/hooks/auto-log-commit.py, docs-eng-process/.claude-templates/scripts/hooks/on-stop.py, scripts/openup-claims.py, .gitattributes, .gitignore, scripts/tests/test_t006_hooks.py, scripts/tests/test_openup_claims.py, docs-eng-process/parallel-lanes.md, docs-eng-process/script-cli-reference.md, docs/changes/T-046, docs/roadmap.md]
+touches: [scripts/openup-state.py, docs-eng-process/.claude-templates/scripts/hooks/auto-log-commit.py, docs-eng-process/.claude-templates/scripts/hooks/on-stop.py, scripts/openup-claims.py, .gitattributes, .gitignore, scripts/tests/test_t006_hooks.py, scripts/tests/test_openup_claims.py, docs-eng-process/parallel-lanes.md, docs-eng-process/parallel-work.md, docs-eng-process/script-cli-reference.md, scripts/tests/test_openup_state.py, docs/changes/T-046, docs/roadmap.md]
 claimed-by: null
 ---
 
