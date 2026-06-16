@@ -51,6 +51,11 @@ EXEMPT_PREFIXES = (
     ".claude/memory/",
     "docs/agent-logs/",
     "docs/iteration-retrospectives/",
+    # Fully-derived view: written only by sync-status.py and process skills
+    # (start-iteration, retrospective) — never hand-authored source. Gating it
+    # blocked /openup-retrospective's own step 7. The write-fence still governs
+    # it on task branches via the fresh-base rule.
+    "docs/project-status.md",
 )
 
 
@@ -158,7 +163,8 @@ REDIRECT = (
     "  /openup-start-iteration task_id: T-XXX   (full task)\n"
     "  /openup-quick-task task: \"description\"   (small change)\n\n"
     "Process-state files (docs/explorations/, .openup/, .claude/memory/,\n"
-    "docs/agent-logs/) are exempt and can be edited freely.\n\n"
+    "docs/agent-logs/, docs/iteration-retrospectives/, docs/project-status.md)\n"
+    "and any path outside this repo are exempt and can be edited freely.\n\n"
     "If this edit is a deliberate one-off, run the appropriate skill rather\n"
     "than bypassing the gate."
 )
@@ -196,6 +202,13 @@ def main() -> None:
         # cwd (worktree-per-task puts state.json in the task worktree).
         state_root = resolve_state_root(cwd, target)
         rel = rel_path(state_root, target)
+
+        # A target outside the repo/worktree root cannot be this project's
+        # source — e.g. the harness memory dir ~/.claude/projects/<id>/memory/,
+        # or a path on another drive (relpath raised, leaving an absolute rel).
+        # Never gate it; the iteration only governs files inside the repo.
+        if rel.startswith("../") or os.path.isabs(rel):
+            sys.exit(0)
 
         # Exempt process-state paths.
         if is_exempt(rel):
