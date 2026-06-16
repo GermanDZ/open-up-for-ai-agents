@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "task_id": "T-043",
+  "iteration": 0,
+  "phase": "construction",
+  "track": "quick",
+  "branch": "docs/T-043-parallelism-scope-note",
+  "worktree": "/Users/germandz/personal-code/ai-dev-framework/open-up-for-ai-agents",
+  "session_id": null,
+  "started_at": "2026-06-16T13:57:51Z",
+  "gates": {
+    "team_deployed": false,
+    "plan_persisted": false,
+    "log_written": true,
+    "roadmap_synced": true,
+    "retro_due": false
+  },
+  "iterations_since_retro": 0
+}
