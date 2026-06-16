@@ -39,6 +39,7 @@ Exit codes:
 
 import argparse
 import json
+import re
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -328,8 +329,53 @@ def cmd_get(args):
     return EXIT_OK
 
 
+def _shard_key(task_id, branch):
+    """Lane key for the run shard filename (T-046).
+
+    A task id (when present) keys the shard, so every event for one task lands in
+    one lane-owned file. Without a task id, the branch slugs the key. The result
+    is sanitized to a safe filename token (slashes/spaces → ``-``).
+    """
+    raw = task_id or branch or "no-task"
+    slug = re.sub(r"[^0-9A-Za-z._-]+", "-", raw).strip("-")
+    return slug or "no-task"
+
+
+def cmd_runs_build(args):
+    """Derive docs/agent-logs/agent-runs.jsonl from the lane-owned shards (T-046).
+
+    The shards under ``runs/`` are the committed source of truth; this rebuilds
+    the consolidated, time-ordered view for local querying. Idempotent — it is a
+    derived view (regenerate, never hand-edit), like the sync-status.py views.
+    """
+    log_dir = (
+        Path(args.log_dir).expanduser().resolve()
+        if getattr(args, "log_dir", None)
+        else REPO_ROOT / "docs" / "agent-logs"
+    )
+    runs_dir = log_dir / "runs"
+    records = []
+    if runs_dir.is_dir():
+        for shard in sorted(runs_dir.glob("*.jsonl")):
+            for line in shard.read_text(encoding="utf-8").splitlines():
+                line = line.strip()
+                if line:
+                    records.append(line)
+    # Stable order: by the trailing "ts" field when parseable, else input order.
+    def _ts(line):
+        try:
+            return json.loads(line).get("ts", "")
+        except (json.JSONDecodeError, AttributeError):
+            return ""
+    records.sort(key=_ts)
+    out = log_dir / "agent-runs.jsonl"
+    out.write_text("".join(r + "\n" for r in records), encoding="utf-8")
+    print(f"built {out} from {len(records)} record(s)")
+    return EXIT_OK
+
+
 def cmd_log_event(args):
-    """Append one clock-stamped record to docs/agent-logs/agent-runs.jsonl.
+    """Append one clock-stamped record to a lane-owned run shard (T-046).
 
     The ``ts`` is stamped here from ``datetime.now(timezone.utc)`` — the model
     never supplies it. This is the deterministic replacement for skill briefs
@@ -341,9 +387,15 @@ def cmd_log_event(args):
         if getattr(args, "log_dir", None)
         else REPO_ROOT / "docs" / "agent-logs"
     )
-    log_dir.mkdir(parents=True, exist_ok=True)
-    log_path = log_dir / "agent-runs.jsonl"
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    # T-046: write to a LANE-OWNED shard, never the shared agent-runs.jsonl. Two
+    # lanes (distinct task_id, else distinct branch) never share a file, so a
+    # GitHub merge of two branches touches disjoint paths — no union driver, no
+    # conflict. agent-runs.jsonl is now a derived view (see `runs build`).
+    runs_dir = log_dir / "runs"
+    runs_dir.mkdir(parents=True, exist_ok=True)
+    key = _shard_key(args.task_id, getattr(args, "branch", None))
+    log_path = runs_dir / f"{ts[:10]}-{key}.jsonl"
 
     # Build the record in the established field order; optional fields appear
     # only when supplied. task_id is always present (null when omitted).
@@ -599,6 +651,18 @@ def build_parser():
         help="Override the agent-logs dir (default: <repo-root>/docs/agent-logs).",
     )
     p_le.set_defaults(func=cmd_log_event)
+
+    # runs build — derive agent-runs.jsonl from the lane-owned shards (T-046)
+    p_rb = sub.add_parser(
+        "runs",
+        help="Derived run-log consolidation (build agent-runs.jsonl from shards).",
+    )
+    p_rb.add_argument("action", choices=["build"], help="build = regenerate the view.")
+    p_rb.add_argument(
+        "--log-dir",
+        help="Override the agent-logs dir (default: <repo-root>/docs/agent-logs).",
+    )
+    p_rb.set_defaults(func=cmd_runs_build)
 
     return parser
 

@@ -137,8 +137,8 @@ is structural, a flag would add no safety).
 
 ## Operations
 
-- [ ] R1: `cmd_log_event` writes `docs/agent-logs/runs/<date>-<key>.jsonl` (task_id else branch slug)
-- [ ] R3: add `openup-state.py runs build` consolidator (glob → sorted agent-runs.jsonl)
+- [x] R1: `cmd_log_event` writes `docs/agent-logs/runs/<date>-<key>.jsonl` (task_id else branch slug)
+- [x] R3: add `openup-state.py runs build` consolidator (glob → sorted agent-runs.jsonl)
 - [ ] R3: gitignore `docs/agent-logs/agent-runs.jsonl`; drop its `merge=union` from `.gitattributes`; `git rm --cached` it
 - [ ] R4: auto-log-commit.py + on-stop.py stage the lane shard, not the derived file; mirror to `.claude-templates/`
 - [ ] R5: point the T-044 `duplicate_start_blocked` counter at the shard glob
