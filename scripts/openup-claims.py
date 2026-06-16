@@ -33,6 +33,8 @@ Usage:
 
 Subcommands:
   preflight   Check deps + collision for a task WITHOUT writing a claim.
+  remote-check Advisory cross-machine branch-as-claim check (T-044); exit 9 on
+              a remote duplicate, fail-open otherwise.
   claim       Run pre-flight, then atomically write the claim file.
   release     Delete a task's claim file (idempotent).
   list        Print all live claims (JSON array).
@@ -69,6 +71,7 @@ EXIT_COLLISION = 4
 EXIT_NOT_FOUND = 5
 EXIT_OTHER_OWNER = 6
 EXIT_BAD_INPUT = 7
+EXIT_REMOTE_DUP = 9  # a remote branch already encodes this task (T-044)
 
 SATISFIED_DEP_STATUSES = {"done", "verified", "completed"}
 
@@ -484,6 +487,80 @@ def preflight(task_id, touches, deps, cdir, root):
 
 
 # --------------------------------------------------------------------------
+# Remote-aware preflight (T-044): branch-as-claim across machines.
+# The local lease lives under .git/ and is never pushed, so it cannot see a
+# teammate's clone. The cross-machine-visible claim signal lanes already
+# produce is the branch name (fix/T-NNN-*). This reads the remote for one and
+# refuses early — ADVISORY / fail-open: any remote error exits OK, because the
+# local lease is the hard gate and offline work must never be blocked.
+# --------------------------------------------------------------------------
+def task_branch_match(task_id: str, branch: str) -> bool:
+    """True if ``branch`` encodes ``task_id`` as a delimited token.
+
+    ``feature/T-044-x``, ``T-044``, ``bugfix/T-044`` match; ``T-44`` /
+    ``T-0440`` / ``xT-044`` do not (the id must be bounded by start/end or a
+    non-alphanumeric on each side, so a numeric prefix/suffix can't sneak in).
+    """
+    return re.search(rf"(?<![0-9A-Za-z]){re.escape(task_id)}(?![0-9A-Za-z])",
+                     branch) is not None
+
+
+def remote_task_branches(task_id, remote, root, do_fetch):
+    """Return (branches, error). branches: remote branch short-names matching
+    the task token. error: a string when the remote could not be consulted
+    (caller treats it as fail-open), else None.
+    """
+    # ls-remote needs no local refs and no working fetch; an optional shallow
+    # fetch only refreshes remote-tracking refs for callers that want it.
+    if do_fetch:
+        _git(["fetch", "--quiet", remote], cwd=str(root))
+    have_remote = _git(["remote"], cwd=str(root))
+    if not remote_in(remote, have_remote):
+        return [], f"no remote named '{remote}'"
+    out = _git(["ls-remote", "--heads", remote], cwd=str(root))
+    if not out:
+        # Empty can mean "no branches" OR an unreachable remote; ls-remote
+        # prints nothing and fails silently via _git. Distinguish with a probe.
+        probe = subprocess.run(["git", "ls-remote", "--heads", remote],
+                               cwd=str(root), capture_output=True, text=True)
+        if probe.returncode != 0:
+            return [], f"remote '{remote}' unreachable"
+        return [], None
+    matches = []
+    for line in out.splitlines():
+        # "<sha>\trefs/heads/<branch>"
+        parts = line.split("\trefs/heads/", 1)
+        if len(parts) != 2:
+            continue
+        branch = parts[1].strip()
+        if task_branch_match(task_id, branch):
+            matches.append(branch)
+    return matches, None
+
+
+def remote_in(name, remote_list):
+    return name in {r.strip() for r in remote_list.splitlines() if r.strip()}
+
+
+def remote_check(task_id, remote, root, do_fetch, self_branch):
+    """Return (exit_code, message). EXIT_REMOTE_DUP only when a remote branch
+    *other than* our own (self_branch) encodes the task. Fail-open otherwise.
+    """
+    branches, error = remote_task_branches(task_id, remote, root, do_fetch)
+    if error is not None:
+        return EXIT_OK, f"SKIP (advisory): {error} — remote not consulted"
+    others = [b for b in branches if b != self_branch]
+    if others:
+        owners = ", ".join(sorted(others))
+        return EXIT_REMOTE_DUP, (
+            f"REMOTE DUPLICATE: task {task_id} already has branch(es) "
+            f"[{owners}] on '{remote}'. Another clone is (or was) on this task. "
+            f"Pick a different lane, or coordinate before continuing."
+        )
+    return EXIT_OK, f"READY: no remote branch for {task_id} on '{remote}'"
+
+
+# --------------------------------------------------------------------------
 # Subcommands
 # --------------------------------------------------------------------------
 def cmd_dir(args):
@@ -496,6 +573,19 @@ def cmd_preflight(args):
     cdir = claims_dir(override=args.claims_dir)
     touches, deps = resolve_task_inputs(args, root)
     code, msg = preflight(args.task_id, touches, deps, cdir, root)
+    (print if code == EXIT_OK else lambda m: sys.stderr.write(m + "\n"))(msg)
+    return code
+
+
+def cmd_remote_check(args):
+    root = repo_root()
+    self_branch = args.self_branch
+    if self_branch is None:
+        self_branch = _git(["rev-parse", "--abbrev-ref", "HEAD"], cwd=str(root))
+    code, msg = remote_check(
+        args.task_id, args.remote, root,
+        do_fetch=not args.no_fetch, self_branch=self_branch,
+    )
     (print if code == EXIT_OK else lambda m: sys.stderr.write(m + "\n"))(msg)
     return code
 
@@ -693,6 +783,23 @@ def build_parser():
     add_task_inputs(p_pf)
     add_common(p_pf)
     p_pf.set_defaults(func=cmd_preflight)
+
+    p_rc = sub.add_parser(
+        "remote-check",
+        help="Advisory cross-machine check: refuse (exit 9) if a remote branch "
+             "already encodes the task. Fail-open on any remote error.",
+    )
+    p_rc.add_argument("--task-id", required=True)
+    p_rc.add_argument("--remote", default="origin", help="Remote name (default: origin).")
+    p_rc.add_argument(
+        "--no-fetch", action="store_true",
+        help="Use existing remote-tracking refs; skip the network fetch.",
+    )
+    p_rc.add_argument(
+        "--self-branch", default=None,
+        help="Our own lane branch to exclude from matches (default: current HEAD).",
+    )
+    p_rc.set_defaults(func=cmd_remote_check)
 
     p_cl = sub.add_parser("claim", help="Pre-flight then atomically write the claim.")
     p_cl.add_argument("--task-id", required=True)

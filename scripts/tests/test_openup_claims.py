@@ -287,5 +287,99 @@ class IdReservationTests(unittest.TestCase):
         self.assertEqual(json.loads(out), [])
 
 
+# exit code added by T-044
+REMOTE_DUP = 9
+
+
+def _git(repo, *args):
+    subprocess.run(["git", *args], cwd=str(repo),
+                   capture_output=True, text=True, check=True)
+
+
+def run_rc(repo, args, expect=None):
+    """Run a subcommand with cwd inside ``repo`` (no --claims-dir injected)."""
+    proc = subprocess.run([sys.executable, str(SCRIPT)] + args,
+                          cwd=str(repo), capture_output=True, text=True)
+    if expect is not None:
+        assert proc.returncode == expect, (
+            f"expected exit {expect}, got {proc.returncode}\n"
+            f"args={args}\nstdout={proc.stdout}\nstderr={proc.stderr}"
+        )
+    return proc
+
+
+class RemoteCheckTests(unittest.TestCase):
+    """T-044 — advisory cross-machine branch-as-claim preflight."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.tmp = Path(self._tmp.name)
+        self.remote = self.tmp / "remote.git"
+        subprocess.run(["git", "init", "-q", "--bare", str(self.remote)],
+                       check=True)
+        self.local = self.tmp / "local"
+        self.local.mkdir()
+        _git(self.local, "init", "-q")
+        _git(self.local, "config", "user.email", "t@t")
+        _git(self.local, "config", "user.name", "t")
+        (self.local / "f.txt").write_text("x")
+        _git(self.local, "add", "-A")
+        _git(self.local, "commit", "-qm", "init")
+        _git(self.local, "branch", "-M", "main")
+        _git(self.local, "remote", "add", "origin", str(self.remote))
+        _git(self.local, "push", "-q", "origin", "main")
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def _push_branch(self, name):
+        _git(self.local, "checkout", "-q", "-b", name)
+        _git(self.local, "push", "-q", "origin", name)
+        _git(self.local, "checkout", "-q", "main")
+
+    def test_remote_duplicate_refused(self):
+        self._push_branch("fix/T-044-other")
+        run_rc(self.local,
+               ["remote-check", "--task-id", "T-044", "--no-fetch",
+                "--self-branch", "feature/T-044-mine"],
+               expect=REMOTE_DUP)
+
+    def test_no_match_is_ready(self):
+        self._push_branch("feature/T-099-unrelated")
+        p = run_rc(self.local,
+                   ["remote-check", "--task-id", "T-044", "--no-fetch"],
+                   expect=OK)
+        self.assertIn("READY", p.stdout)
+
+    def test_self_branch_excluded(self):
+        # the only matching remote branch is OUR lane → not a collision
+        self._push_branch("feature/T-044-mine")
+        run_rc(self.local,
+               ["remote-check", "--task-id", "T-044", "--no-fetch",
+                "--self-branch", "feature/T-044-mine"],
+               expect=OK)
+
+    def test_token_accuracy_no_false_positive(self):
+        # T-44 (no leading zero) must not match T-044
+        self._push_branch("fix/T-44-x")
+        run_rc(self.local,
+               ["remote-check", "--task-id", "T-044", "--no-fetch"],
+               expect=OK)
+
+    def test_missing_remote_fails_open(self):
+        noremote = self.tmp / "noremote"
+        noremote.mkdir()
+        _git(noremote, "init", "-q")
+        _git(noremote, "config", "user.email", "t@t")
+        _git(noremote, "config", "user.name", "t")
+        (noremote / "f.txt").write_text("x")
+        _git(noremote, "add", "-A")
+        _git(noremote, "commit", "-qm", "init")
+        p = run_rc(noremote,
+                   ["remote-check", "--task-id", "T-044", "--no-fetch"],
+                   expect=OK)
+        self.assertIn("advisory", (p.stdout + p.stderr).lower())
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -230,7 +230,28 @@ Live lease claims coordinate parallel sessions (one file per claim under
 surface (`touches`) and `depends-on` come from the task's `docs/changes/{task_id}/plan.md`
 frontmatter, so persist the plan **before** claiming.
 
+The local lease is single-clone (it lives under `.git/`, never pushed). Step 0
+adds the **cross-machine** early-warning (T-044): it asks the *remote* whether
+another clone already pushed a branch for this task. It is **advisory and
+fail-open** — a missing/unreachable remote exits `0` so solo/offline work is
+never blocked; the local pre-flight below remains the hard gate.
+
 ```bash
+# 0. REMOTE-CHECK (T-044): refuse early if another clone already owns this task on
+#    origin. Exit 9 = remote duplicate; exit 0 = clear OR remote not consulted.
+python3 scripts/openup-claims.py remote-check --task-id {task_id} \
+  --self-branch "$(git rev-parse --abbrev-ref HEAD)"
+if [ $? -eq 9 ]; then
+  # Record the duplicate-start (clock-stamped; this is the counter that decides
+  # whether the heavier atomic ref-lock, exploration Option A, is ever justified).
+  python3 scripts/openup-state.py log-event --event duplicate_start_blocked \
+    --task-id {task_id} --branch "$(git rev-parse --abbrev-ref HEAD)"
+  echo "Remote duplicate — another clone owns {task_id}. Do NOT proceed."
+  echo "Roll back this lane: git checkout \"$TRUNK\"; git branch -D \"$BRANCH\";"
+  echo "  git worktree remove \"../\${REPO}-{task_id}\" 2>/dev/null || true"
+  exit 1
+fi
+
 # 1. PRE-FLIGHT (read-only): refuse early on an unmet dependency or a touches collision
 #    with a live claim. Exit 3 = unmet dep; exit 4 = collision (owner named); 0 = clear.
 python3 scripts/openup-claims.py preflight --task-id {task_id} || {

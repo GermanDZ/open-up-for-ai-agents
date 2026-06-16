@@ -177,6 +177,13 @@ That skill runs the collision pre-flight, creates the branch + worktree, writes
 the lease, and initializes `.openup/state.json`. Teams stay opt-in: a `standard`
 lane is solo; only a `full` lane (or an explicit request) deploys one.
 
+It also runs the **cross-machine remote-check** (T-044) before claiming: the
+local lease only sees this clone, so start-iteration asks `origin` whether
+another teammate already pushed a branch for this task and refuses (recording a
+`duplicate_start_blocked` event) if so. It is advisory/fail-open — offline or
+remote-less runs are never blocked. This is the parallel-`openup-next`-across-
+machines guardrail; the local lease guards parallel sessions on one clone.
+
 ### 3. Self-brief and assume the lane's hat
 
 Do **not** ask for a briefing — self-brief from the repo (T-016). Read the

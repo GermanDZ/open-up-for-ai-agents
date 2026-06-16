@@ -5,6 +5,7 @@
 
 | ID | Title | Status | Priority | Depends on |
 |---|---|---|---|---|
+| [T-044](changes/archive/T-044/plan.md) | Remote-aware claim preflight for `openup-next` (Option B: branch-as-claim) — cross-machine duplicate-start early-warning + counter | completed (2026-06-16) | high | T-009 |
 | [T-022](changes/archive/T-022/plan.md) | Fix template→.claude sync (flat skills + rubric/hook coverage) + auto-commit log tail at stop | completed (2026-06-12) | high | — |
 | T-023 | `merge=union` gitattribute for `agent-runs.jsonl` (parallel-PR conflict quick fix) | completed (2026-06-12) | medium | — |
 | [T-024](changes/archive/T-024/plan.md) | Write-fence + derived shared views (parallel-PR conflicts in roadmap/status) | completed (2026-06-12) | high | — |

@@ -1,15 +1,17 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 19
-**Iteration Goal**: T-042 — Retro-surfaced fixes: sync-status single-pass completion, quick-track unfenced lanes, worktree-aware audit hooks (auto-log-commit + on-stop), complete-task status flip
+**Iteration**: 20
+**Iteration Goal**: T-044 — Remote-aware claim preflight for `openup-next` (Option B: branch-as-claim) — cross-machine duplicate-start early-warning + counter
 **Status**: completed
-**Current Task**: T-042
+**Current Task**: T-044
 **Iteration Started**: 2026-06-12
-**Last Updated**: 2026-06-15
+**Last Updated**: 2026-06-16
 **Updated By**: sync-status.py
 
 ## Notes
+
+- **Iteration 20** (2026-06-16): T-044 — remote-aware claim preflight (Option B branch-as-claim). The local lease lives under `.git/` and is never pushed, so parallel `openup-next` across separate clones couldn't see each other (TallyFox #462/#463 dup). New `openup-claims.py remote-check`: token-accurate branch-as-claim against `origin`, exit 9 on duplicate, advisory/fail-open. Wired into start-iteration step 6b before claiming, emitting a clock-stamped `duplicate_start_blocked` counter that gates whether the heavier atomic ref-lock (Option A) is ever built. Seeded by the 2026-06-16 cross-machine exploration. +5 tests, 36/36 claims suite green. Solo, standard, in-place.
 
 - **Iteration 18** (2026-06-15): T-037..T-039 — completes the Project Docs Traceability & Validation Pack (T-034..T-036 delivered in PR #29). **T-037**: `scripts/check-docs.py --coverage` evaluates `trace-model.json` coverage rules with severity (required blocks, advisory reports); `scripts/docs-index.py` writes a derived `docs/INDEX.md` (write-fence pattern, `<-- DO NOT EDIT -->` marker, `--check` drift guard) — the work-product-tier analogue of `.openup/board.json`. The `traced-by` inverse is derived in-script and surfaced in INDEX.md only (not written back to instances), keeping cross-lane edits out of the picture. **T-038**: five `openup-create-*` skills (vision, use-case, test-plan, iteration-plan, architecture-notebook) gain an authoring step that writes typed instance frontmatter onto the produced doc; one cross-cutting `.claude-templates/rubrics/doc-traceability-rubric.md` grades all five (no per-skill rubric duplication); `/openup-complete-task` gains BLOCKING step 3a calling `check-docs.py` + `--coverage`; `.claude-templates/CLAUDE.md` carries the convention pointer. Templates remain byte-for-byte unchanged — frontmatter lands on instances only. **T-039**: registers check-docs.py / docs-index.py / build-trace-model.py / docs-meta.schema.json / trace-model.json in `scripts/process-manifest.txt` (every install/update path ships them now, 14 CLIs vs 9 before); adds a fail-open project-side commit hook `.claude-templates/scripts/hooks/check-docs.py` (stdlib-only, hand-rolled YAML reader); documents `trace_rules:` (enabled / coverage / per-rule severity overrides) in `project-config.md` + the example + an adoption walkthrough in `updating.md`. Completion's step 3a is the strictness floor and is not subject to overrides; the hook is the tunable daily-driver enforcement. 31 new hermetic tests; 226 total pass; KB read-only guardrail respected end-to-end. Solo, standard track, no team.
 
