@@ -1,13 +1,11 @@
 ---
 id: T-044
 title: "Remote-aware claim preflight for openup-next (Option B: branch-as-claim)"
-type: work-item
 status: in-progress
 track: standard
 priority: high
 depends-on: [T-009]
 blocks: []
-traces-from: docs/explorations/2026-06-16-cross-machine-claim-coordination.md
 touches: [scripts/openup-claims.py, scripts/tests/test_openup_claims.py, .claude/skills/openup-next/SKILL.md, .claude/skills/openup-start-iteration/SKILL.md, docs-eng-process/.claude-templates/skills/openup-next/SKILL.md, docs-eng-process/.claude-templates/skills/openup-start-iteration/SKILL.md, docs-eng-process/parallel-work.md, docs-eng-process/script-cli-reference.md, docs/changes/T-044, docs/roadmap.md]
 claimed-by: null
 ---

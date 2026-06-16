@@ -84,3 +84,5 @@
 {"event": "iteration_complete", "task_id": "T-042", "branch": "fix/T-042-retro-findings", "phase": "construction", "ts": "2026-06-15T12:56:49Z"}
 {"run_id": "3cee240dacb54407aef6261f3158bc30", "event": "commit", "task_id": null, "branch": "fix/T-042-retro-findings", "sha": "9a7b80c67d834bf7a692d12a65b1b953891bd32d", "model": null, "session_id": null, "ts": "2026-06-15T13:08:37Z"}
 {"run_id": "27486ed585a64bf88869e3f10d8497ce", "event": "commit", "task_id": null, "branch": "main", "sha": "9c6053a95275ca2ab2b7945647c217a97591db2c", "model": null, "session_id": null, "ts": "2026-06-16T13:29:36Z"}
+{"event": "iteration_start", "task_id": "T-044", "goal": "Remote-aware claim preflight (Option B branch-as-claim) for openup-next", "branch": "feature/T-044-remote-aware-claim-preflight", "phase": "construction", "ts": "2026-06-16T14:15:28Z"}
+{"run_id": "b7bc22883bf148f4897720fb0e16c572", "event": "commit", "task_id": "T-044", "branch": "feature/T-044-remote-aware-claim-preflight", "sha": "a634a8bb2401af359b71caff53a047f5596698a6", "model": null, "session_id": null, "ts": "2026-06-16T14:23:10Z"}
