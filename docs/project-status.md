@@ -4,10 +4,12 @@
 **Iteration**: 20
 **Iteration Goal**: T-044 — Remote-aware claim preflight for `openup-next` (Option B: branch-as-claim) — cross-machine duplicate-start early-warning + counter
 **Status**: completed
-**Current Task**: T-044
+**Retrospective**: [iteration-20-retrospective.md](iteration-retrospectives/iteration-20-retrospective.md)
+**Current Task**: T-044 → (awaiting iteration 21 scope)
 **Iteration Started**: 2026-06-12
+**Iteration Completed**: 2026-06-16
 **Last Updated**: 2026-06-16
-**Updated By**: sync-status.py
+**Updated By**: sync-status.py → openup-retrospective
 
 ## Notes
 
