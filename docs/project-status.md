@@ -1,15 +1,15 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 20
-**Iteration Goal**: T-044 — Remote-aware claim preflight for `openup-next` (Option B: branch-as-claim) — cross-machine duplicate-start early-warning + counter
-**Status**: completed
+**Iteration**: 21
+**Iteration Goal**: T-046 — Shard `agent-runs.jsonl` into lane-owned files; derive the consolidated view (kills GitHub-side PR conflicts merge=union can't)
+**Status**: in-progress
 **Retrospective**: [iteration-20-retrospective.md](iteration-retrospectives/iteration-20-retrospective.md)
-**Current Task**: T-044 → (awaiting iteration 21 scope)
+**Current Task**: T-046
 **Iteration Started**: 2026-06-12
 **Iteration Completed**: 2026-06-16
 **Last Updated**: 2026-06-16
-**Updated By**: sync-status.py → openup-retrospective
+**Updated By**: sync-status.py
 
 ## Notes
 
