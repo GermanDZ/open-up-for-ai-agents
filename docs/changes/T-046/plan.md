@@ -139,12 +139,12 @@ is structural, a flag would add no safety).
 
 - [x] R1: `cmd_log_event` writes `docs/agent-logs/runs/<date>-<key>.jsonl` (task_id else branch slug)
 - [x] R3: add `openup-state.py runs build` consolidator (glob → sorted agent-runs.jsonl)
-- [ ] R3: gitignore `docs/agent-logs/agent-runs.jsonl`; drop its `merge=union` from `.gitattributes`; `git rm --cached` it
-- [ ] R4: auto-log-commit.py + on-stop.py stage the lane shard, not the derived file; mirror to `.claude-templates/`
-- [ ] R5: point the T-044 `duplicate_start_blocked` counter at the shard glob
-- [ ] (tester) Tests: shard-path, two-lane-disjoint-files, derived rebuild, hook-commits-shard, counter-reads-shards
-- [ ] Docs: `parallel-work.md`/`parallel-lanes.md` reclassify the run log; `script-cli-reference.md` `runs build`
-- [ ] Full hook + claims + state suites green; `.claude`↔template sync green
+- [x] R3: gitignore `docs/agent-logs/agent-runs.jsonl`; drop its `merge=union` from `.gitattributes`; `git rm --cached` it
+- [x] R4: auto-log-commit.py + on-stop.py stage the lane shard, not the derived file; mirror to `.claude-templates/`
+- [x] R5: point the T-044 `duplicate_start_blocked` counter at the shard glob
+- [x] (tester) Tests: shard-path, two-lane-disjoint-files, derived rebuild, hook-commits-shard, counter-reads-shards
+- [x] Docs: `parallel-work.md`/`parallel-lanes.md` reclassify the run log; `script-cli-reference.md` `runs build`
+- [x] Full hook + claims + state suites green; `.claude`↔template sync green
 
 ## Norms
 

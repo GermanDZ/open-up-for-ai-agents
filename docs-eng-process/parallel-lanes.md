@@ -45,8 +45,8 @@ git-native, conflict-free discipline:
 
 | Class | Examples | Discipline |
 |---|---|---|
-| **1. Lane-owned** | `docs/changes/T-NNN/**`, dated `docs/agent-logs/YYYY/MM/DD/*.md`, `docs/status-notes/*.md`, `docs/explorations/*.md` | One writer per file by construction. Write freely; never conflicts. **Maximize this class.** |
-| **2. Append-only set** | `docs/agent-logs/agent-runs.jsonl` | `merge=union` in `.gitattributes` (T-023): both sides' appended lines are kept; order/duplication is tolerable for an audit trail. |
+| **1. Lane-owned** | `docs/changes/T-NNN/**`, dated `docs/agent-logs/YYYY/MM/DD/*.md`, `docs/agent-logs/runs/<date>-<lane>.jsonl` (T-046), `docs/status-notes/*.md`, `docs/explorations/*.md` | One writer per file by construction. Write freely; never conflicts. **Maximize this class.** |
+| **2. Append-only set** | *(empty — the run log left this class in T-046)* | `merge=union` in `.gitattributes` keeps both sides' appended lines **locally** — but GitHub does **not** run merge drivers server-side, so a union file still conflicts on PRs. That is why `agent-runs.jsonl` was sharded into class 1 (T-046) and the consolidated file is now a derived view (class 3). Avoid this class. |
 | **3. Derived view** | `docs/roadmap.md` Status cells, the whole `docs/project-status.md` header + `## Notes` | Written **only** by `scripts/sync-status.py`, **only** against a fresh trunk (rebase first). Never hand-edited on a task branch, never hand-merged: on conflict, rebase and re-run the script. |
 | **4. Global mutable prose** | roadmap program sections (Context, "Next step" narrative), plan docs | Cannot be derived. Edited only by a task whose `touches` includes the file, after rebasing — i.e. serialized through the normal claim machinery, not written as a side effect of every completion. |
 

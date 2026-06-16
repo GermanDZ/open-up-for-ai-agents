@@ -5,4 +5,3 @@
 # collide at EOF on merge. `merge=union` keeps BOTH sides' added lines instead
 # of raising a conflict (records are independent; order/duplication is tolerable
 # for an audit trail). Re-derive a sorted view downstream if ever needed.
-docs/agent-logs/agent-runs.jsonl merge=union

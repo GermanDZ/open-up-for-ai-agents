@@ -54,6 +54,25 @@ def run_hook(hook_name, payload, cwd):
     return proc
 
 
+def shard_lines(repo_dir, task_id=None):
+    """All JSONL records across the lane-owned run shards (T-046). Filter to one
+    lane with task_id (matches the `<date>-<task_id>.jsonl` filename suffix)."""
+    runs = Path(repo_dir) / "docs" / "agent-logs" / "runs"
+    if not runs.is_dir():
+        return []
+    out = []
+    for shard in sorted(runs.glob("*.jsonl")):
+        if task_id and not shard.name.endswith(f"-{task_id}.jsonl"):
+            continue
+        out += [l for l in shard.read_text().splitlines() if l.strip()]
+    return out
+
+
+def shard_files(repo_dir):
+    runs = Path(repo_dir) / "docs" / "agent-logs" / "runs"
+    return sorted(runs.glob("*.jsonl")) if runs.is_dir() else []
+
+
 class TempRepo:
     """A throwaway git repo with a project-local copy of scripts/."""
 
@@ -264,15 +283,15 @@ class AutoLogCommitTests(unittest.TestCase):
         proc = run_hook("auto-log-commit.py", self._commit_payload(),
                         self.repo.dir)
         self.assertEqual(proc.returncode, 0)
-        log = self.repo.dir / "docs" / "agent-logs" / "agent-runs.jsonl"
-        self.assertTrue(log.exists())
-        lines = [l for l in log.read_text().splitlines() if l.strip()]
+        # T-046: record lands in the lane shard, NOT the shared agent-runs.jsonl.
+        self.assertFalse(
+            (self.repo.dir / "docs" / "agent-logs" / "agent-runs.jsonl").exists())
+        lines = shard_lines(self.repo.dir, "T-006")
         self.assertEqual(len(lines), 1)
         rec = json.loads(lines[0])
         self.assertEqual(rec["event"], "commit")
         self.assertEqual(rec["task_id"], "T-006")
         self.assertEqual(rec["model"], "claude-opus-test")
-        _, sha = git(self.repo.dir, "rev-parse", "HEAD").stdout, None
         self.assertEqual(rec["sha"],
                          git(self.repo.dir, "rev-parse", "HEAD").stdout.strip())
         # Gate flipped.
@@ -304,10 +323,7 @@ class AutoLogCommitTests(unittest.TestCase):
             }
             proc = run_hook("auto-log-commit.py", payload, repo.dir)
             self.assertEqual(proc.returncode, 0, proc.stderr)
-            log = repo.dir / "docs" / "agent-logs" / "agent-runs.jsonl"
-            rec = json.loads(
-                [l for l in log.read_text().splitlines() if l.strip()][-1]
-            )
+            rec = json.loads(shard_lines(repo.dir, "T-077")[-1])
             self.assertEqual(rec.get("task_id"), "T-077")  # not null
         finally:
             git(repo.dir, "worktree", "remove", "--force", str(wt))
@@ -317,9 +333,7 @@ class AutoLogCommitTests(unittest.TestCase):
         self._make_commit()
         run_hook("auto-log-commit.py", self._commit_payload(), self.repo.dir)
         run_hook("auto-log-commit.py", self._commit_payload(), self.repo.dir)
-        log = self.repo.dir / "docs" / "agent-logs" / "agent-runs.jsonl"
-        lines = [l for l in log.read_text().splitlines() if l.strip()]
-        self.assertEqual(len(lines), 1)  # not double-appended
+        self.assertEqual(len(shard_lines(self.repo.dir, "T-006")), 1)  # not double
 
     def test_new_commit_appends_again(self):
         self._make_commit()
@@ -329,16 +343,33 @@ class AutoLogCommitTests(unittest.TestCase):
         git(self.repo.dir, "add", "-A")
         git(self.repo.dir, "commit", "-q", "-m", "feat: more [T-006]")
         run_hook("auto-log-commit.py", self._commit_payload(), self.repo.dir)
-        log = self.repo.dir / "docs" / "agent-logs" / "agent-runs.jsonl"
-        lines = [l for l in log.read_text().splitlines() if l.strip()]
-        self.assertEqual(len(lines), 2)
+        # Same task + same UTC day → same shard, two records.
+        self.assertEqual(len(shard_lines(self.repo.dir, "T-006")), 2)
 
     def test_non_commit_bash_ignored(self):
         payload = {"tool_name": "Bash", "cwd": str(self.repo.dir),
                    "tool_input": {"command": "git status"}}
         run_hook("auto-log-commit.py", payload, self.repo.dir)
-        log = self.repo.dir / "docs" / "agent-logs" / "agent-runs.jsonl"
-        self.assertFalse(log.exists())
+        self.assertEqual(shard_files(self.repo.dir), [])  # no shard created
+
+    def test_two_lanes_write_disjoint_shards(self):
+        # R2 invariant: distinct task_ids → distinct shard files, so a merge of
+        # two branches touches disjoint paths and cannot conflict.
+        ld = self.repo.dir / "docs" / "agent-logs"
+        for tid in ("T-043", "T-044"):
+            subprocess.run(
+                [sys.executable, str(STATE_CLI), "log-event", "--event", "x",
+                 "--task-id", tid, "--branch", f"feature/{tid}",
+                 "--log-dir", str(ld)],
+                capture_output=True, text=True, check=True)
+        names = {p.name.split("-", 3)[-1] for p in shard_files(self.repo.dir)}
+        self.assertEqual(names, {"T-043.jsonl", "T-044.jsonl"})
+        # runs build consolidates both, ts-ordered.
+        subprocess.run(
+            [sys.executable, str(STATE_CLI), "runs", "build",
+             "--log-dir", str(ld)], capture_output=True, text=True, check=True)
+        built = (ld / "agent-runs.jsonl").read_text().splitlines()
+        self.assertEqual(len([l for l in built if l.strip()]), 2)
 
     def test_skips_log_only_commit(self):
         # A commit that touched ONLY the run log is pure bookkeeping. Logging
@@ -386,15 +417,14 @@ class AutoLogCommitTests(unittest.TestCase):
         # must not over-skip real work.
         self._make_commit()
         run_hook("auto-log-commit.py", self._commit_payload(), self.repo.dir)
-        log = self.repo.dir / "docs" / "agent-logs" / "agent-runs.jsonl"
-        n_before = len([l for l in log.read_text().splitlines() if l.strip()])
+        n_before = len(shard_lines(self.repo.dir, "T-006"))
         (self.repo.dir / "h.txt").write_text("z\n")
         note = self.repo.dir / "docs" / "agent-logs" / "note.md"
         note.write_text("n\n")
         git(self.repo.dir, "add", "-A")
         git(self.repo.dir, "commit", "-q", "-m", "feat: mix code and log [T-006]")
         run_hook("auto-log-commit.py", self._commit_payload(), self.repo.dir)
-        n_after = len([l for l in log.read_text().splitlines() if l.strip()])
+        n_after = len(shard_lines(self.repo.dir, "T-006"))
         self.assertEqual(n_after, n_before + 1)
 
 
@@ -490,33 +520,35 @@ class OnStopTests(unittest.TestCase):
         self.assertIn("UNCOMMITTED", proc.stderr)
 
     def test_exempt_log_dirty_does_not_block(self):
-        # The hook-managed run log lags HEAD by one append by design. With gates
-        # satisfied and ONLY agent-runs.jsonl dirty, on-stop must allow stop.
+        # T-046: the lane shards under docs/agent-logs/runs/ lag HEAD by one
+        # append by design. With gates satisfied and ONLY a shard dirty, on-stop
+        # must allow stop (and sweep it).
         self._commit_on_branch()
         state_cli(self.repo.state_dir, "set-gate", "log_written", "true")
         state_cli(self.repo.state_dir, "set-gate", "roadmap_synced", "true")
-        log = self.repo.dir / "docs" / "agent-logs" / "agent-runs.jsonl"
-        log.parent.mkdir(parents=True, exist_ok=True)
-        log.write_text('{"event":"commit"}\n')
+        shard = (self.repo.dir / "docs" / "agent-logs" / "runs"
+                 / "2026-06-16-T-006.jsonl")
+        shard.parent.mkdir(parents=True, exist_ok=True)
+        shard.write_text('{"event":"commit"}\n')
         git(self.repo.dir, "add", "-A")
-        git(self.repo.dir, "commit", "-q", "-m", "chore: track log [T-006]")
+        git(self.repo.dir, "commit", "-q", "-m", "chore: track shard [T-006]")
         # Re-dirty it the way auto-log-commit does (append after the commit).
-        with log.open("a") as fh:
+        with shard.open("a") as fh:
             fh.write('{"event":"commit","sha":"deadbeef"}\n')
-        # Sanity: porcelain shows only the log as dirty.
         st = git(self.repo.dir, "status", "--porcelain").stdout.strip()
-        self.assertIn("docs/agent-logs/agent-runs.jsonl", st)
+        self.assertIn("docs/agent-logs/runs/", st)
         proc = run_hook("on-stop.py", self._stop_payload(), self.repo.dir)
         self.assertEqual(proc.returncode, 0, proc.stderr)
 
     def test_non_exempt_dirty_still_blocks(self):
-        # A dirty non-exempt file alongside the exempt log must still block.
+        # A dirty non-exempt file alongside the exempt shard must still block.
         self._commit_on_branch()
         state_cli(self.repo.state_dir, "set-gate", "log_written", "true")
         state_cli(self.repo.state_dir, "set-gate", "roadmap_synced", "true")
-        log = self.repo.dir / "docs" / "agent-logs" / "agent-runs.jsonl"
-        log.parent.mkdir(parents=True, exist_ok=True)
-        log.write_text('{"event":"commit"}\n')
+        shard = (self.repo.dir / "docs" / "agent-logs" / "runs"
+                 / "2026-06-16-T-006.jsonl")
+        shard.parent.mkdir(parents=True, exist_ok=True)
+        shard.write_text('{"event":"commit"}\n')
         (self.repo.dir / "scripts" / "foo.py").write_text("print('x')\n")
         proc = run_hook("on-stop.py", self._stop_payload(), self.repo.dir)
         self.assertEqual(proc.returncode, 2)

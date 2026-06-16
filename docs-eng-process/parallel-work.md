@@ -83,7 +83,10 @@ clones already share — the **branch name**:
   remote branch. `/openup-start-iteration` runs this **before** claiming and, on
   exit 9, records a `duplicate_start_blocked` event (the clock-stamped counter
   that decides whether the heavier atomic `refs/openup/claims/*` ref-lock is ever
-  worth building) and refuses the start.
+  worth building) and refuses the start. Since T-046 that event lands in the
+  lane-owned run **shards**, so count it with
+  `grep -h duplicate_start_blocked docs/agent-logs/runs/*.jsonl | wc -l`
+  (or `openup-state.py runs build` then grep the consolidated `agent-runs.jsonl`).
 - **Advisory / fail-open** — unlike the local collision check (which fail-*closes*
   on a corrupt claim), any remote error (no remote, unreachable, auth) exits `0`.
   The local lease stays the hard gate; this only adds a warning the lease cannot

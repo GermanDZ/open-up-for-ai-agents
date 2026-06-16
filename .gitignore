@@ -39,3 +39,6 @@ Thumbs.db
 # Temporary files
 *.tmp
 temp/
+
+# T-046: derived run-log consolidation (source of truth = docs/agent-logs/runs/*.jsonl shards)
+docs/agent-logs/agent-runs.jsonl

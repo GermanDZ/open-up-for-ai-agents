@@ -204,8 +204,13 @@ class LogEventTests(unittest.TestCase):
         return proc
 
     def _records(self):
-        path = self.log_dir / "agent-runs.jsonl"
-        return [json.loads(l) for l in path.read_text().splitlines() if l.strip()]
+        # T-046: log-event writes lane-owned shards under runs/, not the shared
+        # agent-runs.jsonl. Read all shard records in file order.
+        runs = self.log_dir / "runs"
+        out = []
+        for shard in sorted(runs.glob("*.jsonl")) if runs.is_dir() else []:
+            out += [json.loads(l) for l in shard.read_text().splitlines() if l.strip()]
+        return out
 
     def test_stamps_iso_utc_ts(self):
         import re
