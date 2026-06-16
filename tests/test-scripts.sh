@@ -58,6 +58,7 @@ REQUIRED_SCRIPTS=(
     "scripts/update-from-template.sh"
     "scripts/update-openup.sh"
     "scripts/update-openup-simple.sh"
+    "scripts/force-upgrade.sh"
 )
 
 for script in "${REQUIRED_SCRIPTS[@]}"; do
@@ -269,6 +270,66 @@ if bash "$PROJECT_ROOT/scripts/update-openup-simple.sh" --template-dir "$PROJECT
     fi
 else
     test_fail "Simple update execution" "Script returned non-zero exit code"
+fi
+cd "$PROJECT_ROOT"
+
+# Test 7b: Force-upgrade brings an old project up to the full framework
+test_start "Force-upgrade script upgrades an old project"
+FU_DIR="/tmp/openup-test-force-upgrade"
+rm -rf "$FU_DIR"
+# Simulate a project started with an OLD version: has docs-eng-process/ on an
+# old version, plus a minimal .claude/ MISSING skills, hooks, rubrics, settings,
+# and a project-owned CLAUDE.md that must be preserved.
+mkdir -p "$FU_DIR/docs-eng-process" "$FU_DIR/.claude/teammates" "$FU_DIR/docs"
+echo "0.0.1-old" > "$FU_DIR/docs-eng-process/.template-version"
+echo "# stale analyst" > "$FU_DIR/.claude/teammates/analyst.md"
+printf '# My Project\n\nProject-specific stuff.\n' > "$FU_DIR/.claude/CLAUDE.md"
+
+if bash "$PROJECT_ROOT/scripts/force-upgrade.sh" --template-dir "$PROJECT_ROOT" "$FU_DIR" >/dev/null 2>&1; then
+    FU_OK=true
+    # The previously-missing .claude superset must now exist.
+    FU_EXPECTED=(
+        ".claude/skills/openup-init/SKILL.md"
+        ".claude/rubrics"
+        ".claude/scripts/hooks"
+        ".claude/settings.json"
+        ".claude/CLAUDE.openup.md"
+        "scripts/openup-state.py"
+    )
+    for item in "${FU_EXPECTED[@]}"; do
+        if [ ! -e "$FU_DIR/$item" ]; then
+            test_fail "Force-upgrade output" "Missing after upgrade: $item"
+            FU_OK=false
+        fi
+    done
+    # Version must be bumped to the framework's.
+    EXPECTED_VERSION=$(cat "$PROJECT_ROOT/docs-eng-process/.template-version")
+    if [ "$(cat "$FU_DIR/docs-eng-process/.template-version")" != "$EXPECTED_VERSION" ]; then
+        test_fail "Force-upgrade version" "Version not bumped to $EXPECTED_VERSION"
+        FU_OK=false
+    fi
+    # Project-owned CLAUDE.md must be preserved (not overwritten).
+    if ! grep -q "Project-specific stuff" "$FU_DIR/.claude/CLAUDE.md"; then
+        test_fail "Force-upgrade CLAUDE.md" "Project CLAUDE.md was not preserved"
+        FU_OK=false
+    fi
+    if [ "$FU_OK" = true ]; then
+        test_pass "Force-upgrade installs the full superset and bumps the version"
+    fi
+else
+    test_fail "Force-upgrade execution" "Script returned non-zero exit code"
+fi
+cd "$PROJECT_ROOT"
+
+# Test 7c: Force-upgrade refuses a non-OpenUP directory
+test_start "Force-upgrade rejects a non-OpenUP project"
+FU_BAD_DIR="/tmp/openup-test-force-upgrade-bad"
+rm -rf "$FU_BAD_DIR"
+mkdir -p "$FU_BAD_DIR"
+if bash "$PROJECT_ROOT/scripts/force-upgrade.sh" --template-dir "$PROJECT_ROOT" "$FU_BAD_DIR" >/dev/null 2>&1; then
+    test_fail "Force-upgrade guard" "Script should have failed on a directory without docs-eng-process"
+else
+    test_pass "Force-upgrade refuses a directory without docs-eng-process"
 fi
 cd "$PROJECT_ROOT"
 

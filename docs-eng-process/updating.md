@@ -30,6 +30,7 @@ Use the table below to pick the correct update path.
 |------|--------------------|-----------------|
 | Update OpenUP docs and templates | `update-from-template.sh` | `docs-eng-process/` + `.claude/teammates` + `.claude/teams` + `.claude/CLAUDE.openup.md` |
 | Update skills/teammates/teams only | `sync-from-framework.sh` | `.claude/skills` + `.claude/teammates` + `.claude/teams` + `.claude/CLAUDE.openup.md` |
+| **Force-upgrade a project started on an old version** | `force-upgrade.sh` | **Everything**: `docs-eng-process/` + the full `.claude/` superset (skills, teammates, teams, agents, rubrics, hooks, `settings.json`) + process CLIs + `.template-version` |
 
 **Important:** `update-from-template.sh` does **not** update `.claude/skills/` in most projects because `docs-eng-process/.claude-templates/` exists only in the framework repo. If you see "Unknown skill" errors, run `sync-from-framework.sh`.
 
@@ -40,6 +41,51 @@ Use the table below to pick the correct update path.
 If you only need the latest skills, teammates, and teams, use `sync-from-framework.sh`. Use `update-from-template.sh` when you specifically want to update `docs-eng-process/` content.
 
 If this is the first time installing OpenUP into an existing project, copy `docs-eng-process/` first. `update-from-template.sh` expects that directory to already exist.
+
+## Force-Upgrading a Project Started on an Old Version
+
+If a project was **initially started with an old version of OpenUP**, a normal
+update is usually not enough. Depending on how old the install is, it can be
+missing whole categories of files the modern framework expects — skills, hooks,
+rubrics, subagents, `settings.json` wiring, the process CLIs, and the
+doc-traceability rails. Neither `update-from-template.sh` (which doesn't ship
+`.claude/skills/`, hooks, or rubrics) nor `sync-from-framework.sh` (which
+doesn't touch `docs-eng-process/`) closes that gap on its own.
+
+`force-upgrade.sh` does both. It clones the latest framework (or uses
+`--template-dir`) and runs both canonical installers in `--force` mode, so the
+version check never short-circuits:
+
+```bash
+# From your project root, using a local framework checkout
+/path/to/open-up-for-ai-agents/scripts/force-upgrade.sh \
+    --template-dir /path/to/open-up-for-ai-agents
+
+# Or let it clone the latest framework itself
+/path/to/open-up-for-ai-agents/scripts/force-upgrade.sh
+
+# Preview everything first
+./scripts/force-upgrade.sh --dry-run
+```
+
+What it installs/refreshes:
+
+- `docs-eng-process/` (full content) + `.template-version`
+- `.claude/skills/`, `teammates/`, `teams/`, `agents/`, `rubrics/`, `scripts/hooks/`
+- `.claude/settings.json` (OpenUP hooks merged in; your custom hooks and other
+  fields are preserved)
+- `.claude/CLAUDE.openup.md` + a reference line added to your project `.claude/CLAUDE.md`
+- The process CLIs (`scripts/openup-*.py` and the trace rails) listed in
+  `scripts/process-manifest.txt`
+
+What it preserves: your project-owned `.claude/CLAUDE.md`, your `docs/`, your
+source, and anything outside `docs-eng-process/` and `.claude/`. Forced
+overwrites leave `.bak` copies next to changed `.claude/` files — review the git
+diff, then delete them once you've confirmed the upgrade.
+
+> This is an **upgrade**, not a first-time install: the project must already have
+> a `docs-eng-process/` directory. If it doesn't, do a first-time install first
+> (see the section above), then upgrade.
 
 ## Quick Sync: Skills, Teammates, Teams Only
 

@@ -188,6 +188,59 @@ chmod +x scripts/update-openup.sh
 
 **Note**: For a one-liner approach, the repository needs to be public. Since this is a private repo, use one of the approaches above.
 
+### force-upgrade.sh
+
+Fully force-upgrade a project that was **started with an old OpenUP version** to
+the latest framework. A plain update is not enough for old installs: depending
+on age they can be missing whole categories of files (skills, hooks, rubrics,
+subagents, `settings.json` wiring, process CLIs, the doc-traceability rails).
+
+This script clones the latest framework (or uses `--template-dir`) and drives
+both canonical installers in `--force` mode so the version check never
+short-circuits:
+
+1. `update-from-template.sh --force` → `docs-eng-process/`, teammates, teams,
+   `CLAUDE.openup.md`, process CLIs, `.template-version`
+2. `setup-agent-teams.sh --force` → the full `.claude/` superset: skills,
+   teammates, teams, agents, rubrics, hooks, `settings.json` (OpenUP hooks
+   merged, custom hooks preserved), process CLIs
+
+**Usage:**
+```bash
+./force-upgrade.sh [OPTIONS] [project_path]
+```
+
+**Options:**
+- `--template-dir DIR` - Use a local framework checkout instead of cloning
+- `--dry-run` - Show what would change without modifying files
+- `--backup` - Create `.backup-*` copies before overwriting `docs-eng-process` files
+- `--skip-cleanup` - Keep the downloaded framework directory
+
+**What it preserves:**
+- ✅ Your project-owned `.claude/CLAUDE.md` (only a reference line is added if missing)
+- ✅ Custom hooks and all non-hook fields in `settings.json`
+- ✅ Everything outside `docs-eng-process/` and `.claude/` (your `docs/`, source, tests)
+
+**Example:**
+```bash
+# Upgrade the current project from the latest framework
+./force-upgrade.sh
+
+# Preview first
+./force-upgrade.sh --dry-run
+
+# Upgrade a specific project from a local framework checkout
+./force-upgrade.sh --template-dir ~/dev/open-up-for-ai-agents /path/to/project
+```
+
+**When to use:**
+- ✅ A project began on an old OpenUP version and is missing skills/hooks/CLIs
+- ✅ You see "Unknown skill" errors *and* stale `docs-eng-process/` content
+- ❌ For a routine refresh, prefer `sync-from-framework.sh` or `update-from-template.sh`
+
+Forced overwrites leave `.bak` copies next to changed `.claude/` files; review
+the git diff, then delete them once you've confirmed the upgrade.
+
 ### check-model-tiers.py
 
 Keep `docs-eng-process/model-tiers.md` in sync with the live `model:`
@@ -226,6 +279,7 @@ python3 scripts/openup-scribe.py learnings --task-id T-001 --title "<title>" \
 | **Create new project** | `bootstrap-project.sh <name>` | From framework repo |
 | **Set up agent teams** | `setup-agent-teams.sh` | From framework repo or in project |
 | **Update project (full)** | `update-from-template.sh --template-dir <path>` | In your project |
+| **Force-upgrade an old project** | `force-upgrade.sh --template-dir <path>` | In your project |
 | **Sync .claude files only** | `sync-from-framework.sh --framework-path <path>` | In your project |
 | **Update framework's .claude** | `sync-templates-to-claude.sh` | In framework repo only |
 | **Check/regenerate model tiers** | `check-model-tiers.py --check\|--write` | In framework repo |
