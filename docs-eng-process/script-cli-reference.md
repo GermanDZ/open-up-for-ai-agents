@@ -35,6 +35,7 @@ log-event    --event E [--task-id] [--run-id] [--goal] [--branch] [--phase]
 
 ```
 preflight    --task-id            # deps + collision check, writes nothing (exit 3 dep, 4 collision)
+remote-check --task-id [--remote origin] [--no-fetch] [--self-branch B]  # cross-machine (exit 9 dup; 0 clear/skip)
 claim        --task-id --session-id --branch --worktree
 release      --task-id            # idempotent
 list | dir
@@ -44,6 +45,13 @@ next-id | release-id | list-ids
 ```
 - Always `preflight` before `claim`. Claims never expire — a stale claim blocks
   its surface until a human removes `<git-common-dir>/openup/claims/<id>.json`.
+- `remote-check` (T-044) is the **cross-machine** branch-as-claim early-warning:
+  the local lease lives under `.git/` and is never pushed, so it can't see a
+  teammate's clone. This lists `origin`'s branches and exits `9` if another
+  branch already encodes the task (excluding `--self-branch`). **Advisory /
+  fail-open**: no remote, unreachable remote, or auth error all exit `0` — it
+  never blocks solo/offline work. `/openup-start-iteration` runs it before
+  claiming and logs a `duplicate_start_blocked` event on exit 9.
 
 ## openup-board.py — derived execution board
 

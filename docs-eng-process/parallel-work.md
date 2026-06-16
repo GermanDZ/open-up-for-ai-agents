@@ -64,6 +64,32 @@ collision-evaluated.
    - identical paths → collision
    On overlap: refused, exit 4, naming the owning task + session and the conflicting path(s).
 
+## Cross-machine: `remote-check` (T-044)
+
+The pre-flight above is **single-clone**: claims live at
+`<git-common-dir>/openup/claims/`, inside `.git/`, never pushed. Two sessions of
+one clone see the same claims; **separate clones do not** (full boundary in
+[parallel-lanes.md → Parallelism scope](parallel-lanes.md)). So when teammates
+run `/openup-next` in parallel from their own machines, the lease cannot stop
+them claiming the same task — the collision only surfaces as two PRs (e.g.
+TallyFox #462 vs #463).
+
+`remote-check` is the cross-machine early-warning, using the one claim signal
+clones already share — the **branch name**:
+
+- It runs `git ls-remote --heads <remote>` and matches branches encoding the
+  task as a delimited token (`feature/T-044-x` matches `T-044`; `T-44` does not).
+- A match other than `--self-branch` → **exit 9** (`EXIT_REMOTE_DUP`), naming the
+  remote branch. `/openup-start-iteration` runs this **before** claiming and, on
+  exit 9, records a `duplicate_start_blocked` event (the clock-stamped counter
+  that decides whether the heavier atomic `refs/openup/claims/*` ref-lock is ever
+  worth building) and refuses the start.
+- **Advisory / fail-open** — unlike the local collision check (which fail-*closes*
+  on a corrupt claim), any remote error (no remote, unreachable, auth) exits `0`.
+  The local lease stays the hard gate; this only adds a warning the lease cannot
+  give. Rationale and the rejected heavier options:
+  [`docs/explorations/2026-06-16-cross-machine-claim-coordination.md`](../docs/explorations/2026-06-16-cross-machine-claim-coordination.md).
+
 ## Recovery: claims never expire
 
 There is **no automatic expiry and no `--steal`** (design D1/D2). A crashed or abandoned
