@@ -5,13 +5,13 @@ on-stop.py — OpenUP hook: fires when the agent tries to stop.
 Two layers of enforcement:
 
   1. Uncommitted-work block (existing): if the worktree is dirty, block stop
-     so changes are not abandoned. EXEMPTION: docs/agent-logs/agent-runs.jsonl
-     is hook-managed traceability appended by auto-log-commit AFTER each commit,
-     so it always lags HEAD by one append and can never be committed in the
-     commit it records. It is excluded from the dirty check (otherwise every
-     commit re-dirties it and on-stop tail-chases forever); it stays tracked
-     and is swept into the next code commit naturally. Only NON-exempt dirty
-     files block stop.
+     so changes are not abandoned. EXEMPTION: the lane-owned run shards under
+     docs/agent-logs/runs/ (T-046) are hook-managed traceability appended by
+     auto-log-commit AFTER each commit, so a shard always lags HEAD by one
+     append and can never be committed in the commit it records. They are
+     excluded from the dirty check (otherwise every commit re-dirties the shard
+     and on-stop tail-chases forever); they stay tracked and are swept into a
+     log-only commit here. Only NON-exempt dirty files block stop.
   2. Unmet-gate block (new): if an OpenUP iteration is active (.openup/state.json
      present) and commits were made on this branch since trunk, then:
        - gates.log_written false → block (exit 2) naming the gate; or
@@ -37,8 +37,16 @@ import sys
 from pathlib import Path
 
 
-# Hook-managed files that lag HEAD by design and must not block stop.
-EXEMPT_DIRTY_PATHS = {"docs/agent-logs/agent-runs.jsonl"}
+# Hook-managed paths that lag HEAD by design and must not block stop. T-046:
+# the run log is now sharded under docs/agent-logs/runs/ (lane-owned); the
+# auto-log-commit hook appends a commit record to the lane shard AFTER each
+# commit, so the shard lags HEAD by one append exactly as agent-runs.jsonl used
+# to. Exempt the whole shard dir by prefix (filenames vary by date+lane).
+EXEMPT_DIRTY_PREFIXES = ("docs/agent-logs/runs/",)
+
+
+def is_exempt_dirty(path: str) -> bool:
+    return any(path.startswith(pre) for pre in EXEMPT_DIRTY_PREFIXES)
 
 
 def run(cmd: str, cwd: str) -> tuple[int, str]:
@@ -151,7 +159,7 @@ def main() -> None:
     if dirty:
         non_exempt = [
             line for line in dirty.splitlines()
-            if porcelain_path(line) not in EXEMPT_DIRTY_PATHS
+            if not is_exempt_dirty(porcelain_path(line))
         ]
         if non_exempt:
             file_list = "\n".join(f"  {l}" for l in non_exempt[:10])
@@ -177,14 +185,14 @@ def main() -> None:
             # new record and therefore no tail-chase. Fail open on any git error
             # (e.g. missing identity): a stop hook must never trap the session.
             code, _ = run(
-                "git add docs/agent-logs/agent-runs.jsonl && "
-                'git commit -m "chore(process): sweep agent-runs.jsonl log tail '
+                "git add docs/agent-logs/runs/ && "
+                'git commit -m "chore(process): sweep run-log shards '
                 '[openup-skip]"',
                 cwd,
             )
             if code == 0:
                 print(
-                    "[on-stop] ✓ Swept the agent-runs.jsonl log tail into a "
+                    "[on-stop] ✓ Swept the run-log shards into a "
                     "log-only commit — tree is clean.",
                     file=sys.stderr,
                 )

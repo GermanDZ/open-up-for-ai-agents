@@ -44,8 +44,23 @@ from pathlib import Path
 
 COMMIT_RE = re.compile(r"\bgit\b.*\bcommit\b", re.DOTALL)
 
-LOG_REL = "docs/agent-logs/agent-runs.jsonl"
 LOG_DIR = "docs/agent-logs/"
+RUNS_REL = "docs/agent-logs/runs"  # T-046: lane-owned run shards live here
+
+
+def shard_key(task_id, branch):
+    """Lane key for the run shard filename (T-046) — must match
+    openup-state.py `_shard_key` so both writers target the same lane file."""
+    raw = (task_id or "").strip() or (branch or "").strip() or "no-task"
+    if raw in ("null",):
+        raw = (branch or "no-task").strip() or "no-task"
+    slug = re.sub(r"[^0-9A-Za-z._-]+", "-", raw).strip("-")
+    return slug or "no-task"
+
+
+def shard_path(cwd: str, task_id, branch, ts: str) -> Path:
+    """`docs/agent-logs/runs/<UTC-date>-<key>.jsonl` for this lane (T-046)."""
+    return Path(cwd) / RUNS_REL / f"{ts[:10]}-{shard_key(task_id, branch)}.jsonl"
 
 
 def run(cmd: str, cwd: str) -> tuple[int, str]:
@@ -199,15 +214,9 @@ def main() -> None:
             sys.exit(0)
 
         # Self-reference guard: skip commits that only touched audit-trail
-        # files (anything under docs/agent-logs/) — logging them would re-dirty
-        # the run log and tail-chase forever.
+        # files (anything under docs/agent-logs/, which includes the run shards)
+        # — logging them would re-dirty the shard and tail-chase forever.
         if commit_only_touches_logs(cwd, sha):
-            sys.exit(0)
-
-        log_path = Path(cwd) / LOG_REL
-
-        # Idempotency: skip if this SHA is already the last commit record.
-        if last_logged_sha(log_path) == sha:
             sys.exit(0)
 
         # Gather fields.
@@ -219,6 +228,20 @@ def main() -> None:
         sroot = resolve_state_root(cwd)
         scode, task_id = state_get(sroot, "task_id")
         task_id = task_id.strip() if scode == 0 else None
+        if task_id in ("null", ""):
+            task_id = None
+
+        ts = (
+            payload.get("ts")
+            or payload.get("timestamp")
+            or datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        )
+
+        # T-046: write to the LANE-OWNED shard, never the shared agent-runs.jsonl
+        # (now a gitignored derived view). Idempotency reads the same shard.
+        log_path = shard_path(cwd, task_id, branch, ts)
+        if last_logged_sha(log_path) == sha:
+            sys.exit(0)
 
         sidcode, session_id = state_get(sroot, "session_id")
         session_id = session_id.strip() if sidcode == 0 else None
@@ -228,12 +251,6 @@ def main() -> None:
         model = payload.get("model") or payload.get("permission_mode_model")
         if not model:
             model = None
-
-        ts = (
-            payload.get("ts")
-            or payload.get("timestamp")
-            or datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-        )
 
         record = {
             "run_id": uuid.uuid4().hex,

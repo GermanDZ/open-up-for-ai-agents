@@ -21,12 +21,18 @@ retro        {get|increment|reset|check} [--threshold N]
 validate
 log-event    --event E [--task-id] [--run-id] [--goal] [--branch] [--phase]
              [--track] [--sha] [--log-dir]
+runs         build [--log-dir]            # derive agent-runs.jsonl from shards (T-046)
 ```
-- `log-event` stamps `ts` from the system clock and appends one record to
-  `docs/agent-logs/agent-runs.jsonl`. **Use it for every `iteration_start` /
-  `iteration_complete` / `commit` / `run_log` event — never hand-author a JSONL
-  line or a `[ts]` placeholder.** Common events: `iteration_start`,
-  `iteration_complete`, `run_log`.
+- `log-event` stamps `ts` from the system clock and appends one record to the
+  **lane-owned shard** `docs/agent-logs/runs/<UTC-date>-<task_id-or-branch>.jsonl`
+  (T-046 — not the shared `agent-runs.jsonl`, which is now a gitignored derived
+  view). **Use it for every `iteration_start` / `iteration_complete` / `commit` /
+  `run_log` event — never hand-author a JSONL line or a `[ts]` placeholder.**
+- `runs build` regenerates the consolidated `docs/agent-logs/agent-runs.jsonl`
+  (ts-sorted) from the shard glob for local querying — a derived view, never
+  hand-edited. The shards are the committed source of truth and are conflict-free
+  (lane-owned), which `merge=union` on the old shared file could not guarantee on
+  GitHub.
 - Exit codes: `0` ok · `2` usage · `3` no state · `4` state exists (init) ·
   `5` key missing (get) · `6` gates unmet · `7` invalid.
 - All subcommands accept `--state-dir DIR` to override `<repo>/.openup`.

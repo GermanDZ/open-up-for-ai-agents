@@ -1,0 +1,4 @@
+{"run_id": "1285ac88e3ea46859717f6e49d5d9aa5", "event": "commit", "task_id": "T-046", "branch": "feature/T-046-shard-agent-runs-jsonl", "sha": "e086866390343e5e63070fe2607af81d7101fab9", "model": null, "session_id": null, "ts": "2026-06-16T17:16:46Z"}
+{"run_id": "441283c1ea8e4802b1788c8a1dfe4b8a", "event": "commit", "task_id": "T-046", "branch": "feature/T-046-shard-agent-runs-jsonl", "sha": "443fa9f662fd1b5a33e0c860439eecaed77ade5b", "model": null, "session_id": null, "ts": "2026-06-16T17:17:44Z"}
+{"event": "iteration_complete", "task_id": "T-046", "branch": "feature/T-046-shard-agent-runs-jsonl", "phase": "construction", "ts": "2026-06-16T17:18:20Z"}
+{"run_id": "6f0fed5cd6d14f23a565e3ea3f387c7e", "event": "commit", "task_id": "T-046", "branch": "feature/T-046-shard-agent-runs-jsonl", "sha": "443fa9f662fd1b5a33e0c860439eecaed77ade5b", "model": null, "session_id": null, "ts": "2026-06-16T17:18:21Z"}
