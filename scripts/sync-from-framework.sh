@@ -346,6 +346,24 @@ else
   log_warn "install-process-clis.sh not found in framework — skipping process CLI sync"
 fi
 
+# T-047: carry T-046's data migration — untrack the now-derived agent-runs.jsonl
+# (logic lives in scripts/lib/migrate-data.sh so it is unit-testable).
+log_info "Checking T-046 migration (agent-runs.jsonl untrack)..."
+echo ""
+MIGRATE_HELPER="$FRAMEWORK_PATH/scripts/lib/migrate-data.sh"
+if [ -f "$MIGRATE_HELPER" ]; then
+  # shellcheck source=/dev/null
+  source "$MIGRATE_HELPER"
+  if git -C "$PROJECT_ROOT" ls-files --error-unmatch "docs/agent-logs/agent-runs.jsonl" >/dev/null 2>&1; then
+    migrate_untrack_agent_runs "$PROJECT_ROOT" "$DRY_RUN"
+    [ "$DRY_RUN" = false ] && log_success "T-046 migration: untracked agent-runs.jsonl (staged — commit to finish)"
+  else
+    log_verbose "T-046 migration: agent-runs.jsonl already untracked — nothing to do"
+  fi
+else
+  log_warn "migrate-data.sh not found in framework — skipping T-046 migration"
+fi
+
 # Create cache directory if it doesn't exist
 log_info "Ensuring cache directory exists..."
 echo ""

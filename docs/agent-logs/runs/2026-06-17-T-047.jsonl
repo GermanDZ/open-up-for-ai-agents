@@ -1,0 +1,2 @@
+{"event": "iteration_start", "task_id": "T-047", "goal": "sync carries T-046 untrack migration", "branch": "feature/T-047-sync-carries-t046-migration", "phase": "construction", "ts": "2026-06-17T09:47:12Z"}
+{"run_id": "782cff43534849e580cbbab59857397a", "event": "commit", "task_id": "T-047", "branch": "feature/T-047-sync-carries-t046-migration", "sha": "6ccf47c69d2aa162d2275631cdbc1cea8ecb0ed6", "model": null, "session_id": null, "ts": "2026-06-17T09:47:13Z"}

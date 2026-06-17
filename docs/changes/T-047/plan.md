@@ -7,7 +7,7 @@ priority: medium
 estimate: 0.5 session
 depends-on: [T-046]
 blocks: []
-touches: [scripts/sync-from-framework.sh, docs-eng-process/updating.md, scripts/tests/test_sync_migration.py, docs/changes/T-047, docs/roadmap.md]
+touches: [scripts/sync-from-framework.sh, scripts/lib/migrate-data.sh, docs-eng-process/updating.md, scripts/tests/test_sync_migration.py, docs/changes/T-047, docs/roadmap.md]
 claimed-by: null
 ---
 
@@ -104,12 +104,12 @@ self-disabling once applied (guarded on `git ls-files`), so no flag needed.
 
 ## Operations
 
-- [ ] R1: add `migrate_untrack_agent_runs` (guarded on `git ls-files`, `.gitignore` + `git rm --cached`) and call it after the process-CLI sync
-- [ ] R2: honor `$DRY_RUN` (print intent, change nothing)
-- [ ] R3: `.gitignore` append guarded by `grep -qxF` (no duplicate)
-- [ ] (tester) `test_sync_migration.py` — tracked→untracked, already-untracked no-op, dry-run, no-duplicate-gitignore
-- [ ] Docs: `updating.md` note that the untrack is automatic on sync
-- [ ] Full suite green
+- [x] R1: add `migrate_untrack_agent_runs` (guarded on `git ls-files`, `.gitignore` + `git rm --cached`) and call it after the process-CLI sync
+- [x] R2: honor `$DRY_RUN` (print intent, change nothing)
+- [x] R3: `.gitignore` append guarded by `grep -qxF` (no duplicate)
+- [x] (tester) `test_sync_migration.py` — tracked→untracked, already-untracked no-op, dry-run, no-duplicate-gitignore
+- [x] Docs: `updating.md` note that the untrack is automatic on sync
+- [x] Full suite green
 
 ## Norms
 
