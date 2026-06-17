@@ -1,7 +1,7 @@
 ---
 id: T-047
 title: "sync-from-framework.sh carries T-046's agent-runs.jsonl untrack migration"
-status: ready
+status: done
 track: standard
 priority: medium
 estimate: 0.5 session

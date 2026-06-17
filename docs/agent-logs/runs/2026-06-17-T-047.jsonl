@@ -1,2 +1,5 @@
 {"event": "iteration_start", "task_id": "T-047", "goal": "sync carries T-046 untrack migration", "branch": "feature/T-047-sync-carries-t046-migration", "phase": "construction", "ts": "2026-06-17T09:47:12Z"}
 {"run_id": "782cff43534849e580cbbab59857397a", "event": "commit", "task_id": "T-047", "branch": "feature/T-047-sync-carries-t046-migration", "sha": "6ccf47c69d2aa162d2275631cdbc1cea8ecb0ed6", "model": null, "session_id": null, "ts": "2026-06-17T09:47:13Z"}
+{"run_id": "e1417b80b36f40a48365832823f907a6", "event": "commit", "task_id": "T-047", "branch": "feature/T-047-sync-carries-t046-migration", "sha": "e9be2ed995ffcc31a647c3de4a20682c7b63090a", "model": null, "session_id": null, "ts": "2026-06-17T09:51:02Z"}
+{"event": "iteration_complete", "task_id": "T-047", "branch": "feature/T-047-sync-carries-t046-migration", "phase": "construction", "ts": "2026-06-17T09:51:43Z"}
+{"run_id": "a2e87f20c4a846a0b9a3f82d14991179", "event": "commit", "task_id": "T-047", "branch": "feature/T-047-sync-carries-t046-migration", "sha": "e9be2ed995ffcc31a647c3de4a20682c7b63090a", "model": null, "session_id": null, "ts": "2026-06-17T09:51:44Z"}
