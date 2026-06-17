@@ -1,2 +1,3 @@
 {"run_id": "d8e9d1c0cec044fa8d053f40ccd174eb", "event": "commit", "task_id": "T-048", "branch": "fix/T-048-archived-status-and-promote-visibility", "sha": "eec57a14cb558e672af9363caa84d2dbe1e12bd5", "model": null, "session_id": null, "ts": "2026-06-17T16:41:48Z"}
 {"event": "iteration_start", "task_id": "T-048", "goal": "Implement T-048 audit fixes: archived-plan status bump (false dep-block) + worktree-promote board-blindness", "branch": "fix/T-048-audit-false-depblock-worktree-promote", "phase": "construction", "ts": "2026-06-17T16:47:32Z"}
+{"event": "iteration_complete", "task_id": "T-048", "branch": "fix/T-048-audit-false-depblock-worktree-promote", "phase": "construction", "ts": "2026-06-17T17:02:17Z"}

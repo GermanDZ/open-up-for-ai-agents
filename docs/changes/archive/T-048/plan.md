@@ -1,7 +1,7 @@
 ---
 id: T-048
 title: "Audit fixes: archived-plan status bump (false dep-block) + worktree-promote board-blindness"
-status: ready   # proposed → ready → in-progress → done → verified
+status: done
 priority: high   # critical | high | medium | low
 estimate: 1 session   # two related fixes + one-shot migration, single PR
 plan: docs/roadmap.md#maintenance-standalone-fixes
