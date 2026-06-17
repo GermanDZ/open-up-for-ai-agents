@@ -381,5 +381,94 @@ class RemoteCheckTests(unittest.TestCase):
         self.assertIn("advisory", (p.stdout + p.stderr).lower())
 
 
+def _write(p, text):
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(text, encoding="utf-8")
+
+
+def _plan(tid, status):
+    return f"---\nid: {tid}\nstatus: {status}\ntouches: []\ndepends-on: []\n---\n# {tid}\n"
+
+
+def _roadmap(rows):
+    out = ["# Roadmap", "", "| Task | Title | Status | Priority |", "|---|---|---|---|"]
+    for tid, status_cell in rows:
+        out.append(f"| [{tid}](changes/archive/{tid}/plan.md) | t | {status_cell} | high |")
+    return "\n".join(out) + "\n"
+
+
+class ArchivedDepTests(unittest.TestCase):
+    """T-048 — archived plans defer to the roadmap; stale-status migration."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self._tmp.name)
+        self.cdir = self.root / ".claims"
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def _pf(self, dep, expect):
+        return run(["preflight", "--task-id", "SCRATCH", "--touches", "x/y",
+                    "--depends-on", dep, "--repo-root", str(self.root)],
+                   self.cdir, expect)
+
+    def _mig(self, *extra, expect=OK):
+        cmd = [sys.executable, str(SCRIPT), "migrate-archived-status",
+               "--repo-root", str(self.root), *extra]
+        proc = subprocess.run(cmd, capture_output=True, text=True)
+        if expect is not None:
+            assert proc.returncode == expect, (
+                f"expected {expect}, got {proc.returncode}\n{proc.stdout}\n{proc.stderr}")
+        return proc
+
+    # --- dep_satisfied (Req 2) ---
+    def test_archived_stale_but_roadmap_completed_is_satisfied(self):
+        _write(self.root / "docs/changes/archive/T-900/plan.md", _plan("T-900", "in-progress"))
+        _write(self.root / "docs/roadmap.md", _roadmap([("T-900", "completed (2026-01-01)")]))
+        self.assertIn("READY", self._pf("T-900", OK).stdout)
+
+    def test_archived_deferred_and_roadmap_deferred_blocks(self):
+        _write(self.root / "docs/changes/archive/T-901/plan.md", _plan("T-901", "deferred"))
+        _write(self.root / "docs/roadmap.md", _roadmap([("T-901", "deferred")]))
+        self._pf("T-901", DEP)
+
+    def test_active_inprogress_plan_stays_authoritative(self):
+        # NOT archived -> the live body wins; still blocked even though roadmap says done.
+        _write(self.root / "docs/changes/T-902/plan.md", _plan("T-902", "in-progress"))
+        _write(self.root / "docs/roadmap.md", _roadmap([("T-902", "completed")]))
+        self._pf("T-902", DEP)
+
+    def test_archived_no_roadmap_row_trusts_body(self):
+        # Archived but no roadmap vouches completion -> archive presence alone is
+        # too weak (could be a removed deferred plan), so the body still blocks.
+        _write(self.root / "docs/changes/archive/T-903/plan.md", _plan("T-903", "in-progress"))
+        _write(self.root / "docs/roadmap.md", "# Roadmap\n")
+        self._pf("T-903", DEP)
+
+    # --- migration (Req 3) ---
+    def test_migration_repairs_stale_skips_deferred_idempotent(self):
+        _write(self.root / "docs/changes/archive/T-900/plan.md", _plan("T-900", "in-progress"))
+        _write(self.root / "docs/changes/archive/T-901/plan.md", _plan("T-901", "deferred"))
+        _write(self.root / "docs/roadmap.md",
+               _roadmap([("T-900", "completed"), ("T-901", "deferred")]))
+        out = self._mig().stdout
+        self.assertIn("T-900", out)
+        self.assertNotIn("T-901", out)  # roadmap not completed -> left alone
+        self.assertIn("status: done",
+                      (self.root / "docs/changes/archive/T-900/plan.md").read_text())
+        self.assertIn("status: deferred",
+                      (self.root / "docs/changes/archive/T-901/plan.md").read_text())
+        # idempotent: a second run changes nothing
+        self.assertIn("nothing to change", self._mig().stdout)
+
+    def test_migration_dry_run_writes_nothing(self):
+        _write(self.root / "docs/changes/archive/T-900/plan.md", _plan("T-900", "in-progress"))
+        _write(self.root / "docs/roadmap.md", _roadmap([("T-900", "completed")]))
+        self.assertIn("would bump", self._mig("--dry-run").stdout)
+        self.assertIn("status: in-progress",
+                      (self.root / "docs/changes/archive/T-900/plan.md").read_text())
+
+
 if __name__ == "__main__":
     unittest.main()

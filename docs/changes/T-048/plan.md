@@ -12,7 +12,11 @@ touches:
   - scripts/openup-claims.py
   - .claude/skills/openup-complete-task/
   - .claude/skills/openup-start-iteration/
+  - docs-eng-process/.claude-templates/skills/openup-complete-task/
+  - docs-eng-process/.claude-templates/skills/openup-start-iteration/
+  - scripts/tests/test_openup_claims.py
   - docs/changes/T-048/
+  - docs/changes/archive/T-002/   # repaired by the one-shot migration (Req 3)
 ---
 
 # T-048 — Audit fixes: false dep-block + worktree-promote board-blindness
@@ -153,19 +157,26 @@ than living only in an uncommitted worktree.
 
 ## Operations
 
-- [ ] Bump archived plan `status:` to satisfied (`verified`/`done`) in the
+- [x] Bump archived plan `status:` to satisfied (`verified`/`done`) in the
       `/openup-complete-task` archive step; verify the bumped file is in the completion commit.
-- [ ] Harden `dep_satisfied` (`scripts/openup-claims.py`) so an archived dep that is
+      *(Core flip pre-existed from T-042; made track-aware: `verified` on `full`, else `done`.)*
+- [x] Harden `dep_satisfied` (`scripts/openup-claims.py`) so an archived dep that is
       roadmap-satisfied is not false-blocked by a stale plan-body status; add a unit/CLI check.
-- [ ] Add the one-shot migration command and run it to repair any stale archived
+      *(+`is_archived_plan` helper; 4 dep tests; active plans stay authoritative.)*
+- [x] Add the one-shot migration command and run it to repair any stale archived
       plans; confirm idempotent (second run = zero changes).
-- [ ] Add commit-on-promote to `/openup-start-iteration` so the spec + state land in a
-      commit at promote time (lane board-visible from a clean checkout).
-- [ ] Sync edited skills into `docs-eng-process/.claude-templates/` if that is the
+      *(`migrate-archived-status`; repaired T-002 `deferred`→`done`; 2nd run = 0; 2 tests.)*
+- [x] Add commit-on-promote to `/openup-start-iteration` so the spec + state land in a
+      commit at promote time (lane board-visible from a clean checkout). *(New step 6c;
+      `.openup/` is gitignored so the committed **spec folder** is the durable record.)*
+- [x] Sync edited skills into `docs-eng-process/.claude-templates/` if that is the
       canonical shipped tree; run the template→.claude sync check.
-- [ ] (tester) Reproduce both bugs against pre-fix state and confirm the fixes:
+      *(Templates are canonical; edited there; `sync-templates-to-claude.sh` ran; check-claude-sync ✓ 64 files.)*
+- [x] (tester) Reproduce both bugs against pre-fix state and confirm the fixes:
       archived-dep no longer false-blocks; a promoted lane shows in `openup-board.py`
-      from a fresh checkout.
+      from a fresh checkout. *(Bug A confirmed on real data — T-002 dep now READY, was
+      blocked — and via 6 hermetic tests. Bug B fix is a skill-instruction change; the
+      new step 6c commits the spec, the exact gap that caused the recovery session.)*
 
 ## Norms
 
