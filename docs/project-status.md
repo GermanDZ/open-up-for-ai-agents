@@ -1,17 +1,19 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 21
-**Iteration Goal**: T-046 — Shard `agent-runs.jsonl` into lane-owned files; derive the consolidated view (kills GitHub-side PR conflicts merge=union can't)
+**Iteration**: 22
+**Iteration Goal**: T-047 — Carry T-046's untrack migration into `sync-from-framework.sh` (a project adopting T-046 auto-gitignores + `git rm --cached` the now-derived agent-runs.jsonl)
 **Status**: completed
 **Retrospective**: [iteration-20-retrospective.md](iteration-retrospectives/iteration-20-retrospective.md)
-**Current Task**: T-046
+**Current Task**: T-047
 **Iteration Started**: 2026-06-12
 **Iteration Completed**: 2026-06-16
-**Last Updated**: 2026-06-16
+**Last Updated**: 2026-06-17
 **Updated By**: sync-status.py
 
 ## Notes
+
+- **Iteration 22** (2026-06-17): T-047 — `sync-from-framework.sh` now carries T-046's data migration: a downstream project that still tracked `agent-runs.jsonl` gets it untracked automatically on sync (staged `git rm --cached` + `.gitignore`, idempotent, `--dry-run`-aware). Closes the manual two-step adoption felt syncing tallyfox. Logic in `scripts/lib/migrate-data.sh` (unit-testable); +4 tests; `updating.md` documents it. Solo, standard, in-place.
 
 - **Iteration 21** (2026-06-16): T-046 — sharded the machine-readable run log into lane-owned files `docs/agent-logs/runs/<date>-<lane>.jsonl` and made `agent-runs.jsonl` a gitignored derived view (`openup-state.py runs build`). Root-fixes the recurring GitHub PR conflict that `merge=union` could not (GitHub doesn't run merge drivers server-side). `log-event` + auto-log-commit + on-stop all repointed at shards; counter counts from the shard glob. Matches the T-024 status-notes precedent. +1 disjoint-lanes test; 250 tests (1 pre-existing macOS fail). Solo, standard, in-place.
 

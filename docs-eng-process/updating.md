@@ -42,6 +42,18 @@ If you only need the latest skills, teammates, and teams, use `sync-from-framewo
 
 If this is the first time installing OpenUP into an existing project, copy `docs-eng-process/` first. `update-from-template.sh` expects that directory to already exist.
 
+### Automatic data migrations (T-047)
+
+`sync-from-framework.sh` also applies one-time **data migrations** when needed —
+you don't run anything extra. Currently:
+
+- **T-046 run-log untrack.** Run events now shard to
+  `docs/agent-logs/runs/*.jsonl` (lane-owned, conflict-free) and the consolidated
+  `docs/agent-logs/agent-runs.jsonl` is a gitignored derived view. If your project
+  still tracked the old shared file, the sync **stages** its untrack
+  (`git rm --cached` + a `.gitignore` entry) — review and commit it. The step is
+  idempotent: once untracked it is a silent no-op, and `--dry-run` only reports it.
+
 ## Force-Upgrading a Project Started on an Old Version
 
 If a project was **initially started with an old version of OpenUP**, a normal
