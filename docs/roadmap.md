@@ -5,6 +5,7 @@
 
 | ID | Title | Status | Priority | Depends on |
 |---|---|---|---|---|
+| [T-047](changes/T-047/plan.md) | Carry T-046's untrack migration into `sync-from-framework.sh` (a project adopting T-046 auto-gitignores + `git rm --cached` the now-derived agent-runs.jsonl) | ready | medium | T-046 |
 | [T-046](changes/archive/T-046/plan.md) | Shard `agent-runs.jsonl` into lane-owned files; derive the consolidated view (kills GitHub-side PR conflicts merge=union can't) | completed (2026-06-16) | medium | T-023 |
 | [T-044](changes/archive/T-044/plan.md) | Remote-aware claim preflight for `openup-next` (Option B: branch-as-claim) — cross-machine duplicate-start early-warning + counter | completed (2026-06-16) | high | T-009 |
 | [T-022](changes/archive/T-022/plan.md) | Fix template→.claude sync (flat skills + rubric/hook coverage) + auto-commit log tail at stop | completed (2026-06-12) | high | — |
