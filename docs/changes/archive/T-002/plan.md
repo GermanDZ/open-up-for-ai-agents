@@ -1,7 +1,7 @@
 ---
 id: T-002
 title: /openup-sync-spec — back-propagate refactors to artifacts
-status: deferred
+status: done
 priority: medium
 estimate: 1 session
 plan: docs/plans/2026-04-28-spdd-ideas-worth-adopting-in-openup.md#3

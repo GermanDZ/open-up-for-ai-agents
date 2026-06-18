@@ -317,14 +317,21 @@ Once gates pass, archive the iteration state and the **change folder** (Ring 2 �
 **If the task has a change folder** (`docs/changes/{task_id}/` exists — the standard three-ring case):
 
 ```bash
-# 1. Flip the spec's frontmatter status to `done` — dependency resolution
-#    (openup-claims.py preflight) reads this frontmatter, NOT the derived
-#    roadmap, so a dependent task is blocked unless the dep is marked done here.
-python3 - "$PWD/docs/changes/{task_id}/plan.md" <<'PY'
-import re, sys
-p = sys.argv[1]; t = open(p).read()
-t = re.sub(r'(?m)^status:\s*.*$', 'status: done', t, count=1)
-open(p, 'w').write(t)
+# 1. Flip the spec's frontmatter status to a SATISFIED value — dependency
+#    resolution (openup-claims.py preflight) reads this frontmatter, NOT the
+#    derived roadmap, so a dependent task is blocked unless the dep is marked
+#    satisfied here. Use `verified` for a rubric-graded `full`-track completion
+#    (the rubric ran), else `done`. An archived plan must never keep a
+#    non-satisfied status or it false-blocks downstream deps (T-048).
+python3 - "$PWD/docs/changes/{task_id}/plan.md" "$PWD/.openup/state.json" <<'PY'
+import json, re, sys, pathlib
+plan, state = sys.argv[1], pathlib.Path(sys.argv[2])
+track = (json.loads(state.read_text()).get("track") or "").lower() if state.exists() else ""
+status = "verified" if track == "full" else "done"
+t = open(plan).read()
+t = re.sub(r'(?m)^status:\s*.*$', f'status: {status}', t, count=1)
+open(plan, 'w').write(t)
+print(f"plan status -> {status} (track={track or 'n/a'})")
 PY
 # 2. Archive .openup/state.json INTO the change folder as state.json (validate, copy, remove live file)
 python3 scripts/openup-state.py archive "docs/changes/{task_id}/state.json"

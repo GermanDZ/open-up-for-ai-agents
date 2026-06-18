@@ -212,6 +212,17 @@ def find_task_plan(task_id: str, root: Path):
     return None
 
 
+def is_archived_plan(plan_path: Path, root: Path) -> bool:
+    """True iff plan_path lives under ``docs/changes/archive/`` (i.e. the task
+    has been completed/retired via /openup-complete-task, which git-mv's the
+    change folder into the archive ring)."""
+    try:
+        rel = plan_path.resolve().relative_to((root / "docs" / "changes").resolve())
+    except (ValueError, OSError):
+        return False
+    return len(rel.parts) > 0 and rel.parts[0] == "archive"
+
+
 def roadmap_status(task_id: str, root: Path):
     """Best-effort status of a task from the roadmap table (human view)."""
     rm = root / "docs" / "roadmap.md"
@@ -231,12 +242,36 @@ def roadmap_status(task_id: str, root: Path):
 
 
 def dep_satisfied(dep_id: str, root: Path):
-    """(satisfied, reason). A dep is satisfied iff its status is done/verified."""
+    """(satisfied, reason). A dep is satisfied iff its status is done/verified.
+
+    Archived deps (T-048): a plan under ``docs/changes/archive/`` whose body
+    ``status:`` was never bumped off a non-satisfied value (pre-T-042 archives,
+    or a ``deferred`` plan later completed) must NOT false-block a downstream
+    lane. For an archived plan we therefore defer to the roadmap — the human view
+    of record — rather than trusting a stale body. Active (non-archived) plans
+    stay authoritative: an ``in-progress`` *live* spec really is unmet.
+    Archive presence alone is deliberately NOT enough (a genuinely-deferred plan
+    can be archived); only a roadmap-satisfied row flips a stale archived plan.
+    """
     found = find_task_plan(dep_id, root)
     if found:
-        status = (found[1].get("status") or "").lower()
+        plan_path, fm = found
+        status = (fm.get("status") or "").lower()
         if status in SATISFIED_DEP_STATUSES:
             return True, f"{dep_id} {status}"
+        if is_archived_plan(plan_path, root):
+            rstat = roadmap_status(dep_id, root)
+            if rstat in SATISFIED_DEP_STATUSES:
+                return True, (
+                    f"{dep_id} {rstat} (roadmap; archived plan body "
+                    f"'{status or 'unknown'}' is stale)"
+                )
+            if rstat:
+                return False, f"{dep_id} is {rstat} (roadmap; archived)"
+            return False, (
+                f"{dep_id} is {status or 'unknown'} (archived; no roadmap row "
+                f"to vouch completion)"
+            )
         return False, f"{dep_id} is {status or 'unknown'} (needs done/verified)"
     rstat = roadmap_status(dep_id, root)
     if rstat in SATISFIED_DEP_STATUSES:
@@ -244,6 +279,51 @@ def dep_satisfied(dep_id: str, root: Path):
     if rstat:
         return False, f"{dep_id} is {rstat} (roadmap; needs done/verified)"
     return False, f"{dep_id} not found in change folders or roadmap"
+
+
+# --------------------------------------------------------------------------
+# Archived-status migration (T-048): repair stale archived plans
+# --------------------------------------------------------------------------
+def migrate_archived_status(root: Path, satisfied_status: str = "done",
+                            dry_run: bool = False):
+    """Bump archived plans whose body ``status:`` is stale.
+
+    A plan under ``docs/changes/archive/`` is *stale* when its body status is
+    non-satisfied (e.g. ``in-progress``, ``deferred``) **but the roadmap row says
+    it is completed** — i.e. the task really finished but the archive step never
+    bumped the body (pre-T-042 archives, or a deferred plan later completed). Such
+    a body false-blocks downstream deps via ``dep_satisfied``.
+
+    Only roadmap-satisfied plans are touched: a genuinely-``deferred``/``cancelled``
+    archived plan (roadmap not completed) is left as-is. Idempotent — a plan already
+    at a satisfied status is skipped, so a second run changes zero files.
+
+    Returns a list of ``(task_id, old_status, rel_path)`` for changed (or, in
+    ``dry_run``, would-change) plans.
+    """
+    archive = root / "docs" / "changes" / "archive"
+    changed = []
+    if not archive.exists():
+        return changed
+    for plan in sorted(archive.rglob("plan.md")):
+        fm = parse_frontmatter(plan)
+        tid = fm.get("id")
+        status = (fm.get("status") or "").lower()
+        if not tid or status in SATISFIED_DEP_STATUSES:
+            continue
+        if roadmap_status(tid, root) not in SATISFIED_DEP_STATUSES:
+            continue  # roadmap doesn't vouch completion -> leave (deferred etc.)
+        if not dry_run:
+            text = plan.read_text(encoding="utf-8")
+            text = re.sub(r"(?m)^status:\s*.*$",
+                          f"status: {satisfied_status}", text, count=1)
+            plan.write_text(text, encoding="utf-8")
+        try:
+            rel = str(plan.relative_to(root))
+        except ValueError:
+            rel = str(plan)
+        changed.append((tid, status or "unknown", rel))
+    return changed
 
 
 # --------------------------------------------------------------------------
@@ -569,12 +649,28 @@ def cmd_dir(args):
 
 
 def cmd_preflight(args):
-    root = repo_root()
+    root = (Path(args.repo_root).resolve()
+            if getattr(args, "repo_root", None) else repo_root())
     cdir = claims_dir(override=args.claims_dir)
     touches, deps = resolve_task_inputs(args, root)
     code, msg = preflight(args.task_id, touches, deps, cdir, root)
     (print if code == EXIT_OK else lambda m: sys.stderr.write(m + "\n"))(msg)
     return code
+
+
+def cmd_migrate_archived_status(args):
+    root = (Path(args.repo_root).resolve()
+            if getattr(args, "repo_root", None) else repo_root())
+    changed = migrate_archived_status(
+        root, satisfied_status=args.satisfied_status, dry_run=args.dry_run)
+    verb = "would bump" if args.dry_run else "bumped"
+    if not changed:
+        print("no stale archived plans (idempotent: nothing to change)")
+        return EXIT_OK
+    for tid, old, rel in changed:
+        print(f"{verb} {tid}: status '{old}' -> '{args.satisfied_status}'  ({rel})")
+    print(f"{verb} {len(changed)} archived plan(s)")
+    return EXIT_OK
 
 
 def cmd_remote_check(args):
@@ -780,9 +876,33 @@ def build_parser():
 
     p_pf = sub.add_parser("preflight", help="Check deps + collision; write nothing.")
     p_pf.add_argument("--task-id", required=True)
+    p_pf.add_argument(
+        "--repo-root", default=None,
+        help="Override the repo root scanned for deps/roadmap (tests).",
+    )
     add_task_inputs(p_pf)
     add_common(p_pf)
     p_pf.set_defaults(func=cmd_preflight)
+
+    p_mas = sub.add_parser(
+        "migrate-archived-status",
+        help="Repair archived plans whose body status is stale (non-satisfied) "
+             "but whose roadmap row is completed; bump them to a satisfied "
+             "status. Idempotent; leaves deferred/cancelled plans untouched.",
+    )
+    p_mas.add_argument(
+        "--dry-run", action="store_true",
+        help="Report what would change without writing.",
+    )
+    p_mas.add_argument(
+        "--satisfied-status", default="done",
+        help="Status to write into stale archived plans (default: done).",
+    )
+    p_mas.add_argument(
+        "--repo-root", default=None,
+        help="Override the repo root scanned (tests).",
+    )
+    p_mas.set_defaults(func=cmd_migrate_archived_status)
 
     p_rc = sub.add_parser(
         "remote-check",

@@ -270,6 +270,30 @@ Claims **never expire** — an abandoned claim blocks its surface until a human 
 file (`rm <git-common-dir>/openup/claims/{task_id}.json`); there is no TTL and no `--steal`.
 `/openup-complete-task` releases the claim and removes the worktree.
 
+### 6c. Commit the promoted spec — make the lane durable + board-visible (T-048)
+
+**When this start promoted a task into a new lane** (the spec `docs/changes/{task_id}/`
+was just authored — the `/openup-next` promote path, or any first-time start), commit it
+now. `openup-board.py` reads the working tree, so a spec left only as **uncommitted
+worktree files** is invisible from trunk and from every other worktree/machine — a
+"botched promote" that strands the lane and costs a recovery session. Committing here is
+what makes the lane survive in git.
+
+```bash
+# Stage the spec folder + any roadmap row added by the promote. (.openup/ is
+# gitignored Ring-3 state — NOT committed; the committed spec IS the durable,
+# board-visible record of the lane.)
+git add "docs/changes/{task_id}/" docs/roadmap.md 2>/dev/null || true
+if ! git diff --cached --quiet; then
+  git commit -m "docs({task_id}): promote lane — author spec, board-visible [{task_id}]"
+fi
+# Verify: the spec is committed (not dangling) and the board sees the lane.
+git status --porcelain "docs/changes/{task_id}/"   # expect empty for the spec
+```
+
+If the spec was **already committed** before this start (e.g. registered in a prior
+session / PR), this step is a no-op — `git diff --cached --quiet` short-circuits.
+
 ### 7. Check for Answered Input Requests
 
 Check `docs/input-requests/` for files with `status: answered`. Process any answered requests before continuing.
