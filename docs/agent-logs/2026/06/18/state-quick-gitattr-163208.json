@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "task_id": "quick-gitattr-merge-union",
+  "iteration": 0,
+  "phase": "construction",
+  "track": "quick",
+  "branch": "quick/20260618-183054-gitattr-merge-union",
+  "worktree": "/Users/germandz/personal-code/ai-dev-framework/open-up-for-ai-agents",
+  "session_id": null,
+  "started_at": "2026-06-18T16:30:54Z",
+  "gates": {
+    "team_deployed": false,
+    "plan_persisted": false,
+    "log_written": true,
+    "roadmap_synced": true,
+    "retro_due": false
+  },
+  "iterations_since_retro": 0
+}
