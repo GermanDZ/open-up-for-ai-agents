@@ -1,7 +1,7 @@
 ---
 id: T-053
 title: Add `scripts/openup-doctor.py` — read-only project health diagnostic + thin `/openup-doctor` skill
-status: ready   # proposed → ready → in-progress → done → verified
+status: done
 priority: medium   # critical | high | medium | low
 estimate: 1–2 sessions
 plan: docs/explorations/2026-06-18-openup-doctor-health-check.md   # originating exploration (disposition "→ iteration", Option C)
