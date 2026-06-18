@@ -5,3 +5,12 @@
 # collide at EOF on merge. `merge=union` keeps BOTH sides' added lines instead
 # of raising a conflict (records are independent; order/duplication is tolerable
 # for an audit trail). Re-derive a sorted view downstream if ever needed.
+#
+# The run log is sharded into per-lane files under docs/agent-logs/runs/ (T-046).
+# `merge=union` here auto-resolves LOCAL rebase/merge collisions on a shared shard
+# (e.g. the dated `*-main.jsonl` lane). NOTE: this is a complement to — not a
+# replacement for — the T-046 sharding: GitHub does NOT run merge drivers
+# server-side, so sharding remains what prevents server-side PR conflicts; this
+# attribute only helps merges/rebases performed locally. The consolidated
+# agent-runs.jsonl is a gitignored derived view (T-046), so it needs no attribute.
+docs/agent-logs/runs/*.jsonl merge=union
