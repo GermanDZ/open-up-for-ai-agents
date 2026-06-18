@@ -1,7 +1,7 @@
 ---
 id: T-052
 title: Framework syncs must not leave uncommitted changes that trip on-stop
-status: ready
+status: done
 priority: medium
 estimate: 1 session
 plan: ""
