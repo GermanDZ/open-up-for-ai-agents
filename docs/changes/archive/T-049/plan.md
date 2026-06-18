@@ -1,7 +1,7 @@
 ---
 id: T-049
 title: "Board surfaces 'elsewhere' lanes: committed-but-unmerged worktree lanes visible from trunk"
-status: ready   # proposed → ready → in-progress → done → verified
+status: done
 priority: high   # critical | high | medium | low
 estimate: 1 session   # board change + skill skip-rule + tests, single PR
 plan: docs/roadmap.md#maintenance-standalone-fixes

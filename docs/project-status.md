@@ -1,17 +1,19 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 22
-**Iteration Goal**: T-047 — Carry T-046's untrack migration into `sync-from-framework.sh` (a project adopting T-046 auto-gitignores + `git rm --cached` the now-derived agent-runs.jsonl)
+**Iteration**: 0
+**Iteration Goal**: T-049 — Board surfaces 'elsewhere' lanes: committed-but-unmerged worktree lanes visible from trunk (T-048 follow-on)
 **Status**: completed
 **Retrospective**: [iteration-20-retrospective.md](iteration-retrospectives/iteration-20-retrospective.md)
-**Current Task**: T-047
+**Current Task**: T-049
 **Iteration Started**: 2026-06-12
 **Iteration Completed**: 2026-06-16
-**Last Updated**: 2026-06-17
+**Last Updated**: 2026-06-18
 **Updated By**: sync-status.py
 
 ## Notes
+
+- **Iteration 0** (2026-06-18): T-049 — board surfaces non-pickable `elsewhere` lanes for live leases whose spec is committed on an unmerged branch/another worktree (trunk board no longer blind); `/openup-next` §1c skips a pending task that already holds a live lease (kills the re-promote trap). Follow-on to T-048.
 
 - **Iteration 22** (2026-06-17): T-047 — `sync-from-framework.sh` now carries T-046's data migration: a downstream project that still tracked `agent-runs.jsonl` gets it untracked automatically on sync (staged `git rm --cached` + `.gitignore`, idempotent, `--dry-run`-aware). Closes the manual two-step adoption felt syncing tallyfox. Logic in `scripts/lib/migrate-data.sh` (unit-testable); +4 tests; `updating.md` documents it. Solo, standard, in-place.
 
