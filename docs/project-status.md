@@ -1,9 +1,9 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 24
+**Iteration**: 24 (cadence 2)
 **Iteration Goal**: T-052 — Framework syncs must not leave uncommitted changes that trip on-stop (sync self-commits its CLI upgrades)
-**Status**: completed
+**Status**: completed (retrospective: [iteration-10-retrospective.md](iteration-retrospectives/iteration-10-retrospective.md))
 **Current Task**: T-052
 **Iteration Started**: 2026-06-17
 **Last Updated**: 2026-06-18
