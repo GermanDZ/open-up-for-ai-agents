@@ -183,14 +183,14 @@ are deliberately out of scope.
 
 ## Operations
 
-- [ ] (developer) Author root `LICENSE` (MIT, correct copyright holder + year).
-- [ ] (developer) Author root `SECURITY.md`: vuln-disclosure channel; "what runs on your machine" hook manifest generated from `settings.json.example` (every hook · trigger · one-line effect); documented manual opt-out; pin-to-a-tag guidance.
-- [ ] (developer) Bound `Pillow` in `requirements.txt` (`>=12.0.0,<13`); leave the four pinned deps unchanged.
-- [ ] (developer) Rewrite `docs-eng-process/updating.md`: recommended update path clones a pinned tag and runs the local script; remove/flag the cron pipe-to-bash `main` examples; recommend submodule-at-tag.
-- [ ] (developer) Update `README.md` install/update guidance: pinning-first; demote pipe-to-bash.
-- [ ] (developer) Update `scripts/update-openup.sh` + `update-openup-simple.sh` to default to a pinned ref (env-overridable) and document clone-then-run in the usage header.
-- [ ] (developer) Cut annotated tag `v2.0.0` at the trunk commit whose `.template-version` is 2.0.0; verify it resolves; leave the push to the maintainer (note it in the completion summary).
-- [ ] (tester) Verify each Requirement's acceptance: tag resolves, LICENSE/SECURITY.md present + complete, `requirements.txt` bounded, no pipe-to-bash in the recommended docs path, scripts default to a pinned ref. Run any existing doc/skill validators that cover the touched files and confirm green.
+- [x] (developer) Author root `LICENSE` (MIT, correct copyright holder + year).
+- [x] (developer) Author root `SECURITY.md`: vuln-disclosure channel; "what runs on your machine" hook manifest generated from `settings.json.example` (every hook · trigger · one-line effect); documented manual opt-out; pin-to-a-tag guidance.
+- [x] (developer) Bound `Pillow` in `requirements.txt` (`>=12.0.0,<13`); leave the four pinned deps unchanged.
+- [x] (developer) Rewrite `docs-eng-process/updating.md`: recommended update path clones a pinned tag and runs the local script; remove/flag the cron pipe-to-bash `main` examples; recommend submodule-at-tag.
+- [x] (developer) Update `README.md` install/update guidance: pinning-first; demote pipe-to-bash.
+- [x] (developer) Update `scripts/update-openup.sh` + `update-openup-simple.sh` to default to a pinned ref (env-overridable) and document clone-then-run in the usage header.
+- [x] (developer) Cut annotated tag `v2.0.0` at the trunk commit whose `.template-version` is 2.0.0; verify it resolves; leave the push to the maintainer (note it in the completion summary).
+- [x] (tester) Verify each Requirement's acceptance: tag resolves, LICENSE/SECURITY.md present + complete, `requirements.txt` bounded, no pipe-to-bash in the recommended docs path, scripts default to a pinned ref. Run any existing doc/skill validators that cover the touched files and confirm green.
 
 ## Rollout
 

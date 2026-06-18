@@ -113,11 +113,15 @@ Then initialize the project-owned docs in `docs/` by following [docs-eng-process
 
 If OpenUP is already installed in your project and you just need the latest framework changes, see [docs-eng-process/updating.md](docs-eng-process/updating.md) for update options.
 
-**Recommended approach**: Add the framework as a git submodule:
+**Recommended approach**: Add the framework as a git submodule **pinned to a release
+tag** (reproducible and reviewable — don't track `main`, and don't pipe a remote script
+to your shell). See [SECURITY.md](SECURITY.md) for the trust model and the full disclosure
+of the local hooks OpenUP installs.
 
 ```bash
 # In your project directory
 git submodule add https://github.com/GermanDZ/open-up-for-ai-agents.git .openup-template
+git -C .openup-template checkout v2.0.0   # pin to a reviewed release; bump deliberately
 
 # Create convenience update script
 cat > scripts/update-openup.sh << 'EOF'
@@ -397,7 +401,17 @@ All post-processing (link fixing, metadata population, manifest generation) is i
 
 ## License
 
-This converter tool is provided as-is. The OpenUP content it processes is made available under the Eclipse Public License V1.0.
+This project's **own code and documentation** — the converter tool, the OpenUP process
+scripts (`scripts/`), skills, hooks, teammates, and `docs-eng-process/` — are released
+under the **MIT License** (see [LICENSE](LICENSE)).
+
+The **vendored OpenUP content** it processes and ships (Eclipse Process Framework / EPF
+material, e.g. under `openup-knowledge-base/`) remains under its upstream **Eclipse Public
+License v1.0** — MIT does not relicense it. Retain the EPL notice when redistributing that
+content.
+
+See [SECURITY.md](SECURITY.md) for the security policy, version pinning, and disclosure of
+the local automation OpenUP installs.
 
 ## Credits
 
