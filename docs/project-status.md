@@ -1,15 +1,17 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 25 (cadence 3)
-**Iteration Goal**: T-053 — Add `scripts/openup-doctor.py` read-only health diagnostic + thin `/openup-doctor` skill (Option C)
-**Status**: in-progress
+**Iteration**: 25
+**Iteration Goal**: T-053 — Add `scripts/openup-doctor.py` — read-only project health diagnostic (framework/manifest drift + `.openup/state.json` integrity + aggregation of existing `--check` modes) + thin `/openup-doctor` skill
+**Status**: completed
 **Current Task**: T-053
 **Iteration Started**: 2026-06-18
 **Last Updated**: 2026-06-18
-**Updated By**: openup-start-iteration
+**Updated By**: sync-status.py
 
 ## Notes
+
+- **Iteration 25** (2026-06-18): T-053 — `scripts/openup-doctor.py`, a read-only project health diagnostic (Option C from the 2026-06-18 exploration). Two genuinely-new checks: (1) framework/manifest **drift** for a consuming project — version-currency from `.template-version` + byte-level shipped-CLI drift against a `--framework-path` baseline (offline-degraded to version-only); (2) read-time `.openup/state.json` **integrity** (reuses `openup-state.py validate`, catches the corrupt-state footgun). Plus a thin **aggregator** that *invokes* (never reimplements) the existing read-only/`--check` validators — `sync-status.py` deliberately excluded (it writes; no read-only mode). Severity-tagged (error→exit 1, warning/info→exit 0), `--json`, CI-gateable; shipped via `process-manifest.txt`; fronted by `/openup-doctor`. +13 hermetic tests; 280/281 suite (1 pre-existing macOS symlink fail). Solo, standard, worktree.
 
 - **Iteration 24** (2026-06-18): `sync-from-framework.sh` now self-commits its tracked tooling upgrades (process CLIs from the manifest) as one `chore(process) [openup-skip]` commit, so a framework sync no longer leaves modified CLIs that on-stop.py mistakes for abandoned lane work. Pathspec-scoped (never `git add -A`); skips outside a git repo / mid-rebase / when nothing it wrote changed. +3 integration tests.
 
