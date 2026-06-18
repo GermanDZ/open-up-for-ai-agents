@@ -1,6 +1,14 @@
 #!/bin/bash
-# Simple inline update script - no HERE documents, safe for piping
-# Usage: curl -sL https://raw.githubusercontent.com/GermanDZ/open-up-for-ai-agents/main/scripts/update-openup-simple.sh | bash
+# update-openup-simple.sh - Minimal inline update (no update-from-template.sh dependency).
+#
+# RECOMMENDED USAGE (download, review, then run — do NOT pipe to a shell):
+#   git clone --depth 1 --branch v2.0.0 \
+#     https://github.com/GermanDZ/open-up-for-ai-agents.git /tmp/openup
+#   # review /tmp/openup, then:
+#   bash /tmp/openup/scripts/update-openup-simple.sh
+#
+# Pins to the latest released TAG by default (never `main`). Override with:
+#   OPENUP_REF=v2.0.0  (pin to an exact tag, recommended) | OPENUP_BRANCH=main (unpinned)
 
 set -e
 
@@ -9,8 +17,25 @@ YELLOW='\033[1;33m'
 NC='\033[0m'
 
 REPO_URL="${OPENUP_REPO_URL:-https://github.com/GermanDZ/open-up-for-ai-agents.git}"
-BRANCH="${OPENUP_BRANCH:-main}"
 TEMP_DIR="/tmp/openup-update-$$"
+
+# Resolve the ref to clone: OPENUP_REF > explicit OPENUP_BRANCH > latest tag. Never `main` silently.
+resolve_ref() {
+    if [ -n "$OPENUP_REF" ]; then echo "$OPENUP_REF"; return 0; fi
+    if [ -n "$OPENUP_BRANCH" ]; then
+        echo -e "${YELLOW}Warning: OPENUP_BRANCH=$OPENUP_BRANCH is unpinned — prefer OPENUP_REF=<tag>.${NC}" >&2
+        echo "$OPENUP_BRANCH"; return 0
+    fi
+    local latest
+    latest=$(git ls-remote --tags --refs --sort=-v:refname "$REPO_URL" 'v*' 2>/dev/null | head -n1 | sed 's@.*/@@')
+    if [ -z "$latest" ]; then
+        echo -e "${YELLOW}Error: no release tag on $REPO_URL and no OPENUP_REF/OPENUP_BRANCH set.${NC}" >&2
+        echo "Set OPENUP_REF=<tag> (recommended) or OPENUP_BRANCH=main (unpinned) explicitly." >&2
+        return 1
+    fi
+    echo "$latest"
+}
+BRANCH="$(resolve_ref)" || exit 1
 
 echo -e "${GREEN}OpenUP Framework Update${NC}"
 echo ""
@@ -21,7 +46,7 @@ if [ ! -d "docs-eng-process" ]; then
     exit 1
 fi
 
-echo "Downloading latest template from: $REPO_URL"
+echo "Downloading template at $BRANCH from: $REPO_URL"
 git clone --depth 1 --branch "$BRANCH" "$REPO_URL" "$TEMP_DIR" 2>/dev/null || {
     echo "Error: Failed to download template"
     rm -rf "$TEMP_DIR"

@@ -2,6 +2,20 @@
 
 This page is the canonical guide for updating projects that use the OpenUP framework. Use it to choose the right update path and the smallest command that matches your goal.
 
+## Pin to a Released Version (Read First)
+
+OpenUP is **copied into your repository** and installs local automation (Claude Code
+hooks). For a reproducible, reviewable update, **pin to a release tag** (e.g. `v2.0.0`)
+rather than tracking `main`, and **never pipe a remote script straight into a shell** —
+clone a tag, review it, then run a script from that local checkout. See
+[`SECURITY.md`](../SECURITY.md) for the trust model and the full hook disclosure.
+
+- The bundled update scripts (`update-openup.sh`, `update-openup-simple.sh`) **default to
+  the latest release tag** and refuse to silently track `main`. Pin exactly with
+  `OPENUP_REF=v2.0.0`; opt into the unpinned tip only with an explicit `OPENUP_BRANCH=main`.
+- The clone examples below use `--branch v2.0.0`. Replace it with the tag you have
+  reviewed, or `git -C <checkout> checkout <tag>` after cloning.
+
 ## First-Time Install Into an Existing Project
 
 If your app does not already have `docs-eng-process/`, this is not an update. Install OpenUP first, then use the update paths in the rest of this guide.
@@ -164,8 +178,9 @@ cp /path/to/open-up-for-ai-agents/scripts/update-from-template.sh ./scripts/
 **Or add this as a git submodule** (recommended):
 
 ```bash
-# In your project, add the framework as a submodule
+# In your project, add the framework as a submodule, pinned to a reviewed tag
 git submodule add https://github.com/GermanDZ/open-up-for-ai-agents.git .openup-template
+git -C .openup-template checkout v2.0.0   # pin to a release; bump deliberately to upgrade
 
 # Then update using the submodule
 ./scripts/update-from-template.sh --template-dir .openup-template
@@ -396,17 +411,29 @@ Recommended update workflow for full template updates:
    - Check documentation builds correctly
    - Run any tests
 
-## Alternative: One-Liner for Public Repositories
+## Pipe-to-Shell: Not Recommended
 
-**Note**: If you make the template repository public, you can use a one-liner:
+You may see `curl … | bash` one-liners for tools like this. **We do not recommend it**
+for OpenUP: it executes unreviewed, unpinned remote code (and `update-openup.sh` then runs
+a *second* downloaded script), so a compromised or force-pushed `main` lands in your repo
+with no human in the loop. Prefer **clone a pinned tag, review, then run locally**:
 
 ```bash
-curl -s https://raw.githubusercontent.com/GermanDZ/open-up-for-ai-agents/main/scripts/update-openup.sh | bash
+# Recommended convenience path (pinned + reviewable):
+git clone --depth 1 --branch v2.0.0 \
+  https://github.com/GermanDZ/open-up-for-ai-agents.git /tmp/openup
+# review /tmp/openup, then:
+bash /tmp/openup/scripts/update-openup.sh
+rm -rf /tmp/openup
 ```
 
-This requires:
-1. The repository to be public
-2. The `update-openup.sh` script to be in the main branch
+If you understand the trade-off and still want the one-liner, it remains technically
+possible against a public mirror — but pin it to a tag, never `main`:
+
+```bash
+# Convenience only, NOT recommended — at minimum pin to a tag, never main:
+curl -s https://raw.githubusercontent.com/GermanDZ/open-up-for-ai-agents/v2.0.0/scripts/update-openup.sh | bash
+```
 
 ## Recommended Setup for Private Repos
 
@@ -417,7 +444,8 @@ Add the framework as a git submodule in your project:
 ```bash
 # In your project directory
 git submodule add https://github.com/GermanDZ/open-up-for-ai-agents.git .openup-template
-git commit -m "Add OpenUP template as submodule"
+git -C .openup-template checkout v2.0.0   # pin to a reviewed release tag
+git commit -m "Add OpenUP template as submodule (pinned to v2.0.0)"
 ```
 
 Then create a convenience script `scripts/update-openup.sh`:
@@ -474,28 +502,37 @@ chmod +x scripts/update-openup.sh
 
 ## Automating Updates
 
-For automated updates, you can:
+For automated updates, **clone a pinned tag and run a local script** — do not pipe a
+remote script to a shell, and do not auto-pull `main` unattended (an unreviewed upstream
+change would land straight in your repo). Bump the pinned tag deliberately when you choose
+to upgrade.
 
 1. **Schedule with cron** (Linux/Mac):
    ```bash
-   # Run weekly update check
-   0 0 * * 0 cd /path/to/project && curl -s https://raw.githubusercontent.com/GermanDZ/open-up-for-ai-agents/main/scripts/update-openup.sh | bash -s -- --what-new
+   # Weekly "what's new" check against a PINNED tag (review before upgrading)
+   0 0 * * 0 cd /path/to/project && \
+     git clone --depth 1 --branch v2.0.0 https://github.com/GermanDZ/open-up-for-ai-agents.git /tmp/openup-check && \
+     bash /tmp/openup-check/scripts/update-from-template.sh --template-dir /tmp/openup-check --what-new; \
+     rm -rf /tmp/openup-check
    ```
 
-2. **GitHub Actions**:
+2. **GitHub Actions** (pin the framework ref; never pipe-to-bash):
    ```yaml
    name: Check for OpenUP Updates
    on:
      schedule:
        - cron: '0 0 * * 0'
+   env:
+     OPENUP_REF: v2.0.0   # bump deliberately to upgrade
    jobs:
      check-updates:
        runs-on: ubuntu-latest
        steps:
-         - uses: actions/checkout@v3
-         - name: Check updates
-           run: |
-             curl -s https://raw.githubusercontent.com/GermanDZ/open-up-for-ai-agents/main/scripts/update-openup.sh | bash -s -- --what-new
+         - uses: actions/checkout@v4
+         - name: Clone pinned framework
+           run: git clone --depth 1 --branch "$OPENUP_REF" https://github.com/GermanDZ/open-up-for-ai-agents.git /tmp/openup
+         - name: Check what's new
+           run: bash /tmp/openup/scripts/update-from-template.sh --template-dir /tmp/openup --what-new
    ```
 
 3. **Pre-commit hook**:

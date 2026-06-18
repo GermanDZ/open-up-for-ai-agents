@@ -2,4 +2,9 @@ beautifulsoup4==4.12.3
 lxml==5.1.0
 html2text==2024.2.26
 PyYAML==6.0.1
-Pillow>=12.0.0
+Pillow>=12.0.0,<13   # bounded: keep CVE fixes within the 12.x line, exclude the next major
+
+# NB: every dependency above is for the optional content-conversion tooling
+# (converter/ + scripts/convert.py). The OpenUP workflow scripts (scripts/openup-*.py)
+# and the Claude Code hooks are stdlib-only — installing requirements.txt is NOT
+# needed to run the process itself.

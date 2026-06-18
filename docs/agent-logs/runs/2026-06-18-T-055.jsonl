@@ -1,1 +1,3 @@
+{"event": "iteration_start", "task_id": "T-055", "goal": "Supply-chain & adoption-trust hardening (A+B+C): release tag, LICENSE(MIT), SECURITY.md+hook disclosure, bound deps, clone-verify-run install docs", "branch": "chore/T-055-supply-chain-trust", "phase": "construction", "ts": "2026-06-18T15:48:37Z"}
+{"event": "iteration_complete", "task_id": "T-055", "branch": "chore/T-055-supply-chain-trust", "phase": "construction", "ts": "2026-06-18T16:19:10Z"}
 {"run_id": "e91c4f9ee86b46bd930f810894cdedc1", "event": "commit", "task_id": "T-055", "branch": "main", "sha": "b2152db5b43a06dafe5cb142258ab2ce2ed1171b", "model": null, "session_id": null, "ts": "2026-06-18T16:14:09Z"}
