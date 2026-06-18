@@ -5,6 +5,7 @@
 
 | ID | Title | Status | Priority | Depends on |
 |---|---|---|---|---|
+| [T-052](changes/T-052/plan.md) | Framework syncs must not leave uncommitted changes that trip on-stop (sync self-commits its CLI upgrades) | ready | medium | T-051 |
 | [T-048](changes/archive/T-048/plan.md) | Audit fixes: archived-plan status bump (false dep-block) + worktree-promote board-blindness | completed (2026-06-17) | high | — |
 | [T-047](changes/archive/T-047/plan.md) | Carry T-046's untrack migration into `sync-from-framework.sh` (a project adopting T-046 auto-gitignores + `git rm --cached` the now-derived agent-runs.jsonl) | completed (2026-06-17) | medium | T-046 |
 | [T-046](changes/archive/T-046/plan.md) | Shard `agent-runs.jsonl` into lane-owned files; derive the consolidated view (kills GitHub-side PR conflicts merge=union can't) | completed (2026-06-16) | medium | T-023 |
