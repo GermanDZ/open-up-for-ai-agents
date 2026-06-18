@@ -77,6 +77,22 @@ check-docs.py [--docs DIR] [--schema PATH] [--model PATH] [--json] [--coverage]
   `check-docs.py check …`). `--coverage` adds required-coverage rules; required
   gaps fail the run.
 
+## openup-doctor.py — read-only project health diagnostic
+
+```
+openup-doctor.py [--repo-root DIR] [--framework-path DIR] [--json]
+```
+- **Read-only** — never writes/fixes; diagnoses only. Three checks: (1)
+  framework/manifest drift (`--framework-path` enables byte-level CLI drift;
+  offline-degraded to version-only without it), (2) `.openup/state.json`
+  integrity (reuses `openup-state.py validate`), (3) aggregation over the
+  existing read-only / `--check` validators (it *invokes* them, never
+  reimplements). Severity: **error** (corrupt state, missing shipped CLI,
+  failed read-only validator) → **exit 1**; **warning** (behind on version,
+  modified CLI, stale derived view) / **info** → exit 0. Unresolvable root →
+  exit 2. `sync-status.py` is intentionally excluded (it writes; no read-only
+  mode).
+
 ## openup-scribe.py — deterministic scribe writes
 
 ```

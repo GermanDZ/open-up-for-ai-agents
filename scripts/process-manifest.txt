@@ -28,3 +28,6 @@ trace-model.json
 build-trace-model.py
 check-docs.py
 docs-index.py
+# T-053 — read-only project health diagnostic (framework/manifest drift +
+# .openup/state.json integrity + aggregation of existing --check modes).
+openup-doctor.py

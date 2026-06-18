@@ -7,6 +7,14 @@ estimate: 1–2 sessions
 plan: docs/explorations/2026-06-18-openup-doctor-health-check.md   # originating exploration (disposition "→ iteration", Option C)
 depends-on: []
 blocks: []
+touches:
+  - scripts/openup-doctor.py
+  - scripts/tests/test_openup_doctor.py
+  - scripts/process-manifest.txt
+  - docs-eng-process/script-cli-reference.md
+  - docs-eng-process/skills-guide.md
+  - docs-eng-process/model-tiers.md
+  - docs-eng-process/.claude-templates/skills/openup-doctor/
 last-synced: ""
 ---
 
@@ -105,13 +113,13 @@ A single deterministic Python CLI, stdlib-only (matching the project-side hooks'
 
 ## Operations
 
-- [ ] Implement `scripts/openup-doctor.py` skeleton: `Finding` record, severity enum, arg parsing (`--json`, `--framework-path`, `--repo-root`), reporter (human + JSON), exit-code logic (nonzero iff any `error`).
-- [ ] Implement the **framework/manifest drift** check: read `.template-version`; with `--framework-path` compare version + per-CLI byte drift / missing against the manifest; offline-degraded `info` when no baseline.
-- [ ] Implement the **state-integrity** check: reuse `openup-state.py` schema validation to validate `.openup/state.json` at read time; absent file → `info`, malformed/invalid → `error`.
-- [ ] Implement the **aggregator**: subprocess-invoke each existing read-only/`--check` tool, map exit/output to Findings, degrade gracefully when a tool is absent or errors.
-- [ ] Register `scripts/openup-doctor.py` in `scripts/process-manifest.txt`; add its signature to `docs-eng-process/script-cli-reference.md`.
-- [ ] Author the thin canonical skill `docs-eng-process/.claude-templates/skills/openup-doctor/SKILL.md`; sync it to `.claude/` via the sync script; regenerate `skills-guide.md` with `check-skills-guide.py --write`.
-- [ ] (tester) Add hermetic tests covering all three check modules + the `--json`/exit-code contract; run the full suite and confirm green (note any pre-existing env-specific failures).
+- [x] Implement `scripts/openup-doctor.py` skeleton: `Finding` record, severity enum, arg parsing (`--json`, `--framework-path`, `--repo-root`), reporter (human + JSON), exit-code logic (nonzero iff any `error`).
+- [x] Implement the **framework/manifest drift** check: read `.template-version`; with `--framework-path` compare version + per-CLI byte drift / missing against the manifest; offline-degraded `info` when no baseline.
+- [x] Implement the **state-integrity** check: reuse `openup-state.py` schema validation to validate `.openup/state.json` at read time; absent file → `info`, malformed/invalid → `error`.
+- [x] Implement the **aggregator**: subprocess-invoke each existing read-only/`--check` tool, map exit/output to Findings, degrade gracefully when a tool is absent or errors.
+- [x] Register `scripts/openup-doctor.py` in `scripts/process-manifest.txt`; add its signature to `docs-eng-process/script-cli-reference.md`.
+- [x] Author the thin canonical skill `docs-eng-process/.claude-templates/skills/openup-doctor/SKILL.md`; sync it to `.claude/` via the sync script; regenerate `skills-guide.md` with `check-skills-guide.py --write`.
+- [x] (tester) Add hermetic tests covering all three check modules + the `--json`/exit-code contract; run the full suite and confirm green (note any pre-existing env-specific failures).
 
 ## Rollout
 

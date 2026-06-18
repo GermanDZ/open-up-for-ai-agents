@@ -1,13 +1,13 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 24 (cadence 2)
-**Iteration Goal**: T-052 — Framework syncs must not leave uncommitted changes that trip on-stop (sync self-commits its CLI upgrades)
-**Status**: completed (retrospective: [iteration-10-retrospective.md](iteration-retrospectives/iteration-10-retrospective.md))
-**Current Task**: T-052
-**Iteration Started**: 2026-06-17
+**Iteration**: 25 (cadence 3)
+**Iteration Goal**: T-053 — Add `scripts/openup-doctor.py` read-only health diagnostic + thin `/openup-doctor` skill (Option C)
+**Status**: in-progress
+**Current Task**: T-053
+**Iteration Started**: 2026-06-18
 **Last Updated**: 2026-06-18
-**Updated By**: sync-status.py
+**Updated By**: openup-start-iteration
 
 ## Notes
 
