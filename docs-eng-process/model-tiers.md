@@ -35,6 +35,7 @@ authoring, where the session model (often Opus) is more than the task needs.
 | openup-construction | `haiku` |
 | openup-create-handoff | `haiku` |
 | openup-deploy-team | `haiku` |
+| openup-doctor | `haiku` |
 | openup-elaboration | `haiku` |
 | openup-inception | `haiku` |
 | openup-log-run | `haiku` |
@@ -66,7 +67,7 @@ authoring, where the session model (often Opus) is more than the task needs.
 | openup-sync-spec | `inherit` |
 | openup-tdd-workflow | `inherit` |
 
-**Totals:** 11 × `haiku`, 12 × `sonnet`, 10 × `inherit` (33 skills).
+**Totals:** 12 × `haiku`, 12 × `sonnet`, 10 × `inherit` (34 skills).
 <!-- END GENERATED: skill-model-table -->
 
 The tier each skill belongs to (the prose categories above) is editorial; the

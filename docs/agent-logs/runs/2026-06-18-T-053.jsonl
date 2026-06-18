@@ -1,0 +1,2 @@
+{"event": "iteration_start", "task_id": "T-053", "goal": "Add scripts/openup-doctor.py read-only health diagnostic + thin /openup-doctor skill (Option C)", "branch": "feat/T-053-openup-doctor", "phase": "construction", "ts": "2026-06-18T12:48:26Z"}
+{"event": "iteration_complete", "task_id": "T-053", "branch": "feat/T-053-openup-doctor", "phase": "construction", "ts": "2026-06-18T12:59:46Z"}

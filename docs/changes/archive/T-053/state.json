@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "task_id": "T-053",
+  "iteration": 25,
+  "phase": "construction",
+  "track": "standard",
+  "branch": "feat/T-053-openup-doctor",
+  "worktree": "/Users/germandz/personal-code/ai-dev-framework/open-up-for-ai-agents-T-053",
+  "session_id": null,
+  "started_at": "2026-06-18T12:46:29Z",
+  "gates": {
+    "team_deployed": false,
+    "plan_persisted": true,
+    "log_written": true,
+    "roadmap_synced": true,
+    "retro_due": false
+  },
+  "iterations_since_retro": 0
+}
