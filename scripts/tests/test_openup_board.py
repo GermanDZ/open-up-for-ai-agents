@@ -201,5 +201,88 @@ class BoardTests(unittest.TestCase):
         self.assertEqual(by_task(proc)["T-123"]["state"], "ready")
 
 
+class OrphanLeaseTests(unittest.TestCase):
+    """T-049: a live lease with no plan-derived lane on this tree (its spec is
+    committed on an unmerged branch / another worktree) surfaces as a
+    non-pickable ``elsewhere`` lane, visible and collision-correct."""
+
+    LANE_FIELDS = {
+        "task", "title", "track", "state", "lease", "hat",
+        "next_action", "plan", "collides_with", "depends_ok", "awaiting_input"}
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self._tmp.name)
+        self.cdir = self.root / "claims"
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    # --- Req 1: orphan lease → elsewhere lane ----------------------------
+    def test_orphan_lease_becomes_elsewhere_lane(self):
+        # No plan for T-900, only a live lease.
+        write_claim(self.cdir, "T-900", ["src/feat/"])
+        lane = by_task(run(self.root, self.cdir, "refresh", expect=OK))["T-900"]
+        self.assertEqual(lane["state"], "elsewhere")
+        self.assertEqual(set(lane), self.LANE_FIELDS, "elsewhere lane carries the standard field set")
+        self.assertEqual(lane["lease"]["branch"], "feature/T-900")
+        self.assertEqual(lane["lease"]["worktree"], "/tmp/wt-T-900")
+        self.assertIsNone(lane["plan"])
+        self.assertIsNone(lane["next_action"])
+
+    def test_elsewhere_lane_is_never_pickable(self):
+        write_claim(self.cdir, "T-900", ["src/feat/"])
+        proc = run(self.root, self.cdir, "top", expect=NONE_PICKABLE)
+        self.assertNotIn('"task": "T-900"', proc.stdout)
+
+    # --- Req 2: collision parity preserved -------------------------------
+    def test_collision_parity_with_orphan_lease(self):
+        # Local ready lane T-901 whose touches overlap an orphan lease T-900.
+        write_plan(self.root, "T-901", touches=["src/shared/"])
+        write_claim(self.cdir, "T-900", ["src/shared/widget.py"])
+        board = by_task(run(self.root, self.cdir, "refresh", expect=OK))
+        self.assertEqual(board["T-901"]["state"], "colliding")
+        self.assertEqual(board["T-901"]["collides_with"], "T-900")
+        # …and T-900 itself is surfaced as an elsewhere lane.
+        self.assertEqual(board["T-900"]["state"], "elsewhere")
+
+    def test_leased_plan_not_duplicated_as_orphan(self):
+        # A lease whose task HAS a local plan stays a single in-progress lane.
+        write_plan(self.root, "T-103", touches=["src/a/"])
+        write_claim(self.cdir, "T-103", ["src/a/"])
+        board = by_task(run(self.root, self.cdir, "refresh", expect=OK))
+        self.assertEqual(board["T-103"]["state"], "in-progress")
+        self.assertEqual(len(lanes(run(self.root, self.cdir, "refresh", expect=OK))), 1)
+
+    def test_corrupt_lease_not_surfaced_as_elsewhere(self):
+        self.cdir.mkdir(parents=True, exist_ok=True)
+        (self.cdir / "T-900.json").write_text("{not valid json", encoding="utf-8")
+        board = by_task(run(self.root, self.cdir, "refresh", expect=OK))
+        self.assertNotIn("T-900", board, "corrupt lease is not a workable elsewhere lane")
+
+    # --- Req 3: none_pickable_reason routing -----------------------------
+    def test_reason_elsewhere_only_is_promote_eligible(self):
+        # Only an orphan lease, no local plans → promote-eligible message
+        # (NOT the "no pickable lane" stop message), so /openup-next §1c runs.
+        write_claim(self.cdir, "T-900", ["src/feat/"])
+        proc = run(self.root, self.cdir, "top", expect=NONE_PICKABLE)
+        self.assertIn("no active local lanes", proc.stderr)
+        self.assertIn("elsewhere", proc.stderr)
+        self.assertNotIn("no pickable lane", proc.stderr)
+
+    def test_reason_local_blocked_still_stops(self):
+        # A local blocked lane present → stop message, even with an elsewhere lane.
+        write_plan(self.root, "T-902", depends_on=["T-999"])  # unmet dep → blocked
+        write_claim(self.cdir, "T-900", ["src/feat/"])
+        proc = run(self.root, self.cdir, "top", expect=NONE_PICKABLE)
+        self.assertIn("no pickable lane", proc.stderr)
+        self.assertIn("1 blocked", proc.stderr)
+        self.assertIn("1 elsewhere", proc.stderr)
+
+    def test_empty_board_message_unchanged(self):
+        proc = run(self.root, self.cdir, "top", expect=NONE_PICKABLE)
+        self.assertIn("no active lanes", proc.stderr)
+
+
 if __name__ == "__main__":
     unittest.main()

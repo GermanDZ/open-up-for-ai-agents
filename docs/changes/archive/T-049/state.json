@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "task_id": "T-049",
+  "iteration": 0,
+  "phase": "construction",
+  "track": "standard",
+  "branch": "fix/T-049-board-elsewhere-lanes",
+  "worktree": "/Users/germandz/personal-code/ai-dev-framework/open-up-for-ai-agents-T-049",
+  "session_id": null,
+  "started_at": "2026-06-18T07:57:21Z",
+  "gates": {
+    "team_deployed": false,
+    "plan_persisted": "docs/changes/T-049/plan.md",
+    "log_written": true,
+    "roadmap_synced": true,
+    "retro_due": false
+  },
+  "iterations_since_retro": 0
+}
