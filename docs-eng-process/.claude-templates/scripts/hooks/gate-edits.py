@@ -4,7 +4,8 @@ gate-edits.py — OpenUP hook: fires before every Edit / Write / NotebookEdit.
 
 Gates edits to product/source code on an active OpenUP iteration with a
 persisted plan. Process-state paths (explorations, .openup, memory, agent-logs,
-plan-mode plans) are always exempt so the harness can manage its own bookkeeping.
+change folders docs/changes/, plan-mode plans) are always exempt so the harness
+can manage its own bookkeeping and author task specs before an iteration exists.
 
 State is resolved from the worktree that OWNS the edited file, not the harness
 cwd — so worktree-per-task edits read the task worktree's state.json instead of
@@ -56,6 +57,12 @@ EXEMPT_PREFIXES = (
     # blocked /openup-retrospective's own step 7. The write-fence still governs
     # it on task branches via the fresh-base rule.
     "docs/project-status.md",
+    # Ring 2 change-state: plan.md / design.md / inputs / test-notes. These ARE
+    # the plan the gate wants persisted before code — gating their authoring is
+    # a chicken-and-egg block that stops /openup-create-task-spec from writing
+    # the spec on trunk pre-iteration. None are product source. The write-fence
+    # (openup-fence.py) still confines a lane's diff to its own T-NNN/ folder.
+    "docs/changes/",
 )
 
 
@@ -163,8 +170,9 @@ REDIRECT = (
     "  /openup-start-iteration task_id: T-XXX   (full task)\n"
     "  /openup-quick-task task: \"description\"   (small change)\n\n"
     "Process-state files (docs/explorations/, .openup/, .claude/memory/,\n"
-    "docs/agent-logs/, docs/iteration-retrospectives/, docs/project-status.md)\n"
-    "and any path outside this repo are exempt and can be edited freely.\n\n"
+    "docs/agent-logs/, docs/iteration-retrospectives/, docs/project-status.md,\n"
+    "docs/changes/) and any path outside this repo are exempt and can be\n"
+    "edited freely.\n\n"
     "If this edit is a deliberate one-off, run the appropriate skill rather\n"
     "than bypassing the gate."
 )
