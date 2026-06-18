@@ -64,7 +64,13 @@ install_process_clis() {
                 skipped=$((skipped + 1))
                 continue
             fi
-            if [ "$force" != "true" ]; then
+            # Only back up to .bak when git can't already recover the prior
+            # version. For a git-tracked dest the .bak is pure debris: it
+            # lingers untracked in the consumer tree and trips on-stop.py's
+            # uncommitted-changes guard (which can't tell a sync's overwrite
+            # from abandoned lane work). git is the backup for tracked files.
+            if [ "$force" != "true" ] \
+               && ! git -C "$dest_dir" ls-files --error-unmatch -- "$f" >/dev/null 2>&1; then
                 cp "$dest" "$dest.bak"
             fi
         fi
