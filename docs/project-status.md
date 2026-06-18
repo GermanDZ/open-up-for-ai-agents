@@ -1,15 +1,19 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 23
-**Iteration Goal**: T-048 — Audit fixes: archived-plan status bump (false dep-block) + worktree-promote board-blindness
+**Iteration**: 24
+**Iteration Goal**: T-052 — Framework syncs must not leave uncommitted changes that trip on-stop (sync self-commits its CLI upgrades)
 **Status**: completed
-**Current Task**: T-048
+**Current Task**: T-052
 **Iteration Started**: 2026-06-17
-**Last Updated**: 2026-06-17
+**Last Updated**: 2026-06-18
 **Updated By**: sync-status.py
 
 ## Notes
+
+- **Iteration 24** (2026-06-18): `sync-from-framework.sh` now self-commits its tracked tooling upgrades (process CLIs from the manifest) as one `chore(process) [openup-skip]` commit, so a framework sync no longer leaves modified CLIs that on-stop.py mistakes for abandoned lane work. Pathspec-scoped (never `git add -A`); skips outside a git repo / mid-rebase / when nothing it wrote changed. +3 integration tests.
+
+- **Iteration 0** (2026-06-18): T-049 — board surfaces non-pickable `elsewhere` lanes for live leases whose spec is committed on an unmerged branch/another worktree (trunk board no longer blind); `/openup-next` §1c skips a pending task that already holds a live lease (kills the re-promote trap). Follow-on to T-048.
 
 - **Iteration 23** (2026-06-17): T-048 — two framework audit fixes from a downstream continue-loop audit. **Bug A (false dep-block):** `dep_satisfied` trusted an archived plan's body `status:` over the roadmap, so an archived dep never bumped off a non-satisfied value false-blocked downstream lanes; now an archived plan defers to the roadmap (active plans stay authoritative, +`is_archived_plan`). New `openup-claims.py migrate-archived-status` one-shot subcommand (idempotent, `--dry-run`/`--repo-root`) repairs existing stale archived plans — repaired this repo's T-002 (`deferred`→`done`). `complete-task` archive flip made track-aware (`verified` on full, else `done`). **Bug B (worktree-promote board-blindness):** `start-iteration` step 6c now commits the spec folder on promote so the lane is board-visible from a clean checkout (`.openup/` is gitignored; the committed spec is the durable record). +6 hermetic tests (42/42 claims green). Templates canonical, synced to `.claude`. Solo, standard, worktree.
 

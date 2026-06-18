@@ -396,6 +396,117 @@ else
     test_fail "Version file" "Version file not found"
 fi
 
+# Test 11: Sync self-commits its CLI upgrades and never sweeps unrelated work (T-052)
+test_start "Sync self-commits its CLI upgrades, never sweeps unrelated work (T-052)"
+SC_DIR="/tmp/openup-test-sync-commit"
+rm -rf "$SC_DIR"
+mkdir -p "$SC_DIR/scripts" "$SC_DIR/src"
+# A consumer runs its OWN copy of the sync script, so PROJECT_ROOT resolves to it.
+cp "$PROJECT_ROOT/scripts/sync-from-framework.sh" "$SC_DIR/scripts/"
+# A real consumer gitignores the .claude runtime copy + .bak debris.
+printf '/.claude\n.openup/\n*.bak\n' > "$SC_DIR/.gitignore"
+# A tracked, STALE process CLI the sync will overwrite + unrelated user code.
+cp "$PROJECT_ROOT/scripts/openup-board.py" "$SC_DIR/scripts/openup-board.py"
+printf '\n# stale-marker-line\n' >> "$SC_DIR/scripts/openup-board.py"
+printf 'print("v1")\n' > "$SC_DIR/src/app.py"
+(
+    cd "$SC_DIR"
+    git init -q
+    git config user.email "test@openup.local"
+    git config user.name "OpenUP Test"
+    git add -A
+    git commit -q -m "init consumer [openup-skip]"
+)
+# Unrelated uncommitted edit that must survive untouched (Requirement 3).
+printf 'print("v2-uncommitted")\n' > "$SC_DIR/src/app.py"
+
+SC_OK=true
+bash "$SC_DIR/scripts/sync-from-framework.sh" --framework-path "$PROJECT_ROOT" >/dev/null 2>&1 || true
+
+# (R1) the overwritten CLI is committed — not left modified.
+if [ -n "$(cd "$SC_DIR" && git status --porcelain scripts/openup-board.py)" ]; then
+    test_fail "Sync self-commit R1" "scripts/openup-board.py left uncommitted after sync"
+    SC_OK=false
+fi
+# (R2) the commit uses the canonical chore(process) + [openup-skip] subject.
+SC_SUBJECT="$(cd "$SC_DIR" && git log -1 --pretty=%s)"
+if ! printf '%s' "$SC_SUBJECT" | grep -q 'chore(process): sync OpenUP framework'; then
+    test_fail "Sync self-commit R2" "Unexpected commit subject: $SC_SUBJECT"
+    SC_OK=false
+fi
+if ! printf '%s' "$SC_SUBJECT" | grep -q '\[openup-skip\]'; then
+    test_fail "Sync self-commit R2" "Commit subject missing [openup-skip]: $SC_SUBJECT"
+    SC_OK=false
+fi
+# (R3) the unrelated edit is NOT in the sync commit and survives uncommitted.
+if (cd "$SC_DIR" && git show --name-only --pretty=format: HEAD | grep -qx 'src/app.py'); then
+    test_fail "Sync self-commit R3" "Unrelated src/app.py was swept into the sync commit"
+    SC_OK=false
+fi
+if [ -z "$(cd "$SC_DIR" && git status --porcelain src/app.py)" ]; then
+    test_fail "Sync self-commit R3" "Unrelated src/app.py edit was lost (should stay uncommitted)"
+    SC_OK=false
+fi
+if ! grep -q 'v2-uncommitted' "$SC_DIR/src/app.py"; then
+    test_fail "Sync self-commit R3" "src/app.py content was modified by the sync"
+    SC_OK=false
+fi
+if [ "$SC_OK" = true ]; then
+    test_pass "Sync commits only the CLIs it wrote; unrelated work untouched"
+fi
+cd "$PROJECT_ROOT"
+
+# Test 11b: After a sync, on-stop allows a clean stop (T-052 R4).
+# Reuses the Test 11 consumer: restore the unrelated edit so the ONLY changes the
+# sync made (the committed CLI) remain — the tree is then clean.
+test_start "After a sync, on-stop allows a clean stop (T-052 R4)"
+(cd "$SC_DIR" && git checkout -q -- src/app.py 2>/dev/null || true)
+set +e
+echo '{"cwd":"'"$SC_DIR"'"}' | python3 "$PROJECT_ROOT/.claude/scripts/hooks/on-stop.py" >/tmp/openup-test-onstop-clean.out 2>&1
+ONSTOP_RC=$?
+set -e
+if [ "$ONSTOP_RC" -eq 0 ]; then
+    test_pass "on-stop exits 0 once the sync committed its own CLI changes"
+else
+    test_fail "on-stop after sync" "Expected exit 0, got $ONSTOP_RC: $(cat /tmp/openup-test-onstop-clean.out 2>/dev/null)"
+fi
+cd "$PROJECT_ROOT"
+
+# Test 11c: on-stop still blocks genuinely abandoned (non-sync) CLI edits (T-052 R5).
+test_start "on-stop still blocks abandoned non-sync CLI edits (T-052 R5)"
+SC3_DIR="/tmp/openup-test-onstop-regress"
+rm -rf "$SC3_DIR"
+mkdir -p "$SC3_DIR/scripts"
+cp "$PROJECT_ROOT/scripts/openup-board.py" "$SC3_DIR/scripts/openup-board.py"
+printf '/.claude\n.openup/\n*.bak\n' > "$SC3_DIR/.gitignore"
+(
+    cd "$SC3_DIR"
+    git init -q
+    git config user.email "test@openup.local"
+    git config user.name "OpenUP Test"
+    git add -A
+    git commit -q -m "init [openup-skip]"
+)
+# A real, hand-made (non-sync) edit left uncommitted — must still block.
+printf '\n# hand edit, not a sync\n' >> "$SC3_DIR/scripts/openup-board.py"
+set +e
+echo '{"cwd":"'"$SC3_DIR"'"}' | python3 "$PROJECT_ROOT/.claude/scripts/hooks/on-stop.py" >/tmp/openup-test-onstop-regress.out 2>&1
+ONSTOP_RC=$?
+set -e
+REG_OK=true
+if [ "$ONSTOP_RC" -ne 2 ]; then
+    test_fail "on-stop regression" "Expected exit 2 (block), got $ONSTOP_RC"
+    REG_OK=false
+fi
+if ! grep -q 'openup-board.py' /tmp/openup-test-onstop-regress.out 2>/dev/null; then
+    test_fail "on-stop regression" "Block message did not name the abandoned file"
+    REG_OK=false
+fi
+if [ "$REG_OK" = true ]; then
+    test_pass "on-stop blocks (exit 2) and names a non-sync abandoned CLI edit"
+fi
+cd "$PROJECT_ROOT"
+
 # Summary
 echo ""
 echo -e "${BLUE}=== Test Summary ===${NC}"
