@@ -1,13 +1,13 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 25
-**Iteration Goal**: T-053 — Add `scripts/openup-doctor.py` — read-only project health diagnostic (framework/manifest drift + `.openup/state.json` integrity + aggregation of existing `--check` modes) + thin `/openup-doctor` skill
-**Status**: completed
-**Current Task**: T-053
+**Iteration**: 26
+**Iteration Goal**: T-055 — Supply-chain & adoption-trust hardening (A+B+C): cut v2.0.0 release tag; add root LICENSE (MIT) + SECURITY.md (with hook-execution disclosure + manual opt-out + pinning guidance); bound Pillow (>=12.0.0,<13); rewrite install/update docs to clone-a-pinned-tag (no pipe-to-bash default, de-pipe cron examples); Option D (signing/SBOM/CI scanning) deferred
+**Status**: in-progress
+**Current Task**: T-055
 **Iteration Started**: 2026-06-18
 **Last Updated**: 2026-06-18
-**Updated By**: sync-status.py
+**Updated By**: openup-start-iteration
 
 ## Notes
 
