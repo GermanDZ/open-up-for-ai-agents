@@ -121,23 +121,32 @@ python3 scripts/openup-state.py get task_id 2>/dev/null   # exit 3 = no active i
 python3 scripts/openup-board.py top    # prints the top pickable lane as JSON; exit 3 = none
 ```
 
-- **Exit 0** → you get the lane JSON: `{task, title, track, state, lease, hat, next_action, plan, collides_with, depends_ok}`. Continue with this lane (step 2). A lane the board calls `ready` is one `scripts/openup-claims.py preflight` will also clear — same dependency/collision logic — so the claim in step 2 will not surprise you.
+- **Exit 0** → you get the lane JSON: `{task, title, track, state, lease, hat, next_action, plan, collides_with, depends_ok}`. Continue with this lane (step 2). A lane the board calls `ready` is one `scripts/openup-claims.py preflight` will also clear — same dependency/collision logic — so the claim in step 2 will not surprise you. (An `elsewhere` lane — a live lease whose spec is committed on an unmerged branch / another worktree, T-049 — is **never** returned by `top`: it is in flight elsewhere, not pickable here.)
 - **Exit 3** → read the **reason on stderr** and branch:
-  - **"no pickable lane (… `N blocked` / `in-progress` / `suspended` …)"** — lanes
-    exist but every one is held up. This is a genuine no-op: **stop cleanly**,
-    print the reason, do nothing else. (Run `openup-board.py refresh` to show the
-    full board if the user wants to see why.)
-  - **"no active lanes — every change folder is done/archived or absent."** — there
-    are zero lanes. Do **not** stop yet: the roadmap may still have pending work
-    that simply has not been promoted into a change folder. Go to 1c.
+  - **"no pickable lane (… `N blocked` / `in-progress` / `elsewhere` / `suspended` …)"**
+    — local lanes exist but every one is held up. This is a genuine no-op:
+    **stop cleanly**, print the reason, do nothing else. (Run `openup-board.py refresh`
+    to show the full board if the user wants to see why.)
+  - **"no active lanes — every change folder is done/archived or absent."** *or*
+    **"no active local lanes (N in flight elsewhere) — roadmap may have promotable
+    work."** — there are no *local* plan-derived lanes (the second form means work
+    is in flight in another worktree, but its spec is not on this tree). Do **not**
+    stop yet: the roadmap may still have pending work to promote. Go to 1c.
 
 #### 1c. Promote — turn the next pending roadmap task into a lane, then start it
 
 Read `docs/roadmap.md` and select the **next pending task** — the first
 `pending`/`planned` entry in the product-manager's given order whose
-`depends-on` are satisfied and that has **no `docs/changes/<id>/` folder yet**.
-Consume the order as given; do not re-prioritize (that is the product-manager
-role's call). Then promote it **by task shape**:
+`depends-on` are satisfied, that has **no `docs/changes/<id>/` folder yet**, and
+that **does not already hold a live lease** (T-049). The last filter is
+mechanical: a task in flight in another worktree appears on the board as an
+`elsewhere` (or `in-progress`) lane even when its folder is absent from this
+tree, because the lease lives in the shared `--git-common-dir`. Skipping it
+prevents the re-promote trap — re-authoring a spec for work already underway,
+only to collide in pre-flight. Check it with the board (`openup-board.py refresh`
+→ any `elsewhere`/`in-progress` lane for that id) or `openup-claims.py list`;
+skip any pending id that has one. This is a skip-for-mechanical-reason, not a
+re-prioritization. Then promote the chosen task **by task shape**:
 
 - **Implementation / change task** → `/openup-create-task-spec task_id: <id>`.
   This writes `docs/changes/<id>/plan.md` (REASONS Canvas + Operations boxes),

@@ -60,10 +60,11 @@ PRIORITY_RANK = {"critical": 0, "high": 1, "medium": 2, "low": 3}
 STATE_RANK = {
     "ready": 0,
     "in-progress": 1,
-    "colliding": 2,
-    "blocked": 3,
-    "suspended": 4,
-    "deferred": 5,
+    "elsewhere": 2,  # leased in another worktree, plan not on this tree (T-049)
+    "colliding": 3,
+    "blocked": 4,
+    "suspended": 5,
+    "deferred": 6,
 }
 
 
@@ -246,6 +247,34 @@ def sort_key(lane):
     )
 
 
+def orphan_lease_lane(claim):
+    """Synthesize an ``elsewhere`` lane from a live lease that has no plan-derived
+    lane on this tree (T-049). Its spec is committed on an unmerged branch / in
+    another worktree, so the trunk checkout can't see the ``plan.md`` — but the
+    lease (shared ``--git-common-dir``) proves the task is in flight. The lane is
+    visible and collision-correct, but never pickable (``state != "ready"``)."""
+    lane = {
+        "task": claim.get("task_id"),
+        "title": None,
+        "track": None,
+        "state": "elsewhere",
+        "lease": {
+            "session_id": claim.get("session_id"),
+            "branch": claim.get("branch"),
+            "worktree": claim.get("worktree"),
+            "claimed_at": claim.get("claimed_at"),
+        },
+        "hat": None,
+        "next_action": None,
+        "plan": None,        # no spec on this tree — that is the whole point
+        "collides_with": None,
+        "depends_ok": True,  # unknowable locally; never consulted (not pickable)
+        "awaiting_input": None,
+    }
+    lane["_priority"] = "medium"  # sort-only; stripped before return
+    return lane
+
+
 def build_board(root: Path, cdir: Path):
     live = claims.live_claims(cdir)
     lanes = [
@@ -253,6 +282,18 @@ def build_board(root: Path, cdir: Path):
         for plan in active_plans(root)
         if (lane := build_lane(plan, root, live)) is not None
     ]
+    # A live lease whose task has no plan-derived lane is in flight elsewhere
+    # (committed on an unmerged branch / another worktree). Surface it as an
+    # ``elsewhere`` lane so a trunk board is not blind to it and the loop does
+    # not re-promote it (T-049). Corrupt leases are skipped — they are already
+    # surfaced fail-closed as colliders, never as workable lanes.
+    claimed = {lane["task"] for lane in lanes}
+    for claim in live:
+        task_id = claim.get("task_id")
+        if claim.get("_corrupt") or not task_id or task_id in claimed:
+            continue
+        lanes.append(orphan_lease_lane(claim))
+        claimed.add(task_id)
     lanes.sort(key=sort_key)
     for lane in lanes:
         lane.pop("_priority", None)  # strip the sort-only field
@@ -267,12 +308,29 @@ def write_board(board, out_path: Path):
 
 
 def none_pickable_reason(board) -> str:
-    counts = {}
+    # ``elsewhere`` lanes are in flight in another worktree and have no spec on
+    # this tree, so they are NOT local work that holds up the loop. Count them
+    # apart from local plan-derived lanes: an elsewhere-only board must still
+    # route /openup-next into its promote step (the roadmap may have promotable
+    # work), exactly as an empty board did before T-049 — only now the in-flight
+    # task is visible rather than invisible.
+    local = {}
+    elsewhere = 0
     for lane in board["lanes"]:
-        counts[lane["state"]] = counts.get(lane["state"], 0) + 1
-    if not counts:
-        return "no active lanes — every change folder is done/archived or absent."
-    parts = ", ".join(f"{n} {s}" for s, n in sorted(counts.items()))
+        if lane["state"] == "elsewhere":
+            elsewhere += 1
+        else:
+            local[lane["state"]] = local.get(lane["state"], 0) + 1
+    if not local:
+        if not elsewhere:
+            return "no active lanes — every change folder is done/archived or absent."
+        return (
+            f"no active local lanes ({elsewhere} in flight elsewhere) — "
+            "roadmap may have promotable work."
+        )
+    parts = ", ".join(f"{n} {s}" for s, n in sorted(local.items()))
+    if elsewhere:
+        parts += f", {elsewhere} elsewhere"
     return f"no pickable lane ({parts})."
 
 
