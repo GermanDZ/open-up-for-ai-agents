@@ -101,6 +101,84 @@ check_script_version() {
   fi
 }
 
+# Self-commit the tracked files this sync overwrote (T-052).
+#
+# A sync overwrites tracked process CLIs (the scripts/<name> from
+# process-manifest.txt) and completes the T-046 untrack — leaving them MODIFIED
+# but uncommitted. The on-stop guard can't tell a sync's overwrite from
+# abandoned lane work, so it blocks the next /openup-next lane from stopping
+# (observed looping to the override cap). Fix: the sync owns its blast radius —
+# it stages EXACTLY the paths it wrote and makes one chore(process) commit, so
+# the tree is clean on return and on-stop never sees sync changes.
+#
+# Guards: dry-run, not-a-git-repo, mid-rebase/merge, and "nothing it wrote is
+# dirty" all skip cleanly. NEVER a blanket `git add -A`/`git add .` — only the
+# captured pathspecs, so unrelated user work is never swept in (Requirement 3).
+commit_synced_changes() {
+  [ "$DRY_RUN" = false ] || return 0
+  git -C "$PROJECT_ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1 || {
+    log_verbose "Not a git work tree — leaving synced files for you to commit."
+    return 0
+  }
+
+  # Don't entangle the sync commit with an in-progress conflict resolution.
+  local gitdir
+  gitdir="$(git -C "$PROJECT_ROOT" rev-parse --git-dir 2>/dev/null)" || return 0
+  case "$gitdir" in /*) ;; *) gitdir="$PROJECT_ROOT/$gitdir" ;; esac
+  if [ -e "$gitdir/MERGE_HEAD" ] || [ -d "$gitdir/rebase-merge" ] || [ -d "$gitdir/rebase-apply" ]; then
+    log_warn "Rebase/merge in progress — leaving synced changes uncommitted (commit them yourself)."
+    return 0
+  fi
+
+  # The exact tracked paths a sync writes: the process CLIs (from the manifest)
+  # plus the T-046 migration target. Everything else the sync touches lands in
+  # the gitignored .claude/ runtime copy, so it never needs committing.
+  local captured=() f
+  while IFS= read -r f; do
+    [ -n "$f" ] && captured+=("scripts/$f")
+  done < <(_process_cli_manifest "$FRAMEWORK_PATH/scripts")
+  captured+=("docs/agent-logs/agent-runs.jsonl")
+
+  # Stage the written paths ONE AT A TIME (never a blanket `git add -A`). A
+  # single multi-pathspec `git add` aborts entirely if any pathspec matches
+  # nothing (e.g. agent-runs.jsonl when the T-046 migration didn't run here), so
+  # we add per-path and swallow the misses. (The T-046 deletion, when it ran, is
+  # already staged by the migration; it's picked up by the diff below.)
+  local p
+  for p in "${captured[@]}"; do
+    git -C "$PROJECT_ROOT" add -A -- "$p" 2>/dev/null || true
+  done
+
+  # Exactly the captured paths that actually have staged changes — diff tolerates
+  # non-matching pathspecs (unlike add), so the agent-runs miss is harmless here.
+  local staged=()
+  while IFS= read -r p; do
+    [ -n "$p" ] && staged+=("$p")
+  done < <(git -C "$PROJECT_ROOT" diff --cached --name-only -- "${captured[@]}" 2>/dev/null)
+
+  if [ "${#staged[@]}" -eq 0 ]; then
+    log_verbose "No sync-written tracked files changed — nothing to commit."
+    return 0
+  fi
+
+  # Attribute the commit to the framework version when we can read it.
+  local fw_sha msg
+  fw_sha="$(git -C "$FRAMEWORK_PATH" rev-parse --short HEAD 2>/dev/null || true)"
+  if [ -n "$fw_sha" ]; then
+    msg="chore(process): sync OpenUP framework to $fw_sha [openup-skip]"
+  else
+    msg="chore(process): sync OpenUP framework [openup-skip]"
+  fi
+
+  # Partial-commit form (explicit staged pathspecs): commits ONLY these paths,
+  # leaving any unrelated staged user work untouched (Requirement 3).
+  if git -C "$PROJECT_ROOT" commit -m "$msg" -- "${staged[@]}" >/dev/null 2>&1; then
+    log_success "Committed framework-synced tooling: $msg"
+  else
+    log_warn "Could not commit synced tooling — please commit it yourself: $msg"
+  fi
+}
+
 # Get script directory and project root
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
@@ -564,6 +642,15 @@ else
     ensure_openup_reference "$dest_claude"
     SKIPPED_FILES=$((SKIPPED_FILES + 1))
   fi
+fi
+
+# Self-commit the tracked files this sync overwrote (T-052) so the working tree
+# is clean on return and on-stop.py never mistakes them for abandoned lane work.
+if [ "$DRY_RUN" = false ]; then
+  log_info "Committing framework-synced tooling..."
+  echo ""
+  commit_synced_changes
+  echo ""
 fi
 
 # Display summary

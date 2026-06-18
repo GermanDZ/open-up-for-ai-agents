@@ -54,6 +54,32 @@ you don't run anything extra. Currently:
   (`git rm --cached` + a `.gitignore` entry) — review and commit it. The step is
   idempotent: once untracked it is a silent no-op, and `--dry-run` only reports it.
 
+### The sync self-commits its own tooling upgrades (T-052)
+
+A sync overwrites the tracked process CLIs (`scripts/openup-*.py` and the trace
+rails from `scripts/process-manifest.txt`) in your project. Those are framework
+files, not your lane's work — so the sync now **commits them for you** rather
+than leaving them as modified-but-uncommitted changes. When you run
+`sync-from-framework.sh` inside a git work tree it stages **exactly the paths it
+wrote** and makes one commit:
+
+```
+chore(process): sync OpenUP framework to <sha> [openup-skip]
+```
+
+This keeps your working tree clean on return, so the `on-stop` guard (which
+blocks a turn from ending on uncommitted changes) never mistakes a framework
+upgrade for abandoned lane work — the loop several consumer repos hit before this
+fix. Guarantees and guards:
+
+- **Only the paths the sync wrote are committed** — never a blanket `git add -A`,
+  so an unrelated edit you had in flight is left untouched and uncommitted.
+- The commit is **skipped cleanly** (your changes left for you to commit) when
+  the directory isn't a git repo, when nothing the sync wrote actually changed,
+  or when a rebase/merge is in progress.
+- `--dry-run` never commits. The commit is an ordinary commit on your current
+  branch — revert it with `git revert`/`git reset` if you don't want it.
+
 ## Force-Upgrading a Project Started on an Old Version
 
 If a project was **initially started with an old version of OpenUP**, a normal

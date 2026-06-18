@@ -5,7 +5,11 @@ status: ready
 priority: medium
 estimate: 1 session
 plan: ""
-depends-on: [T-051]
+touches:
+  - scripts/sync-from-framework.sh
+  - tests/test-scripts.sh
+  - docs-eng-process/updating.md
+depends-on: []
 blocks: []
 last-synced: ""
 ---
@@ -126,19 +130,21 @@ edit into its `.claude-templates/` source per the dual-source rule.
 
 ## Operations
 
-- [ ] In `sync-from-framework.sh`, capture the set of repo-relative paths the installer
+- [x] In `sync-from-framework.sh`, capture the set of repo-relative paths the installer
       actually wrote (board/claims/other CLIs + any templates), not a blanket `git status`.
-- [ ] After install, if the repo is a git work tree and any captured path is dirty, `git add`
+- [x] After install, if the repo is a git work tree and any captured path is dirty, `git add`
       exactly those paths and commit with
       `chore(process): sync OpenUP framework to <version/sha> [openup-skip]`.
-- [ ] Guard the commit: skip cleanly (with a printed note) when not in a git repo, when
+- [x] Guard the commit: skip cleanly (with a printed note) when not in a git repo, when
       nothing the sync wrote is dirty, or when a rebase/merge is in progress.
-- [ ] (tester) Simulate a sync in a scratch git repo: dirty a tracked CLI + an unrelated
+- [x] (tester) Simulate a sync in a scratch git repo: dirty a tracked CLI + an unrelated
       `src/app.py`, run the sync, assert the CLI is committed, `src/app.py` is untouched,
-      and `on-stop.py` exits 0.
-- [ ] (tester) Regression: leave a non-sync edit to a tracked CLI, run `on-stop.py`, assert
-      it still blocks (exit 2) and names the file.
-- [ ] Update `docs-eng-process/updating.md` to state the sync now self-commits its upgrades.
+      and `on-stop.py` exits 0. *(Split into Test 15 (CLI committed + app.py untouched, R1–R3)
+      and Test 16 (on-stop exit 0); see design.md — on-stop is whole-tree, so the exit-0
+      assertion is checked once the unrelated edit is restored.)*
+- [x] (tester) Regression: leave a non-sync edit to a tracked CLI, run `on-stop.py`, assert
+      it still blocks (exit 2) and names the file. *(Test 17.)*
+- [x] Update `docs-eng-process/updating.md` to state the sync now self-commits its upgrades.
 
 ## Norms
 
