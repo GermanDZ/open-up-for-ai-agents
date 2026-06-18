@@ -1,1 +1,3 @@
 {"run_id": "9adec4849ec64aff8e93f0bc179535a3", "event": "commit", "task_id": "T-052", "branch": "spec/T-052-sync-uncommitted-on-stop", "sha": "3b9b521899859e98d301ff79a294586f4ec44a18", "model": null, "session_id": null, "ts": "2026-06-18T11:18:58Z"}
+{"event": "iteration_start", "task_id": "T-052", "goal": "Make sync-from-framework.sh self-commit its CLI upgrades so on-stop never blocks on sync changes", "branch": "feat/T-052-sync-self-commit", "phase": "construction", "ts": "2026-06-18T11:25:42Z"}
+{"run_id": "21838e8d719248029068aec306174662", "event": "commit", "task_id": "T-052", "branch": "feat/T-052-sync-self-commit", "sha": "82e44226330ab2fca3c5da6ee84015b524fb2aa9", "model": null, "session_id": null, "ts": "2026-06-18T11:39:12Z"}
