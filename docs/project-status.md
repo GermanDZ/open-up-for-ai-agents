@@ -2,14 +2,16 @@
 
 **Phase**: construction
 **Iteration**: 26
-**Iteration Goal**: T-055 — Supply-chain & adoption-trust hardening (A+B+C): cut v2.0.0 release tag; add root LICENSE (MIT) + SECURITY.md (with hook-execution disclosure + manual opt-out + pinning guidance); bound Pillow (>=12.0.0,<13); rewrite install/update docs to clone-a-pinned-tag (no pipe-to-bash default, de-pipe cron examples); Option D (signing/SBOM/CI scanning) deferred
-**Status**: in-progress
+**Iteration Goal**: T-055 — Supply-chain & adoption-trust hardening (pin/release tag · clone-verify-run install · hook disclosure · LICENSE/SECURITY.md)
+**Status**: completed
 **Current Task**: T-055
 **Iteration Started**: 2026-06-18
 **Last Updated**: 2026-06-18
-**Updated By**: openup-start-iteration
+**Updated By**: sync-status.py
 
 ## Notes
+
+- **Iteration 26** (2026-06-18): T-055 — supply-chain & adoption-trust hardening (A+B+C from the 2026-06-18 security exploration; Option D deferred). Added root **LICENSE (MIT)** + **SECURITY.md** (vuln-disclosure channel, full disclosure of all 9 `settings.json.example` hooks with per-event effects, documented manual opt-out, version-pinning guidance); README now splits MIT (own code) from EPL-v1.0 (vendored EPF content). Bounded `Pillow>=12.0.0,<13` (noted requirements.txt is converter-only; workflow is stdlib-only). Rewrote install/update guidance (`updating.md` + README) to **clone-a-pinned-tag-then-run-local**, de-piped the cron/GitHub-Actions examples, pinned submodule examples; both `update-openup*.sh` now resolve a **pinned ref** (OPENUP_REF > OPENUP_BRANCH > latest tag, never silent `main`). Cut annotated **v2.0.0** tag locally (push deferred to maintainer; next tag post-merge should carry the governance files). Solo, standard, worktree.
 
 - **Iteration 25** (2026-06-18): T-053 — `scripts/openup-doctor.py`, a read-only project health diagnostic (Option C from the 2026-06-18 exploration). Two genuinely-new checks: (1) framework/manifest **drift** for a consuming project — version-currency from `.template-version` + byte-level shipped-CLI drift against a `--framework-path` baseline (offline-degraded to version-only); (2) read-time `.openup/state.json` **integrity** (reuses `openup-state.py validate`, catches the corrupt-state footgun). Plus a thin **aggregator** that *invokes* (never reimplements) the existing read-only/`--check` validators — `sync-status.py` deliberately excluded (it writes; no read-only mode). Severity-tagged (error→exit 1, warning/info→exit 0), `--json`, CI-gateable; shipped via `process-manifest.txt`; fronted by `/openup-doctor`. +13 hermetic tests; 280/281 suite (1 pre-existing macOS symlink fail). Solo, standard, worktree.
 

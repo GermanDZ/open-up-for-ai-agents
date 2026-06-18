@@ -1,7 +1,7 @@
 ---
 id: T-055
 title: Supply-chain & adoption-trust hardening (pin/release · clone-verify-run install · hook disclosure · LICENSE/SECURITY.md)
-status: in-progress
+status: done
 priority: medium   # critical | high | medium | low
 estimate: 1 session
 plan: docs/explorations/2026-06-18-security-supply-chain-trust.md   # originating exploration (disposition "→ iteration", Options A+B+C)
