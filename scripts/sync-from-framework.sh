@@ -138,6 +138,7 @@ commit_synced_changes() {
     [ -n "$f" ] && captured+=("scripts/$f")
   done < <(_process_cli_manifest "$FRAMEWORK_PATH/scripts")
   captured+=("docs/agent-logs/agent-runs.jsonl")
+  captured+=("docs-eng-process/.template-version")
 
   # Stage the written paths ONE AT A TIME (never a blanket `git add -A`). A
   # single multi-pathspec `git add` aborts entirely if any pathspec matches
@@ -564,11 +565,27 @@ if [ ! -d "$DOCS_PROCESS_DIR" ]; then
   log_warn "No docs-eng-process directory found."
   log_warn "To get OpenUP documentation, copy from framework:"
   log_warn "  mkdir -p docs-eng-process"
-  log_warn "  cp -r $FRAMEWORK_PATH/docs-eng-process/openup-knowledge-base docs-eng-process/"
+  log_warn "  cp -r $FRAMEWORK_PATH/openup-knowledge-base ."
   log_warn "  cp -r $FRAMEWORK_PATH/docs-eng-process/templates docs-eng-process/"
   log_warn "  cp $FRAMEWORK_PATH/docs-eng-process/*.md docs-eng-process/"
 else
   log_verbose "Documentation directory exists (not syncing to preserve local changes)"
+
+  # The version marker is NOT free-form local content — it records which
+  # framework revision the synced CLIs/skills came from. The sync overwrites
+  # that content, so the marker must move with it; otherwise it drifts (a
+  # project shows an old version while running current tooling, which
+  # openup-doctor then flags). Mirror the framework's marker on every sync.
+  fw_version_file="$FRAMEWORK_PATH/docs-eng-process/.template-version"
+  if [ -f "$fw_version_file" ]; then
+    if [ "$DRY_RUN" = true ]; then
+      log_info "[DRY-RUN] Would update .template-version to $(cat "$fw_version_file")"
+    elif ! cmp -s "$fw_version_file" "$DOCS_PROCESS_DIR/.template-version"; then
+      cp "$fw_version_file" "$DOCS_PROCESS_DIR/.template-version"
+      log_success "Updated .template-version -> $(cat "$fw_version_file")"
+      SYNCED_FILES=$((SYNCED_FILES + 1))
+    fi
+  fi
 fi
 
 # Sync CLAUDE.md template (but warn about local changes)
