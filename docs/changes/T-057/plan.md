@@ -16,6 +16,9 @@ touches:
   - .claude/skills/openup-complete-task/SKILL.md
   - docs-eng-process/.claude-templates/skills/openup-complete-task/SKILL.md
   - .claude/CLAUDE.openup.md
+  - docs-eng-process/.claude-templates/CLAUDE.md
+  - scripts/tests/test_t006_hooks.py
+  - scripts/tests/test_t010_tracks.py
 ---
 
 # T-057 — Solo UX Friction — Free Exploration, Gate-at-Commit, Auto-Merge
