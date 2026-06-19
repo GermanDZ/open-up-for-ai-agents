@@ -162,21 +162,21 @@ branch-protection block surfaces a clear message rather than crashing the skill.
 
 ## Operations
 
-- [ ] Fix `on-task-request.py`: change both `sys.exit(2)` → `sys.exit(0)` in
+- [x] Fix `on-task-request.py`: change both `sys.exit(2)` → `sys.exit(0)` in
   `.claude/scripts/hooks/on-task-request.py` and its template copy; confirm stderr
   messages are still emitted; run `python3 -m pytest tests/ -k on_task_request -v`
   and assert all paths exit 0
-- [ ] Fix `gate-edits.py`: add `"docs/iteration-plans/"` and `"docs/roadmap.md"` to
+- [x] Fix `gate-edits.py`: add `"docs/iteration-plans/"` and `"docs/roadmap.md"` to
   EXEMPT_PREFIXES in `.claude/scripts/hooks/gate-edits.py` and its template copy;
   run `python3 -m pytest tests/ -k gate_edits -v` and assert newly-exempt paths pass
-- [ ] Add Step 9 to `.claude/skills/openup-complete-task/SKILL.md` and its template
+- [x] Add Step 9 to `.claude/skills/openup-complete-task/SKILL.md` and its template
   copy: `gh pr merge --merge --delete-branch` + `git pull origin main` (from main
   repo context, which is where the skill runs after step 7b removed the worktree);
   include fail-open branch (log PR URL + manual instructions on non-zero exit);
   include `auto_merge: false` skip condition
-- [ ] Update `.claude/CLAUDE.openup.md` Critical Rules: add hook-behavior note
+- [x] Update `.claude/CLAUDE.openup.md` Critical Rules: add hook-behavior note
   ("Hooks gate at commit, not at prompt. `on-task-request.py` is advisory…")
-- [ ] (tester) Run `bash check-claude-sync.sh` and assert exit 0; run full test suite
+- [x] (tester) Run `bash check-claude-sync.sh` and assert exit 0; run full test suite
   `python3 -m pytest tests/ -v` and assert no regressions
 
 ## Norms
