@@ -73,6 +73,13 @@ EXIT_OTHER_OWNER = 6
 EXIT_BAD_INPUT = 7
 EXIT_REMOTE_DUP = 9  # a remote branch already encodes this task (T-044)
 
+# --------------------------------------------------------------------------
+# Git-ref distributed locking (T-056): push claims to refs/openup/claims/<id>
+# so two agents on different machines cannot both claim the same task.
+# All network operations are fail-open: if the remote is unreachable the
+# behaviour is identical to today (local-only claims).
+# --------------------------------------------------------------------------
+
 SATISFIED_DEP_STATUSES = {"done", "verified", "completed"}
 
 
@@ -622,6 +629,141 @@ def remote_in(name, remote_list):
     return name in {r.strip() for r in remote_list.splitlines() if r.strip()}
 
 
+# --------------------------------------------------------------------------
+# Git-ref distributed locking helpers
+# --------------------------------------------------------------------------
+def _has_remote(remote: str, root) -> bool:
+    """True iff a remote with that name is configured in the repo."""
+    listing = _git(["remote"], cwd=str(root))
+    return remote_in(remote, listing)
+
+
+def _push_claim_ref(task_id: str, payload_json: str, root,
+                    remote: str = "origin"):
+    """Write a git blob, create local ref, push to remote atomically.
+
+    Returns:
+      (True,  None)          — pushed successfully (we own the ref)
+      (False, existing_json) — ref already existed on remote (another owner)
+      (False, None)          — network/git error (fail-open: treat as no remote)
+    """
+    # Write blob into object store
+    blob_result = subprocess.run(
+        ["git", "hash-object", "--stdin", "-w"],
+        input=payload_json, cwd=str(root),
+        capture_output=True, text=True,
+    )
+    if blob_result.returncode != 0:
+        return False, None
+    blob_sha = blob_result.stdout.strip()
+    if not blob_sha:
+        return False, None
+
+    ref = f"refs/openup/claims/{task_id}"
+
+    # Point local ref at blob
+    subprocess.run(
+        ["git", "update-ref", ref, blob_sha],
+        cwd=str(root), capture_output=True,
+    )
+
+    # Push without --force: the push is rejected if the ref already exists on
+    # the remote (another session owns this task).
+    push_result = subprocess.run(
+        ["git", "push", remote, f"{ref}:{ref}"],
+        cwd=str(root), capture_output=True, text=True,
+    )
+    if push_result.returncode == 0:
+        return True, None
+
+    combined = push_result.stderr + push_result.stdout
+    if any(kw in combined for kw in ("rejected", "already exists", "[rejected]",
+                                     "already up to date")):
+        # Fetch the winning blob so we can report who owns it.
+        subprocess.run(
+            ["git", "fetch", remote, f"{ref}:{ref}"],
+            cwd=str(root), capture_output=True,
+        )
+        cat_result = subprocess.run(
+            ["git", "cat-file", "-p", ref],
+            cwd=str(root), capture_output=True, text=True,
+        )
+        existing_json = cat_result.stdout.strip() if cat_result.returncode == 0 else None
+        return False, existing_json
+
+    # Any other error (network, auth, etc.) → fail-open
+    return False, None
+
+
+def _fetch_remote_claims(root, cdir, remote: str = "origin"):
+    """Fetch refs/openup/claims/* from origin and mirror them to local files.
+
+    Returns an error string on failure, None on success.  Fail-open: callers
+    ignore the return value and continue with whatever local files exist.
+    """
+    result = subprocess.run(
+        ["git", "fetch", remote,
+         "+refs/openup/claims/*:refs/openup/claims/*"],
+        cwd=str(root), capture_output=True, text=True,
+    )
+    if result.returncode != 0:
+        return f"fetch failed: {result.stderr.strip()}"
+    _sync_refs_to_local(root, cdir)
+    return None
+
+
+def _sync_refs_to_local(root, cdir: Path):
+    """Read all refs/openup/claims/* refs and write them as local JSON files.
+
+    Creates cdir if needed.  Only updates a file when its content differs
+    from the existing file (avoids spurious mtime changes).
+    """
+    ls_result = subprocess.run(
+        ["git", "for-each-ref", "--format=%(refname) %(objectname)",
+         "refs/openup/claims/"],
+        cwd=str(root), capture_output=True, text=True,
+    )
+    if ls_result.returncode != 0 or not ls_result.stdout.strip():
+        return
+
+    cdir.mkdir(parents=True, exist_ok=True)
+    for line in ls_result.stdout.splitlines():
+        parts = line.strip().split()
+        if len(parts) != 2:
+            continue
+        refname, sha = parts
+        # refname = refs/openup/claims/<task-id>
+        task_id = refname.split("/")[-1]
+        if not task_id:
+            continue
+        cat_result = subprocess.run(
+            ["git", "cat-file", "-p", sha],
+            cwd=str(root), capture_output=True, text=True,
+        )
+        if cat_result.returncode != 0:
+            continue
+        content = cat_result.stdout
+        fp = cdir / f"{task_id}.json"
+        existing = fp.read_text(encoding="utf-8") if fp.exists() else None
+        if content != existing:
+            fp.write_text(content, encoding="utf-8")
+
+
+def _delete_claim_ref(task_id: str, root, remote: str = "origin"):
+    """Delete the remote and local claim refs (idempotent, fail-open)."""
+    ref = f"refs/openup/claims/{task_id}"
+    # Delete remote ref (push refspec :<ref> = delete)
+    subprocess.run(
+        ["git", "push", remote, f":{ref}"],
+        cwd=str(root), capture_output=True,
+    )
+    # Delete local ref
+    subprocess.run(
+        ["git", "update-ref", "-d", ref],
+        cwd=str(root), capture_output=True,
+    )
+
+
 def remote_check(task_id, remote, root, do_fetch, self_branch):
     """Return (exit_code, message). EXIT_REMOTE_DUP only when a remote branch
     *other than* our own (self_branch) encodes the task. Fail-open otherwise.
@@ -652,6 +794,12 @@ def cmd_preflight(args):
     root = (Path(args.repo_root).resolve()
             if getattr(args, "repo_root", None) else repo_root())
     cdir = claims_dir(override=args.claims_dir)
+    # Fetch remote claims so local files reflect the distributed state.
+    # Fail-open: skip when --no-push is set or no remote is configured.
+    no_push = getattr(args, "no_push", False)
+    remote = getattr(args, "remote", "origin")
+    if not no_push and _has_remote(remote, root):
+        _fetch_remote_claims(root, cdir, remote)
     touches, deps = resolve_task_inputs(args, root)
     code, msg = preflight(args.task_id, touches, deps, cdir, root)
     (print if code == EXIT_OK else lambda m: sys.stderr.write(m + "\n"))(msg)
@@ -689,6 +837,8 @@ def cmd_remote_check(args):
 def cmd_claim(args):
     root = repo_root()
     cdir = claims_dir(override=args.claims_dir)
+    no_push = getattr(args, "no_push", False)
+    remote = getattr(args, "remote", "origin")
     touches, deps = resolve_task_inputs(args, root)
 
     # Idempotent / ownership check for an existing claim on this task.
@@ -717,8 +867,46 @@ def cmd_claim(args):
         "claimed_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "touches": touches,
     }
-    write_claim_atomic(claim_file(args.task_id, cdir), payload)
-    print(f"Claimed {args.task_id} -> {claim_file(args.task_id, cdir)}")
+    fp = claim_file(args.task_id, cdir)
+    write_claim_atomic(fp, payload)
+
+    # Distributed locking: push the claim ref to origin so other machines see it.
+    # Skip when --no-push is set (test mode) or no remote is configured.
+    if not no_push and _has_remote(remote, root):
+        import io as _io
+        payload_json = _io.StringIO()
+        json.dump(payload, payload_json, indent=2)
+        payload_json.write("\n")
+        ok, existing_json = _push_claim_ref(
+            args.task_id, payload_json.getvalue(), root, remote
+        )
+        if not ok:
+            if existing_json is not None:
+                # Another session on a different machine already owns this task.
+                try:
+                    existing_data = json.loads(existing_json)
+                    owner_sess = existing_data.get("session_id") or "unknown-session"
+                    owner_branch = existing_data.get("branch") or "unknown-branch"
+                except (json.JSONDecodeError, ValueError):
+                    owner_sess = "unknown-session"
+                    owner_branch = "unknown-branch"
+                # Roll back local claim file — we lost the race.
+                fp.unlink(missing_ok=True)
+                sys.stderr.write(
+                    f"REFUSED: {args.task_id} already claimed on remote by session "
+                    f"{owner_sess} (branch {owner_branch}). "
+                    f"Coordinate before continuing.\n"
+                )
+                return EXIT_OTHER_OWNER
+            else:
+                # Network error — keep local claim and continue (fail-open).
+                sys.stderr.write(
+                    f"WARNING: could not push claim ref for {args.task_id} to "
+                    f"'{remote}' (network error). Proceeding with local-only claim "
+                    f"(same behaviour as before git-ref locking).\n"
+                )
+
+    print(f"Claimed {args.task_id} -> {fp}")
     return EXIT_OK
 
 
@@ -730,6 +918,15 @@ def cmd_release(args):
         print(f"Released {args.task_id}")
     else:
         print(f"No claim for {args.task_id} (already released)")  # idempotent
+
+    # Delete remote claim ref (fail-open, idempotent).
+    no_push = getattr(args, "no_push", False)
+    remote = getattr(args, "remote", "origin")
+    if not no_push:
+        root = repo_root()
+        if _has_remote(remote, root):
+            _delete_claim_ref(args.task_id, root, remote)
+
     return EXIT_OK
 
 
@@ -874,6 +1071,17 @@ def build_parser():
     add_common(p_dir)
     p_dir.set_defaults(func=cmd_dir)
 
+    def add_push_flags(sp):
+        """Add --no-push and --remote flags for distributed-lock control."""
+        sp.add_argument(
+            "--no-push", action="store_true",
+            help="Skip all network/git-ref operations (local-only mode; used by tests).",
+        )
+        sp.add_argument(
+            "--remote", default="origin",
+            help="Remote name for git-ref claim operations (default: origin).",
+        )
+
     p_pf = sub.add_parser("preflight", help="Check deps + collision; write nothing.")
     p_pf.add_argument("--task-id", required=True)
     p_pf.add_argument(
@@ -882,6 +1090,7 @@ def build_parser():
     )
     add_task_inputs(p_pf)
     add_common(p_pf)
+    add_push_flags(p_pf)
     p_pf.set_defaults(func=cmd_preflight)
 
     p_mas = sub.add_parser(
@@ -919,6 +1128,10 @@ def build_parser():
         "--self-branch", default=None,
         help="Our own lane branch to exclude from matches (default: current HEAD).",
     )
+    p_rc.add_argument(
+        "--no-push", action="store_true",
+        help="Skip all network/git-ref operations (local-only mode; used by tests).",
+    )
     p_rc.set_defaults(func=cmd_remote_check)
 
     p_cl = sub.add_parser("claim", help="Pre-flight then atomically write the claim.")
@@ -932,11 +1145,13 @@ def build_parser():
         help="Skip the existing-owner check (re-claim). Pre-flight still runs.",
     )
     add_common(p_cl)
+    add_push_flags(p_cl)
     p_cl.set_defaults(func=cmd_claim)
 
     p_rl = sub.add_parser("release", help="Delete a task's claim (idempotent).")
     p_rl.add_argument("--task-id", required=True)
     add_common(p_rl)
+    add_push_flags(p_rl)
     p_rl.set_defaults(func=cmd_release)
 
     p_ls = sub.add_parser("list", help="Print all live claims (JSON array).")

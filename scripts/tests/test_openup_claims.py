@@ -24,7 +24,20 @@ OK, DEP, COLL, NOTFOUND, OWNER, BAD = 0, 3, 4, 5, 6, 7
 
 
 def run(args, cdir, expect=None):
+    """Run an openup-claims.py subcommand with an isolated claims dir.
+
+    --no-push is injected automatically for every invocation so existing tests
+    remain hermetic even after git-ref locking was added (the git-ref path
+    requires a real remote and is tested separately in GitRefClaimTests).
+    The --no-push flag is only injected for subcommands that accept it.
+    """
+    _NO_PUSH_CMDS = {"claim", "release", "preflight", "remote-check"}
     cmd = [sys.executable, str(SCRIPT)] + args + ["--claims-dir", str(cdir)]
+    # Inject --no-push before any existing --no-push to avoid duplicates.
+    if args and args[0] in _NO_PUSH_CMDS and "--no-push" not in args:
+        cmd = [sys.executable, str(SCRIPT)] + args + [
+            "--claims-dir", str(cdir), "--no-push"
+        ]
     proc = subprocess.run(cmd, capture_output=True, text=True)
     if expect is not None:
         assert proc.returncode == expect, (
@@ -468,6 +481,163 @@ class ArchivedDepTests(unittest.TestCase):
         self.assertIn("would bump", self._mig("--dry-run").stdout)
         self.assertIn("status: in-progress",
                       (self.root / "docs/changes/archive/T-900/plan.md").read_text())
+
+
+class GitRefClaimTests(unittest.TestCase):
+    """Tests for the git-ref distributed locking path (T-056).
+
+    Each test sets up a bare "remote" + a local clone so the push path is
+    exercised against a real git remote (a local bare repo). --no-push is
+    NOT passed here — these tests specifically exercise the network path.
+    """
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.tmp = Path(self._tmp.name)
+
+        # Bare remote
+        self.remote = self.tmp / "remote.git"
+        subprocess.run(["git", "init", "-q", "--bare", str(self.remote)],
+                       check=True)
+
+        # Local clone A (the "first agent")
+        self.local_a = self.tmp / "local_a"
+        self.local_a.mkdir()
+        _git(self.local_a, "init", "-q")
+        _git(self.local_a, "config", "user.email", "t@t")
+        _git(self.local_a, "config", "user.name", "t")
+        (self.local_a / "f.txt").write_text("x")
+        _git(self.local_a, "add", "-A")
+        _git(self.local_a, "commit", "-qm", "init")
+        _git(self.local_a, "branch", "-M", "main")
+        _git(self.local_a, "remote", "add", "origin", str(self.remote))
+        _git(self.local_a, "push", "-q", "origin", "main")
+
+        # Local clone B (the "second agent" — different machine simulation)
+        self.local_b = self.tmp / "local_b"
+        subprocess.run(
+            ["git", "clone", "-q", str(self.remote), str(self.local_b)],
+            check=True,
+        )
+        _git(self.local_b, "config", "user.email", "t@t")
+        _git(self.local_b, "config", "user.name", "t")
+
+        self.cdir_a = self.tmp / "claims_a"
+        self.cdir_b = self.tmp / "claims_b"
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def _claim(self, local, cdir, task, session, touches="src/", expect=None):
+        cmd = [
+            sys.executable, str(SCRIPT),
+            "claim",
+            "--task-id", task,
+            "--session-id", session,
+            "--branch", f"feature/{task}",
+            "--worktree", str(local),
+            "--touches", touches,
+            "--depends-on", "",
+            "--claims-dir", str(cdir),
+            # do NOT pass --no-push here — we want the real push path
+        ]
+        proc = subprocess.run(cmd, capture_output=True, text=True, cwd=str(local))
+        if expect is not None:
+            assert proc.returncode == expect, (
+                f"expected exit {expect}, got {proc.returncode}\n"
+                f"stdout={proc.stdout}\nstderr={proc.stderr}"
+            )
+        return proc
+
+    def _release(self, local, cdir, task):
+        cmd = [
+            sys.executable, str(SCRIPT),
+            "release",
+            "--task-id", task,
+            "--claims-dir", str(cdir),
+            # do NOT pass --no-push
+        ]
+        return subprocess.run(cmd, capture_output=True, text=True, cwd=str(local))
+
+    # --- no-push still works (local only) --------------------------------
+    def test_no_push_claim_local_only(self):
+        """--no-push must succeed without any remote interaction."""
+        # Use a directory that is NOT a git repo to prove no git calls happen.
+        non_repo = self.tmp / "non_repo"
+        non_repo.mkdir()
+        cdir = self.tmp / "claims_nopush"
+        cmd = [
+            sys.executable, str(SCRIPT),
+            "claim",
+            "--task-id", "T-200",
+            "--session-id", "S-local",
+            "--branch", "feature/T-200",
+            "--worktree", str(non_repo),
+            "--touches", "src/foo/",
+            "--depends-on", "",
+            "--claims-dir", str(cdir),
+            "--no-push",
+        ]
+        proc = subprocess.run(cmd, capture_output=True, text=True)
+        assert proc.returncode == OK, (
+            f"--no-push claim failed: {proc.stdout}\n{proc.stderr}"
+        )
+        self.assertTrue((cdir / "T-200.json").exists())
+        data = json.loads((cdir / "T-200.json").read_text())
+        self.assertEqual(data["task_id"], "T-200")
+        self.assertEqual(data["session_id"], "S-local")
+
+    # --- first agent claims, second agent is blocked ---------------------
+    def test_second_agent_blocked_when_ref_exists(self):
+        """Agent B must be refused when Agent A already pushed a claim ref."""
+        # Agent A claims first
+        self._claim(self.local_a, self.cdir_a, "T-300", "S-A", expect=OK)
+        # Verify the ref landed on the remote
+        ls = subprocess.run(
+            ["git", "ls-remote", str(self.remote), "refs/openup/claims/T-300"],
+            capture_output=True, text=True,
+        )
+        self.assertIn("refs/openup/claims/T-300", ls.stdout,
+                      "claim ref must be on the remote after agent A claims")
+
+        # Agent B tries to claim the same task — must be refused
+        proc_b = self._claim(self.local_b, self.cdir_b, "T-300", "S-B", expect=OWNER)
+        self.assertIn("S-A", proc_b.stderr,
+                      "error message must name the owning session")
+
+        # Agent B's local claim file must NOT exist (rolled back)
+        self.assertFalse((self.cdir_b / "T-300.json").exists(),
+                         "local claim file must be rolled back on push rejection")
+
+    # --- release deletes the remote ref ----------------------------------
+    def test_release_deletes_remote_ref(self):
+        """Releasing a claim must delete the ref on the remote."""
+        self._claim(self.local_a, self.cdir_a, "T-301", "S-A", expect=OK)
+        # Confirm ref is on remote
+        ls_before = subprocess.run(
+            ["git", "ls-remote", str(self.remote), "refs/openup/claims/T-301"],
+            capture_output=True, text=True,
+        )
+        self.assertIn("T-301", ls_before.stdout)
+
+        self._release(self.local_a, self.cdir_a, "T-301")
+
+        ls_after = subprocess.run(
+            ["git", "ls-remote", str(self.remote), "refs/openup/claims/T-301"],
+            capture_output=True, text=True,
+        )
+        self.assertNotIn("T-301", ls_after.stdout,
+                         "claim ref must be deleted from remote after release")
+
+    # --- after release, second agent can claim ---------------------------
+    def test_second_agent_can_claim_after_release(self):
+        """Once agent A releases, agent B must be able to claim."""
+        self._claim(self.local_a, self.cdir_a, "T-302", "S-A", expect=OK)
+        self._release(self.local_a, self.cdir_a, "T-302")
+        # Agent B can now claim (fetch + push should succeed)
+        self._claim(self.local_b, self.cdir_b, "T-302", "S-B", expect=OK)
+        data = json.loads((self.cdir_b / "T-302.json").read_text())
+        self.assertEqual(data["session_id"], "S-B")
 
 
 if __name__ == "__main__":
