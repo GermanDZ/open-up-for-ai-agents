@@ -1,15 +1,17 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 26
-**Iteration Goal**: T-055 — Supply-chain & adoption-trust hardening (pin/release tag · clone-verify-run install · hook disclosure · LICENSE/SECURITY.md)
+**Iteration**: 27
+**Iteration Goal**: T-056 — Web session bootstrap — auto-regenerate `.claude/` on session start + framework version selector (vendored/latest/pinned)
 **Status**: completed
-**Current Task**: T-055
+**Current Task**: T-056
 **Iteration Started**: 2026-06-18
-**Last Updated**: 2026-06-18
+**Last Updated**: 2026-06-19
 **Updated By**: sync-status.py
 
 ## Notes
+
+- **Iteration 27** (2026-06-19): T-056 — web session bootstrap for ephemeral/web environments. Added `scripts/session-start.sh` (SessionStart hook) + `scripts/install-openup.sh` (version selector: vendored/latest/pinned tag with offline fallback); patched `.gitignore` to track only `.claude/settings.json`; registered SessionStart hook in `settings.json.example`; updated `sync-templates-to-claude.sh` to honor `OPENUP_TEMPLATES_DIR`; added bootstrap section to `sync-from-framework.sh` (emits `.openup-version`, patches `.gitignore` in consuming projects); added both scripts to `process-manifest.txt` so every install/update path ships them. All three version modes tested + network-failure fallback verified. Solo, standard, worktree.
 
 - **Iteration 26** (2026-06-18): T-055 — supply-chain & adoption-trust hardening (A+B+C from the 2026-06-18 security exploration; Option D deferred). Added root **LICENSE (MIT)** + **SECURITY.md** (vuln-disclosure channel, full disclosure of all 9 `settings.json.example` hooks with per-event effects, documented manual opt-out, version-pinning guidance); README now splits MIT (own code) from EPL-v1.0 (vendored EPF content). Bounded `Pillow>=12.0.0,<13` (noted requirements.txt is converter-only; workflow is stdlib-only). Rewrote install/update guidance (`updating.md` + README) to **clone-a-pinned-tag-then-run-local**, de-piped the cron/GitHub-Actions examples, pinned submodule examples; both `update-openup*.sh` now resolve a **pinned ref** (OPENUP_REF > OPENUP_BRANCH > latest tag, never silent `main`). Cut annotated **v2.0.0** tag locally (push deferred to maintainer; next tag post-merge should carry the governance files). Solo, standard, worktree.
 
