@@ -48,6 +48,10 @@ EDIT_TOOLS = {"Edit", "Write", "NotebookEdit"}
 # repo-relative path.
 EXEMPT_PREFIXES = (
     "docs/explorations/",
+    # Planning artifacts produced by /openup-plan-feature and related skills —
+    # not product source, must be writable before an iteration exists to avoid
+    # the circular "need a plan to start an iteration, gate blocks the plan" trap.
+    "docs/iteration-plans/",
     ".openup/",
     ".claude/memory/",
     "docs/agent-logs/",
@@ -57,6 +61,10 @@ EXEMPT_PREFIXES = (
     # blocked /openup-retrospective's own step 7. The write-fence still governs
     # it on task branches via the fresh-base rule.
     "docs/project-status.md",
+    # Roadmap is a planning/coordination artifact (hand-authored rows + sync-status
+    # managed Status cells). /openup-plan-feature and /openup-create-task-spec must
+    # be able to add rows without a prior iteration; gating it was circular.
+    "docs/roadmap.md",
     # Ring 2 change-state: plan.md / design.md / inputs / test-notes. These ARE
     # the plan the gate wants persisted before code — gating their authoring is
     # a chicken-and-egg block that stops /openup-create-task-spec from writing

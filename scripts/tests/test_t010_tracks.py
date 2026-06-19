@@ -144,7 +144,7 @@ class NoActiveIterationTests(unittest.TestCase):
     def test_quick_prompt_suggests_quick(self):
         proc = run_hook(self.proj.payload("fix typo in README for T-010"),
                         self.proj.dir)
-        self.assertEqual(proc.returncode, 2)
+        self.assertEqual(proc.returncode, 0)  # advisory — never blocks the prompt
         self.assertIn("Suggested track: quick", proc.stderr)
         # Folded into the start-iteration suggestion.
         self.assertIn("track: quick", proc.stderr)
@@ -154,7 +154,7 @@ class NoActiveIterationTests(unittest.TestCase):
         proc = run_hook(
             self.proj.payload("implement T-010: redesign the architecture"),
             self.proj.dir)
-        self.assertEqual(proc.returncode, 2)
+        self.assertEqual(proc.returncode, 0)  # advisory — never blocks the prompt
         self.assertIn("Suggested track: full", proc.stderr)
         self.assertIn("track: full", proc.stderr)
 
@@ -162,7 +162,7 @@ class NoActiveIterationTests(unittest.TestCase):
         proc = run_hook(
             self.proj.payload("implement the export feature for T-010"),
             self.proj.dir)
-        self.assertEqual(proc.returncode, 2)
+        self.assertEqual(proc.returncode, 0)  # advisory — never blocks the prompt
         self.assertIn("Suggested track: standard", proc.stderr)
         self.assertIn("track: standard", proc.stderr)
 
@@ -181,7 +181,7 @@ class ActiveIterationTests(unittest.TestCase):
         proc = run_hook(
             self.proj.payload("continue with T-010 — fix typo in the doc"),
             self.proj.dir)
-        self.assertEqual(proc.returncode, 2)
+        self.assertEqual(proc.returncode, 0)  # advisory — never blocks the prompt
         self.assertIn("Active iteration", proc.stderr)
         self.assertIn("Suggested track: quick", proc.stderr)
 
@@ -189,7 +189,7 @@ class ActiveIterationTests(unittest.TestCase):
         proc = run_hook(
             self.proj.payload("work on T-010 migration across services"),
             self.proj.dir)
-        self.assertEqual(proc.returncode, 2)
+        self.assertEqual(proc.returncode, 0)  # advisory — never blocks the prompt
         self.assertIn("Suggested track: full", proc.stderr)
 
 

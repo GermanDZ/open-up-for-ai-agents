@@ -182,7 +182,7 @@ def main() -> None:
             f"Project phase: {phase} | No active iteration",
             file=sys.stderr,
         )
-        sys.exit(2)
+        sys.exit(0)  # advisory only — never block the user's prompt
 
     else:
         # Iteration is active — remind Claude to continue from repo state, solo by default
@@ -199,7 +199,7 @@ def main() -> None:
             f"Suggested track: {track} — adjust if the scope differs (see tracks.md).",
             file=sys.stderr,
         )
-        sys.exit(2)
+        sys.exit(0)  # advisory only — never block the user's prompt
 
 
 if __name__ == "__main__":
