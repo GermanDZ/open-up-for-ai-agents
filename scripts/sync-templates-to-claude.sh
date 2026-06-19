@@ -56,7 +56,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 # Define source and destination paths
-DEV_PROCESS_DIR="$PROJECT_ROOT/docs-eng-process/.claude-templates"
+# Allow callers (e.g. install-openup.sh) to override the templates source
+DEV_PROCESS_DIR="${OPENUP_TEMPLATES_DIR:-$PROJECT_ROOT/docs-eng-process/.claude-templates}"
 CLAUDE_DIR="$PROJECT_ROOT/.claude"
 
 # Functions

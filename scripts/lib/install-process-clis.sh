@@ -76,7 +76,7 @@ install_process_clis() {
         fi
         cp "$src" "$dest"
         case "$f" in
-            *.py) chmod +x "$dest" 2>/dev/null || true ;;
+            *.py|*.sh) chmod +x "$dest" 2>/dev/null || true ;;
         esac
         copied=$((copied + 1))
     done < <(_process_cli_manifest "$src_dir")

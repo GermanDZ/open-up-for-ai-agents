@@ -31,3 +31,8 @@ docs-index.py
 # T-053 — read-only project health diagnostic (framework/manifest drift +
 # .openup/state.json integrity + aggregation of existing --check modes).
 openup-doctor.py
+# T-056 — web session bootstrap (auto-regenerate .claude/ on session start).
+# These shell scripts are shipped alongside the Python CLIs so a consuming
+# project gets the full bootstrap out of the box on every install/update.
+session-start.sh
+install-openup.sh

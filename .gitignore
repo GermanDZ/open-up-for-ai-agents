@@ -30,7 +30,8 @@ Thumbs.db
 *.log
 
 # Claude Code
-/.claude
+/.claude/*
+!/.claude/settings.json
 
 # OpenUP runtime iteration state (machine-readable, regenerated per iteration)
 # The tracked schema + helper live in scripts/; only the runtime dir is ignored.
