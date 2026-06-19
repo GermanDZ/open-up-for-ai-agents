@@ -1,7 +1,7 @@
 ---
 type: task-spec
 id: T-058
-status: ready
+status: done
 title: "Periodic framework-version staleness check — 6-hour cooldown, wired into board and start-iteration"
 phase: construction
 track: standard
@@ -14,6 +14,7 @@ touches:
   - scripts/openup-state.py
   - scripts/process-manifest.txt
   - scripts/tests/test_t058_version_check.py
+  - docs/iteration-plans/t-058-framework-version-staleness-check.md
 depends-on: []
 ---
 

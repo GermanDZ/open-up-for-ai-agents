@@ -11,6 +11,8 @@
 
 ## Notes
 
+- **Iteration 29** (2026-06-19): T-058 — periodic framework version staleness check. New `scripts/openup-version-check.py` (stdlib-only, fail-open) compares installed version against latest remote semver tag; 6-hour cooldown via `.openup/version-check.json` prevents repeated network calls. Wired into `openup-board.py` (top of main()) and `openup-state.py` (end of cmd_init()) via importlib pattern; advisory warning to stderr when outdated. Registered in `process-manifest.txt`. 9 hermetic tests. Solo, standard, worktree.
+
 - **Iteration 28** (2026-06-19): T-057 — solo UX friction fixes.  is now advisory (exit 0 on all paths — never blocks the prompt);  exempts  and  (planning artifacts, no iteration required);  Step 9 adds auto-merge () + Already up to date. after PR creation (fail-open on branch-protection block);  adds hook-behavior note to Critical Rules. +7 tests (5 updated exit-code assertions, 2 new gate exemptions). Solo, standard, worktree.
 
 - **Iteration 27** (2026-06-19): T-056 — web session bootstrap for ephemeral/web environments. Added `scripts/session-start.sh` (SessionStart hook) + `scripts/install-openup.sh` (version selector: vendored/latest/pinned tag with offline fallback); patched `.gitignore` to track only `.claude/settings.json`; registered SessionStart hook in `settings.json.example`; updated `sync-templates-to-claude.sh` to honor `OPENUP_TEMPLATES_DIR`; added bootstrap section to `sync-from-framework.sh` (emits `.openup-version`, patches `.gitignore` in consuming projects); added both scripts to `process-manifest.txt` so every install/update path ships them. All three version modes tested + network-failure fallback verified. Solo, standard, worktree.

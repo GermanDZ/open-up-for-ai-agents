@@ -1,7 +1,7 @@
 ---
 type: iteration-plan
 id: T-058
-status: pending
+status: implemented
 title: "Periodic framework-version staleness check — 6-hour cooldown, wired into board and start-iteration"
 traces-from: []
 verified-by: []
