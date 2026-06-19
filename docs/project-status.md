@@ -1,10 +1,10 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 28
-**Iteration Goal**: T-057 — Solo UX Friction — Free Exploration, Gate-at-Commit, Auto-Merge
+**Iteration**: 29
+**Iteration Goal**: T-058 — Periodic framework version staleness check — 6-hour cooldown, wired into board + start-iteration
 **Status**: completed
-**Current Task**: T-057
+**Current Task**: T-058
 **Iteration Started**: 2026-06-18
 **Last Updated**: 2026-06-19
 **Updated By**: sync-status.py
