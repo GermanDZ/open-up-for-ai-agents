@@ -1,18 +1,8 @@
 ---
 type: iteration-plan
 id: T-056
-status: pending
+status: implemented
 traces-from: []
-touches:
-  - .gitignore
-  - .openup-version
-  - docs-eng-process/.claude-templates/settings.json.example
-  - scripts/install-openup.sh
-  - scripts/lib/install-process-clis.sh
-  - scripts/process-manifest.txt
-  - scripts/session-start.sh
-  - scripts/sync-from-framework.sh
-  - scripts/sync-templates-to-claude.sh
 verified-by: []
 ---
 
