@@ -523,7 +523,8 @@ try:
     with open(src_path) as f:
         src = json.load(f)
     with open(dest_path) as f:
-        dest = json.load(f)
+        original_text = f.read()
+    dest = json.loads(original_text)
 
     src_hooks = src.get("hooks", {})
     dest_hooks = dest.get("hooks", {})
@@ -538,9 +539,12 @@ try:
             merged[event] = dest_hooks[event]
 
     dest["hooks"] = merged
+    new_text = json.dumps(dest, indent=2) + "\n"
+    if new_text == original_text:
+        # Exit 2 = success, no change (idempotent)
+        sys.exit(2)
     with open(dest_path, "w") as f:
-        json.dump(dest, f, indent=2)
-        f.write("\n")
+        f.write(new_text)
     print(f"Merged OpenUP hooks into {dest_path} (custom hooks preserved)")
 except Exception as e:
     print(f"Warning: could not merge settings.json: {e}", file=sys.stderr)
@@ -549,6 +553,8 @@ PYEOF
       then
         log_success "Merged OpenUP hooks into settings.json (custom hooks preserved)"
         SYNCED_FILES=$((SYNCED_FILES + 1))
+      elif [ $? -eq 2 ]; then
+        log_verbose "settings.json already up-to-date (no change)"
       else
         log_warn "Could not merge settings.json; restoring backup"
         mv "${SETTINGS_DEST}.bak" "$SETTINGS_DEST"
