@@ -661,6 +661,45 @@ else
   fi
 fi
 
+# T-056: Bootstrap — emit .openup-version + patch .gitignore so .claude/settings.json
+# is tracked (the only file a fresh clone needs to trigger the SessionStart hook).
+log_info "Checking web/ephemeral session bootstrap..."
+echo ""
+
+OPENUP_VERSION_FILE="$PROJECT_ROOT/.openup-version"
+GITIGNORE_FILE="$PROJECT_ROOT/.gitignore"
+
+# Emit .openup-version (vendored by default) if absent; never overwrite an
+# existing pin — the project owns this value.
+if [ ! -f "$OPENUP_VERSION_FILE" ]; then
+  if [ "$DRY_RUN" = false ]; then
+    echo "vendored" > "$OPENUP_VERSION_FILE"
+    log_success "Created .openup-version (default: vendored)"
+    SYNCED_FILES=$((SYNCED_FILES + 1))
+  else
+    log_info "[DRY RUN] Would create .openup-version"
+  fi
+else
+  log_verbose ".openup-version already exists ($(cat "$OPENUP_VERSION_FILE")) — skipping"
+fi
+
+# Patch .gitignore: swap the broad /.claude ignore for the settings-only pattern.
+# Idempotent: only runs when the old pattern is present.
+if [ -f "$GITIGNORE_FILE" ] && grep -qxF '/.claude' "$GITIGNORE_FILE"; then
+  if [ "$DRY_RUN" = false ]; then
+    # Replace the bare /.claude line with the two-line pattern
+    sed -i.bak 's|^/\.claude$|/.claude/*\
+!/.claude/settings.json|' "$GITIGNORE_FILE" && rm -f "${GITIGNORE_FILE}.bak"
+    log_success "Patched .gitignore: /.claude → /.claude/* + !/.claude/settings.json"
+    SYNCED_FILES=$((SYNCED_FILES + 1))
+  else
+    log_info "[DRY RUN] Would patch .gitignore (/.claude → /.claude/* + !/.claude/settings.json)"
+  fi
+else
+  log_verbose ".gitignore already has the settings-only pattern (or does not exist) — skipping"
+fi
+echo ""
+
 # Self-commit the tracked files this sync overwrote (T-052) so the working tree
 # is clean on return and on-stop.py never mistakes them for abandoned lane work.
 if [ "$DRY_RUN" = false ]; then
