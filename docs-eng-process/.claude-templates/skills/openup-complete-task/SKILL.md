@@ -403,6 +403,30 @@ If the task ran in-place (`worktree: false`), only the claim release applies.
    - No unmerged commits → inform user PR is not needed
    - Failure → explain error and provide manual steps
 
+### 9. Auto-Merge and Pull to Local Main
+
+**Auto-merge runs by default.** Skip ONLY if `$ARGUMENTS[auto_merge]` is explicitly `"false"`,
+or if step 8 produced no PR (no unmerged commits).
+
+This step runs after the PR is created (step 8). By this point the worktree has been removed
+(step 7b), so the executor is in the main repo context on `main`. Run:
+
+```bash
+# Merge the PR — merge commit (not squash) preserves atomic commits on trunk
+gh pr merge --merge --delete-branch
+
+# Pull the merge commit to local main
+git pull origin main
+```
+
+On success: local `main` now reflects the merged task commits; no stranded branch remains.
+
+On failure (e.g. branch protection requires a review):
+- Log the failure and the PR URL.
+- Inform the user: "Auto-merge blocked (branch protection or CI gate). Merge manually
+  at `<PR URL>`, then run `git pull origin main`."
+- Continue to the next step (release + worktree cleanup) — do NOT abort the skill.
+
 ## Output
 
 Returns a summary of:

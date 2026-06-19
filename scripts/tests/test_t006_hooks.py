@@ -174,6 +174,21 @@ class GateEditsTests(unittest.TestCase):
                         self._edit_payload("docs/project-status.md"), self.repo.dir)
         self.assertEqual(proc.returncode, 0)
 
+    def test_allows_iteration_plans_without_state(self):
+        # T-057: /openup-plan-feature writes to docs/iteration-plans/ before an
+        # iteration exists. Gating it was circular (need a plan to start one).
+        proc = run_hook("gate-edits.py",
+                        self._edit_payload("docs/iteration-plans/plan-foo.md"),
+                        self.repo.dir)
+        self.assertEqual(proc.returncode, 0)
+
+    def test_allows_roadmap_without_state(self):
+        # T-057: roadmap is a planning artifact — /openup-plan-feature and
+        # /openup-create-task-spec must be able to add rows without a prior iteration.
+        proc = run_hook("gate-edits.py",
+                        self._edit_payload("docs/roadmap.md"), self.repo.dir)
+        self.assertEqual(proc.returncode, 0)
+
     def test_allows_path_outside_repo_without_state(self):
         # Regression: the harness memory dir lives at
         # ~/.claude/projects/<id>/memory/ — outside the repo. A repo-scoped
