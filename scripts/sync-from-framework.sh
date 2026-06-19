@@ -188,9 +188,10 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 if [ -z "$FRAMEWORK_PATH" ]; then
   log_info "Auto-detecting framework repository..."
 
-  # Check if we're in the framework repository itself
-  # Framework repo has sync-templates-to-claude.sh script
-  if [ -f "$PROJECT_ROOT/scripts/sync-templates-to-claude.sh" ]; then
+  # Check if we're in the framework repository itself.
+  # The definitive marker is docs-eng-process/.claude-templates/ — only the
+  # framework has the template source tree; consuming projects never do.
+  if [ -d "$PROJECT_ROOT/docs-eng-process/.claude-templates" ]; then
     log_error "You appear to be in the framework repository itself."
     log_error "This script is meant to be run from projects that USE the framework."
     log_error "Use ./scripts/sync-templates-to-claude.sh instead."
