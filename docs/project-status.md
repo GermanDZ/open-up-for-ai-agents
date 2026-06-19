@@ -1,15 +1,17 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 27
-**Iteration Goal**: T-056 — Web session bootstrap — auto-regenerate `.claude/` on session start + framework version selector (vendored/latest/pinned)
+**Iteration**: 28
+**Iteration Goal**: T-057 — Solo UX Friction — Free Exploration, Gate-at-Commit, Auto-Merge
 **Status**: completed
-**Current Task**: T-056
+**Current Task**: T-057
 **Iteration Started**: 2026-06-18
 **Last Updated**: 2026-06-19
 **Updated By**: sync-status.py
 
 ## Notes
+
+- **Iteration 28** (2026-06-19): T-057 — solo UX friction fixes.  is now advisory (exit 0 on all paths — never blocks the prompt);  exempts  and  (planning artifacts, no iteration required);  Step 9 adds auto-merge () + Already up to date. after PR creation (fail-open on branch-protection block);  adds hook-behavior note to Critical Rules. +7 tests (5 updated exit-code assertions, 2 new gate exemptions). Solo, standard, worktree.
 
 - **Iteration 27** (2026-06-19): T-056 — web session bootstrap for ephemeral/web environments. Added `scripts/session-start.sh` (SessionStart hook) + `scripts/install-openup.sh` (version selector: vendored/latest/pinned tag with offline fallback); patched `.gitignore` to track only `.claude/settings.json`; registered SessionStart hook in `settings.json.example`; updated `sync-templates-to-claude.sh` to honor `OPENUP_TEMPLATES_DIR`; added bootstrap section to `sync-from-framework.sh` (emits `.openup-version`, patches `.gitignore` in consuming projects); added both scripts to `process-manifest.txt` so every install/update path ships them. All three version modes tested + network-failure fallback verified. Solo, standard, worktree.
 

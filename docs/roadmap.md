@@ -5,7 +5,7 @@
 
 | ID | Title | Status | Priority | Depends on |
 |---|---|---|---|---|
-| [T-057](changes/T-057/plan.md) | Solo UX Friction — Free Exploration, Gate-at-Commit, Auto-Merge | in-progress | high | — |
+| [T-057](changes/T-057/plan.md) | Solo UX Friction — Free Exploration, Gate-at-Commit, Auto-Merge | completed (2026-06-19) | high | — |
 | [T-056](changes/T-056/plan.md) | Web session bootstrap — auto-regenerate `.claude/` on session start + framework version selector (vendored/latest/pinned) | completed (2026-06-19) | high | — |
 | [T-055](changes/T-055/plan.md) | Supply-chain & adoption-trust hardening (pin/release tag · clone-verify-run install · hook disclosure · LICENSE/SECURITY.md) | completed (2026-06-18) | medium | — |
 | T-054 | Bump OpenUP framework version to 2.0.0 (major — openup-doctor + parallel-lanes/write-fence/board/typed-traceability since 1.5.0) | completed (2026-06-18) | low | — |
