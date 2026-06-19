@@ -1,7 +1,7 @@
 ---
 id: T-057
 title: "Solo UX Friction — Free Exploration, Gate-at-Commit, Auto-Merge"
-status: ready
+status: done
 priority: high
 estimate: 1 session
 plan: docs/explorations/2026-06-19-t057-solo-ux-friction.md
