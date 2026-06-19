@@ -306,6 +306,16 @@ def cmd_init(args):
     }
     write_state(args, state)
     print(f"Initialized {state_path(args)}")
+    # Version staleness check (T-058): advisory warning, fail-open.
+    try:
+        import importlib.util as _ilu
+        _p = Path(__file__).resolve().parent / "openup-version-check.py"
+        _s = _ilu.spec_from_file_location("openup_version_check", _p)
+        _m = _ilu.module_from_spec(_s)
+        _s.loader.exec_module(_m)  # type: ignore[union-attr]
+        _m.check_once(str(Path(__file__).resolve().parents[1]))
+    except Exception:
+        pass  # Version check never breaks state init.
     return EXIT_OK
 
 

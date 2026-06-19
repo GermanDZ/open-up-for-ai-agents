@@ -394,6 +394,16 @@ def build_parser():
 
 
 def main(argv=None):
+    # Version staleness check (T-058): advisory warning, fail-open.
+    try:
+        _vc_path = Path(__file__).resolve().parent / "openup-version-check.py"
+        _vc_spec = importlib.util.spec_from_file_location("openup_version_check", _vc_path)
+        _vc = importlib.util.module_from_spec(_vc_spec)
+        _vc_spec.loader.exec_module(_vc)  # type: ignore[union-attr]
+        _vc.check_once(str(Path(__file__).resolve().parents[1]))
+    except Exception:
+        pass  # Version check never breaks the board.
+
     raw = list(sys.argv[1:] if argv is None else argv)
     # Default subcommand is `refresh` when the first token isn't a known command.
     if not raw or raw[0] not in {"refresh", "top"}:

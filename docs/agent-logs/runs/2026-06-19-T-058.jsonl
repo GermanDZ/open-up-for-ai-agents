@@ -1,0 +1,4 @@
+{"event": "iteration_start", "task_id": "T-058", "goal": "Framework version staleness check with 6-hour cooldown, wired into board and start-iteration", "branch": "feat/T-058-framework-version-staleness-check", "phase": "construction", "ts": "2026-06-19T12:34:29Z"}
+{"event": "task_completed", "task_id": "T-058", "goal": "Framework version staleness check implemented and tested", "branch": "feat/T-058-framework-version-staleness-check", "phase": "construction", "ts": "2026-06-19T12:40:48Z"}
+{"event": "run_log", "task_id": "T-058", "branch": "feat/T-058-framework-version-staleness-check", "phase": "construction", "ts": "2026-06-19T12:43:48Z"}
+{"event": "iteration_complete", "task_id": "T-058", "branch": "feat/T-058-framework-version-staleness-check", "phase": "construction", "ts": "2026-06-19T13:22:30Z"}

@@ -1,15 +1,17 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 28
-**Iteration Goal**: T-057 — Solo UX Friction — Free Exploration, Gate-at-Commit, Auto-Merge
+**Iteration**: 29
+**Iteration Goal**: T-058 — Periodic framework version staleness check — 6-hour cooldown, wired into board + start-iteration
 **Status**: completed
-**Current Task**: T-057
+**Current Task**: T-058
 **Iteration Started**: 2026-06-18
 **Last Updated**: 2026-06-19
 **Updated By**: sync-status.py
 
 ## Notes
+
+- **Iteration 29** (2026-06-19): T-058 — periodic framework version staleness check. New `scripts/openup-version-check.py` (stdlib-only, fail-open) compares installed version against latest remote semver tag; 6-hour cooldown via `.openup/version-check.json` prevents repeated network calls. Wired into `openup-board.py` (top of main()) and `openup-state.py` (end of cmd_init()) via importlib pattern; advisory warning to stderr when outdated. Registered in `process-manifest.txt`. 9 hermetic tests. Solo, standard, worktree.
 
 - **Iteration 28** (2026-06-19): T-057 — solo UX friction fixes.  is now advisory (exit 0 on all paths — never blocks the prompt);  exempts  and  (planning artifacts, no iteration required);  Step 9 adds auto-merge () + Already up to date. after PR creation (fail-open on branch-protection block);  adds hook-behavior note to Critical Rules. +7 tests (5 updated exit-code assertions, 2 new gate exemptions). Solo, standard, worktree.
 
