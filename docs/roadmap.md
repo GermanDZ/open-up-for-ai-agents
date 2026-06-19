@@ -173,3 +173,12 @@ any claim or fence runs).
 
 **Next step**: program complete. T-001/T-003 delivered, T-013/T-014 backfilled, and
 T-002 (`/openup-sync-spec`) completed 2026-06-11 once T-008's readiness DAG un-blocked it.
+
+
+<!-- plan-hook: 2026-06-15 -->
+### Planned: Make the "approve on your phone" wait a visible, auto-advancing session state
+
+- **Status**: `planned` (awaiting implementation)
+- **Plan**: [plans/2026-06-15-make-the-approve-on-your-phone-wait-a-visible-auto-advancing.md](plans/2026-06-15-make-the-approve-on-your-phone-wait-a-visible-auto-advancing.md)
+- **Created**: 2026-06-15
+- **Next step**: Run `/openup-start-iteration` referencing this plan
