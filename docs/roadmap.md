@@ -5,6 +5,7 @@
 
 | ID | Title | Status | Priority | Depends on |
 |---|---|---|---|---|
+| [T-056](changes/T-056/plan.md) | Web session bootstrap — auto-regenerate `.claude/` on session start + framework version selector (vendored/latest/pinned) | pending | high | — |
 | [T-055](changes/T-055/plan.md) | Supply-chain & adoption-trust hardening (pin/release tag · clone-verify-run install · hook disclosure · LICENSE/SECURITY.md) | completed (2026-06-18) | medium | — |
 | T-054 | Bump OpenUP framework version to 2.0.0 (major — openup-doctor + parallel-lanes/write-fence/board/typed-traceability since 1.5.0) | completed (2026-06-18) | low | — |
 | [T-053](changes/archive/T-053/plan.md) | Add `scripts/openup-doctor.py` — read-only project health diagnostic (framework/manifest drift + `.openup/state.json` integrity + aggregation of existing `--check` modes) + thin `/openup-doctor` skill | completed (2026-06-18) | medium | — |
