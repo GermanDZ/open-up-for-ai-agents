@@ -183,3 +183,35 @@ T-002 (`/openup-sync-spec`) completed 2026-06-11 once T-008's readiness DAG un-b
 - **Plan**: [plans/2026-06-15-make-the-approve-on-your-phone-wait-a-visible-auto-advancing.md](plans/2026-06-15-make-the-approve-on-your-phone-wait-a-visible-auto-advancing.md)
 - **Created**: 2026-06-15
 - **Next step**: Run `/openup-start-iteration` referencing this plan
+
+---
+
+## T-059: Loop Support for /openup-next
+**Status**: pending
+**Priority**: high
+**Value**: Practitioners driving the roadmap from a shell script or cron get a reliable stop signal and safe wrapper, eliminating manual loop management and enabling unattended backlog drain.
+**Description**: Add a machine-readable sentinel (`OPENUP-NEXT: ADVANCED/DONE`) to every `/openup-next` exit, a loop-behavior section in the skill, and `scripts/openup-loop.sh` — a wrapper with cycle cap, stall detection, and sentinel-based stop. Prerequisite for T-060.
+- Sentinel line on every exit (ADVANCED vs DONE with reason)
+- "When driven by an outer loop" section in `openup-next/SKILL.md`
+- `scripts/openup-loop.sh` (cycle cap, stall limit, sentinel check, fail-safe exit codes)
+- Entry in `process-manifest.txt`
+
+**Dependencies**: none
+
+**See**: `docs/iteration-plans/t-059-loop-support-openup-next.md`
+
+---
+
+## T-060: Parallel Fan-Out (/openup-fan-out)
+**Status**: pending
+**Priority**: high
+**Value**: Teams (and solo practitioners with a wide board) can run multiple lanes concurrently as background subagents, compressing wall-clock delivery time while the interactive session stays free for planning — no manual parallelism wiring required.
+**Description**: Add a stale-lease reaper to `openup-claims.py` (heartbeat field + `reap` subcommand) so crashed background subagents don't wedge lanes permanently, a `top-n` subcommand to `openup-board.py` for collision-free multi-lane selection, and a new `/openup-fan-out` skill that dispatches one background subagent per READY lane.
+- `openup-claims.py heartbeat` + `reap` subcommands (stale-claim recovery)
+- `openup-board.py top-n N` (collision-free lane partition)
+- `/openup-fan-out` skill (dispatch + collect summaries)
+- Heartbeat stamp wired into `/openup-start-iteration`
+
+**Dependencies**: T-059
+
+**See**: `docs/iteration-plans/t-060-parallel-fan-out.md`
