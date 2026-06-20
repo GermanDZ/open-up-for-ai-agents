@@ -1,7 +1,7 @@
 ---
 id: T-059
 title: "Loop support for /openup-next — sentinel output, loop section, openup-loop.sh"
-status: ready
+status: done
 priority: high
 estimate: 1 session
 plan: docs/iteration-plans/t-059-loop-support-openup-next.md

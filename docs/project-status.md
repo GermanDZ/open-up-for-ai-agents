@@ -1,15 +1,17 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 0
+**Iteration**: 30
 **Iteration Goal**: T-058 — Periodic framework version staleness check — 6-hour cooldown, wired into board + start-iteration
 **Status**: completed
-**Current Task**: quick-sync-settings-idempotent
+**Current Task**: T-059
 **Iteration Started**: 2026-06-18
-**Last Updated**: 2026-06-19
+**Last Updated**: 2026-06-20
 **Updated By**: sync-status.py
 
 ## Notes
+
+- **Iteration 30** (2026-06-20): T-059 — loop support for /openup-next. Added machine-readable sentinel protocol (OPENUP-NEXT: ADVANCED/DONE as last stdout line on every exit), `## When Driven by an Outer Loop` section in `openup-next/SKILL.md` (stop rule, context model, /loop vs shell-loop tradeoff, stall detection), and `scripts/openup-loop.sh` wrapper (cycle cap, stall detection, exit codes 0/1/2/3). Manifest entry added. Solo, standard, worktree.
 
 - **Iteration 29** (2026-06-19): T-058 — periodic framework version staleness check. New `scripts/openup-version-check.py` (stdlib-only, fail-open) compares installed version against latest remote semver tag; 6-hour cooldown via `.openup/version-check.json` prevents repeated network calls. Wired into `openup-board.py` (top of main()) and `openup-state.py` (end of cmd_init()) via importlib pattern; advisory warning to stderr when outdated. Registered in `process-manifest.txt`. 9 hermetic tests. Solo, standard, worktree.
 

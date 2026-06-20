@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "task_id": "T-059",
+  "iteration": 30,
+  "phase": "construction",
+  "track": "standard",
+  "branch": "feat/T-059-loop-support-openup-next",
+  "worktree": "/Users/germandz/personal-code/ai-dev-framework/open-up-for-ai-agents-T-059",
+  "session_id": null,
+  "started_at": "2026-06-20T14:43:03Z",
+  "gates": {
+    "team_deployed": false,
+    "plan_persisted": false,
+    "log_written": true,
+    "roadmap_synced": true,
+    "retro_due": false
+  },
+  "iterations_since_retro": 0
+}
