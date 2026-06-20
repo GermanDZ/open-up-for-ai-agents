@@ -1,0 +1,2 @@
+{"run_id": "openup-next-t059-20260620", "event": "iteration_start", "task_id": "T-059", "goal": "Add sentinel output, loop-behavior section, and openup-loop.sh to make /openup-next reliably driveable by an outer loop", "branch": "feat/T-059-loop-support-openup-next", "phase": "construction", "ts": "2026-06-20T14:44:01Z"}
+{"event": "iteration_complete", "task_id": "T-059", "branch": "feat/T-059-loop-support-openup-next", "phase": "construction", "ts": "2026-06-20T14:50:39Z"}
