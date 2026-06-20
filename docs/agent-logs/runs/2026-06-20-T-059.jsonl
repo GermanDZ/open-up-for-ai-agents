@@ -1,2 +1,3 @@
 {"run_id": "openup-next-t059-20260620", "event": "iteration_start", "task_id": "T-059", "goal": "Add sentinel output, loop-behavior section, and openup-loop.sh to make /openup-next reliably driveable by an outer loop", "branch": "feat/T-059-loop-support-openup-next", "phase": "construction", "ts": "2026-06-20T14:44:01Z"}
 {"event": "iteration_complete", "task_id": "T-059", "branch": "feat/T-059-loop-support-openup-next", "phase": "construction", "ts": "2026-06-20T14:50:39Z"}
+{"run_id": "c3b8d300a6f34f599e9a5c081a872bdf", "event": "commit", "task_id": "T-059", "branch": "main", "sha": "bee23890966510ec88a966a7c1e06a3559575d8a", "model": null, "session_id": null, "ts": "2026-06-20T14:43:52Z"}
