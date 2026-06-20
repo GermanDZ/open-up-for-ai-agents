@@ -98,11 +98,11 @@ Extend the `/openup-next` skill by appending a sentinel contract to its `## Outp
 
 ## Operations
 
-- [ ] Edit `docs-eng-process/.claude-templates/skills/openup-next/SKILL.md`: append sentinel spec (ADVANCED/DONE format, fail-safe rule) to `## Output` section and add `## When Driven by an Outer Loop` section after `## See Also`
-- [ ] Copy the same edits to `.claude/skills/openup-next/SKILL.md`; verify with `diff docs-eng-process/.claude-templates/skills/openup-next/SKILL.md .claude/skills/openup-next/SKILL.md` → must exit 0
-- [ ] Create `scripts/openup-loop.sh` with `set -euo pipefail`, flags `--max-cycles` (default 50), `--stall-limit` (default 3), `--task-id`; sentinel grep; exit codes 0/1/2/3; then `chmod +x scripts/openup-loop.sh`
-- [ ] Add `scripts/openup-loop.sh` entry to `scripts/process-manifest.txt` under the scripts section
-- [ ] (tester) Verify all acceptance criteria: sentinel grep in both SKILL.md copies, `diff` exits 0, `test -x scripts/openup-loop.sh`, manifest entry present; run mock exit-code tests for all four exit paths
+- [x] Edit `docs-eng-process/.claude-templates/skills/openup-next/SKILL.md`: append sentinel spec (ADVANCED/DONE format, fail-safe rule) to `## Output` section and add `## When Driven by an Outer Loop` section after `## See Also`
+- [x] Copy the same edits to `.claude/skills/openup-next/SKILL.md`; verify with `diff docs-eng-process/.claude-templates/skills/openup-next/SKILL.md .claude/skills/openup-next/SKILL.md` → must exit 0
+- [x] Create `scripts/openup-loop.sh` with `set -euo pipefail`, flags `--max-cycles` (default 50), `--stall-limit` (default 3), `--task-id`; sentinel grep; exit codes 0/1/2/3; then `chmod +x scripts/openup-loop.sh`
+- [x] Add `scripts/openup-loop.sh` entry to `scripts/process-manifest.txt` under the scripts section
+- [x] (tester) Verify all acceptance criteria: sentinel grep in both SKILL.md copies, `diff` exits 0, `test -x scripts/openup-loop.sh`, manifest entry present; run mock exit-code tests for all four exit paths
 
 ## Success Measures
 

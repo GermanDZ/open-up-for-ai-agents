@@ -39,3 +39,6 @@ openup-version-check.py
 # project gets the full bootstrap out of the box on every install/update.
 session-start.sh
 install-openup.sh
+# T-059 — shell-loop driver for /openup-next (sentinel-based stop, cycle cap,
+# stall detection; fresh claude -p process per cycle for cold context).
+openup-loop.sh

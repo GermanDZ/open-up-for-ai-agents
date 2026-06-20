@@ -237,6 +237,24 @@ A compact summary (≤6 bullets): which path ran (**resumed** / **picked** /
 landed, which boxes are now ticked, and which legal exit was taken. If you
 promoted a roadmap task, name the spec/lane you created.
 
+### Sentinel line (machine-readable, always last)
+
+Every exit — ADVANCED or DONE — must end with exactly one of these lines as the
+very last line of output, with nothing after it:
+
+```
+OPENUP-NEXT: ADVANCED — <task-id>
+OPENUP-NEXT: DONE — <reason>
+```
+
+`ADVANCED` means a lane was worked this cycle (resumed, picked, or promoted+started).
+`DONE` means a clean no-op: either every lane is blocked/suspended/elsewhere, or the
+roadmap has no pickable pending task. The `<reason>` on DONE names the specific
+condition (e.g. "board empty — all lanes done", "roadmap exhausted — phase review
+needed", "all lanes blocked or suspended"). An outer loop MUST stop on `DONE` and
+continue on `ADVANCED`. Any exit that is neither is a crash; treat it as `DONE`
+(fail-safe stop).
+
 ## See Also
 
 - [openup-start-iteration](../start-iteration/SKILL.md) — the claim/worktree/state machinery step 2 delegates to.
@@ -246,3 +264,32 @@ promoted a roadmap task, name the spec/lane you created.
 - [openup-request-input](../request-input/SKILL.md) — how a cycle suspends on a question (creates the input-request + sets `awaiting-input`).
 - `scripts/openup-board.py` — the deterministic board generator (`refresh` / `top`).
 - `scripts/openup-input.py` — maps answered input-requests back to resumable lanes (`resumable` / `list`).
+- `scripts/openup-loop.sh` — the recommended shell-loop driver (`--max-cycles`, `--stall-limit`, `--task-id`).
+
+## When Driven by an Outer Loop
+
+`/openup-next` is designed to be re-invoked repeatedly by an outer driver — a
+shell script (`openup-loop.sh`), `/loop`, or a cron job. The repo carries all
+continuation state; each invocation starts cold.
+
+**Stop rule (mandatory):** after every exit, check the last output line:
+- `OPENUP-NEXT: ADVANCED — …` → schedule another invocation immediately (or
+  after a short yield — never sleep longer than the worktree's expected cycle
+  time).
+- `OPENUP-NEXT: DONE — …` → stop the outer loop. Do not reinvoke. Surface the
+  reason to the user.
+- Anything else → treat as `DONE` (fail-safe stop; investigate the exit).
+
+**Context model:** each invocation reads the repo from scratch. Nothing from a
+prior invocation's conversation lives into the next. This is a feature — context
+stays minimal every cycle regardless of how many cycles have run.
+
+**Under `/loop` (interactive):** `/loop /openup-next` works but accumulates
+context across ticks (same conversation). For long runs, prefer `openup-loop.sh`
+(fresh `claude -p` process per cycle, truly cold context). Use `/loop` when you
+want to watch progress interactively and the run is short (≤ ~10 cycles).
+
+**Stall detection:** if the same task produces `create-handoff` exits N cycles in
+a row (the lane keeps suspending on the same question), the outer loop should
+stop and surface the stall rather than spinning. `openup-loop.sh` implements this
+with `--stall-limit N` (default 3).
