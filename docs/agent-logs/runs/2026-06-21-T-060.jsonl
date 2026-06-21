@@ -1,2 +1,3 @@
 {"run_id": "null", "event": "iteration_start", "task_id": "T-060", "goal": "Parallel fan-out \u2014 stale-lease reaper + /openup-fan-out skill", "branch": "feat/T-060-parallel-fan-out-openup-fan-out", "phase": "construction", "ts": "2026-06-21T15:39:43Z"}
 {"event": "iteration_complete", "task_id": "T-060", "branch": "feat/T-060-parallel-fan-out-openup-fan-out", "phase": "construction", "ts": "2026-06-21T16:10:23Z"}
+{"run_id": "43b04403250d442091f57c4a5b04ba5e", "event": "commit", "task_id": "T-060", "branch": "main", "sha": "5a79c03281aa07cd75f90400b9d54a1f3873f416", "model": null, "session_id": null, "ts": "2026-06-21T15:39:14Z"}
