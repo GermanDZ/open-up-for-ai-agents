@@ -264,6 +264,12 @@ python3 scripts/openup-claims.py claim \
   --session-id "$(python3 scripts/openup-state.py get session_id 2>/dev/null || echo "$BRANCH")" \
   --branch "$(git rev-parse --abbrev-ref HEAD)" \
   --worktree "$(git rev-parse --show-toplevel)"
+
+# 3. STAMP HEARTBEAT — opts this claim into the heartbeat model (T-060).
+#    The reaper (openup-claims.py reap) only touches claims that have a
+#    last_heartbeat field; stamping here ensures background subagents are
+#    eligible for cleanup if they crash mid-run.
+python3 scripts/openup-claims.py heartbeat --task-id {task_id}
 ```
 
 Claims **never expire** — an abandoned claim blocks its surface until a human removes the

@@ -117,11 +117,11 @@ Extend the two existing CLIs (claims, board) with additive subcommands: `heartbe
 
 ## Operations
 
-- [ ] Add `heartbeat` and `reap` subcommands to `scripts/openup-claims.py`; write unit tests in `tests/` (synthetic claim files: no-heartbeat skipped, fresh-heartbeat kept, stale-heartbeat reaped, `--dry-run` prints but doesn't delete)
-- [ ] Add `top-n <N>` subcommand to `scripts/openup-board.py`; write unit tests (greedy collision-free selection, stops at N, returns `[]` with exit 0 when board has READY lanes but all selected, exits 3 when no READY lanes)
-- [ ] Wire heartbeat stamp into `.claude/skills/openup-start-iteration/SKILL.md` (step after claim write: `python3 scripts/openup-claims.py heartbeat --task-id <task_id>`) and mirror to `docs-eng-process/.claude-templates/skills/openup-start-iteration/SKILL.md`
-- [ ] Create `/openup-fan-out` skill at `.claude/skills/openup-fan-out/SKILL.md` and `docs-eng-process/.claude-templates/skills/openup-fan-out/SKILL.md` per the design in the iteration plan
-- [ ] (tester) Run integration verification: 2-lane fan-out scenario (disjoint touches), assert no claim conflicts, both sentinels received; synthetic stale-claim scenario, assert `reap` clears it and lane is re-pickable; confirm `process-manifest.txt` is not missing entries for the new CLIs (they extend existing scripts, no new entries needed)
+- [x] Add `heartbeat` and `reap` subcommands to `scripts/openup-claims.py`; write unit tests in `tests/` (synthetic claim files: no-heartbeat skipped, fresh-heartbeat kept, stale-heartbeat reaped, `--dry-run` prints but doesn't delete)
+- [x] Add `top-n <N>` subcommand to `scripts/openup-board.py`; write unit tests (greedy collision-free selection, stops at N, returns `[]` with exit 0 when board has READY lanes but all selected, exits 3 when no READY lanes)
+- [x] Wire heartbeat stamp into `.claude/skills/openup-start-iteration/SKILL.md` (step after claim write: `python3 scripts/openup-claims.py heartbeat --task-id <task_id>`) and mirror to `docs-eng-process/.claude-templates/skills/openup-start-iteration/SKILL.md`
+- [x] Create `/openup-fan-out` skill at `.claude/skills/openup-fan-out/SKILL.md` and `docs-eng-process/.claude-templates/skills/openup-fan-out/SKILL.md` per the design in the iteration plan
+- [x] (tester) Run integration verification: 2-lane fan-out scenario (disjoint touches), assert no claim conflicts, both sentinels received; synthetic stale-claim scenario, assert `reap` clears it and lane is re-pickable; confirm `process-manifest.txt` is not missing entries for the new CLIs (they extend existing scripts, no new entries needed)
 
 ## Norms
 
