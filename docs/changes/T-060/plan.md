@@ -15,6 +15,10 @@ touches:
   - docs-eng-process/.claude-templates/skills/openup-fan-out/SKILL.md
   - .claude/skills/openup-start-iteration/SKILL.md
   - docs-eng-process/.claude-templates/skills/openup-start-iteration/SKILL.md
+  - docs-eng-process/model-tiers.md
+  - docs-eng-process/skills-guide.md
+  - tests/test_board_topn.py
+  - tests/test_claims_heartbeat_reap.py
 ---
 
 # T-060 — Parallel fan-out — stale-lease reaper + /openup-fan-out skill
