@@ -1,7 +1,7 @@
 ---
 id: T-060
 title: "Parallel fan-out — stale-lease reaper + /openup-fan-out skill"
-status: ready
+status: done
 priority: high
 estimate: 1–2 sessions
 plan: docs/iteration-plans/t-060-parallel-fan-out.md

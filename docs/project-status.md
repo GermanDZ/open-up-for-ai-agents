@@ -11,6 +11,8 @@
 
 ## Notes
 
+- **Iteration 31** (2026-06-21): Delivered T-060 — stale-lease reaper (heartbeat+reap CLI), top-n board partition, and /openup-fan-out skill; 23 hermetic unit tests; backward-compat invariant (no-heartbeat claims never reaped) enforced.
+
 - **Iteration 30** (2026-06-20): T-059 — loop support for /openup-next. Added machine-readable sentinel protocol (OPENUP-NEXT: ADVANCED/DONE as last stdout line on every exit), `## When Driven by an Outer Loop` section in `openup-next/SKILL.md` (stop rule, context model, /loop vs shell-loop tradeoff, stall detection), and `scripts/openup-loop.sh` wrapper (cycle cap, stall detection, exit codes 0/1/2/3). Manifest entry added. Solo, standard, worktree.
 
 - **Iteration 29** (2026-06-19): T-058 — periodic framework version staleness check. New `scripts/openup-version-check.py` (stdlib-only, fail-open) compares installed version against latest remote semver tag; 6-hour cooldown via `.openup/version-check.json` prevents repeated network calls. Wired into `openup-board.py` (top of main()) and `openup-state.py` (end of cmd_init()) via importlib pattern; advisory warning to stderr when outdated. Registered in `process-manifest.txt`. 9 hermetic tests. Solo, standard, worktree.
