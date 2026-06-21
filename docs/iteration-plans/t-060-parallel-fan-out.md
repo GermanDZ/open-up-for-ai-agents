@@ -1,7 +1,7 @@
 ---
 type: iteration-plan
 id: T-060
-status: pending
+status: implemented
 title: "Parallel fan-out — stale-lease reaper + /openup-fan-out skill"
 traces-from: []
 verified-by: []
