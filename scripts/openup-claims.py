@@ -40,6 +40,8 @@ Subcommands:
   list        Print all live claims (JSON array).
   get         Print one task's claim (or exit 5 if absent).
   dir         Print the resolved claims directory.
+  heartbeat   Stamp last_heartbeat on an existing claim (T-060); exit 7 if absent.
+  reap        Sweep claims with stale heartbeats (T-060); advisory, always exits 0.
   reserve-id  Atomically reserve the next free task ID (or a requested one).
   next-id     Print the ID reserve-id would allocate; writes nothing.
   release-id  Delete an ID reservation (idempotent).
@@ -53,7 +55,8 @@ Exit codes:
   5  claim not found (get)
   6  refused: task already claimed/reserved by a DIFFERENT session, or a
      requested ID is already in use in the repo
-  7  bad input (e.g. cannot resolve task touches, malformed task ID)
+  7  bad input (e.g. cannot resolve task touches, malformed task ID) OR
+     heartbeat: the specified claim does not exist
 """
 
 import argparse
@@ -1038,6 +1041,93 @@ def cmd_list_ids(args):
     return EXIT_OK
 
 
+def cmd_heartbeat(args):
+    """Stamp last_heartbeat on an existing claim file (T-060).
+
+    Reads the claim for --task-id, updates last_heartbeat to now (ISO-8601),
+    and rewrites the file atomically.  Exits 7 if the claim does not exist.
+    """
+    cdir = claims_dir(override=args.claims_dir)
+    fp = claim_file(args.task_id, cdir)
+    data = read_claim(fp)
+    if data is None:
+        sys.stderr.write(f"No claim for {args.task_id} — cannot stamp heartbeat\n")
+        return EXIT_BAD_INPUT
+    data["last_heartbeat"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    write_claim_atomic(fp, data)
+    print(f"Heartbeat stamped for {args.task_id}")
+    return EXIT_OK
+
+
+def cmd_reap(args):
+    """Sweep claims with stale heartbeats (T-060).
+
+    For each live claim:
+      - No last_heartbeat → skip (legacy/interactive claim; never managed by a
+        background agent and therefore never reaped — backward-compat invariant).
+      - last_heartbeat present and age > stale-after → delete (or print with
+        --dry-run).
+
+    Always exits 0 — reap is advisory; a failed delete is printed to stderr and
+    skipped rather than aborting.
+    """
+    cdir = claims_dir(override=args.claims_dir)
+    stale_after = args.stale_after
+    dry_run = args.dry_run
+    now = datetime.now(timezone.utc)
+
+    reaped = 0
+    skipped_no_hb = 0
+    skipped_fresh = 0
+    errors = 0
+
+    for claim in live_claims(cdir):
+        task_id = claim.get("task_id", "?")
+        hb = claim.get("last_heartbeat")
+        if not hb:
+            skipped_no_hb += 1
+            continue  # no heartbeat → legacy/interactive, never reaped
+        try:
+            hb_dt = datetime.fromisoformat(hb.replace("Z", "+00:00"))
+            age = (now - hb_dt).total_seconds()
+        except (ValueError, TypeError):
+            sys.stderr.write(
+                f"skipping {task_id}: malformed last_heartbeat {hb!r}\n"
+            )
+            skipped_no_hb += 1
+            continue
+        if age <= stale_after:
+            skipped_fresh += 1
+            continue
+        fp = claim_file(task_id, cdir)
+        if dry_run:
+            print(
+                f"would reap {task_id} "
+                f"(heartbeat age {int(age)}s > {stale_after}s): {fp}"
+            )
+            reaped += 1
+        else:
+            try:
+                fp.unlink()
+                print(
+                    f"reaped {task_id} "
+                    f"(heartbeat age {int(age)}s > {stale_after}s)"
+                )
+                reaped += 1
+            except OSError as e:
+                sys.stderr.write(f"could not reap {task_id}: {e}\n")
+                errors += 1
+
+    verb = "would reap" if dry_run else "reaped"
+    print(
+        f"reap summary: {verb} {reaped}, "
+        f"skipped {skipped_no_hb} (no heartbeat), "
+        f"skipped {skipped_fresh} (fresh), "
+        f"{errors} error(s)"
+    )
+    return EXIT_OK  # always 0; reap is advisory
+
+
 # --------------------------------------------------------------------------
 # Argument parsing
 # --------------------------------------------------------------------------
@@ -1206,6 +1296,34 @@ def build_parser():
     p_ls_ids = sub.add_parser("list-ids", help="Print all live ID reservations.")
     add_common(p_ls_ids)
     p_ls_ids.set_defaults(func=cmd_list_ids)
+
+    p_hb = sub.add_parser(
+        "heartbeat",
+        help="Stamp last_heartbeat on an existing claim (T-060). Exit 7 if absent.",
+    )
+    p_hb.add_argument("--task-id", required=True)
+    add_common(p_hb)
+    p_hb.set_defaults(func=cmd_heartbeat)
+
+    p_reap = sub.add_parser(
+        "reap",
+        help="Sweep claims with stale heartbeats (T-060). Advisory; always exits 0.",
+    )
+    p_reap.add_argument(
+        "--stale-after",
+        type=int,
+        default=1800,
+        metavar="SECONDS",
+        help="Reap claims whose last_heartbeat age exceeds this many seconds "
+             "(default: 1800 = 30 min).",
+    )
+    p_reap.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Print what would be reaped without deleting anything.",
+    )
+    add_common(p_reap)
+    p_reap.set_defaults(func=cmd_reap)
 
     return parser
 

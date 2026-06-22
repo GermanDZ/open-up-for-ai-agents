@@ -1,15 +1,17 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 30
+**Iteration**: 31
 **Iteration Goal**: T-058 — Periodic framework version staleness check — 6-hour cooldown, wired into board + start-iteration
 **Status**: completed
-**Current Task**: T-059
+**Current Task**: T-060
 **Iteration Started**: 2026-06-18
-**Last Updated**: 2026-06-20
+**Last Updated**: 2026-06-21
 **Updated By**: sync-status.py
 
 ## Notes
+
+- **Iteration 31** (2026-06-21): Delivered T-060 — stale-lease reaper (heartbeat+reap CLI), top-n board partition, and /openup-fan-out skill; 23 hermetic unit tests; backward-compat invariant (no-heartbeat claims never reaped) enforced.
 
 - **Iteration 30** (2026-06-20): T-059 — loop support for /openup-next. Added machine-readable sentinel protocol (OPENUP-NEXT: ADVANCED/DONE as last stdout line on every exit), `## When Driven by an Outer Loop` section in `openup-next/SKILL.md` (stop rule, context model, /loop vs shell-loop tradeoff, stall detection), and `scripts/openup-loop.sh` wrapper (cycle cap, stall detection, exit codes 0/1/2/3). Manifest entry added. Solo, standard, worktree.
 

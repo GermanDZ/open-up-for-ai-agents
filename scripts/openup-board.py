@@ -369,6 +369,54 @@ def cmd_top(args):
     return EXIT_NONE_PICKABLE
 
 
+def cmd_top_n(args):
+    """Return up to N mutually collision-free READY lanes as a JSON array (T-060).
+
+    Selection is greedy in board priority order: a READY lane is included if its
+    ``touches`` don't prefix-overlap the touches of any already-selected lane.
+    Exits 0 with a JSON array (possibly ``[]`` when N=0); exits 3 when the board
+    has no READY lanes at all.
+    """
+    root = resolve_root(args)
+    board = build_board(root, resolve_cdir(args, root))
+    write_board(board, resolve_out(args, root))
+
+    ready = [lane for lane in board["lanes"] if is_pickable(lane)]
+    if not ready:
+        sys.stderr.write(none_pickable_reason(board) + "\n")
+        return EXIT_NONE_PICKABLE
+
+    n = args.n
+    selected = []
+    selected_touches = []  # flat list of touch sets for already-selected lanes
+
+    for lane in ready:
+        if len(selected) >= n:
+            break
+        # Re-read the plan frontmatter to get this lane's touches.  (build_board
+        # strips internal-only fields so we cannot rely on them here.)
+        plan_rel = lane.get("plan")
+        if plan_rel:
+            try:
+                fm = claims.parse_frontmatter(root / plan_rel)
+                lane_touches = [claims._norm(t) for t in fm.get("touches", [])]
+            except OSError:
+                lane_touches = []
+        else:
+            lane_touches = []
+
+        collides = any(
+            claims.touches_overlap(lane_touches, prev_touches)
+            for prev_touches in selected_touches
+        )
+        if not collides:
+            selected.append(lane)
+            selected_touches.append(lane_touches)
+
+    print(json.dumps(selected, indent=2, ensure_ascii=False))
+    return EXIT_OK
+
+
 # --------------------------------------------------------------------------
 def build_parser():
     parser = argparse.ArgumentParser(
@@ -390,6 +438,20 @@ def build_parser():
     add_common(p_top)
     p_top.set_defaults(func=cmd_top)
 
+    p_top_n = sub.add_parser(
+        "top-n",
+        help="Print up to N collision-free READY lanes as a JSON array (T-060). "
+             "Exit 3 if no READY lanes exist at all.",
+    )
+    p_top_n.add_argument(
+        "n",
+        type=int,
+        metavar="N",
+        help="Maximum number of lanes to return.",
+    )
+    add_common(p_top_n)
+    p_top_n.set_defaults(func=cmd_top_n)
+
     return parser
 
 
@@ -406,7 +468,7 @@ def main(argv=None):
 
     raw = list(sys.argv[1:] if argv is None else argv)
     # Default subcommand is `refresh` when the first token isn't a known command.
-    if not raw or raw[0] not in {"refresh", "top"}:
+    if not raw or raw[0] not in {"refresh", "top", "top-n"}:
         raw = ["refresh"] + raw
     args = build_parser().parse_args(raw)
     return args.func(args)
