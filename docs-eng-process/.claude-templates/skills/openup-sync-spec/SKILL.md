@@ -51,9 +51,8 @@ Run `git diff <last-synced>..HEAD` (use `--stat` first for the file map, then fu
 hunks for changed files). Classify the **whole diff** as **REFACTOR** only if
 *every* hunk matches a refactor signal and *no* hunk matches a behaviour signal.
 If any behaviour signal fires, or the diff is ambiguous, classify as
-**BEHAVIOUR-CHANGE**. This asymmetry is intentional: refusing a true refactor costs
-one re-run; mislabelling a behaviour change silences exactly the drift SPDD warns
-against.
+**BEHAVIOUR-CHANGE**. This asymmetry is intentional (see the cost-asymmetry note
+at the top of this skill).
 
 **REFACTOR signals (safe to back-propagate):**
 - Symbol **rename** with all call sites updated in the same diff (identifier churn,
@@ -170,7 +169,7 @@ anyway" escape hatch.
 > **`/openup-sync-spec` refused — this diff changes behaviour, not just structure.**
 >
 > `<last-synced>..HEAD` contains a behaviour signal: **`<signal name, e.g. "public
-> API signature change in src/foo.py:bar()">`**. Back-propagation is only for pure
+> API signature change in <file>:<symbol>">`**. Back-propagation is only for pure
 > refactors; a behaviour change must update the spec **first** (the "Fix the spec
 > first" rule), then the code.
 >

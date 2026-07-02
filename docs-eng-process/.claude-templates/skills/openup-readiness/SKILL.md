@@ -138,58 +138,55 @@ Human view from docs/roadmap.md — NOT authoritative frontmatter.
 If `$ARGUMENTS[task_id]` is provided, print only that task's line plus its dependency
 reason chain, skipping the other sections.
 
-## Worked Example (current repo state, 2026-06-11)
+## Worked Example (synthetic)
 
 Authoritative records parsed from `docs/changes/**/plan.md`:
 
 | id | status | depends-on | blocks | touches |
 |---|---|---|---|---|
-| T-001 | done | [] | [T-002] | — |
-| T-002 | deferred | [T-001] | [] | .claude/skills/openup-workflow/, docs-eng-process/templates/ |
-| T-003 | done | [] | [] | — |
-| T-007 | done | [] | [T-008] | — |
-| T-008 | in-progress | [T-007] | [T-009] | docs/changes/, .claude/skills/openup-workflow/, docs-eng-process/ |
+| T-101 | done | [] | [T-103] | — |
+| T-102 | in-progress | [] | [] | src/auth/, docs/changes/ |
+| T-103 | planned | [T-101] | [] | src/auth/, docs/api/ |
+| T-104 | planned | [T-102] | [] | src/billing/ |
+| T-105 | deferred | [] | [] | src/auth/ |
 
-Roadmap-only (rows with no change folder): T-009 (depends T-005,T-008), T-010 (depends
-T-005,T-006), T-011 (depends T-005). T-004/T-005/T-006 are `completed` in the roadmap.
+Roadmap-only (rows with no change folder): T-106 (depends T-101).
 
 Resulting report:
 
 ```
-# Readiness Report — 2026-06-11
+# Readiness Report
 Source of truth: docs/changes/**/plan.md frontmatter (authoritative).
 Roadmap rows without a change folder are listed separately (human view, not authoritative).
 
 ## READY
-(none)
+(none — T-103's deps are met but it collides; see COLLISIONS)
 
 ## BLOCKED
-(none)
+- T-104 — blocked on T-102 (in-progress, not done)
 
 ## IN-PROGRESS
-- T-008 — Coordination frontmatter + /openup-readiness DAG
+- T-102 — Auth session hardening
 
 ## DONE / VERIFIED
-3 task(s): T-001, T-003, T-007
+1 task(s): T-101
 
 ## DEFERRED
-- T-002 — /openup-sync-spec (defer-until: drift observed in practice after T-001 lands)
+- T-105 — (defer-until: T-102 lands)
 
 ## ⚠ COLLISIONS
-- T-008 (in-progress) touches docs/changes/ and .claude/skills/openup-workflow/; T-002 (deferred, not in collision set) shares those prefixes but is excluded — no active collision.
-  (No two collision-set tasks overlap: T-008 is the only member.)
+- T-103 ↔ T-102: overlapping touches src/auth/ (T-105 shares the prefix but is
+  deferred — excluded from the collision set).
 
 ## Roadmap-only (no change folder yet)
 Human view from docs/roadmap.md — NOT authoritative frontmatter.
-- T-009 — Worktree-per-task + lease claims   status=planned, depends-on=[T-005, T-008]  → BLOCKED on T-008 (in-progress, not done; T-005 ✅)
-- T-010 — Graded tracks (quick/standard/full)   status=planned, depends-on=[T-005, T-006]  → READY (T-005 ✅, T-006 ✅)
-- T-011 — Retro cadence trigger + /openup-create-handoff   status=planned, depends-on=[T-005]  → READY (T-005 ✅)
+- T-106 — Billing export   status=planned, depends-on=[T-101]  → READY (T-101 ✅)
 ```
 
-Reading: T-008 is the actionable in-progress task; T-009 is blocked on T-008 (not yet
-done); T-010 and T-011 are roadmap-ready because their only deps (T-005/T-006) are
-completed — they will surface in **READY** once they get change folders. T-002 stays
-deferred. No active collisions because only one task (T-008) is in the collision set.
+Reading: T-104 is dependency-blocked; T-103 is dependency-ready but held back by an
+active-touches collision with in-progress T-102; deferred T-105 never enters the
+collision set; roadmap-only T-106 will surface in **READY** once it gets a change
+folder.
 
 ## Common Errors
 

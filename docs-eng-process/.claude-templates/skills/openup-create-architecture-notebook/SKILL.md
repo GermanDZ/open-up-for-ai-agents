@@ -40,6 +40,7 @@ After using this skill, verify:
 - [ ] Key architectural decisions are documented
 - [ ] Architectural constraints are listed
 - [ ] Quality attributes are specified
+- [ ] Subsystem/component decomposition is documented
 
 ## Process
 
@@ -113,17 +114,12 @@ Apply the **Self-Critique SOP** (`docs-eng-process/sops/self-critique.md`) befor
 validating: take a hostile-reviewer stance, surface every load-bearing
 assumption into the notebook, and confirm each architectural decision records
 the rejected alternatives and the constraint that forced it — not just the
-choice made. Fix or explicitly flag each genuine weakness, then record the
-weakest point and its resolution in one line.
+choice made. List every weakness you find — including ones you are uncertain about — then fix or explicitly flag each one. Rank them and record the top one or two with their resolutions.
 
 ### 6. Validate Completeness
 
-Ensure the architecture notebook includes:
-- System overview and context
-- Key architectural decisions with rationale
-- Architectural constraints
-- Quality attribute requirements
-- Subsystem/component decomposition
+Re-check every item in **Success Criteria** (top of this skill) against the
+document you produced; fix any gap before returning.
 
 ## Output
 

@@ -42,16 +42,6 @@ After using this skill, verify:
 - [ ] Open questions are tracked for elaboration
 - [ ] Document is linked from main vision
 
-## Process Summary
-
-1. Read existing vision document
-2. Extract technical context and objectives
-3. Define IN/OUT scope
-4. Document technical assumptions and constraints
-5. Record key technical decisions
-6. Identify open questions
-7. Self-critique the document (sharp IN/OUT scope; decisions record trade-offs)
-
 ## Detailed Steps
 
 ### 1. Read Existing Vision
@@ -102,8 +92,8 @@ Record assumptions about the technical environment:
 
 | Assumption | Impact | Validated By |
 |------------|--------|--------------|
-| Example: PostgreSQL available | Low - affects data layer | DBA |
-| Example: Users on modern browsers | Medium - affects frontend | UX research |
+| Example: Chosen datastore available in all environments | Low - affects data layer | Ops |
+| Example: Users on up-to-date client versions | Medium - affects UI layer | UX research |
 
 ### 5. Document Technical Constraints
 
@@ -111,7 +101,7 @@ Record known constraints that limit options:
 
 | Constraint | Description | Mitigation |
 |------------|-------------|------------|
-| Example: Budget for cloud services | Must use cost-effective solutions | Serverless architecture |
+| Example: Infrastructure budget cap | Must use cost-effective solutions | Prefer managed services |
 | Example: Legacy system integration | Must work with existing APIs | Adapter pattern |
 
 ### 6. Record Key Technical Decisions
@@ -120,8 +110,8 @@ Document significant technical decisions with rationale:
 
 **Examples:**
 - Choice of programming language
-- Architectural style (microservices vs monolith)
-- Database selection
+- Architectural style
+- Datastore selection
 - Deployment approach
 
 For each decision:
@@ -162,9 +152,10 @@ See [Shared Vision](shared-vision.md) for detailed technical objectives, scope, 
 Apply the **Self-Critique SOP** (`docs-eng-process/sops/self-critique.md`) before
 returning: take a hostile-reviewer stance, surface every load-bearing assumption
 into the document, and confirm the IN/OUT scope boundaries are sharp enough to
-settle a real dispute and that each key decision records what it trades away. Fix
-or explicitly flag each genuine weakness, then record the weakest point and its
-resolution in one line.
+settle a real dispute and that each key decision records what it trades away.
+List every weakness you find — including ones you are uncertain about — then fix
+or explicitly flag each one. Rank them and record the top one or two with their
+resolutions.
 
 ## Output
 

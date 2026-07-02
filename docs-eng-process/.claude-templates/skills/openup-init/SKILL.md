@@ -81,7 +81,7 @@ If not provided via arguments, interactively prompt for:
 
 ### 2. Create Project Structure
 
-Create the following directories **with Bash** (gate-exempt):
+Create the following directories (via Bash — see Gate awareness above):
 ```bash
 mkdir -p docs/input-requests docs/use-cases docs/agent-logs
 # docs/input-requests  — Stakeholder input documents
@@ -91,9 +91,8 @@ mkdir -p docs/input-requests docs/use-cases docs/agent-logs
 
 ### 3. Generate Initial Documents
 
-Write each file below **with Bash** — `cp` for templates, `cat > FILE << 'EOF'`
-heredocs for the generated content. The markdown shown is the file *content*, not
-a `Write`-tool call (see "Gate awareness" above).
+Write each file below via Bash (see Gate awareness above). The markdown shown
+is the file *content*, not a `Write`-tool call.
 
 #### Project Status (`docs/project-status.md`)
 ```markdown
@@ -225,7 +224,7 @@ The skill uses intelligent defaults based on project type:
 | Error | Cause | Solution |
 |-------|-------|----------|
 | Directory not empty | Project already initialized | Use existing structure or specify new location |
-| Git not found | Git not installed | Install git or use --no-git flag |
+| Git not found | Git not installed | Install git, or skip git-dependent steps and initialize the repo later |
 | Permission denied | Cannot create directories | Check directory permissions |
 
 ## Next Steps

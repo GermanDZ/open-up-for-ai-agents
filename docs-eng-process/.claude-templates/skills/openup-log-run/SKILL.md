@@ -61,9 +61,7 @@ If `$ARGUMENTS[run_id]` is not provided, generate: `YYYY-MM-DDTHH:MM:SSZ-agent-b
 
 - Branch: `git branch --show-current`
 - Trunk: detect via `origin/HEAD`, fallback `main`/`master`
-- Start/end timestamps — **clock-sourced**: `started_at` from
-  `python3 scripts/openup-state.py get started_at`, end from `date -u`. Never
-  author timestamps by hand.
+- Start/end timestamps: `$START` / `$END` as captured in the callout above
 - Phase from `docs/project-status.md`
 - Commits: `git log --oneline <since>...HEAD`
 
@@ -80,17 +78,15 @@ Create `docs/agent-logs/YYYY/MM/DD/<timestamp>-<agent>-<branch>.md` with:
 
 ### 4. Append JSONL Entry
 
-Append the record with the **deterministic logger**, which stamps `ts` from the
-system clock — the model never supplies a timestamp:
+Append the record with the **deterministic logger** (see the callout above —
+never hand-author a JSONL line):
 
 ```bash
 python3 scripts/openup-state.py log-event \
   --event run_log --task-id "<id>" --branch "<branch>" --phase "<phase>"
 ```
 
-This replaces hand-authoring a JSONL line (the source of the fabricated
-round-number times the audit found). The script appends one well-formed record
-to `docs/agent-logs/agent-runs.jsonl`.
+The script appends one well-formed record to `docs/agent-logs/agent-runs.jsonl`.
 
 ### 5. Record the log gate
 

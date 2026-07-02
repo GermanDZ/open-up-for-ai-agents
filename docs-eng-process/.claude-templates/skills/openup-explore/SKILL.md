@@ -55,7 +55,7 @@ No rubric. No structure beyond the required end-section. Capture:
 - Options considered and what was ruled in / out
 - Open questions for a future delivery iteration
 
-### 3. Product-Manager Challenge Pass — MANDATORY before the disposition
+### 3. Product-Manager Challenge Pass (required before the disposition)
 
 Exploration must not be passive transcription of human-submitted ideas. Before
 writing the disposition, **assume the product-manager role hat** — read
@@ -67,7 +67,7 @@ Write a `### Product-manager challenge pass` section containing, as applies:
 
 - **Pushback** — which submitted ideas are weak, unsupported, or likely to
   degrade into ritual, and *why* ("what changes for which user, and how would
-  we notice?"). Silence is not an option when the value case is thin.
+  we notice?"). When the value case is thin, say so explicitly.
 - **Complement** — what the human missed: connections between their ideas,
   prerequisites, cheaper alternatives.
 - **Refine** — sharpen the question and the options (narrow a vague measure to

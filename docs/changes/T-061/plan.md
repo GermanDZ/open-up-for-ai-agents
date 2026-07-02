@@ -39,40 +39,26 @@ under-triggering). Findings summary:
 
 ## Requirements
 
-### R1 — No stale model references in skill bodies
-Remove the hardcoded `Claude Opus 4.6` co-author line from the quick-task commit template; no template skill body names a specific Claude model version.
+1. **R1 — No stale model references in skill bodies.** Remove the hardcoded `Claude Opus 4.6` co-author line from the quick-task commit template; no template skill body names a specific Claude model version.
+   **Given** the template skills tree, **When** skill bodies are grepped for `Claude Opus`/`Claude Sonnet`/`Claude Haiku` version strings, **Then** zero matches remain (frontmatter `model:` aliases excluded).
 
-**Scenario:** Given the template skills tree, When I grep skill bodies for `Claude Opus`/`Claude Sonnet`/`Claude Haiku` version strings, Then zero matches remain (frontmatter `model:` aliases excluded).
+2. **R2 — all skills are language/stack-agnostic.** OpenUP is a generic development process: no template skill names a programming language, framework, database, or stack — neither as prescription nor as illustrative example. The plan-feature exploration step detects the project's stack from its own manifest/build files and directory layout, then maps stack-neutral categories (data models, request handlers, routing, schema/migrations, business logic, i18n-if-present, tests, config) onto it; the generated plan template emits `## i18n` only when the project has i18n resources; code fences carry no hardcoded language.
+   **Given** the template skills tree, **When** skill bodies are grepped for language/framework/stack names (Ruby, Rails, Python, PostgreSQL, …) and stack-specific paths, **Then** zero prescriptive or exemplary stack mentions remain, and a plan generated for any project contains no unconditional `## i18n` YAML section.
 
-### R2 — plan-feature is stack-agnostic
-The codebase-exploration step detects the project stack first (from manifest files) and maps stack-neutral categories (data models, request handlers, routing, schema/migrations, business logic, i18n-if-present, tests, config) onto it; the generated plan template emits `## i18n` only when the project has i18n resources; code fences carry no hardcoded language.
+3. **R3 — Self-Critique blocks use report-then-rank.** All authoring skills carrying a Self-Critique block instruct: list every weakness found, fix or explicitly flag each, rank them, record the top one or two with resolution — replacing the "genuine weakness … the weakest point" filter-first wording.
+   **Given** the authoring skills with Self-Critique blocks, **When** those blocks are grepped for `genuine weakness` and `the weakest point`, **Then** zero matches remain and each block asks for an exhaustive list before ranking.
 
-**Scenario:** Given a non-Rails project, When `/openup-plan-feature` runs its explore step, Then no Rails-specific path (`app/services/`, `config/routes.rb`, `db/schema.rb`, `en.yml`) is prescribed and the plan contains no unconditional `## i18n` YAML section.
+4. **R4 — Emphasis proportionate to risk.** `MANDATORY` caps on the plan-feature and create-task-spec ambiguity gates, explore's "silence is not an option", and start-iteration's "the skill has FAILED" framing are softened to plain imperative gate language; hard gates guarding destructive/irreversible actions (trunk guard, write-fence, two-legal-exits, fan-out worktree constraint, sync-spec refusal, complete-task BLOCKING steps) are left at full strength.
+   **Given** the four flagged files, **When** the softened passages are read, **Then** each still states the gate as a requirement ("before drafting", "stop and report") without ALL-CAPS alarm framing, and every legitimate BLOCKING tag in complete-task/fan-out/next is unchanged.
 
-### R3 — Self-Critique blocks use report-then-rank
-All authoring skills carrying a Self-Critique block instruct: list every weakness found, fix or explicitly flag each, rank them, record the top one or two with resolution — replacing the "genuine weakness … the weakest point" filter-first wording.
+5. **R5 — Repeated rationale stated once.** Each of these is stated once and referenced elsewhere: log-run's timestamps-from-clock rule; init's Bash-not-Write rule; sync-spec's cost-asymmetry argument; next's no-state-in-conversation rule. The six create-* skills keep one canonical Success-Criteria checklist (the validate step points back to it). Process Summary sections duplicating Detailed Steps are removed in plan-feature, detail-use-case, and shared-vision. readiness's dated worked example is replaced by a small synthetic dateless one. quick-task's invented time metrics are deleted. init's `--no-git` reference is corrected.
+   **Given** the edited files, **When** each named file is read, **Then** the named rule appears once in full with at most pointer-references elsewhere, and no dated repo snapshot or invented metric remains.
 
-**Scenario:** Given the 10 authoring skills with Self-Critique blocks, When I grep for `genuine` and `the weakest point` in those blocks, Then zero matches remain and each block asks for an exhaustive list before ranking.
+6. **R6 — retrospective re-tiered to sonnet.** `openup-retrospective` frontmatter moves `model: haiku` → `model: sonnet`; the model-tiers doc's generated table is regenerated and its prose tier categories updated.
+   **Given** the re-tiered skill, **When** `python3 scripts/check-model-tiers.py --check` runs, **Then** it exits 0 with retrospective listed under `sonnet`.
 
-### R4 — Emphasis proportionate to risk
-`MANDATORY` caps on the plan-feature and create-task-spec ambiguity gates, explore's "silence is not an option", and start-iteration's "the skill has FAILED" framing are softened to plain imperative gate language; hard gates guarding destructive/irreversible actions (trunk guard, write-fence, two-legal-exits, fan-out worktree constraint, sync-spec refusal, complete-task BLOCKING steps) are left at full strength.
-
-**Scenario:** Given the four flagged files, When I read the softened passages, Then each still states the gate as a requirement ("before drafting", "stop and report") without ALL-CAPS alarm framing, and every legitimate BLOCKING tag in complete-task/fan-out/next is unchanged.
-
-### R5 — Repeated rationale stated once
-Each of these is stated once and referenced elsewhere: log-run's timestamps-from-clock rule; init's Bash-not-Write rule; sync-spec's cost-asymmetry argument; next's no-state-in-conversation rule. The six create-* skills keep one canonical Success-Criteria checklist (the validate step points back to it). Process Summary sections duplicating Detailed Steps are removed in plan-feature, detail-use-case, and shared-vision. readiness's dated worked example is replaced by a small synthetic dateless one. quick-task's invented time metrics are deleted. init's `--no-git` reference is corrected.
-
-**Scenario:** Given the edited files, When I read each named file, Then the named rule appears once in full with at most pointer-references elsewhere, and no dated repo snapshot or invented metric remains.
-
-### R6 — retrospective re-tiered to sonnet
-`openup-retrospective` frontmatter moves `model: haiku` → `model: sonnet`; the model-tiers doc's generated table is regenerated and its prose tier categories updated; `check-model-tiers.py --check` passes.
-
-**Scenario:** Given the re-tiered skill, When I run `python3 scripts/check-model-tiers.py --check`, Then it exits 0 with retrospective listed under `sonnet`.
-
-### R7 — Templates and live copies in sync
-All edits land in `docs-eng-process/.claude-templates/` (canonical) and are mirrored to `.claude/` via `scripts/sync-templates-to-claude.sh`; `scripts/check-claude-sync.sh` passes.
-
-**Scenario:** Given the completed edits, When I run `scripts/check-claude-sync.sh`, Then it reports no drift between templates and live copies.
+7. **R7 — Templates and live copies in sync.** All edits land in `docs-eng-process/.claude-templates/` (canonical) and are mirrored to `.claude/` via `scripts/sync-templates-to-claude.sh`.
+   **Given** the completed edits, **When** `scripts/check-claude-sync.sh` runs, **Then** it reports no drift between templates and live copies.
 
 ## Out of Scope (follow-up candidates)
 
@@ -92,10 +78,10 @@ Not flagged — docs/template-only change with no runtime behavior; consuming pr
 
 ## Operations
 
-- [ ] R1 stale model string fixed (quick-task)
-- [ ] R2 plan-feature stack-agnostic
-- [ ] R3 Self-Critique blocks rewritten (10 skills)
-- [ ] R4 emphasis softened (4 files)
-- [ ] R5 dedup pass (log-run, init, sync-spec, next, 6× create-*, 3× process-summary, readiness example, quick-task metrics, --no-git)
-- [ ] R6 retrospective re-tiered + model-tiers regenerated
-- [ ] R7 sync to .claude + drift check green
+- [x] R1 stale model string fixed (quick-task)
+- [x] R2 all skills language/stack-agnostic (plan-feature explore + template, shared-vision examples, sync-spec example, quick-task example)
+- [x] R3 Self-Critique blocks rewritten (9 skills + task-spec variant + SOP)
+- [x] R4 emphasis softened (4 files)
+- [x] R5 dedup pass (log-run, init, sync-spec, next, 6× create-*, 3× process-summary, readiness example, quick-task metrics, --no-git)
+- [x] R6 retrospective re-tiered + model-tiers regenerated
+- [x] R7 sync to .claude + drift check green

@@ -19,8 +19,9 @@ passed" is never sufficient on its own.
 
 ## Procedure
 
-1. **Adopt a hostile-reviewer stance.** Assume the draft is flawed and find its
-   single weakest part. Do not defend the draft — attack it as the role most
+1. **Adopt a hostile-reviewer stance.** Assume the draft is flawed and list
+   every weak part you can find — including ones you are uncertain about;
+   ranking comes later, coverage comes first. Do not defend the draft — attack it as the role most
    likely to reject it: the **analyst** for scope/intent, the **architect** for
    design soundness, the **tester** for verifiability.
 
@@ -36,16 +37,15 @@ passed" is never sufficient on its own.
    "review and approve", "looks correct", or otherwise unfalsifiable, and rewrite
    it into a checkable form.
 
-4. **Resolve — don't note-and-move-on.** For each genuine weakness found, either:
+4. **Resolve — don't note-and-move-on.** For each weakness found, either:
    - **Fix it** in the draft, or
    - **Flag it explicitly** in the artifact (Open Questions / Risks /
      Limitations) so it is inherited as a known gap. Routing a *blocking* gap to
      `/openup-request-input` counts as resolving it.
 
-5. **Record the outcome in one line** in the skill's run output: the weakest
-   point found and how it was resolved (fixed / flagged / routed).
-   *"No genuine weaknesses found"* is valid **only** after steps 1–3 were
-   actually run.
+5. **Rank, then record the outcome** in the skill's run output: the top one or
+   two weaknesses found and how each was resolved (fixed / flagged / routed).
+   *"No weaknesses found"* is valid **only** after steps 1–3 were actually run.
 
 ## Relationship to other gates
 

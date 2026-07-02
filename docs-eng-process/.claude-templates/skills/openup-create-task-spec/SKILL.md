@@ -99,7 +99,7 @@ per round.
   folder if it does not exist.
 - Copy `docs-eng-process/templates/task-spec.md` to that path.
 
-### 2. Ambiguity Gate — MANDATORY before drafting
+### 2. Ambiguity Gate (before drafting)
 
 Before any role drafts, list the open questions the request leaves unanswered
 and classify each:
@@ -154,10 +154,10 @@ Use *impact*, *engagement*, and *returned value* as **prompts** to find the righ
 measure — they are not three required slots; one honest, checkable expectation
 beats three vanity metrics. A measure nobody will read back is worse than none:
 on the `quick` track (or for genuinely unmeasurable internal work) write
-`n/a — <reason>` instead, and the reason must survive review. Add the section
-when drafting — the OpenUP-derived template at `docs-eng-process/templates/task-spec.md`
-does **not** carry it (OpenUP artifacts are read-only; this section is a
-claude-templates layer concern enforced by rubric criterion 12).
+`n/a — <reason>` instead, and the reason must survive review. Add the section when drafting;
+rubric criterion 12 enforces it. (Both this section and Rollout are authored
+additions — the OpenUP-derived template at `docs-eng-process/templates/task-spec.md`
+is read-only and does not carry them.)
 
 For **Rollout**, the architect writes a `## Rollout` section stating how the
 change reaches users (KB framing: a feature flag is the modern, cheaper
@@ -174,8 +174,8 @@ off beats redeploying):
   because a flag is temporary debt, not a permanent switch).
 - Not user-facing at all (pure refactor, internal tooling): `n/a — <reason>`.
 
-Add the section when drafting — the OpenUP-derived template does **not** carry
-it (read-only per the guardrail); rubric criterion 13 enforces it.
+Add the section when drafting; rubric criterion 13 enforces it (authored
+addition — see the note under Success Measures).
 
 For **Requirements**, the analyst writes each numbered assertion *with* at least one
 acceptance scenario in `Given / When / Then` form (bold markers `**Given**` / `**When**`
@@ -203,9 +203,9 @@ Apply the **Self-Critique SOP** (`docs-eng-process/sops/self-critique.md`) befor
 rubric grading: take a hostile-reviewer stance, surface every load-bearing
 assumption into the spec, and confirm the Behaviour Delta names what *observably*
 changes and that every acceptance criterion and scenario is failable — not
-"review and approve". This precedes (does not replace) the rubric: fix the
-weaknesses first so step 6 grades a stronger spec. Record the weakest point and
-its resolution in one line.
+"review and approve". This precedes (does not replace) the rubric: list every weakness you find,
+fix or explicitly flag each one so step 6 grades a stronger spec, then rank
+them and record the top one or two with their resolutions.
 
 ### 6. Rubric Grading
 

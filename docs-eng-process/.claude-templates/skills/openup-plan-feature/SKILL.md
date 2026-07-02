@@ -54,19 +54,6 @@ After using this skill, verify:
 - [ ] Roadmap entry exists in `docs/roadmap.md` with correct format
 - [ ] PR is created (if `create_pr` is true)
 
-## Process Summary
-
-1. Read project context (status, roadmap, architecture)
-2. Reserve task ID through the claims mechanism
-3. Explore codebase for relevant code
-4. Ambiguity gate — classify open questions (blocking → ask, non-blocking → record)
-5. Generate iteration plan document
-6. Update roadmap with new entry
-7. Self-critique the plan (hostile review; assumptions surfaced, criteria failable)
-8. Optionally validate with analyst + architect team
-9. Optionally create branch, commit, push, and PR
-10. Present summary
-
 ## Detailed Steps
 
 ### 1. Read Project Context
@@ -111,22 +98,26 @@ lanes and stale checkouts; T-031):
 
 ### 3. Explore Codebase
 
-This is a critical step. The iteration plan must reference real files and code, not abstract descriptions.
+The iteration plan must reference real files and code, not abstract descriptions.
 
-Based on the feature topic (`$ARGUMENTS[topic]`), explore:
-1. **Models** — Grep/Glob for relevant ActiveRecord models, their associations, validations, and scopes
-2. **Controllers** — Find controllers that handle related functionality
-3. **Services** — Look for service objects in `app/services/` related to the feature
-4. **Views** — Find relevant views and partials
-5. **Routes** — Check `config/routes.rb` for related route definitions
-6. **Schema** — Read `db/schema.rb` for relevant table definitions
-7. **Locales** — Check `config/locales/en.yml` and `config/locales/es.yml` for existing i18n keys in the area
-8. **Tests** — Find existing test files for the affected code
-9. **Config** — Check `config/app_settings.yml` or other config files if relevant
+**First, detect the project's language and stack** from its own manifest/build
+files and directory layout — never assume one. Then, based on the feature topic
+(`$ARGUMENTS[topic]`), map these stack-neutral categories onto what you found
+and explore each one that applies:
+
+1. **Data models** — entities/schemas/ORM models relevant to the feature
+2. **Request handlers** — controllers, views, handlers, or endpoints for related functionality
+3. **Business logic** — services, use-case modules, or domain logic related to the feature
+4. **UI** — relevant views, templates, or components (if the project has a UI layer)
+5. **Routing / entry points** — route definitions, CLI entry points, or API registrations
+6. **Schema / migrations** — table or schema definitions the feature touches
+7. **i18n** — existing locale/translation resources in the area (only if the project has them)
+8. **Tests** — existing test files for the affected code
+9. **Config** — application config files if relevant
 
 Extract actual code snippets (with file paths and line numbers) for the "Current State" section of the plan.
 
-### 4. Ambiguity Gate — MANDATORY before generating the plan
+### 4. Ambiguity Gate (before generating the plan)
 
 Now that you understand the request and the code, list the open questions and
 classify each before drafting the plan:
@@ -171,15 +162,15 @@ Use this structure (matching the project's established format):
 {For each relevant area, show the actual current code with file paths and line numbers.
 Include model definitions, controller actions, service methods, view excerpts, routes, schema.}
 
-### {Area 1} (`path/to/file.rb`)
+### {Area 1} (`path/to/file`)
 
-```ruby
+```{language}
 # Current implementation
 ```
 
-### {Area 2} (`path/to/file.rb`)
+### {Area 2} (`path/to/file`)
 
-```ruby
+```{language}
 # Current implementation
 ```
 
@@ -188,41 +179,29 @@ Include model definitions, controller actions, service methods, view excerpts, r
 ## Proposed Design
 
 {For each change, show the proposed code with clear before/after or new code.
-Group by logical units of work (e.g., Migration, Model, Service, Controller, Views, i18n).}
+Group by logical units of work appropriate to the stack (e.g., schema/migration,
+data model, business logic, handler, UI, i18n).}
 
 ### {Change 1}: {Description}
 
-**File**: `path/to/file.rb`
+**File**: `path/to/file`
 
-```ruby
+```{language}
 # Proposed implementation
 ```
 
 ### {Change 2}: {Description}
 
-**New file**: `path/to/new_file.rb`
+**New file**: `path/to/new_file`
 
-```ruby
+```{language}
 # Proposed implementation
 ```
 
 ---
 
-## i18n
-
-New keys for `config/locales/en.yml`:
-
-```yaml
-en:
-  # new keys
-```
-
-New keys for `config/locales/es.yml`:
-
-```yaml
-es:
-  # new keys
-```
+{Include an `## i18n` section listing the new keys per locale resource ONLY if
+the project has i18n resources (detected in step 3); omit it otherwise.}
 
 ---
 
@@ -322,8 +301,7 @@ team validation: take a hostile-reviewer stance on the plan you just generated,
 surface every load-bearing assumption into its **Open Questions / Dependencies**,
 and confirm the Acceptance Criteria and Success Measure could actually fail — not
 "review and approve". This is mandatory and runs whether or not the optional team
-review below is used. Fix or explicitly flag each genuine weakness, then record
-the weakest point and its resolution in one line.
+review below is used. List every weakness you find — including ones you are uncertain about — then fix or explicitly flag each one. Rank them and record the top one or two with their resolutions.
 
 ### 8. Validate with Team (Optional)
 
