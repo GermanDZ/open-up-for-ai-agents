@@ -12,6 +12,8 @@ touches:
   - docs-eng-process/.claude-templates/skills/
   - .claude/skills/
   - docs-eng-process/model-tiers.md
+  - docs-eng-process/skills-guide.md
+  - docs-eng-process/sops/self-critique.md
 ---
 
 # T-061 — Optimize template skills for Opus 4.8 / Sonnet 5
