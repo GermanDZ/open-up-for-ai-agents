@@ -280,9 +280,9 @@ continuation state; each invocation starts cold.
   reason to the user.
 - Anything else → treat as `DONE` (fail-safe stop; investigate the exit).
 
-**Context model:** each invocation reads the repo from scratch. Nothing from a
-prior invocation's conversation lives into the next. This is a feature — context
-stays minimal every cycle regardless of how many cycles have run.
+**Context model:** each invocation reads the repo from scratch (the
+no-continuation-state rule at the top of this skill) — context stays minimal
+every cycle regardless of how many cycles have run.
 
 **Under `/loop` (interactive):** `/loop /openup-next` works but accumulates
 context across ticks (same conversation). For long runs, prefer `openup-loop.sh`

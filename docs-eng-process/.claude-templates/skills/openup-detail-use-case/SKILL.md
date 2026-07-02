@@ -42,16 +42,6 @@ After using this skill, verify:
 - [ ] All actors are identified (primary and secondary)
 - [ ] Preconditions and postconditions are clear
 
-## Process Summary
-
-1. Read existing use case
-2. Identify scenarios (happy path, alternatives, errors)
-3. Document each scenario with step-by-step flows
-4. Generate Gherkin acceptance criteria
-5. Create test cases (if requested)
-6. Update the use case file
-7. Self-critique scenarios (independently failable; alternative/error flows covered)
-
 ## Detailed Steps
 
 ### 1. Read Existing Use Case
@@ -139,8 +129,7 @@ Apply the **Self-Critique SOP** (`docs-eng-process/sops/self-critique.md`) befor
 returning: take a hostile-reviewer stance, surface every load-bearing assumption
 into the scenarios, and confirm each Gherkin scenario is independently failable
 and that the alternative and error flows are covered — not just the happy path.
-Fix or explicitly flag each genuine weakness, then record the weakest point and
-its resolution in one line.
+List every weakness you find — including ones you are uncertain about — then fix or explicitly flag each one. Rank them and record the top one or two with their resolutions.
 
 ## Output
 

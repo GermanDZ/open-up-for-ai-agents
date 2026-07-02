@@ -17,8 +17,8 @@ Rationale).
 | Tier | Model | What belongs here |
 |------|-------|-------------------|
 | **Scribe** | `haiku` | Fully-specified mechanical writes: log appends, status field updates, handoff/input-request docs, JSONL records. The caller decides every value; the scribe only writes. |
-| **Coordination** | `haiku` | Process orchestration with low judgment per step: starting iterations, deploying teams, phase checklists, the readiness DAG (deterministic by construction), retrospective assembly. |
-| **Authoring** | `sonnet` | Producing artifacts that require synthesis but follow a template + rubric: use cases, vision, architecture notebook, iteration plans, test plans, task specs, documentation, PR descriptions, feature plans. Sonnet gives near-Opus authoring quality at materially lower cost. |
+| **Coordination** | `haiku` | Process orchestration with low judgment per step: starting iterations, deploying teams, phase checklists, the readiness DAG (deterministic by construction). |
+| **Authoring** | `sonnet` | Producing artifacts that require synthesis but follow a template + rubric: use cases, vision, architecture notebook, iteration plans, test plans, task specs, documentation, PR descriptions, feature plans, retrospectives (measure read-back and went-well/improve synthesis are analysis, not assembly). Sonnet gives near-Opus authoring quality at materially lower cost. |
 | **Quality Gate** | `inherit` | Judgment gates that decide whether work or a phase is *done*: per-criterion rubric grading and milestone phase-review. The gate must never run on a weaker model than the work it judges, so it inherits the session model. |
 | **Reasoning** | `inherit` | Open-ended problem solving: implementation, TDD, exploration, multi-role orchestration, task completion (which embeds judgment about quality gates), spec back-propagation. |
 
@@ -41,7 +41,6 @@ authoring, where the session model (often Opus) is more than the task needs.
 | openup-log-run | `haiku` |
 | openup-readiness | `haiku` |
 | openup-request-input | `haiku` |
-| openup-retrospective | `haiku` |
 | openup-start-iteration | `haiku` |
 | openup-transition | `haiku` |
 | openup-create-architecture-notebook | `sonnet` |
@@ -55,6 +54,7 @@ authoring, where the session model (often Opus) is more than the task needs.
 | openup-create-vision | `sonnet` |
 | openup-detail-use-case | `sonnet` |
 | openup-plan-feature | `sonnet` |
+| openup-retrospective | `sonnet` |
 | openup-shared-vision | `sonnet` |
 | openup-assess-completeness | `inherit` |
 | openup-complete-task | `inherit` |
@@ -68,7 +68,7 @@ authoring, where the session model (often Opus) is more than the task needs.
 | openup-sync-spec | `inherit` |
 | openup-tdd-workflow | `inherit` |
 
-**Totals:** 12 × `haiku`, 12 × `sonnet`, 11 × `inherit` (35 skills).
+**Totals:** 11 × `haiku`, 13 × `sonnet`, 11 × `inherit` (35 skills).
 <!-- END GENERATED: skill-model-table -->
 
 The tier each skill belongs to (the prose categories above) is editorial; the

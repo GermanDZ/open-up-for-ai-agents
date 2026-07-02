@@ -37,6 +37,7 @@ After using this skill, verify:
 - [ ] Tasks are selected from roadmap
 - [ ] Task assignments are made
 - [ ] Success criteria are specified
+- [ ] Iteration timeline is stated
 
 ## Process
 
@@ -118,17 +119,12 @@ Apply the **Self-Critique SOP** (`docs-eng-process/sops/self-critique.md`) befor
 validating: take a hostile-reviewer stance, surface every load-bearing
 assumption into the plan, and confirm the iteration goal and each task's success
 criteria could actually fail — and that the selected work realistically fits the
-phase's time box. Fix or explicitly flag each genuine weakness, then record the
-weakest point and its resolution in one line.
+phase's time box. List every weakness you find — including ones you are uncertain about — then fix or explicitly flag each one. Rank them and record the top one or two with their resolutions.
 
 ### 7. Validate Completeness
 
-Ensure the iteration plan includes:
-- Clear iteration goal
-- List of tasks to complete
-- Task assignments
-- Success criteria
-- Iteration timeline
+Re-check every item in **Success Criteria** (top of this skill) against the
+document you produced; fix any gap before returning.
 
 ## Output
 

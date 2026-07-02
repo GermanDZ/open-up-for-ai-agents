@@ -231,6 +231,7 @@ After using this skill, verify:
 - [ ] Key architectural decisions are documented
 - [ ] Architectural constraints are listed
 - [ ] Quality attributes are specified
+- [ ] Subsystem/component decomposition is documented
 
 **Arguments**:
 - `system_name` (required) — Name of the system
@@ -282,6 +283,7 @@ After using this skill, verify:
 - [ ] Tasks are selected from roadmap
 - [ ] Task assignments are made
 - [ ] Success criteria are specified
+- [ ] Iteration timeline is stated
 
 **Arguments**:
 - `iteration_number` (optional) — Iteration number to plan
@@ -400,7 +402,7 @@ Do NOT use this skill when:
 After using this skill, verify:
 - [ ] Test cases exist in `docs/test-cases/`
 - [ ] Test scripts exist in `docs/test-scripts/`
-- [ ] Test coverage includes happy path and edge cases
+- [ ] Test coverage includes happy path, edge cases, error conditions, and integration points
 - [ ] Expected results are defined
 - [ ] Test procedures are documented
 
@@ -476,6 +478,7 @@ Do NOT use this skill when:
 After using this skill, verify:
 - [ ] Vision document exists at `docs/vision.md`
 - [ ] Project name and problem statement are filled in
+- [ ] Proposed solution overview is present
 - [ ] Stakeholders are identified
 - [ ] Key features are listed
 - [ ] Success criteria are defined
@@ -989,8 +992,6 @@ Use Quick Task for:
 - Quick experiments
 - Hot fixes
 
-**Target**: Complete tasks in 50% less time than standard workflow.
-
 **When NOT to Use**
 
 Do NOT use for:
@@ -1060,7 +1061,7 @@ Create an input request document for asynchronous stakeholder communication
 
 Generate iteration retrospective with feedback and action items
 
-**Model**: `haiku`
+**Model**: `sonnet`
 
 **Fit**:
 - Great fit: end-of-iteration reflection, capturing patterns to feed forward
@@ -1085,7 +1086,7 @@ After this skill completes, ALL of these must be true:
 
 - [ ] **BLOCKING (full track only, when a team is requested)**: If the `full` track (or an explicit `team:` / `deploy_team: true`) calls for a team, it is deployed and coordinating before implementation begins. `quick` and `standard` default to solo sequential work — no team required.
 - [ ] Project status is updated with new iteration
-- [ ] **BLOCKING**: `git rev-parse --abbrev-ref HEAD` returns a non-trunk branch name. If it returns trunk, the skill has FAILED — do not proceed.
+- [ ] **BLOCKING**: `git rev-parse --abbrev-ref HEAD` returns a non-trunk branch name. If it returns trunk, stop and report — do not proceed.
 - [ ] Iteration goal is defined
 - [ ] Answered input requests are processed
 - [ ] Log entry is created

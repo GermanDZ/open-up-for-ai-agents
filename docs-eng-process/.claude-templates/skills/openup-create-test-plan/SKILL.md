@@ -34,7 +34,7 @@ Do NOT use this skill when:
 After using this skill, verify:
 - [ ] Test cases exist in `docs/test-cases/`
 - [ ] Test scripts exist in `docs/test-scripts/`
-- [ ] Test coverage includes happy path and edge cases
+- [ ] Test coverage includes happy path, edge cases, error conditions, and integration points
 - [ ] Expected results are defined
 - [ ] Test procedures are documented
 
@@ -124,16 +124,12 @@ Apply the **Self-Critique SOP** (`docs-eng-process/sops/self-critique.md`) befor
 validating coverage: take a hostile-reviewer stance, surface every load-bearing
 assumption into the plan, and confirm the suite genuinely exercises error and
 edge paths — not happy-path restatements — and that every case is written so it
-can actually fail. Fix or explicitly flag each genuine weakness, then record the
-weakest point and its resolution in one line.
+can actually fail. List every weakness you find — including ones you are uncertain about — then fix or explicitly flag each one. Rank them and record the top one or two with their resolutions.
 
 ### 7. Validate Coverage
 
-Ensure test coverage includes:
-- Happy path scenarios
-- Edge cases
-- Error conditions
-- Integration points
+Re-check every item in **Success Criteria** (top of this skill) against the
+document you produced; fix any gap before returning.
 
 ## Output
 

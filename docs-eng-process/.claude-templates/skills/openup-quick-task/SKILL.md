@@ -37,8 +37,6 @@ Use Quick Task for:
 - Quick experiments
 - Hot fixes
 
-**Target**: Complete tasks in 50% less time than standard workflow.
-
 ## When NOT to Use
 
 Do NOT use for:
@@ -91,9 +89,8 @@ Implement the change:
 If not skipping commit:
 ```bash
 git add .
-git commit -m "quick: $task
-
-Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>"
+git commit -m "quick: $task"
+# (append your harness's standard commit trailers, if any — do not hardcode a model name)
 ```
 
 ### 5. Rubric Check (artifact tasks only)
@@ -157,7 +154,6 @@ Returns:
 | SOP compliance | Full Start-of-Run | Skipped |
 | Documentation | Full update | Minimal |
 | Log entry | Full JSONL | Simple log line |
-| **Typical time** | ~8 minutes | ~4 minutes |
 
 ## Examples
 
@@ -173,7 +169,7 @@ Returns:
 
 ### Skip Branching
 ```
-/openup-quick-task task: "Add comment to utils.py" skip_branch: true
+/openup-quick-task task: "Add clarifying comment to a source file" skip_branch: true
 ```
 
 ### Full Control
@@ -189,17 +185,12 @@ Returns:
 - [ ] Committed (if not skipped)
 - [ ] Logged (if not skipped)
 
-## Smart Features
+## Defaults to Apply
 
-**Auto-detect skip opportunities:**
-- If already on feature branch → skip branching
-- If no git changes → skip commit
-- If single file change → minimal logging
-
-**Auto-categorize task:**
-- Bug fixes → `bugfix/` prefix
-- Docs → `docs/` prefix
-- Hot fixes → `hotfix/` prefix
+When executing the steps above:
+- Already on a non-trunk feature branch → treat `skip_branch` as true.
+- No git changes at commit time → skip the commit step.
+- Pick the branch prefix from the task type: `bugfix/`, `docs/`, or `hotfix/` instead of `quick/` when it clearly applies.
 
 ## See Also
 

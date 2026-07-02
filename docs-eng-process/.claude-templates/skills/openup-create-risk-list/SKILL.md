@@ -81,16 +81,12 @@ Apply the **Self-Critique SOP** (`docs-eng-process/sops/self-critique.md`) befor
 validating: take a hostile-reviewer stance, surface every load-bearing
 assumption into the list, and confirm each risk has a concrete trigger and a
 mitigation you could actually verify was carried out — not a restatement of the
-risk itself. Fix or explicitly flag each genuine weakness, then record the
-weakest point and its resolution in one line.
+risk itself. List every weakness you find — including ones you are uncertain about — then fix or explicitly flag each one. Rank them and record the top one or two with their resolutions.
 
 ### 6. Validate Completeness
 
-Ensure the risk list includes:
-- Clear risk descriptions
-- Probability and impact assessments
-- Mitigation strategies
-- Risk owners
+Re-check every item in **Success Criteria** (top of this skill) against the
+document you produced; fix any gap before returning.
 
 ## Output
 

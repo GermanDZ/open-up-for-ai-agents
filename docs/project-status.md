@@ -1,15 +1,17 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 31
-**Iteration Goal**: T-058 — Periodic framework version staleness check — 6-hour cooldown, wired into board + start-iteration
+**Iteration**: 32
+**Iteration Goal**: T-061 — Optimize template skills for Opus 4.8 / Sonnet 5 — stale model string, stack-agnostic plan-feature, report-then-rank self-critique, emphasis/dedup pass, retrospective re-tier
 **Status**: completed
-**Current Task**: T-060
+**Current Task**: T-061
 **Iteration Started**: 2026-06-18
-**Last Updated**: 2026-06-21
+**Last Updated**: 2026-07-02
 **Updated By**: sync-status.py
 
 ## Notes
+
+- **Iteration 32** (2026-07-02): T-061 — optimized all 35 template skills for Opus 4.8 / Sonnet 5. Removed the stale 'Claude Opus 4.6' co-author from quick-task; made every skill language/stack-agnostic (plan-feature now detects the stack from the project's own manifests — no Rails paths, conditional i18n, neutral fences; neutralized examples in shared-vision/sync-spec/quick-task); rewrote Self-Critique to report-then-rank (list every weakness, rank, record top 1–2) across 9 authoring skills + task-spec variant + the shared SOP; softened disproportionate MANDATORY/alarm emphasis on non-destructive gates (hard gates untouched); deduplicated repeated rationale (log-run timestamps, init Bash-rule, sync-spec asymmetry, next context-model, create-* success-criteria, 3× process summaries, readiness's dated example → synthetic, invented time metrics, --no-git ref); re-tiered openup-retrospective haiku→sonnet and regenerated model-tiers tables. Surfaced 3 pre-existing check-docs failures (out of lane) → enqueued T-062. Solo, standard, worktree.
 
 - **Iteration 31** (2026-06-21): Delivered T-060 — stale-lease reaper (heartbeat+reap CLI), top-n board partition, and /openup-fan-out skill; 23 hermetic unit tests; backward-compat invariant (no-heartbeat claims never reaped) enforced.
 

@@ -112,18 +112,12 @@ Validator: `python3 scripts/check-docs.py`.
 Apply the **Self-Critique SOP** (`docs-eng-process/sops/self-critique.md`) before
 validating: take a hostile-reviewer stance, surface every load-bearing
 assumption into the use case, and confirm each flow step is observable and the
-pre/postconditions are checkable — not narrative prose. Fix or explicitly flag
-each genuine weakness, then record the weakest point and its resolution in one
-line.
+pre/postconditions are checkable — not narrative prose. List every weakness you find — including ones you are uncertain about — then fix or explicitly flag each one. Rank them and record the top one or two with their resolutions.
 
 ### 6. Validate Completeness
 
-Ensure the use case includes:
-- Clear name and description
-- Identified actors
-- Basic flow of events
-- Key alternative flows
-- Pre/postconditions
+Re-check every item in **Success Criteria** (top of this skill) against the
+document you produced; fix any gap before returning.
 
 ## Output
 

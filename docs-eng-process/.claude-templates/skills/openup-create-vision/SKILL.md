@@ -37,6 +37,7 @@ Do NOT use this skill when:
 After using this skill, verify:
 - [ ] Vision document exists at `docs/vision.md`
 - [ ] Project name and problem statement are filled in
+- [ ] Proposed solution overview is present
 - [ ] Stakeholders are identified
 - [ ] Key features are listed
 - [ ] Success criteria are defined
@@ -103,18 +104,15 @@ Validator: `python3 scripts/check-docs.py`.
 Apply the **Self-Critique SOP** (`docs-eng-process/sops/self-critique.md`) before
 validating: take a hostile-reviewer stance, surface every load-bearing
 assumption into the document, and confirm the problem statement and success
-criteria are falsifiable — not aspirational claims that could never fail. Fix or
-explicitly flag each genuine weakness, then record the weakest point and its
-resolution in one line.
+criteria are falsifiable — not aspirational claims that could never fail. List
+every weakness you find — including ones you are uncertain about — then fix or
+explicitly flag each one. Rank them and record the top one or two with their
+resolutions.
 
 ### 5. Validate Completeness
 
-Ensure the vision document includes:
-- Clear problem statement
-- Proposed solution overview
-- Stakeholder descriptions
-- Key features and benefits
-- Success criteria
+Re-check every item in **Success Criteria** (top of this skill) against the
+document you produced; fix any gap before returning.
 
 ## Output
 

@@ -40,7 +40,7 @@ After this skill completes, ALL of these must be true:
 
 - [ ] **BLOCKING (full track only, when a team is requested)**: If the `full` track (or an explicit `team:` / `deploy_team: true`) calls for a team, it is deployed and coordinating before implementation begins. `quick` and `standard` default to solo sequential work — no team required.
 - [ ] Project status is updated with new iteration
-- [ ] **BLOCKING**: `git rev-parse --abbrev-ref HEAD` returns a non-trunk branch name. If it returns trunk, the skill has FAILED — do not proceed.
+- [ ] **BLOCKING**: `git rev-parse --abbrev-ref HEAD` returns a non-trunk branch name. If it returns trunk, stop and report — do not proceed.
 - [ ] Iteration goal is defined
 - [ ] Answered input requests are processed
 - [ ] Log entry is created
