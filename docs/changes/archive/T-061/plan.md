@@ -1,7 +1,7 @@
 ---
 id: T-061
 title: "Optimize template skills for Opus 4.8 / Sonnet 5 — literalism, tier fit, dedup"
-status: in-progress
+status: done
 priority: medium
 estimate: 1 session
 track: standard
