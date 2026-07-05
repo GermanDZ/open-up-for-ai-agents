@@ -1,15 +1,17 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 32
-**Iteration Goal**: T-061 — Optimize template skills for Opus 4.8 / Sonnet 5 — stale model string, stack-agnostic plan-feature, report-then-rank self-critique, emphasis/dedup pass, retrospective re-tier
+**Iteration**: 33
+**Iteration Goal**: T-062 — Fix pre-existing `check-docs.py` failures (archived T-056 plan + t-059/t-060 iteration-plan frontmatter: status enum + duplicate id) so the complete-task 3a gate is green again
 **Status**: completed
-**Current Task**: T-061
+**Current Task**: T-062
 **Iteration Started**: 2026-06-18
-**Last Updated**: 2026-07-02
+**Last Updated**: 2026-07-05
 **Updated By**: sync-status.py
 
 ## Notes
+
+- **Iteration 33** (2026-07-05): T-062 — repaired the 3 pre-existing `check-docs.py` failures so the complete-task 3a gate is green again. Archived T-056 plan status `done`→`verified` (valid iteration-plan enum; coverage rules don't target iteration-plan); stripped the anomalous typed frontmatter from archived T-060 `design.md` (killed the duplicate id T-060 at its source — all 23 sibling `design.md` carry none, nothing traced to it); t-059 iteration-plan status `pending`→`implemented` (delivered iter 30). check-docs now exits 0 in both default and --coverage modes. Solo, quick, in-place. Note: T-059/T-060 roadmap rows still read `pending` though both were delivered (iters 30/31) — a stale status for the product-manager to reconcile.
 
 - **Iteration 32** (2026-07-02): T-061 — optimized all 35 template skills for Opus 4.8 / Sonnet 5. Removed the stale 'Claude Opus 4.6' co-author from quick-task; made every skill language/stack-agnostic (plan-feature now detects the stack from the project's own manifests — no Rails paths, conditional i18n, neutral fences; neutralized examples in shared-vision/sync-spec/quick-task); rewrote Self-Critique to report-then-rank (list every weakness, rank, record top 1–2) across 9 authoring skills + task-spec variant + the shared SOP; softened disproportionate MANDATORY/alarm emphasis on non-destructive gates (hard gates untouched); deduplicated repeated rationale (log-run timestamps, init Bash-rule, sync-spec asymmetry, next context-model, create-* success-criteria, 3× process summaries, readiness's dated example → synthetic, invented time metrics, --no-git ref); re-tiered openup-retrospective haiku→sonnet and regenerated model-tiers tables. Surfaced 3 pre-existing check-docs failures (out of lane) → enqueued T-062. Solo, standard, worktree.
 

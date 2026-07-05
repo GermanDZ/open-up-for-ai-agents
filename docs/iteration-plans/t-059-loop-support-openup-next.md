@@ -1,7 +1,7 @@
 ---
 type: iteration-plan
 id: T-059
-status: pending
+status: implemented
 title: "Loop support for /openup-next — sentinel output, loop section, openup-loop.sh"
 traces-from: []
 verified-by: []

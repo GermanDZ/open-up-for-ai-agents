@@ -1,7 +1,7 @@
 ---
 type: iteration-plan
 id: T-056
-status: done
+status: verified
 traces-from: []
 verified-by: []
 ---
