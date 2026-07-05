@@ -5,7 +5,7 @@
 
 | ID | Title | Status | Priority | Depends on |
 |---|---|---|---|---|
-| T-062 | Fix pre-existing `check-docs.py` failures (archived T-056 plan + t-059/t-060 iteration-plan frontmatter: status enum + duplicate id) so the complete-task 3a gate is green again | pending | medium | — |
+| T-062 | Fix pre-existing `check-docs.py` failures (archived T-056 plan + t-059/t-060 iteration-plan frontmatter: status enum + duplicate id) so the complete-task 3a gate is green again | completed (2026-07-05) | medium | — |
 | [T-061](changes/T-061/plan.md) | Optimize template skills for Opus 4.8 / Sonnet 5 — stale model string, stack-agnostic plan-feature, report-then-rank self-critique, emphasis/dedup pass, retrospective re-tier | completed (2026-07-02) | medium | — |
 | T-058 | Periodic framework version staleness check — 6-hour cooldown, wired into board + start-iteration | completed (2026-06-19) | medium | — |
 | [T-057](changes/T-057/plan.md) | Solo UX Friction — Free Exploration, Gate-at-Commit, Auto-Merge | completed (2026-06-19) | high | — |
