@@ -1,13 +1,40 @@
 # T-063 Handoff — openup-session.py begin|end + reap wiring in the sequential loop
 
-**Status:** in-progress (lane stood up; implementation not started) · **Branch:** feat/T-063-openup-session-reap · **For:** the next developer-role session
-**Last commit:** 7b892fa — docs(T-063): promote lane — author spec, board-visible [T-063]
+**Status:** in-progress (core landed; skill-adoption + docs remain) · **Branch:** feat/T-063-openup-session-reap · **For:** the next developer-role session
+**Last commit:** 990e875 — feat(T-063): openup-session.py begin|end + board refresh reap wiring [T-063]
 
 > **Entry point:** the iteration is **active** (`.openup/state.json` → T-063), so the next
 > `/openup-next` hits the **resume** path (§1a) and continues from the **first unchecked
-> Operations box** in `docs/changes/T-063/plan.md`. Self-brief from that spec — it is
-> complete and authoritative; no extra context is needed. The full design rationale is in
-> `docs/iteration-plans/t-063-openup-session-begin-end-reap.md`.
+> Operations box** in `docs/changes/T-063/plan.md` — which is now **step 4** (steps 1–3 are
+> ticked and committed). Read `design.md` first: **DD1** narrows the remaining scope
+> (create-handoff needs NO change). Self-brief from the spec + design.md; the full rationale
+> is in `docs/iteration-plans/t-063-openup-session-begin-end-reap.md`.
+
+> **Done & committed (steps 1–3):** `scripts/openup-session.py` (`begin`/`end`, composition
+> over openup-claims/openup-state, atomic rollback), `openup-board.py refresh` reap wiring
+> (heartbeat-gated; **already live** — every `/openup-next` cycle now self-heals stale
+> leases), and `scripts/tests/test_openup_session.py` (5 tests, all green; full suite 300
+> passed, 1 pre-existing macOS symlink fail in test_docs_index unrelated).
+
+> **Remaining (steps 4–6):**
+> - **Step 4** — slim `/openup-start-iteration` §6/§6b (the remote-check→preflight→claim
+>   →heartbeat→state-init→log chain) to one `openup-session.py begin` call, in **both**
+>   `.claude/skills/` and `.claude-templates/skills/`. Keep the git worktree creation.
+> - **Step 5** — slim `/openup-complete-task` §7b to one `openup-session.py end
+>   --archive-to docs/changes/<id>/state.json` call (both copies). Keep worktree removal.
+>   **create-handoff is NOT changed** (DD1). Run `sync-templates-to-claude.sh` before
+>   committing (sparse-worktree gotcha below).
+> - **Step 6** — `docs-eng-process/script-cli-reference.md` (session verbs),
+>   `docs-eng-process/parallel-lanes.md` (board-refresh reap note), `process-manifest.txt`
+>   (ship `scripts/openup-session.py`); re-run full suite + `check-docs.py`.
+> - **Spec cleanup** — apply DD1 to `plan.md` Req 6 / Behavior-Delta / touches (drop the
+>   `openup-create-handoff` skill dirs); the touches fence still lists them, so either edit
+>   the skill trivially or update the spec so the fence check passes at complete-task.
+
+> **`end` CLI:** `openup-session.py end --task-id T --archive-to PATH [--branch B]` →
+> archives `.openup/state.json` to PATH, logs `session_end`, releases the claim. Matches
+> complete-task's current `openup-state.py archive "docs/changes/<id>/state.json"` +
+> `openup-claims.py release`.
 
 ## 1. Acceptance criteria
 > From `plan.md` (Requirements 1–6). "Done" = all six verified.
