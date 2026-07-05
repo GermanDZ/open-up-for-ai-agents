@@ -189,7 +189,7 @@ T-002 (`/openup-sync-spec`) completed 2026-06-11 once T-008's readiness DAG un-b
 ---
 
 ## T-059: Loop Support for /openup-next
-**Status**: pending
+**Status**: completed (2026-06-20)
 **Priority**: high
 **Value**: Practitioners driving the roadmap from a shell script or cron get a reliable stop signal and safe wrapper, eliminating manual loop management and enabling unattended backlog drain.
 **Description**: Add a machine-readable sentinel (`OPENUP-NEXT: ADVANCED/DONE`) to every `/openup-next` exit, a loop-behavior section in the skill, and `scripts/openup-loop.sh` — a wrapper with cycle cap, stall detection, and sentinel-based stop. Prerequisite for T-060.
@@ -205,7 +205,7 @@ T-002 (`/openup-sync-spec`) completed 2026-06-11 once T-008's readiness DAG un-b
 ---
 
 ## T-060: Parallel Fan-Out (/openup-fan-out)
-**Status**: pending
+**Status**: completed (2026-06-22)
 **Priority**: high
 **Value**: Teams (and solo practitioners with a wide board) can run multiple lanes concurrently as background subagents, compressing wall-clock delivery time while the interactive session stays free for planning — no manual parallelism wiring required.
 **Description**: Add a stale-lease reaper to `openup-claims.py` (heartbeat field + `reap` subcommand) so crashed background subagents don't wedge lanes permanently, a `top-n` subcommand to `openup-board.py` for collision-free multi-lane selection, and a new `/openup-fan-out` skill that dispatches one background subagent per READY lane.
@@ -217,3 +217,62 @@ T-002 (`/openup-sync-spec`) completed 2026-06-11 once T-008's readiness DAG un-b
 **Dependencies**: T-059
 
 **See**: `docs/iteration-plans/t-060-parallel-fan-out.md`
+
+---
+
+<!-- plan-hook: 2026-07-05 -->
+### Planned: Efficient /openup-next loop — deterministic selection, single-call state, self-healing claims
+
+- **Status**: `planned` (awaiting implementation)
+- **Exploration**: [explorations/2026-07-05-next-loop-efficiency.md](explorations/2026-07-05-next-loop-efficiency.md)
+- **Created**: 2026-07-05
+- **Goal**: Make one `/openup-next` cycle cheap (tokens), deterministic (selection), and low-friction (round-trips) by extending the script layer — without duplicating the skill machinery. Three ordered deliverables (T-063 → T-064 → T-065), reap+atomicity first per the exploration's product-manager challenge pass.
+- **Next step**: Run `/openup-start-iteration task_id: T-063`
+
+---
+
+## T-063: openup-session.py begin|end + reap wiring in the sequential loop
+**Status**: pending
+**Priority**: high
+**Value**: An unattended `/openup-next` loop survives its own crashes — a stale lease self-heals within one cycle instead of wedging the lane until a human runs `release` — which is the difference between "autonomous" and "babysat".
+**Description**: Add `scripts/openup-session.py` with atomic `begin` (reap + remote-check + claim + heartbeat + state-init + log in one process, with rollback on partial failure) and `end` (release + state-archive + log). Composition-only over existing `openup-claims.py`/`openup-state.py` — git worktree ops stay in the skills. Wire the T-060 reaper into `openup-board.py refresh` so a crashed session's stale lease self-heals within one cycle.
+- `scripts/openup-session.py begin|end` (atomic claim lifecycle, state+claim+log only)
+- Reap wired into `openup-board.py refresh` (heartbeat-gated; T-060 invariant preserved)
+- `/openup-start-iteration` + `/openup-complete-task` + `/openup-create-handoff` slimmed to call the new verbs
+- Entry in `process-manifest.txt` + `script-cli-reference.md`
+
+**Dependencies**: T-060
+
+**See**: `docs/iteration-plans/t-063-openup-session-begin-end-reap.md`
+
+---
+
+## T-064: openup-roadmap.py — deterministic roadmap interface
+**Status**: pending
+**Priority**: high
+**Value**: Solo developers running `/openup-next` stop paying a re-read of the whole roadmap every cycle and stop getting divergent picks — promote-step selection becomes script-decided, so two sessions on identical inputs choose the same task.
+**Description**: Add `scripts/openup-roadmap.py` with `next` (mechanically implements `/openup-next` §1c's selection rule: first pending entry with satisfied deps, no change folder, no live lease — skipping in-flight-elsewhere ids), `list`, and `get`. Parses both roadmap entry shapes (table rows + manual `## T-NNN:` sections). Read-only. `/openup-next` §1c calls it instead of reading the roadmap into context. Track selection stays a model judgment.
+- `scripts/openup-roadmap.py next|list|get` (read-only parser + selector)
+- `/openup-next` §1c consumes `next`
+- Selection divergence = 0 on identical fixtures (falsifiable measure)
+- Entry in `process-manifest.txt` + `script-cli-reference.md`
+
+**Dependencies**: none (composes with T-063)
+
+**See**: `docs/iteration-plans/t-064-openup-roadmap-interface.md`
+
+---
+
+## T-065: openup-board.py status/resolve verb + skill slimming
+**Status**: pending
+**Priority**: high
+**Value**: State discovery collapses to one call returning ≤~40 lines of JSON, and the per-cycle skill text shrinks — so the loop stops spending tokens just to learn "where are we", every cycle, compounding.
+**Description**: Add `openup-board.py resolve` (the §0–§1 precedence — resume/pick/promote/noop — computed once as data, folding in resumable-input + state + board-top + roadmap-next) and `status` (superset diagnostic). Read-only. Slim `/openup-next` §0–§1 to a single `resolve` call, cut `/openup-start-iteration`'s double status/roadmap re-read, and give `openup-loop.sh` a no-op pre-check that avoids spawning a cycle process.
+- `openup-board.py resolve` + `status` (read-only, ≤~40-line JSON)
+- `/openup-next` §0–§1 → single `resolve` call; `start-iteration` double-read removed
+- `openup-loop.sh` no-op pre-check
+- Entry in `process-manifest.txt` + `script-cli-reference.md`
+
+**Dependencies**: T-064
+
+**See**: `docs/iteration-plans/t-065-openup-board-resolve-skill-slimming.md`
