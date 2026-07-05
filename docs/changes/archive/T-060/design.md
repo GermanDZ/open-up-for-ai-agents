@@ -1,9 +1,3 @@
----
-id: T-060
-type: decision
-status: implemented
----
-
 # T-060 Design — Parallel fan-out: stale-lease reaper + /openup-fan-out skill
 
 ## Requirement Grades (step 1a — completion gate)
