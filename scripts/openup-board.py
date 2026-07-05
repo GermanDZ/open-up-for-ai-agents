@@ -30,11 +30,14 @@ Exit codes:
 """
 
 import argparse
+import contextlib
 import importlib.util
+import io
 import json
 import re
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 # --------------------------------------------------------------------------
 # Reuse openup-claims.py (hyphenated filename → load via importlib). The board
@@ -349,9 +352,37 @@ def resolve_cdir(args, root: Path) -> Path:
     return claims.claims_dir(cwd=root, override=args.claims_dir)
 
 
+# Default stale-heartbeat threshold for the refresh-time reap. Mirrors
+# openup-claims.py's `reap --stale-after` default (1800s = 30 min).
+REAP_STALE_AFTER = 1800
+
+
+def _reap_stale_leases(cdir, stale_after):
+    """Live-reap heartbeat-stale leases before deriving the board (T-063).
+
+    Delegates to openup-claims.py's `cmd_reap` (composition — the heartbeat-gated
+    T-060 invariant is inherited, never re-implemented: claims with no
+    last_heartbeat are skipped there). The reaper's stdout chatter is captured so
+    it never pollutes the board JSON printed on stdout; a one-line notice is
+    surfaced on stderr only when something was actually reaped, so a crashed
+    session's stale lane self-heals to READY within one refresh — i.e. within one
+    /openup-next cycle.
+    """
+    ns = SimpleNamespace(claims_dir=str(cdir), stale_after=stale_after, dry_run=False)
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        claims.cmd_reap(ns)
+    for line in buf.getvalue().splitlines():
+        if line.startswith("reaped "):
+            sys.stderr.write(f"[board refresh] {line}\n")
+
+
 def cmd_refresh(args):
     root = resolve_root(args)
-    board = build_board(root, resolve_cdir(args, root))
+    cdir = resolve_cdir(args, root)
+    if not getattr(args, "no_reap", False):
+        _reap_stale_leases(cdir, getattr(args, "reap_stale_after", REAP_STALE_AFTER))
+    board = build_board(root, cdir)
     write_board(board, resolve_out(args, root))
     print(json.dumps(board, indent=2, ensure_ascii=False))
     return EXIT_OK
@@ -432,6 +463,15 @@ def build_parser():
 
     p_refresh = sub.add_parser("refresh", help="Regenerate and print the board.")
     add_common(p_refresh)
+    p_refresh.add_argument(
+        "--reap-stale-after", type=int, default=REAP_STALE_AFTER,
+        help=f"Stale-heartbeat threshold (s) for the refresh-time reap "
+             f"(default {REAP_STALE_AFTER}).",
+    )
+    p_refresh.add_argument(
+        "--no-reap", action="store_true",
+        help="Skip the refresh-time stale-lease reap.",
+    )
     p_refresh.set_defaults(func=cmd_refresh)
 
     p_top = sub.add_parser("top", help="Print the top pickable lane (exit 3 if none).")
