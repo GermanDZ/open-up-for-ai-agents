@@ -20,7 +20,7 @@ touches:
   - docs-eng-process/.claude-templates/skills/openup-create-handoff/
   - docs-eng-process/script-cli-reference.md
   - docs-eng-process/parallel-lanes.md
-  - process-manifest.txt
+  - scripts/process-manifest.txt
   - docs/changes/T-063/
 ---
 
