@@ -1,1 +1,4 @@
 {"run_id": "a5c0dc53acf14ceda71cae98568d7a59", "event": "commit", "task_id": "T-063", "branch": "main", "sha": "dbe66d1e9b01cfbf7259b2d06af98b2a183e7bde", "model": null, "session_id": null, "ts": "2026-07-05T10:32:42Z"}
+{"event": "iteration_start", "task_id": "T-063", "goal": "openup-session.py begin|end atomic claim lifecycle + reap wiring in the sequential loop", "branch": "feat/T-063-openup-session-reap", "phase": "construction", "ts": "2026-07-05T10:32:41Z"}
+{"event": "handoff_created", "task_id": "T-063", "branch": "feat/T-063-openup-session-reap", "ts": "2026-07-05T10:34:13Z"}
+{"event": "handoff_created", "task_id": "T-063", "branch": "feat/T-063-openup-session-reap", "ts": "2026-07-05T13:20:04Z"}

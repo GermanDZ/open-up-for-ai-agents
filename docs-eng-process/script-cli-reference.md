@@ -59,14 +59,44 @@ next-id | release-id | list-ids
   never blocks solo/offline work. `/openup-start-iteration` runs it before
   claiming and logs a `duplicate_start_blocked` event on exit 9.
 
+## openup-session.py — atomic session lifecycle (claim + state + log)
+
+```
+begin  --task-id --iteration N --phase P --track T [--branch B] [--worktree W]
+       [--session-id S] [--plan P] [--goal G] [--run-id R] [--touches ...]
+       [--depends-on ...] [--iterations-since-retro N] [--reap] [--stale-after S]
+       [--no-push] [--force]              # acquire: reap-warn→remote-check→claim→
+                                          #   heartbeat→state-init→session_begin log
+end    --task-id --archive-to PATH [--status done] [--branch B] [--no-push]
+                                          # teardown: archive state→session_end log→release
+```
+- `begin` folds `/openup-start-iteration` §6/§6b into one call. It runs the
+  T-044 remote-check (exit **9** = another clone owns the task) and pre-flight
+  (exit **3** unmet dep / **4** collision) via the composed `claim`. Any failure
+  **after** the claim rolls it back (release) so no half-acquired session remains
+  (Requirement 2). By default the stale-lease sweep is **dry-run + warn**; `--reap`
+  makes it live (the loop's live self-heal lives in `openup-board.py refresh`, not here).
+- `end` is `/openup-complete-task` §7b's teardown: archive `.openup/state.json`
+  into `--archive-to`, log `session_end`, release the claim (idempotent — a no-op
+  for an in-place task with no claim). Worktree removal stays in the skill.
+  `/openup-create-handoff` does **not** call `end` — a handoff keeps its lease +
+  state so `/openup-next` resumes the lane.
+- Pure **composition** over `openup-claims.py` + `openup-state.py` (imported,
+  driven through their `main(argv)`); it adds no new claim/state semantics.
+
 ## openup-board.py — derived execution board
 
 ```
 top      [--root] [--claims-dir]        # top pickable lane as JSON; exit 3 = none pickable
-refresh  [--root] [--claims-dir] [--out]  # rewrite .openup/board.json; print full board
+refresh  [--root] [--claims-dir] [--out] [--reap-stale-after S] [--no-reap]
+                                        # reap stale leases, then rewrite .openup/board.json
 ```
 - The board is **derived** from `docs/changes/*/plan.md` — never authored by the
   model. Exit 3 from `top` is a clean no-op, not a failure (see `/openup-next`).
+- `refresh` **reaps heartbeat-stale leases before deriving** (T-063): a crashed
+  session's lane self-heals from `in-progress` to `ready` within one refresh.
+  Default threshold 1800s (`--reap-stale-after`); `--no-reap` skips it. The T-060
+  invariant holds — a claim with **no** `last_heartbeat` is never reaped.
 
 ## check-docs.py — work-product validator
 

@@ -196,85 +196,70 @@ git rev-parse --abbrev-ref HEAD
 - No unmerged commits → delete and recreate from trunk
 - Has unmerged commits → create PR or merge first, then create new branch
 
-### 6. Initialize Iteration State
+### 6. Acquire the Session — one atomic `begin` (T-063)
 
-Write the machine-readable iteration state file. This is what hooks read to enforce process gates (see [state-file.md](../../../../docs-eng-process/state-file.md)). Fill in the iteration's actual values — pass the **track selected in step 3** to `--track`:
+`openup-session.py begin` folds the entire acquire chain into **one** call:
+stale-lease reap-warn → remote-check (T-044) → pre-flight + claim → heartbeat →
+iteration-state init → `session_begin` log. If any step **after** the claim fails it
+rolls the claim back (release), so a partial begin never strands a half-acquired lane
+(Requirement 2). This replaces the former six-call §6/§6b sequence — the individual
+`openup-claims.py`/`openup-state.py` verbs still exist for direct use, but the skill no
+longer sequences them by hand.
+
+The **git worktree was already created in step 5** (worktree-first, claim-second) and
+worktree creation stays there — `begin` owns only claim + state + log. The claim's
+collision surface (`touches`) and `depends-on` are read from
+`docs/changes/{task_id}/plan.md` frontmatter, so persist the plan **before** `begin`. Pass
+the **track selected in step 3** to `--track`. See
+[parallel-work.md](../../../../docs-eng-process/parallel-work.md).
 
 ```bash
-python3 scripts/openup-state.py init \
+BRANCH="$(git rev-parse --abbrev-ref HEAD)"
+python3 scripts/openup-session.py begin \
   --task-id "{task_id}" \
   --iteration {iteration_number} \
   --phase {inception|elaboration|construction|transition} \
   --track {selected track: quick|standard|full} \
-  --branch "$(git rev-parse --abbrev-ref HEAD)" \
+  --branch "$BRANCH" \
   --worktree "$(git rev-parse --show-toplevel)" \
+  --session-id "$BRANCH" \
   --iterations-since-retro "$(python3 scripts/openup-state.py retro get)" \
+  --goal "{goal}" \
+  --run-id "{run_id}" \
   [--plan docs/plans/{plan}.md]    # standard/full only; the quick track has no plan gate
-```
-
-The `--iterations-since-retro` flag **seeds the new state's mirror from the durable
-counter** (`.openup/retro.json`), carrying the cadence forward across the iteration that
-`/openup-complete-task` archived. Then record `gates.retro_due` from the threshold:
-
-```bash
-python3 scripts/openup-state.py retro check   # sets gates.retro_due = (count >= 5)
-```
-
-If the team was already deployed in step 4, also run `python3 scripts/openup-state.py set-gate team_deployed true` now.
-
-### 6b. Pre-flight + write the worktree claim
-
-Live lease claims coordinate parallel sessions (one file per claim under
-`<git-common-dir>/openup/claims/`, never committed). See
-[parallel-work.md](../../../../docs-eng-process/parallel-work.md). The claim's collision
-surface (`touches`) and `depends-on` come from the task's `docs/changes/{task_id}/plan.md`
-frontmatter, so persist the plan **before** claiming.
-
-The local lease is single-clone (it lives under `.git/`, never pushed). Step 0
-adds the **cross-machine** early-warning (T-044): it asks the *remote* whether
-another clone already pushed a branch for this task. It is **advisory and
-fail-open** — a missing/unreachable remote exits `0` so solo/offline work is
-never blocked; the local pre-flight below remains the hard gate.
-
-```bash
-# 0. REMOTE-CHECK (T-044): refuse early if another clone already owns this task on
-#    origin. Exit 9 = remote duplicate; exit 0 = clear OR remote not consulted.
-python3 scripts/openup-claims.py remote-check --task-id {task_id} \
-  --self-branch "$(git rev-parse --abbrev-ref HEAD)"
-if [ $? -eq 9 ]; then
-  # Record the duplicate-start (clock-stamped; this is the counter that decides
-  # whether the heavier atomic ref-lock, exploration Option A, is ever justified).
+rc=$?
+if [ "$rc" -eq 9 ]; then
+  # Remote duplicate (T-044): another clone already owns this task on origin. Record the
+  # counter event (clock-stamped — decides whether the heavier atomic ref-lock is ever
+  # justified), then roll the local lane back. Do NOT proceed.
   python3 scripts/openup-state.py log-event --event duplicate_start_blocked \
-    --task-id {task_id} --branch "$(git rev-parse --abbrev-ref HEAD)"
+    --task-id {task_id} --branch "$BRANCH"
   echo "Remote duplicate — another clone owns {task_id}. Do NOT proceed."
   echo "Roll back this lane: git checkout \"$TRUNK\"; git branch -D \"$BRANCH\";"
   echo "  git worktree remove \"../\${REPO}-{task_id}\" 2>/dev/null || true"
   exit 1
+elif [ "$rc" -ne 0 ]; then
+  # Pre-flight refused (exit 3 unmet dep / 4 collision) or a post-claim step failed
+  # (begin already released the claim). Resolve the cause above, then roll back the
+  # worktree: git worktree remove "../${REPO}-{task_id}"
+  echo "begin refused (code $rc) — do NOT proceed. Resolve the dependency/collision above."
+  exit 1
 fi
 
-# 1. PRE-FLIGHT (read-only): refuse early on an unmet dependency or a touches collision
-#    with a live claim. Exit 3 = unmet dep; exit 4 = collision (owner named); 0 = clear.
-python3 scripts/openup-claims.py preflight --task-id {task_id} || {
-  echo "Pre-flight refused — do NOT proceed. Resolve the dependency/collision above."; exit 1; }
-
-# 2. WRITE THE CLAIM (worktree already created in step 5 — worktree-first, claim-second; D6).
-#    On failure AFTER the worktree exists, roll back: git worktree remove "../${REPO}-{task_id}"
-python3 scripts/openup-claims.py claim \
-  --task-id {task_id} \
-  --session-id "$(python3 scripts/openup-state.py get session_id 2>/dev/null || echo "$BRANCH")" \
-  --branch "$(git rev-parse --abbrev-ref HEAD)" \
-  --worktree "$(git rev-parse --show-toplevel)"
-
-# 3. STAMP HEARTBEAT — opts this claim into the heartbeat model (T-060).
-#    The reaper (openup-claims.py reap) only touches claims that have a
-#    last_heartbeat field; stamping here ensures background subagents are
-#    eligible for cleanup if they crash mid-run.
-python3 scripts/openup-claims.py heartbeat --task-id {task_id}
+# begin seeded the retro INPUT (--iterations-since-retro); stamp the gate itself:
+python3 scripts/openup-state.py retro check   # sets gates.retro_due = (count >= 5)
 ```
 
-Claims **never expire** — an abandoned claim blocks its surface until a human removes the
-file (`rm <git-common-dir>/openup/claims/{task_id}.json`); there is no TTL and no `--steal`.
-`/openup-complete-task` releases the claim and removes the worktree.
+The `--iterations-since-retro` flag **seeds the new state's mirror from the durable
+counter** (`.openup/retro.json`), carrying the cadence forward across the iteration that
+`/openup-complete-task` archived. If the team was already deployed in step 4, also run
+`python3 scripts/openup-state.py set-gate team_deployed true` now.
+
+Claims **never expire on their own**, but a heartbeat-stale claim now self-heals: it is
+reaped by `openup-board.py refresh` (and warned about by the next `begin`). An abandoned
+claim otherwise blocks its surface until a human removes
+`<git-common-dir>/openup/claims/{task_id}.json`. `/openup-complete-task`'s `end` releases
+the claim and removes the worktree.
 
 ### 6c. Commit the promoted spec — make the lane durable + board-visible (T-048)
 
@@ -321,20 +306,12 @@ Check `docs/input-requests/` for files with `status: answered`. Process any answ
 
 ### 9. Log Initialization
 
-Append the `iteration_start` record with the **deterministic logger** — it stamps
-`ts` from the system clock, so the model never authors a timestamp (the cause of
-the fabricated round-number times the audit found). This is a script call, not a
-scribe brief:
-
-```bash
-python3 scripts/openup-state.py log-event \
-  --event iteration_start \
-  --task-id "{task_id}" \
-  --run-id "{run_id}" \
-  --goal "{goal}" \
-  --branch "$(git rev-parse --abbrev-ref HEAD)" \
-  --phase "{phase}"
-```
+**Already done by `begin` (step 6).** The `session_begin` record — carrying the
+`--goal`, `--run-id`, `--branch`, and `--phase` passed to `begin` — is appended by the
+**deterministic logger** inside `openup-session.py begin`, which stamps `ts` from the
+system clock (the model never authors a timestamp). No separate log call is needed here;
+this step is retained only as the map from the former standalone `iteration_start` log to
+the folded `session_begin` event.
 
 ## Output
 

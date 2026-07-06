@@ -1,15 +1,17 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 33
+**Iteration**: 34
 **Iteration Goal**: T-062 — Fix pre-existing `check-docs.py` failures (archived T-056 plan + t-059/t-060 iteration-plan frontmatter: status enum + duplicate id) so the complete-task 3a gate is green again
 **Status**: completed
-**Current Task**: T-062
+**Current Task**: T-063
 **Iteration Started**: 2026-06-18
-**Last Updated**: 2026-07-05
+**Last Updated**: 2026-07-06
 **Updated By**: sync-status.py
 
 ## Notes
+
+- **Iteration 34** (2026-07-06): T-063 — `/openup-start-iteration` and `/openup-complete-task` now acquire/tear down via one atomic `openup-session.py begin|end`; `openup-board.py refresh` self-heals heartbeat-stale leases. `/openup-create-handoff` unchanged (keeps its lease to resume). Docs + manifest updated; live⇄template skills in sync.
 
 - **Iteration 33** (2026-07-05): T-062 — repaired the 3 pre-existing `check-docs.py` failures so the complete-task 3a gate is green again. Archived T-056 plan status `done`→`verified` (valid iteration-plan enum; coverage rules don't target iteration-plan); stripped the anomalous typed frontmatter from archived T-060 `design.md` (killed the duplicate id T-060 at its source — all 23 sibling `design.md` carry none, nothing traced to it); t-059 iteration-plan status `pending`→`implemented` (delivered iter 30). check-docs now exits 0 in both default and --coverage modes. Solo, quick, in-place. Note: T-059/T-060 roadmap rows still read `pending` though both were delivered (iters 30/31) — a stale status for the product-manager to reconcile.
 
