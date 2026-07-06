@@ -1,7 +1,7 @@
 ---
 id: T-063
 title: "openup-session.py begin|end atomic claim lifecycle + reap wiring in the sequential loop"
-status: ready
+status: done
 priority: high
 estimate: 1–2 sessions
 plan: docs/iteration-plans/t-063-openup-session-begin-end-reap.md

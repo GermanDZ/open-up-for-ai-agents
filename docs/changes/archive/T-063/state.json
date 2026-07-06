@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "task_id": "T-063",
+  "iteration": 34,
+  "phase": "construction",
+  "track": "standard",
+  "branch": "feat/T-063-openup-session-reap",
+  "worktree": "/Users/germandz/personal-code/ai-dev-framework/open-up-for-ai-agents-T-063",
+  "session_id": null,
+  "started_at": "2026-07-05T10:32:17Z",
+  "gates": {
+    "team_deployed": false,
+    "plan_persisted": "docs/iteration-plans/t-063-openup-session-begin-end-reap.md",
+    "log_written": true,
+    "roadmap_synced": true,
+    "retro_due": false
+  },
+  "iterations_since_retro": 0
+}
