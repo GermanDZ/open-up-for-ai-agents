@@ -38,6 +38,16 @@ Two consequences worth stating outright:
   [the cross-machine exploration](../docs/explorations/2026-06-16-cross-machine-claim-coordination.md)
   for the git-as-coordination design under evaluation.
 
+**Stale leases self-heal (T-063).** A claim never expires on a timer, but a lane
+whose session crashed leaves a **heartbeat-stale** claim (its `last_heartbeat` is
+older than the threshold, default 1800s). `openup-board.py refresh` now **reaps**
+such claims before it derives the board, so the lane flips `in-progress → ready`
+within one refresh — the sequential `/openup-next` loop recovers a crashed lane on
+its own, matching the reap `/openup-fan-out` already did. The T-060 invariant holds:
+a claim with **no** `last_heartbeat` field is never reaped (opt-in only). Sessions
+are acquired and torn down atomically through `openup-session.py begin`/`end`, which
+compose the claim + state + log so a partial acquire never strands a half-held lease.
+
 ## The four classes of shared files
 
 Every file a lane may write falls into one class, and each class has a

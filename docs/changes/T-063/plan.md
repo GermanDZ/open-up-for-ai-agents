@@ -117,9 +117,9 @@ Add a thin `scripts/openup-session.py` that **imports** the existing `openup_cla
 - [x] Write `scripts/openup-session.py` with `begin` (reap-dry-run → remote-check → claim → heartbeat → state-init → log, with rollback-release on any post-claim failure) and `end` (release → state-archive → log); composition over imported `openup_claims`/`openup_state`, compact JSON output.
 - [x] Wire live `reap` into `scripts/openup-board.py refresh` (heartbeat-gated) so stale leases self-heal; add the dry-run warn to `session begin`.
 - [x] (tester) Write `scripts/tests/test_openup_session.py`: clean begin/end, injected post-claim failure → rollback (Req 2), stale-heartbeat reaped + no-heartbeat untouched (Req 4/5), board refresh flips `in-progress→ready`.
-- [ ] Slim `/openup-start-iteration` §6/§6b to a single `begin` call (live + template copies); keep git worktree creation.
-- [ ] Slim `/openup-complete-task` §7b and `/openup-create-handoff` to `end` (live + template copies); keep worktree removal in complete-task.
-- [ ] Update `docs-eng-process/script-cli-reference.md`, `docs-eng-process/parallel-lanes.md`, and `process-manifest.txt`; run the full test suite + `scripts/check-docs.py` green.
+- [x] Slim `/openup-start-iteration` §6/§6b to a single `begin` call (live + template copies); keep git worktree creation.
+- [x] Slim `/openup-complete-task` §7b to `end` (live + template copies); keep worktree removal in complete-task. (`/openup-create-handoff` is **not** changed — it has no teardown to slim; see design.md DD1.)
+- [x] Update `docs-eng-process/script-cli-reference.md`, `docs-eng-process/parallel-lanes.md`, and `process-manifest.txt`; run the full test suite + `scripts/check-docs.py` green.
 
 ## Norms
 

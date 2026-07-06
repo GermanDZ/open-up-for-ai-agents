@@ -59,3 +59,30 @@ JSON on stdout); a one-line notice goes to stderr only when something was actual
 A `--reap-stale-after SECONDS` (default 1800, matching the CLI) and `--no-reap` flag keep it
 tunable. Heartbeat-less claims are still skipped by `cmd_reap` itself — the T-060 invariant
 is inherited, not re-implemented.
+
+## DD5 — Skill-adoption details (Operations steps 4-6, 2026-07-06)
+
+Landing the three remaining boxes surfaced two small faithful-adoption decisions:
+
+- **`session-id` now flows to state, not just the claim.** The old §6 `openup-state.py
+  init` passed **no** `--session-id` (so `.openup/state.json.session_id` stayed `null`),
+  while §6b's `claim` used the branch. `begin` passes one `--session-id` to *both* the
+  composed claim and state-init, so the slimmed §6 passes `--session-id "$BRANCH"` — state
+  and claim now agree (branch as the session id) instead of the prior latent `null`
+  mismatch. Behaviour-neutral for the reaper (heartbeat-gated, not session-id-gated).
+- **`iteration_start` log folds into `begin`'s `session_begin`.** The former §9 standalone
+  `log-event --event iteration_start` is removed — `begin` already appends a `session_begin`
+  record (same deterministic clock-stamped logger, carrying `--goal`/`--run-id`/`--branch`/
+  `--phase`). `iteration_start` was only a free-form label with no control-flow consumer
+  (grep: only an example in `openup-state.py --help` and a sample in `test_openup_state.py`);
+  the fold is a cosmetic event rename, not a semantic change. §9 is kept as a one-line map
+  from the old event to the folded one.
+- **Box 121 narrowed to complete-task only**, per DD1 — `/openup-create-handoff` is left
+  unchanged (no teardown existed to slim). Its skill dirs stay in the claim `touches` (a
+  superset is fenced-legal) but received no edit.
+
+**Verification:** full `scripts/tests/` suite 300 passed / 1 pre-existing failure
+(`test_docs_index.py::…test_write_creates_index_file` — a macOS `/private/var` vs `/var`
+tmpdir-symlink assertion, reproduces identically with these edits stashed, unrelated to
+T-063). `scripts/check-docs.py` green (7 instances). Live⇄template copies byte-identical
+for both edited skills.

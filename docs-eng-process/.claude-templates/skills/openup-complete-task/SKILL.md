@@ -333,20 +333,28 @@ t = re.sub(r'(?m)^status:\s*.*$', f'status: {status}', t, count=1)
 open(plan, 'w').write(t)
 print(f"plan status -> {status} (track={track or 'n/a'})")
 PY
-# 2. Archive .openup/state.json INTO the change folder as state.json (validate, copy, remove live file)
-python3 scripts/openup-state.py archive "docs/changes/{task_id}/state.json"
+# 2. TEAR DOWN THE SESSION (T-063) — one atomic `end`: archive .openup/state.json INTO
+#    the change folder as state.json (validate, copy, remove live file), log `session_end`,
+#    AND release the live claim. Replaces the former separate `openup-state.py archive`
+#    (here) + `openup-claims.py release` (§7b). Worktree removal stays in §7b.
+python3 scripts/openup-session.py end \
+  --task-id {task_id} --archive-to "docs/changes/{task_id}/state.json"
 # 3. Move the whole change folder into the archive ring (preserves history)
 git mv "docs/changes/{task_id}" "docs/changes/archive/{task_id}"
 ```
 
-**Otherwise** (legacy / quick-track task with no change folder), archive the state into the dated agent-logs tree:
+**Otherwise** (legacy / quick-track task with no change folder), `end` archives the state
+into the dated agent-logs tree (release is idempotent — a no-op when the task ran in-place
+with no claim):
 
 ```bash
-python3 scripts/openup-state.py archive \
-  "docs/agent-logs/$(date -u +%Y)/$(date -u +%m)/$(date -u +%d)/state-{task_id}.json"
+python3 scripts/openup-session.py end \
+  --task-id {task_id} \
+  --archive-to "docs/agent-logs/$(date -u +%Y)/$(date -u +%m)/$(date -u +%d)/state-{task_id}.json"
 ```
 
-Either way the live `.openup/state.json` is removed by the `archive` command. Commit the archive move with the task's other completion commits.
+Either way the live `.openup/state.json` is removed by `end` (via the `archive` step) and
+the claim is released. Commit the archive move with the task's other completion commits.
 
 ### 7a. Increment the Retro-Cadence Counter (T-011)
 
@@ -362,25 +370,22 @@ When the count reaches the threshold (5), the next `/openup-start-iteration` wil
 `gates.retro_due` and **refuse a `full`-track start** until `/openup-retrospective` runs
 (which resets the counter). See [state-file.md](../../../../docs-eng-process/state-file.md).
 
-### 7b. Release the Worktree Claim (and remove the worktree)
+### 7b. Remove the Worktree
 
-Release the live lease so the task's collision surface is freed for other sessions, and
-remove the isolated worktree (T-009). Claims never expire, so this release is the **only**
-thing that frees the surface — do not skip it.
+The live lease was **already released** by `end` in step 7 (release + archive + log are one
+atomic teardown, T-063). All that remains is to remove the isolated worktree (T-009).
 
 ```bash
-# 1. Release the claim (idempotent — safe even if already released)
-python3 scripts/openup-claims.py release --task-id {task_id}
-
-# 2. Remove the worktree IF one was created (worktree-default-on tasks). Run this from a
-#    DIFFERENT worktree/the main checkout — git refuses to remove the worktree you are in.
-#    Add --force only if the tree is known-clean (all work committed/pushed).
+# Remove the worktree IF one was created (worktree-default-on tasks). Run this from a
+# DIFFERENT worktree/the main checkout — git refuses to remove the worktree you are in.
+# Add --force only if the tree is known-clean (all work committed/pushed).
 REPO=$(basename "$(git rev-parse --show-toplevel)")
 git worktree remove "../${REPO}-{task_id}" 2>/dev/null || \
   echo "No worktree to remove (in-place task), or run from the main checkout."
 ```
 
-If the task ran in-place (`worktree: false`), only the claim release applies.
+If the task ran in-place (`worktree: false`), there is nothing to remove — `end` already
+released the (possibly absent) claim.
 
 ### 8. Create Pull Request
 
