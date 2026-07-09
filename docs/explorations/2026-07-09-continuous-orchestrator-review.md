@@ -257,11 +257,119 @@ ranking — value ordering stays with the product-manager role.
   → **Accepted**: folded into R4's scope (suspended-lanes report) and the
   re-rank note in candidate 10.
 
+## Follow-up (2026-07-09, same day): isolation & many-orchestrator constraints
+
+Three constraints added by the owner after the first pass:
+
+- **C1 — Isolated sessions.** The orchestrator and every lane run in sessions
+  that share nothing but the repo. No orchestration state may live in any
+  session's memory.
+- **C2 — Interruptible anywhere.** A lane can be stopped at *any* moment (not
+  just at a handoff) and continued later — possibly by a different session on a
+  different machine.
+- **C3 — Many mutually-unaware orchestrators.** N orchestrators run against the
+  same repo without knowing of each other. They must never compete (no
+  duplicate dispatch), but any of them may adopt and continue work another one
+  stopped.
+
+### Correction to the first pass
+
+Cross-machine claiming is **stronger** than the T-044 "advisory branch-as-claim"
+description in the docs: `openup-claims.py claim` already performs a real
+remote CAS — it pushes `refs/openup/claims/<id>` without `--force` (rejected =
+another owner), and **rolls back the local claim** on a lost race (exit
+`EXIT_OTHER_OWNER`). `release` deletes the ref; `board refresh` fetches and
+mirrors remote claim refs to local files. So claim-time arbitration between
+mutually-unaware orchestrators sharing one `origin` already exists. C3's
+"never compete" is *almost* satisfied at claim time — the problems are in the
+release/recovery half of the lifecycle.
+
+### New problems surfaced by C1–C3
+
+**P9 — Crashed/stopped lanes wedge permanently once a remote exists
+(critical; breaks C2 and C3).** Three verified facts compound:
+(a) `reap` deletes only the **local** claim file — it never deletes the remote
+`refs/openup/claims/<id>` ref (`release` is the only deleter);
+(b) `heartbeat` rewrites only the local file — the ref's payload is written
+once at claim time and **never carries a heartbeat**;
+(c) `board refresh` re-mirrors remote refs to local claim files, and a
+mirrored claim (no `last_heartbeat`) hits the reaper's "no heartbeat → never
+reap" invariant.
+Net: session on machine A stops mid-lane → the remote ref persists → every
+future `claim` from any orchestrator is rejected by the dead ref, local reap
+either can't see staleness (no heartbeat in the mirror) or deletes a file that
+the next refresh resurrects. The T-060 reaper is **neutralized by the T-056
+locking layer** in exactly the deployment C3 describes. There is no ownership-
+transfer path at all today.
+
+**P10 — Local claim is check-then-act, not create-exclusive (low).**
+`cmd_claim` tests file existence, then `write_claim_atomic` unconditionally
+`os.replace`s — two same-clone processes in the window both "succeed"
+(last-writer-wins). The remote CAS masks this whenever a remote exists; the
+remoteless case should use the `os.link`-exclusive pattern the ID-reservation
+path already uses.
+
+**P11 — Stopped work is not durable off its machine (high; breaks C2/C3).**
+`create-handoff` never pushes the lane branch; in-flight commits live only in
+the local worktree. A different orchestrator/clone has nothing to fetch and
+continue from. Additionally, handoff deliberately **keeps the lease** (T-063)
+— correct for same-owner resume, but with P9 unfixed there is no takeover path
+for anyone else, and even with P9 fixed the taker needs the branch pushed.
+
+### Design consequences for R4 (`/openup-drive`)
+
+1. **Stateless tick, no owned partition.** T-060 fan-out's core assumption —
+   "lanes are assigned before any subagent starts so no board-race is
+   possible" — is invalid under C3 (two orchestrators compute the same
+   partition). The drive loop must hold no wave state: every tick re-derives
+   from repo + claims, dispatches against the *current* board, and treats a
+   **lost claim race as a benign skip** (needs its own sentinel/exit
+   classification, distinct from failure — today `/openup-next task_id:` just
+   "refuses", which a driver can't tell from a crash).
+2. **Liveness = renewed heartbeat, on both layers.** Ownership is redefined:
+   *alive* = heartbeat fresh (renewed on progress events, locally **and**
+   periodically onto the claim ref — force-update of a ref you own is safe);
+   *stopped* = heartbeat stale = reapable by anyone. Reap gains a remote CAS
+   delete (delete the ref only while it still points at the stale blob — the
+   force-with-lease analog), which makes reap itself race-safe between
+   mutually-unaware orchestrators.
+3. **Checkpoint-push durability.** The lane branch is pushed at every handoff
+   (mandatory) and optionally on every Operations-box tick (`quick` win: the
+   box tick is already a commit point). Then C2's "stopped at any moment"
+   loses at most the work since the last checkpoint on *other* machines and
+   nothing on the same clone.
+4. **Adoption is a first-class verb.** Continuing someone else's lane =
+   reap-stale → claim (CAS) → fetch lane branch → adopt-or-recreate worktree →
+   resume from the next unchecked box. This is former R9/P8 upgraded from
+   "verify" to a required deliverable with its own test.
+
+### Revised roadmap candidates
+
+- **R1 (expanded) — Liveness & ownership-transfer protocol.** Heartbeat
+  renewal on progress events, heartbeat mirrored onto the claim ref, reap with
+  remote CAS delete, mirrored-claim staleness readable cross-machine, and the
+  invariant pair: *an actively-worked lane is never reaped; a stopped lane is
+  always eventually adoptable*. (Absorbs P1 + P9; P10 fixed in passing with
+  O_EXCL create.) Still the first shippable — fan-out benefits immediately.
+- **R10 (new) — Checkpoint-push + lane adoption.** Handoff pushes the branch;
+  optional tick-push; `openup-session.py adopt` (or `begin --adopt`) implements
+  the takeover sequence; end-to-end test: stop a lane mid-work on clone A,
+  adopt and finish it from clone B. (Absorbs old R9 and P8/P11.)
+- **R4 (revised) — `/openup-drive`, stateless tick.** As before, plus: no
+  partition state, lost-race = benign skip with distinct classification, and
+  the acceptance test becomes a **two-orchestrator soak**: two drivers on the
+  same repo (ideally separate clones), zero duplicate dispatches, zero wedged
+  lanes, full roadmap drain, at least one lane deliberately killed mid-work and
+  finished by the *other* orchestrator. Depends: R1, R2, R10, T-064, T-065.
+- R2, R5, R6, R7, R8 unchanged. R6 (completion serialization) gains weight
+  under C3 — N orchestrators multiply simultaneous completions.
+
 ## Where this goes next
 
-→ iteration — promote, in order: **R1** (heartbeat renewal + safe-reap
-invariant), **R2** (roadmap stamping both shapes + doctor drift check), then
-T-064/T-065 as already planned, then **R4** (`/openup-drive` continuous
-orchestrator, Option A) with the drain/duplicate/wall-clock measures as
-acceptance criteria; R5 rides with R4, R7 is a quick-track candidate anytime,
-R6/R9 gated on their tests, R8 when the shell driver is next touched.
+→ iteration — promote, in order: **R1** (liveness & ownership-transfer:
+heartbeat on both layers, CAS reap, adoptability invariant), **R2** (roadmap
+stamping both shapes + doctor drift check), **R10** (checkpoint-push + lane
+adoption), then T-064/T-065 as already planned, then **R4** (`/openup-drive`,
+stateless tick, Option A) with the two-orchestrator soak as the acceptance
+gate; R5 rides with R4, R7 is a quick-track candidate anytime, R6/R8 gated on
+their tests/evidence.
