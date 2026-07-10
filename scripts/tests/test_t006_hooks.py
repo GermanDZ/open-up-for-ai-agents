@@ -639,6 +639,50 @@ class OnStopTests(unittest.TestCase):
         self.assertEqual(proc.returncode, 2)
         self.assertIn("log_written", proc.stderr)
 
+    def _track_and_redirty_shard(self):
+        """Commit a run-log shard (clean tree), then re-dirty it the way
+        auto-log-commit appends after a commit. Returns the shard path."""
+        state_cli(self.repo.state_dir, "set-gate", "log_written", "true")
+        state_cli(self.repo.state_dir, "set-gate", "roadmap_synced", "true")
+        shard = (self.repo.dir / "docs" / "agent-logs" / "runs"
+                 / "2026-07-10-T-006.jsonl")
+        shard.parent.mkdir(parents=True, exist_ok=True)
+        shard.write_text('{"event":"commit"}\n')
+        git(self.repo.dir, "add", "-A")
+        git(self.repo.dir, "commit", "-q", "-m", "chore: track shard [T-006]")
+        with shard.open("a") as fh:
+            fh.write('{"event":"commit","sha":"deadbeef"}\n')
+        return shard
+
+    def test_trunk_does_not_sweep_commit(self):
+        # T-069: on trunk (TempRepo default is `main`), on-stop must NOT
+        # sweep-commit the exempt shard — a local commit on main diverges from
+        # origin the moment a PR merges. Stop still proceeds; the shard is left
+        # dirty (uncommitted).
+        shard = self._track_and_redirty_shard()
+        head_before = git(self.repo.dir, "rev-parse", "HEAD").stdout.strip()
+        proc = run_hook("on-stop.py", self._stop_payload(), self.repo.dir)
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        head_after = git(self.repo.dir, "rev-parse", "HEAD").stdout.strip()
+        self.assertEqual(head_before, head_after, "no sweep commit on trunk")
+        self.assertIn("On trunk", proc.stderr)
+        # the shard stays uncommitted (safe — it is exempt from the stop-blocker)
+        st = git(self.repo.dir, "status", "--porcelain").stdout
+        self.assertIn("docs/agent-logs/runs/", st)
+
+    def test_feature_branch_still_sweeps(self):
+        # T-069: the feature-branch behavior is unchanged — on a non-trunk
+        # branch on-stop still sweeps the shard into an [openup-skip] commit.
+        git(self.repo.dir, "checkout", "-q", "-b", "feature/T-006-x")
+        shard = self._track_and_redirty_shard()
+        head_before = git(self.repo.dir, "rev-parse", "HEAD").stdout.strip()
+        proc = run_hook("on-stop.py", self._stop_payload(), self.repo.dir)
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        head_after = git(self.repo.dir, "rev-parse", "HEAD").stdout.strip()
+        self.assertNotEqual(head_before, head_after, "sweep commit expected off trunk")
+        last_msg = git(self.repo.dir, "log", "-1", "--format=%s").stdout
+        self.assertIn("sweep run-log shards", last_msg)
+
 
 # --------------------------------------------------------------------------
 # sync-status.py

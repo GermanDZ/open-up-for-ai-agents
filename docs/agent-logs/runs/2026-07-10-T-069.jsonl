@@ -1,0 +1,6 @@
+{"run_id": "62ce3f74d7f24ed199524e3a8c8c9834", "event": "session_begin", "task_id": "T-069", "goal": "on-stop.py skips the run-log sweep-commit when HEAD is trunk", "branch": "feat/T-069-onstop-trunk-sweep", "phase": "construction", "ts": "2026-07-10T11:47:49Z"}
+{"run_id": "d294c082615c43369881f95796bc716f", "event": "commit", "task_id": "T-069", "branch": "feat/T-069-onstop-trunk-sweep", "sha": "f5ac6fabfd8820142a97efca77bf41c43c522da9", "model": null, "session_id": "feat/T-069-onstop-trunk-sweep", "ts": "2026-07-10T11:47:58Z"}
+{"run_id": "8318ec5320a3452e8330869cb3d47114", "event": "commit", "task_id": "T-069", "branch": "feat/T-069-onstop-trunk-sweep", "sha": "ad2a3122835ae7efb1809d9523af2be6710948b5", "model": null, "session_id": "feat/T-069-onstop-trunk-sweep", "ts": "2026-07-10T11:51:49Z"}
+{"event": "iteration_complete", "task_id": "T-069", "branch": "feat/T-069-onstop-trunk-sweep", "phase": "construction", "ts": "2026-07-10T11:52:12Z"}
+{"run_id": "57bf9c97919a491ea988ed1ca8d288b9", "event": "commit", "task_id": "T-069", "branch": "feat/T-069-onstop-trunk-sweep", "sha": "e5d07a4c2adcca89b848a43da83db230800e1c54", "model": null, "session_id": "feat/T-069-onstop-trunk-sweep", "ts": "2026-07-10T11:52:12Z"}
+{"event": "session_end", "task_id": "T-069", "ts": "2026-07-10T11:52:24Z"}
