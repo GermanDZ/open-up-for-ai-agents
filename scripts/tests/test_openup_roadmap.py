@@ -11,12 +11,15 @@ or real leases. The script is exercised through its CLI exactly as /openup-next
 would.
 """
 
+import importlib.util
 import json
+import shutil
 import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 
 SCRIPT = Path(__file__).resolve().parents[1] / "openup-roadmap.py"
 
@@ -212,6 +215,144 @@ class Next(unittest.TestCase):
         a = run(root, cdir, "next", expect=OK)
         b = run(root, cdir, "next", expect=OK)
         self.assertEqual(a.stdout, b.stdout)  # divergence == 0
+
+
+class RemoteGuard(unittest.TestCase):
+    """T-066: a task delivered in an open, unmerged PR shows up on ``origin`` as a
+    branch encoding its id — invisible to the local folder/lease guards. ``next``
+    must skip it (never re-promote) yet stay fail-open when the remote can't be
+    consulted. Exercised against a REAL bare origin so the ls-remote path runs."""
+
+    ROADMAP = """# Roadmap
+
+## T-101: first pending
+**Status**: pending
+
+## T-200: second pending
+**Status**: pending
+"""
+
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp(prefix="openup-roadmap-remote-"))
+        self.remote = self.tmp / "origin.git"
+        self.local = self.tmp / "repo"
+        subprocess.run(["git", "init", "-q", "--bare", str(self.remote)], check=True)
+        subprocess.run(["git", "init", "-q", str(self.local)], check=True)
+        self._git("config", "user.email", "t@example.com")
+        self._git("config", "user.name", "t")
+        (self.local / "docs").mkdir(parents=True)
+        (self.local / "docs" / "roadmap.md").write_text(self.ROADMAP, encoding="utf-8")
+        self.cdir = self.local / "_claims"
+        self.cdir.mkdir()
+        self._git("add", "-A")
+        self._git("commit", "-q", "-m", "init")
+        self._git("branch", "-M", "main")
+        self._git("remote", "add", "origin", str(self.remote))
+        self._git("push", "-q", "origin", "main")
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def _git(self, *args):
+        subprocess.run(["git", *args], cwd=str(self.local),
+                       check=True, capture_output=True, text=True)
+
+    def _push_branch(self, name):
+        # A branch on origin (pointing at main) with no local checkout — exactly
+        # the trace an open PR leaves after complete-task pushed the lane.
+        self._git("push", "-q", "origin", "main:refs/heads/" + name)
+
+    def _next(self, *extra, expect=None):
+        cmd = [sys.executable, str(SCRIPT), "next",
+               "--root", str(self.local), "--claims-dir", str(self.cdir), *extra]
+        proc = subprocess.run(cmd, capture_output=True, text=True)
+        if expect is not None:
+            assert proc.returncode == expect, (
+                f"expected exit {expect}, got {proc.returncode}\n"
+                f"extra={extra}\nstdout={proc.stdout}\nstderr={proc.stderr}")
+        return proc
+
+    def test_no_matching_branch_promotes(self):
+        # Only main on origin → nothing encodes T-101 → normal promote.
+        e = json.loads(self._next(expect=OK).stdout)
+        self.assertEqual(e["id"], "T-101")
+
+    def test_matching_branch_skipped(self):
+        # An origin branch encodes T-101 (delivered-but-unmerged) → skip it,
+        # promote the next pending task instead.
+        self._push_branch("feat/T-101-board-guard")
+        e = json.loads(self._next(expect=OK).stdout)
+        self.assertEqual(e["id"], "T-200")
+
+    def test_sole_candidate_remote_skipped_exits_none_with_reason(self):
+        self._push_branch("feat/T-101-x")
+        self._push_branch("feat/T-200-y")
+        proc = self._next(expect=NONE)
+        self.assertIn("delivered-but-unmerged", proc.stderr)
+        self.assertIn("T-101", proc.stderr)
+        self.assertIn("merge its PR", proc.stderr)
+
+    def test_no_remote_check_bypasses_guard(self):
+        self._push_branch("feat/T-101-x")
+        e = json.loads(self._next("--no-remote-check", expect=OK).stdout)
+        self.assertEqual(e["id"], "T-101")
+
+    def test_missing_remote_fails_open(self):
+        # No origin at all → remote error → guard must NOT block promotion.
+        self._push_branch("feat/T-101-x")   # (pushed before removal)
+        self._git("remote", "remove", "origin")
+        e = json.loads(self._next(expect=OK).stdout)
+        self.assertEqual(e["id"], "T-101")
+
+    def test_token_boundary_no_false_positive(self):
+        # A branch for T-1010 must not match T-101 (id is a delimited token).
+        self._push_branch("feat/T-1010-unrelated")
+        e = json.loads(self._next(expect=OK).stdout)
+        self.assertEqual(e["id"], "T-101")
+
+
+class RemoteCacheUnit(unittest.TestCase):
+    """T-066 req 3: N candidates needing the remote check cost ONE ls-remote."""
+
+    def _load_module(self):
+        spec = importlib.util.spec_from_file_location(
+            "openup_roadmap_under_test", SCRIPT)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        return mod
+
+    def test_ls_remote_called_once_across_candidates(self):
+        mod = self._load_module()
+        root = Path(tempfile.mkdtemp(prefix="openup-roadmap-cache-"))
+        self.addCleanup(shutil.rmtree, root, True)
+        (root / "docs").mkdir(parents=True)
+        (root / "docs" / "roadmap.md").write_text(
+            "# Roadmap\n\n## T-101: a\n**Status**: pending\n\n"
+            "## T-200: b\n**Status**: pending\n", encoding="utf-8")
+        cdir = root / "_claims"
+        cdir.mkdir()
+
+        calls = {"ls": 0}
+        orig_git = mod.claims._git
+
+        def fake_git(args, cwd=None):
+            if args[:1] == ["remote"] and len(args) == 1:
+                return "origin"
+            if args[:2] == ["ls-remote", "--heads"]:
+                calls["ls"] += 1
+                return "sha\trefs/heads/feat/T-101-x"  # matches T-101 only
+            return orig_git(args, cwd=cwd)
+
+        mod.claims._git = fake_git
+        try:
+            args = SimpleNamespace(root=str(root), claims_dir=str(cdir),
+                                   remote="origin", no_remote_check=False)
+            rc = mod.cmd_next(args)   # T-101 skipped, T-200 promoted
+        finally:
+            mod.claims._git = orig_git
+
+        self.assertEqual(rc, OK)
+        self.assertEqual(calls["ls"], 1)   # cached — not once per candidate
 
 
 if __name__ == "__main__":

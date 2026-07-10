@@ -11,7 +11,7 @@ last-synced: ""
 touches:
   - scripts/openup-roadmap.py
   - scripts/tests/test_openup_roadmap.py
-  - .claude/skills/openup-next/SKILL.md
+  - docs-eng-process/.claude-templates/skills/openup-next/SKILL.md
   - docs-eng-process/script-cli-reference.md
   - docs/changes/T-066/
 ---
@@ -96,11 +96,11 @@ In `cmd_next`, after a candidate clears the local in-flight and dep checks but *
 
 ## Operations
 
-- [ ] Implement the remote-branch guard in `openup-roadmap.py cmd_next`: memoized `claims.remote_task_branches(id, "origin", root, do_fetch=False)` consulted after local checks; skip candidate on a match with no error; fail-open on error; record a remote-skip reason. Add the `--no-remote-check` flag to the `next` subparser (default off = guard on).
-- [ ] Emit a remote-specific stderr reason on exit 3 when the sole blocker was a matching remote branch (name the branch / instruct merging its PR).
-- [ ] Update `.claude/skills/openup-next/SKILL.md` §1c to note the remote delivered-but-unmerged skip and the `--no-remote-check` opt-out; keep the two-exit contract + sentinel byte-unchanged. Sync the template copy if one exists.
-- [ ] Update `docs-eng-process/script-cli-reference.md` with the guard + flag.
-- [ ] (tester) Add path-coverage tests in `test_openup_roadmap.py` using a real bare `origin`: (a) matching branch → candidate skipped/next returned, (b) no matching branch → promoted, (c) no remote / unreachable → fail-open promote, (d) `--no-remote-check` → bypass. Confirm existing non-git-repo tests still pass (fail-open). Run the full suite green.
+- [x] Implement the remote-branch guard in `openup-roadmap.py cmd_next`: a single cached `ls-remote --heads` (all origin heads fetched once — one round-trip across N candidates, req 3) filtered per candidate with the reused `claims.task_branch_match`; skip a candidate on a positive match with no remote error; fail-open (return None → promote) on any error. Add the `--no-remote-check` / `--remote` flags to the `next` subparser (default off = guard on).
+- [x] Emit a remote-specific stderr reason on exit 3 when the sole blocker was a matching remote branch (names the branch + "merge its PR instead of re-promoting").
+- [x] Update `.claude/skills/openup-next/SKILL.md` §1c (promote + noop bullets) to note the remote delivered-but-unmerged skip and the `--no-remote-check` opt-out; two-exit contract + sentinel byte-unchanged; template copy synced.
+- [x] Update `docs-eng-process/script-cli-reference.md` with the guard + `--no-remote-check`/`--remote` flags + `resolve` inheritance note.
+- [x] (tester) Path-coverage tests in `test_openup_roadmap.py` on a real bare `origin`: matching branch → skipped, no match → promoted, no remote → fail-open promote, `--no-remote-check` → bypass, token-boundary no-false-positive, + a unit test asserting ONE ls-remote across candidates. Existing non-git-repo tests still green (fail-open). Full suite green (bar a pre-existing unrelated `test_docs_index` macOS /var symlink flake).
 
 ## Norms
 
