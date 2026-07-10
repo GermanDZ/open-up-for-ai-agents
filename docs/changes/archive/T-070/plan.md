@@ -1,7 +1,7 @@
 ---
 id: T-070
 title: validate-commit accepts the active task_id as the required tag
-status: ready   # proposed → ready → in-progress → done → verified
+status: done
 priority: high   # critical | high | medium | low
 estimate: 0.5 session   # rough size
 plan: docs/explorations/2026-07-10-validate-commit-numeric-tag-gap.md   # originating exploration
