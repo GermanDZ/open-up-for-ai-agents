@@ -115,6 +115,60 @@ def set_gate(cwd: str, name: str, value: str) -> None:
     run(f'python3 "{script}" set-gate {name} {value}', cwd)
 
 
+def _worktree_heads(cwd: str) -> list[tuple[str, str]]:
+    """[(path, head_sha)] for every linked worktree. Parses
+    `git worktree list --porcelain`; a detached/bare entry with no HEAD is
+    skipped. Empty on any failure."""
+    rc, out = run("git worktree list --porcelain", cwd)
+    if rc != 0 or not out:
+        return []
+    res, path = [], None
+    for line in out.splitlines():
+        if line.startswith("worktree "):
+            path = line[len("worktree "):].strip()
+        elif line.startswith("HEAD ") and path:
+            res.append((path, line[len("HEAD "):].strip()))
+            path = None
+        elif not line.strip():
+            path = None
+    return res
+
+
+def _committer_ts(cwd: str, sha: str) -> int:
+    """Committer timestamp (epoch secs) of <sha>, or -1 if unresolvable."""
+    rc, out = run(f"git show -s --format=%ct {sha}", cwd)
+    try:
+        return int(out.strip()) if rc == 0 and out.strip() else -1
+    except ValueError:
+        return -1
+
+
+def resolve_commit_root(cwd: str) -> tuple[str, str]:
+    """Return (root, sha) for the worktree that just received the commit.
+
+    The harness cwd stays pinned to the main checkout while OpenUP skills run
+    `cd <worktree> && git commit`, so trusting `payload.cwd` logs the commit into
+    the WRONG tree (main's HEAD, main's shard) — which dirties main and blocks
+    the next pull (T-068). A freshly-made commit is always the newest across
+    worktrees, so we pick the worktree whose HEAD has the max committer
+    timestamp — no command parsing, no cross-invocation state.
+
+    Fallback: ≤1 worktree (the plain no-worktree repo) or any enumeration
+    failure → (cwd, HEAD-of-cwd), i.e. exactly today's behavior — this change is
+    a strict superset.
+    """
+    heads = _worktree_heads(cwd)
+    if len(heads) <= 1:
+        rc, sha = run("git rev-parse HEAD", cwd)
+        return cwd, (sha.strip() if rc == 0 else "")
+    best_path, best_sha, best_ts = cwd, "", -2
+    for path, sha in heads:
+        ts = _committer_ts(path, sha)
+        if ts > best_ts:
+            best_path, best_sha, best_ts = path, sha, ts
+    return best_path, best_sha
+
+
 def commit_succeeded(payload: dict, command: str) -> bool:
     """Heuristic: a commit command whose tool_response shows no failure.
 
@@ -207,25 +261,28 @@ def main() -> None:
         if not commit_succeeded(payload, command):
             sys.exit(0)
 
-        # Resolve HEAD SHA. If this fails, there is nothing to log.
-        rc, sha = run("git rev-parse HEAD", cwd)
-        sha = sha.strip()
-        if rc != 0 or not sha:
+        # Resolve the worktree the commit actually landed in (T-068). The harness
+        # cwd stays pinned to the main checkout during `cd <worktree> && git
+        # commit`, so using it here would read main's HEAD and append the record
+        # into main's shard — dirtying main and blocking the next pull. `root` is
+        # the worktree whose HEAD is the just-made commit; `sha` is that commit.
+        root, sha = resolve_commit_root(cwd)
+        if not sha:
             sys.exit(0)
 
         # Self-reference guard: skip commits that only touched audit-trail
         # files (anything under docs/agent-logs/, which includes the run shards)
         # — logging them would re-dirty the shard and tail-chase forever.
-        if commit_only_touches_logs(cwd, sha):
+        if commit_only_touches_logs(root, sha):
             sys.exit(0)
 
-        # Gather fields.
-        _, branch = run("git rev-parse --abbrev-ref HEAD", cwd)
+        # Gather fields — from the commit's worktree, not the pinned cwd.
+        _, branch = run("git rev-parse --abbrev-ref HEAD", root)
         branch = branch.strip()
 
         # Read iteration state from the worktree that owns it, not a cwd pinned
         # to the main repo (T-042 Fix-7b) — otherwise commits log task_id null.
-        sroot = resolve_state_root(cwd)
+        sroot = resolve_state_root(root)
         scode, task_id = state_get(sroot, "task_id")
         task_id = task_id.strip() if scode == 0 else None
         if task_id in ("null", ""):
@@ -239,7 +296,8 @@ def main() -> None:
 
         # T-046: write to the LANE-OWNED shard, never the shared agent-runs.jsonl
         # (now a gitignored derived view). Idempotency reads the same shard.
-        log_path = shard_path(cwd, task_id, branch, ts)
+        # Shard lives in the commit's worktree (`root`), not the pinned cwd (T-068).
+        log_path = shard_path(root, task_id, branch, ts)
         if last_logged_sha(log_path) == sha:
             sys.exit(0)
 

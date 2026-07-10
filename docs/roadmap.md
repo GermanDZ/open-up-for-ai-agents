@@ -308,3 +308,18 @@ T-002 (`/openup-sync-spec`) completed 2026-06-11 once T-008's readiness DAG un-b
 **Dependencies**: —
 
 **See**: `docs/changes/T-067/plan.md`
+
+---
+
+## T-068: auto-log-commit logs to the worktree that received the commit
+**Status**: completed (2026-07-10)
+**Priority**: high
+**Value**: Kills a recurring, cross-cutting friction: the `auto-log-commit` PostToolUse hook derives its shard path + logged sha from the pinned harness cwd (the main checkout), so every worktree commit appends a bogus `commit` record into **main's** run-log shard — dirtying main and silently blocking the next `git pull`/merge. Fires on every worktree-based task (the default flow), so pulls break "all the time".
+**Description**: Add `resolve_commit_root(cwd)` to `auto-log-commit.py` that routes the log to the worktree whose HEAD has the newest committer timestamp (the just-made commit) via `git worktree list`, with a strict fallback to today's cwd behavior on ≤1 worktree or failure. Rewire `main()` to use that root/sha. Sync `.claude/` from the template; extend the T-006 hook tests with worktree-routing + main-stays-clean cases. No schema/idempotency/fail-open change; shards stay tracked (no gitignore).
+- `resolve_commit_root` (sha↔worktree by newest committer ts)
+- `main()` rewire off `payload.cwd`
+- worktree-routing hook tests (+ main-clean assertion)
+
+**Dependencies**: —
+
+**See**: `docs/changes/T-068/plan.md`

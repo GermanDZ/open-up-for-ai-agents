@@ -344,6 +344,61 @@ class AutoLogCommitTests(unittest.TestCase):
             git(repo.dir, "worktree", "remove", "--force", str(wt))
             repo.cleanup()
 
+    def test_worktree_commit_logs_to_worktree_not_main(self):
+        # T-068: the harness cwd is pinned to MAIN, but the commit landed in a
+        # linked WORKTREE (the OpenUP `cd <worktree> && git commit` flow). The
+        # record must go to the worktree's shard with the worktree's HEAD sha —
+        # and MAIN's working tree must stay clean (no stray run-shard that would
+        # block the next `git pull`).
+        repo = TempRepo()
+        wt = repo.dir.parent / (repo.dir.name + "-T088-wt")
+        try:
+            git(repo.dir, "worktree", "add", "-q", str(wt), "-b", "feature/T-088")
+            (wt / "scripts").mkdir(parents=True, exist_ok=True)
+            shutil.copy(STATE_CLI, wt / "scripts" / "openup-state.py")
+            shutil.copy(SCHEMA, wt / "scripts" / "openup-state.schema.json")
+            state_cli(wt / ".openup", "init", "--task-id", "T-088",
+                      "--iteration", "1", "--phase", "construction",
+                      "--track", "standard", "--branch", "feature/T-088",
+                      "--worktree", str(wt), "--force")
+            # Commit IN THE WORKTREE, with a committer date strictly newer than
+            # main's seed so the newest-HEAD selection is deterministic (no
+            # same-second tie in the hermetic test).
+            (wt / "g.txt").write_text("y\n")
+            git(wt, "add", "-A")
+            env = {**os.environ,
+                   "GIT_COMMITTER_DATE": "2035-01-01T00:00:00",
+                   "GIT_AUTHOR_DATE": "2035-01-01T00:00:00"}
+            subprocess.run(["git", "commit", "-q", "-m", "feat: change [T-088]"],
+                           cwd=wt, env=env, capture_output=True, text=True)
+            wt_head = git(wt, "rev-parse", "HEAD").stdout.strip()
+
+            # payload.cwd is MAIN (the pinned harness cwd) — the bug scenario.
+            payload = {
+                "tool_name": "Bash", "cwd": str(repo.dir),
+                "tool_input": {"command": 'git commit -m "feat: change [T-088]"'},
+                "tool_response": {"stdout": "1 file changed", "returncode": 0},
+            }
+            proc = run_hook("auto-log-commit.py", payload, repo.dir)
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+
+            # Record lands in the WORKTREE shard, carrying the worktree commit.
+            wt_lines = shard_lines(wt, "T-088")
+            self.assertEqual(len(wt_lines), 1, "expected one worktree shard record")
+            rec = json.loads(wt_lines[0])
+            self.assertEqual(rec["sha"], wt_head)
+            self.assertEqual(rec["task_id"], "T-088")
+            self.assertEqual(rec["branch"], "feature/T-088")
+
+            # MAIN stays clean: no run-shard was written into the main checkout.
+            self.assertEqual(shard_files(repo.dir), [],
+                             "main checkout must not gain a run-shard")
+            status = git(repo.dir, "status", "--porcelain").stdout
+            self.assertNotIn("docs/agent-logs/runs", status)
+        finally:
+            git(repo.dir, "worktree", "remove", "--force", str(wt))
+            repo.cleanup()
+
     def test_idempotent_same_sha(self):
         self._make_commit()
         run_hook("auto-log-commit.py", self._commit_payload(), self.repo.dir)
