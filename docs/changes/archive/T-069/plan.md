@@ -1,7 +1,7 @@
 ---
 id: T-069
 title: on-stop.py skips the run-log sweep-commit when HEAD is trunk (no divergence)
-status: ready   # proposed → ready → in-progress → done → verified
+status: done
 priority: high   # critical | high | medium | low
 estimate: 1 session
 plan: ""
