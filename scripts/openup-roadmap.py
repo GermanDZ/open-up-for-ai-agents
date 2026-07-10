@@ -14,9 +14,13 @@ Subcommands:
   get T-NNN JSON for one entry (exit 3 if absent).
   next      The first promotable pending/planned entry (document order) whose
             deps are all satisfied, with no change folder (active OR archived —
-            the P2 re-promotion guard) and no live lease. Exit 3 + a specific
-            stderr reason when nothing is promotable, mirroring
-            ``openup-board.py top``.
+            the P2 re-promotion guard), no live lease, and — unless
+            ``--no-remote-check`` — no branch encoding its id on ``origin`` (the
+            T-066 delivered-but-unmerged guard: a task finished in an open PR is
+            invisible to the local guards, so it would otherwise be re-promoted).
+            Exit 3 + a specific stderr reason when nothing is promotable,
+            mirroring ``openup-board.py top``. Fail-open: any remote error leaves
+            promotion exactly as it was without the guard.
 
 Determinism: no wall-clock, no randomness — identical roadmap + claims/folders
 → byte-identical ``next`` output. Read-only: writes nothing.
@@ -37,6 +41,7 @@ import argparse
 import importlib.util
 import json
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -265,6 +270,56 @@ def cmd_next(args):
         if c.get("task_id") and not c.get("_corrupt")
     }
 
+    # Remote delivered-but-unmerged guard (T-066). A task fully delivered in an
+    # open, unmerged PR is invisible to every LOCAL guard above: its change
+    # folder was archived on the branch (not here), its lease was released at
+    # complete-task, and the roadmap row still reads ``pending`` on trunk. The
+    # one cross-machine signal that survives is the branch on ``origin`` — the
+    # same branch-as-claim T-044 already reads. We consult it once (cached),
+    # fail-open on any remote error so offline / no-remote / non-repo runs are
+    # never blocked, and skip a candidate whose id a remote branch encodes.
+    remote = getattr(args, "remote", "origin")
+    remote_check_on = not getattr(args, "no_remote_check", False)
+    _heads_cache = {}  # single-slot cache → ONE ls-remote per invocation (req 3)
+
+    def _remote_head_branches():
+        """(branches, error) for all ``origin`` heads — fail-open. Fetched once
+        and cached so N candidates cost ONE ls-remote. Mirrors the probe in
+        claims.remote_task_branches but returns the *unfiltered* set; the token
+        matcher (claims.task_branch_match) is reused per candidate, not copied."""
+        if "v" not in _heads_cache:
+            if not claims.remote_in(remote, claims._git(["remote"], cwd=str(root))):
+                _heads_cache["v"] = ([], f"no remote named '{remote}'")
+            else:
+                out = claims._git(["ls-remote", "--heads", remote], cwd=str(root))
+                if not out:
+                    # Empty is ambiguous (no branches vs unreachable) — probe.
+                    probe = subprocess.run(
+                        ["git", "ls-remote", "--heads", remote],
+                        cwd=str(root), capture_output=True, text=True)
+                    _heads_cache["v"] = (
+                        ([], f"remote '{remote}' unreachable")
+                        if probe.returncode != 0 else ([], None))
+                else:
+                    branches = [
+                        p[1].strip()
+                        for p in (line.split("\trefs/heads/", 1)
+                                  for line in out.splitlines())
+                        if len(p) == 2]
+                    _heads_cache["v"] = (branches, None)
+        return _heads_cache["v"]
+
+    def remote_branch_for(task_id):
+        """Matching remote branch name, or None. None also on any remote error
+        (fail-open): a delivered-but-unmerged skip requires positive evidence."""
+        branches, err = _remote_head_branches()
+        if err is not None:
+            return None
+        for b in branches:
+            if claims.task_branch_match(task_id, b):
+                return b
+        return None
+
     def deps_ok(entry):
         for dep in entry["depends_on"]:
             dep_entry = by_id.get(dep)
@@ -277,6 +332,7 @@ def cmd_next(args):
     saw_pending = False
     first_blocked = None
     saw_inflight = False
+    remote_skipped = None  # (task_id, branch) — sole-blocker delivered-but-unmerged
     for e in entries:
         if e["status"] not in PROMOTABLE_STATUSES:
             continue
@@ -291,6 +347,15 @@ def cmd_next(args):
             if first_blocked is None:
                 first_blocked = (e["id"], blocked_on)
             continue
+        if remote_check_on:
+            rbranch = remote_branch_for(e["id"])
+            if rbranch is not None:
+                # Delivered-but-unmerged: an origin branch encodes this id (an
+                # open PR). Skip like any in-flight lane — never re-promote it.
+                saw_inflight = True
+                if remote_skipped is None:
+                    remote_skipped = (e["id"], rbranch)
+                continue
         print(json.dumps(e, indent=2, ensure_ascii=False))
         return EXIT_OK
 
@@ -298,6 +363,10 @@ def cmd_next(args):
         reason = "roadmap exhausted — no promotable pending task."
     elif first_blocked is not None:
         reason = f"next pending {first_blocked[0]} blocked on {first_blocked[1]}."
+    elif remote_skipped is not None:
+        reason = (f"{remote_skipped[0]} delivered-but-unmerged — origin branch "
+                  f"'{remote_skipped[1]}' exists; merge its PR instead of "
+                  f"re-promoting.")
     elif saw_inflight:
         reason = "all pending tasks in flight (change folder or live lease present)."
     else:
@@ -331,6 +400,12 @@ def main(argv=None):
 
     p_next = sub.add_parser("next", help="Print the next promotable task (exit 3 if none).")
     common(p_next)
+    p_next.add_argument(
+        "--remote", default="origin",
+        help="Remote consulted for delivered-but-unmerged branches (default: origin).")
+    p_next.add_argument(
+        "--no-remote-check", action="store_true",
+        help="Disable the remote delivered-but-unmerged guard (offline/hermetic).")
     p_next.set_defaults(func=cmd_next)
 
     args = parser.parse_args(argv)

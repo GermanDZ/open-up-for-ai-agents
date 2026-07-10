@@ -95,7 +95,13 @@ It returns `{path, lane, resumable_input, active_iteration, reason}` where
 - **`promote`** — `lane.task` is the deterministically-selected next roadmap task
   (identical to `openup-roadmap.py next`: first `pending`/`planned` entry in
   document order with satisfied deps, no active/archived change folder, no live
-  lease — so finished or in-flight work is never re-promoted). **Track selection
+  lease, and **no branch encoding its id on `origin`** — the T-066
+  delivered-but-unmerged guard: a task finished in an open, unmerged PR is
+  invisible to the local folder/lease checks, so without this it would be
+  re-promoted and re-implemented. When that guard fires you get `noop` with a
+  "merge its PR" reason, not `promote` — **merge the PR, don't redo the work**.
+  The guard is fail-open (offline / no remote → promotion behaves as before) and
+  disablable with `openup-roadmap.py next --no-remote-check`). **Track selection
   stays a model judgment** — `resolve` names *which* task; you choose *which
   ceremony track*. Promote **by task shape**:
   - **Implementation / change task** → `/openup-create-task-spec task_id: <id>`
@@ -107,10 +113,12 @@ It returns `{path, lane, resumable_input, active_iteration, reason}` where
     `/openup-plan-feature` at the idea stage). Drive human questions through
     `/openup-request-input` so the lane suspends cleanly.
 - **`noop`** — nothing pickable and nothing promotable. **Stop cleanly** and
-  print `reason`. Make it actionable: if every roadmap row is `completed` and the
-  phase's exit criteria look met, name the next move — run `/openup-phase-review`
-  to advance the phase (a **product-manager decision** the loop surfaces, never
-  performs). If the roadmap is simply empty, say so.
+  print `reason`. Make it actionable: if the `reason` names a
+  **delivered-but-unmerged** task (an `origin` branch / open PR exists), the move
+  is to **merge that PR** — the work is done, not pending. If every roadmap row is
+  `completed` and the phase's exit criteria look met, name the next move — run
+  `/openup-phase-review` to advance the phase (a **product-manager decision** the
+  loop surfaces, never performs). If the roadmap is simply empty, say so.
 
 If `task_id` was passed, skip the precedence and select that lane directly from
 `python3 scripts/openup-board.py top` / `refresh` `lanes[]`; refuse only if it is

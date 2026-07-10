@@ -276,3 +276,19 @@ T-002 (`/openup-sync-spec`) completed 2026-06-11 once T-008's readiness DAG un-b
 **Dependencies**: T-064
 
 **See**: `docs/iteration-plans/t-065-openup-board-resolve-skill-slimming.md`
+
+---
+
+## T-066: promote-selector remote delivered-but-unmerged guard
+**Status**: ready
+**Priority**: high
+**Value**: `/openup-next` stops re-promoting — and re-implementing — a task that is already fully delivered in an open, unmerged PR. Today a completed-but-unmerged task is invisible to every local promote guard (no active folder, archived folder lives on the branch, lease released), so the loop wastes a whole cycle redoing finished work. This closes the last re-promote hole.
+**Description**: Add a remote-branch guard to `openup-roadmap.py cmd_next` (inherited by `openup-board.py resolve`'s promote branch): before promoting a candidate that passed the local in-flight checks, consult `origin` for a branch encoding the task id (reuse the T-044 `claims.remote_task_branches` helper). If one exists → skip as in-flight-elsewhere and surface "merge the PR", never re-promote. Fail-open (offline / no remote / git error → do not block), one `ls-remote` per invocation (cached), opt-out via `--no-remote-check`.
+- `openup-roadmap.py cmd_next` remote-branch guard (fail-open, cached, `--no-remote-check`)
+- `/openup-next` §1c note: delivered-but-unmerged is skipped remotely
+- Path-coverage tests: real bare-remote fixture (branch present → skip; absent → promote; offline → fail-open promote)
+- Entry in `script-cli-reference.md`
+
+**Dependencies**: T-064, T-065
+
+**See**: `docs/changes/T-066/plan.md`

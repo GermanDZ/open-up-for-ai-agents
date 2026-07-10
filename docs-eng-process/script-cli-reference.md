@@ -114,7 +114,8 @@ refresh  [--root] [--claims-dir] [--out] [--reap-stale-after S] [--no-reap]
 list  [--status pending|planned|completed|all] [--root] [--claims-dir]
                                         # matching entries as JSON, document order (default: pending+planned)
 get   T-NNN [--root] [--claims-dir]     # one entry as JSON; exit 3 if absent
-next  [--root] [--claims-dir]           # next promotable task as JSON; exit 3 = none (reason on stderr)
+next  [--root] [--claims-dir] [--remote origin] [--no-remote-check]
+                                        # next promotable task as JSON; exit 3 = none (reason on stderr)
 ```
 - **Read-only** — parses `docs/roadmap.md` (both entry shapes: table rows **and**
   manual `## T-NNN:` sections) and never writes. Document order is the
@@ -127,6 +128,19 @@ next  [--root] [--claims-dir]           # next promotable task as JSON; exit 3 =
   delivery evidence (`completed` status **or** archived folder). Exit-3 reasons
   mirror `openup-board.py top` (`roadmap exhausted` / `next pending <id> blocked on
   <dep>` / `all pending tasks in flight`). Track selection stays a model call.
+- **Remote delivered-but-unmerged guard (T-066)**: before promoting a candidate,
+  `next` also consults `origin` for a branch encoding the task id (reuses the
+  T-044 branch-as-claim matcher) and **skips it** if one exists — a task finished
+  in an open, unmerged PR archives its change folder *on the branch* and releases
+  its lease, so it is invisible to the local guards and would otherwise be
+  re-implemented. The exit-3 reason then reads `<id> delivered-but-unmerged —
+  origin branch '<branch>' exists; merge its PR instead of re-promoting.`
+  **Fail-open**: no remote / unreachable / not a git repo → promotion behaves
+  exactly as without the guard (offline work is never blocked). One `ls-remote`
+  per invocation (cached across candidates). `--no-remote-check` disables it
+  (hermetic/offline callers); `--remote` overrides the remote name. Inherited by
+  `openup-board.py resolve`'s promote branch (it calls `cmd_next`), so `resolve`
+  returns `noop` (not `promote`) for a delivered-but-unmerged task.
 
 ## check-docs.py — work-product validator
 
