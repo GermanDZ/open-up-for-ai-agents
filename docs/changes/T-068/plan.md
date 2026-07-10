@@ -138,18 +138,18 @@ check-claude-sync guard stays green.
 
 ## Operations
 
-- [ ] Add `resolve_commit_root(cwd)` + `_worktree_heads` / `_committer_ts`
+- [x] Add `resolve_commit_root(cwd)` + `_worktree_heads` / `_committer_ts`
       helpers to the template `auto-log-commit.py`; return `(cwd, HEAD)` on ≤1
       worktree or failure.
-- [ ] Rewire `main()` to use `(root, sha)` from the helper for the logs-only
+- [x] Rewire `main()` to use `(root, sha)` from the helper for the logs-only
       guard, branch, `resolve_state_root`, `shard_path`, and gate flip.
-- [ ] Run `scripts/sync-templates-to-claude.sh` so `.claude/` matches the
+- [x] Run `scripts/sync-templates-to-claude.sh` so `.claude/` matches the
       template (check-claude-sync green).
-- [ ] (tester) Extend `scripts/tests/test_t006_hooks.py`: a linked-worktree
+- [x] (tester) Extend `scripts/tests/test_t006_hooks.py`: a linked-worktree
       commit logs to the worktree shard and leaves main clean (R1/R2); the
       no-worktree path still logs to cwd (R3); idempotency preserved (R4). Run
       the full `scripts/tests/` suite.
-- [ ] Backfill sanity: confirm `git status` in the main checkout stays clean
+- [x] Backfill sanity: confirm `git status` in the main checkout stays clean
       across a simulated worktree commit in the test.
 
 ## Norms
