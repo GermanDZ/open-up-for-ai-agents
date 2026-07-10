@@ -86,11 +86,11 @@ Keep `TASK_TAG_RE` (the generic `[T-NNN]` shape) as an always-accepted alternati
 
 ## Operations
 
-- [ ] Edit the template hook `docs-eng-process/.claude-templates/scripts/hooks/validate-commit.py`: in the mandatory-tag branch, accept the subject when it contains the literal `[{task_id}]` (regex-escaped, case-insensitive) OR matches `TASK_TAG_RE`; only raise exit 2 when neither is present.
-- [ ] Run `scripts/sync-templates-to-claude.sh` so the live `.claude/` hook matches the template byte-for-byte.
-- [ ] (tester) Extend `ValidateCommitTests` in `scripts/tests/test_t006_hooks.py`: non-numeric id + `[{id}]` passes; non-numeric id + no tag fails (stderr names the id); numeric id + `[T-NNN]` still passes; `[openup-skip]` still bypasses.
-- [ ] Run the T-006 hook suite (`python3 -m pytest scripts/tests/test_t006_hooks.py` or the repo's test runner) — all green.
-- [ ] Verify the falsifiable measure end-to-end: with a non-numeric active `task_id`, the exact tag the hook prints in its error makes a real `git commit` pass.
+- [x] Edit the template hook `docs-eng-process/.claude-templates/scripts/hooks/validate-commit.py`: in the mandatory-tag branch, accept the subject when it contains the literal `[{task_id}]` (regex-escaped, case-insensitive) OR matches `TASK_TAG_RE`; only raise exit 2 when neither is present.
+- [x] Run `scripts/sync-templates-to-claude.sh` so the live `.claude/` hook matches the template byte-for-byte.
+- [x] (tester) Extend `ValidateCommitTests` in `scripts/tests/test_t006_hooks.py`: non-numeric id + `[{id}]` passes; non-numeric id + no tag fails (stderr names the id); numeric id + `[T-NNN]` still passes; `[openup-skip]` still bypasses.
+- [x] Run the T-006 hook suite (`python3 -m unittest scripts.tests.test_t006_hooks`) — all green (43/43; ValidateCommit 8/8).
+- [x] Verify the falsifiable measure end-to-end: with a non-numeric active `task_id`, the exact tag the hook prints in its error makes a real `git commit` pass.
 
 ## Norms
 
