@@ -1,7 +1,7 @@
 ---
 id: T-067
 title: sync-status.py stamps free-form `## T-NNN:` section Status lines (+ reconcile sweep, doctor drift check)
-status: ready   # proposed → ready → in-progress → done → verified
+status: done
 priority: high   # critical | high | medium | low
 estimate: 1 session
 plan: ""
