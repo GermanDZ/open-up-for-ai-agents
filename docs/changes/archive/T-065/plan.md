@@ -1,7 +1,7 @@
 ---
 id: T-065
 title: "openup-board.py status/resolve verb + skill slimming"
-status: ready
+status: done
 priority: high
 estimate: 1 session
 plan: docs/iteration-plans/t-065-openup-board-resolve-skill-slimming.md
