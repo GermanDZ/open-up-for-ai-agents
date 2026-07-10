@@ -142,6 +142,30 @@ next  [--root] [--claims-dir] [--remote origin] [--no-remote-check]
   `openup-board.py resolve`'s promote branch (it calls `cmd_next`), so `resolve`
   returns `noop` (not `promote`) for a delivered-but-unmerged task.
 
+## sync-status.py — derived-view generator (roadmap + project-status)
+
+```
+sync-status.py [--state-dir] [--roadmap] [--project-status] [--notes-dir] [--no-gate]
+                                        # default: derive current task's status from state, regen both views
+sync-status.py --reconcile [--dry-run] [--roadmap]
+                                        # self-heal: stamp completed(<archival-date>) on section-style entries
+```
+- **Writes** `docs/roadmap.md` + `docs/project-status.md` — the sole writer of
+  those derived shared views (never hand-edit them; re-run this instead).
+- Default mode flips the current task's Status (from `.openup/state.json`).
+  `update_roadmap()` handles **both** entry shapes: markdown **table rows** and
+  the free-form `## T-NNN:` **section** `**Status**:` lines emitted by
+  `/openup-plan-feature` (the section path is a fallback taken only when no table
+  row matches — T-067).
+- `--reconcile` is a **state-free sweep**: for every `## T-NNN:` section whose
+  change folder is archived under `docs/changes/archive/<id>/` but whose Status
+  is not yet `completed`, it stamps `completed (<archival-date>)` (the archival
+  commit's date via `git log`, falling back to today). Idempotent; writes only on
+  change. This heals plan-feature status-rot regardless of when it happened.
+  `--dry-run` reports drift as machine-readable `DRIFT <id> <status>` lines
+  without writing — this is what `openup-doctor`'s read-only
+  `roadmap-status-drift` check invokes.
+
 ## check-docs.py — work-product validator
 
 ```

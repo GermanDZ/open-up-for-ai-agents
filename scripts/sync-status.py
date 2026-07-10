@@ -152,8 +152,142 @@ def update_roadmap(text: str, task_id: str, status: str,
                     cell = f"completed ({today})"
             cells[3] = f" {cell} "
             lines[i] = "|".join(cells)
-            break
-    return "".join(lines), title
+            return "".join(lines), title
+
+    # No table row matched — fall back to the free-form ``## <task_id>:`` section
+    # emitted by /openup-plan-feature, whose status lives in a ``**Status**:``
+    # line, not a table cell. Without this fallback those sections rot (they are
+    # updated only by hand — the exact bug T-067 fixes).
+    new_text, _, sec_title = stamp_section_status(text, task_id, status, today)
+    return new_text, sec_title
+
+
+# --------------------------------------------------------------------------
+# Free-form ``## T-NNN:`` section Status lines (T-067)
+# --------------------------------------------------------------------------
+_SECTION_STATUS_RE = re.compile(r"^\*\*Status\*\*:\s*(.*?)\s*$")
+
+
+def _section_bounds(lines: list[str], task_id: str) -> tuple[int, int] | None:
+    """Return (header_idx, end_idx) for the ``## <task_id>:`` section, where
+    end_idx is the line of the next ``## `` header (or len(lines)). None if the
+    section is absent."""
+    header_re = re.compile(rf"^##\s+{re.escape(task_id)}:")
+    start = None
+    for i, line in enumerate(lines):
+        if start is None:
+            if header_re.match(line):
+                start = i
+            continue
+        if line.startswith("## "):
+            return start, i
+    if start is not None:
+        return start, len(lines)
+    return None
+
+
+def find_section_status(text: str, task_id: str) -> tuple[int, str] | None:
+    """Locate the ``**Status**:`` line inside the ``## <task_id>:`` section.
+    Returns (line_index, current_value) or None if section/line is absent."""
+    lines = text.splitlines(keepends=True)
+    bounds = _section_bounds(lines, task_id)
+    if bounds is None:
+        return None
+    start, end = bounds
+    for i in range(start + 1, end):
+        m = _SECTION_STATUS_RE.match(lines[i].rstrip("\n"))
+        if m:
+            return i, m.group(1).strip()
+    return None
+
+
+def _section_title(text: str, task_id: str) -> str | None:
+    """The prose title after ``## <task_id>:`` (used to seed the goal), if any."""
+    m = re.search(rf"^##\s+{re.escape(task_id)}:\s*(.*?)\s*$", text, re.MULTILINE)
+    return m.group(1).strip() if m and m.group(1).strip() else None
+
+
+def stamp_section_status(text: str, task_id: str, status: str,
+                         today: str) -> tuple[str, bool, str | None]:
+    """Stamp the ``**Status**:`` line of the ``## <task_id>:`` section.
+
+    Mirrors the table-cell convention: a ``completed`` status is stamped
+    ``completed (YYYY-MM-DD)`` and is idempotent (an existing completion date is
+    preserved). Returns (new_text, changed, section_title).
+    """
+    found = find_section_status(text, task_id)
+    title = _section_title(text, task_id)
+    if found is None:
+        return text, False, title
+    idx, current = found
+    new_value = status
+    if status == "completed":
+        new_value = current if current.startswith("completed (") else f"completed ({today})"
+    if new_value == current:
+        return text, False, title
+    lines = text.splitlines(keepends=True)
+    eol = "\n" if lines[idx].endswith("\n") else ""
+    lines[idx] = f"**Status**: {new_value}{eol}"
+    return "".join(lines), True, title
+
+
+# --------------------------------------------------------------------------
+# --reconcile sweep — self-heal section statuses from archived-folder truth
+# --------------------------------------------------------------------------
+def archived_task_ids(root: Path) -> list[str]:
+    """Task IDs with an archived change folder under docs/changes/archive/."""
+    adir = root / "docs" / "changes" / "archive"
+    if not adir.is_dir():
+        return []
+    id_re = re.compile(r"^T-\d+$")
+    return sorted(p.name for p in adir.iterdir() if p.is_dir() and id_re.match(p.name))
+
+
+def archival_date(task_id: str, root: Path, today: str) -> str:
+    """Date the change folder was archived (last commit touching it), YYYY-MM-DD.
+    Falls back to ``today`` when git is unavailable or the path has no history."""
+    rel = f"docs/changes/archive/{task_id}"
+    try:
+        out = subprocess.run(
+            ["git", "log", "-1", "--format=%cs", "--", rel],
+            cwd=str(root), capture_output=True, text=True,
+        )
+        date = out.stdout.strip()
+        if out.returncode == 0 and re.match(r"^\d{4}-\d{2}-\d{2}$", date):
+            return date
+    except (OSError, ValueError):
+        pass
+    return today
+
+
+def section_status_drift(text: str, root: Path) -> list[tuple[str, str]]:
+    """(task_id, current_status) for every ``## T-NNN:`` section whose change
+    folder is archived but whose Status is not yet ``completed``. This is the
+    single source of truth for both --reconcile and openup-doctor's read-only
+    drift check (T-067)."""
+    drift = []
+    for task_id in archived_task_ids(root):
+        found = find_section_status(text, task_id)
+        if found is None:
+            continue
+        _, current = found
+        if not current.startswith("completed"):
+            drift.append((task_id, current))
+    return drift
+
+
+def reconcile_sections(text: str, root: Path,
+                       today: str) -> tuple[str, list[tuple[str, str]]]:
+    """Stamp ``completed (<archival-date>)`` on every drifted section. Returns
+    (new_text, [(task_id, stamped_date), …]). Idempotent."""
+    changed = []
+    for task_id, _current in section_status_drift(text, root):
+        date = archival_date(task_id, root, today)
+        new_text, did, _ = stamp_section_status(text, task_id, "completed", date)
+        if did:
+            text = new_text
+            changed.append((task_id, date))
+    return text, changed
 
 
 # --------------------------------------------------------------------------
@@ -229,6 +363,38 @@ def set_gate_roadmap_synced(args) -> None:
     subprocess.run(cmd, capture_output=True, text=True)
 
 
+def run_reconcile(args) -> int:
+    """--reconcile entrypoint. State-free: derives completion purely from the
+    archived change folders, so it heals rot regardless of iteration state.
+    ``--dry-run`` reports drift without writing (read-only; used by
+    openup-doctor). Machine-readable ``DRIFT <id> <status>`` lines let callers
+    parse the set."""
+    rm_path = roadmap_path(args)
+    if not rm_path.exists():
+        sys.stderr.write(f"Missing doc: roadmap={rm_path}\n")
+        return EXIT_NO_DOC
+    root = rm_path.resolve().parent.parent  # docs/roadmap.md -> repo root
+    text = rm_path.read_text(encoding="utf-8")
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+    if args.dry_run:
+        drift = section_status_drift(text, root)
+        for task_id, current in drift:
+            print(f"DRIFT {task_id} {current}")
+        print(f"drift: {len(drift)} section(s)")
+        return EXIT_OK
+
+    new_text, changed = reconcile_sections(text, root, today)
+    if new_text != text:
+        rm_path.write_text(new_text, encoding="utf-8")
+    if changed:
+        summary = ", ".join(f"{t} ({d})" for t, d in changed)
+        print(f"reconciled {len(changed)} section(s): {summary}")
+    else:
+        print("reconciled 0 section(s).")
+    return EXIT_OK
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(
         prog="sync-status.py",
@@ -247,7 +413,21 @@ def main(argv=None) -> int:
         action="store_true",
         help="Skip setting gates.roadmap_synced (used in isolated tests).",
     )
+    parser.add_argument(
+        "--reconcile",
+        action="store_true",
+        help="Self-heal: stamp completed(<archival-date>) on every free-form "
+             "'## T-NNN:' section whose change folder is archived. State-free.",
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="With --reconcile: report drift without writing (read-only).",
+    )
     args = parser.parse_args(argv)
+
+    if args.reconcile:
+        return run_reconcile(args)
 
     state = read_state(args)
     if state is None:

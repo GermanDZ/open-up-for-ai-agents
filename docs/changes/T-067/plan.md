@@ -156,21 +156,21 @@ and matching conventions — no second source of truth.
 
 ## Operations
 
-- [ ] Add a `stamp_section_status(text, task_id, status, today)` helper in
+- [x] Add a `stamp_section_status(text, task_id, status, today)` helper in
       `sync-status.py` and call it from `update_roadmap` as the fallback when no
       table row matched; keep the idempotent `completed (date)` convention.
-- [ ] Add `reconcile_sections()` + `--reconcile` arg: sweep archived ids, resolve
+- [x] Add `reconcile_sections()` + `--reconcile` arg: sweep archived ids, resolve
       archival date via git (fallback today), stamp non-completed sections, write
       once, print count.
-- [ ] Add the read-only section-status-drift `warning` check to
+- [x] Add the read-only section-status-drift `warning` check to
       `openup-doctor.py` (points at `sync-status.py --reconcile`; exit stays 0).
-- [ ] (tester) Write `scripts/tests/test_sync_status_sections.py` covering: table
+- [x] (tester) Write `scripts/tests/test_sync_status_sections.py` covering: table
       row unchanged (req 2), section fallback stamp (req 1), reconcile
       idempotence (req 3), doctor drift finding (req 4). Run the full
       `scripts/tests/` suite green.
-- [ ] Run `python3 scripts/sync-status.py --reconcile` to backfill T-063/T-064/
+- [x] Run `python3 scripts/sync-status.py --reconcile` to backfill T-063/T-064/
       T-066; verify the three lines and idempotence (req 5).
-- [ ] Document `--reconcile` in `docs-eng-process/script-cli-reference.md`.
+- [x] Document `--reconcile` in `docs-eng-process/script-cli-reference.md`.
 
 ## Norms
 
@@ -192,6 +192,23 @@ Inherits from:
   ever changed by running the generator, never hand-edited.
 - **Idempotence.** Re-running section stamping / reconcile preserves existing
   `completed (date)` values.
+
+## Success Measures
+
+`n/a — internal process tooling with no runtime user metric.` Correctness is
+falsifiable and verified deterministically instead: `openup-doctor` reports **0**
+`roadmap-status-drift` findings after reconcile (was 3: T-063/T-064/T-066), the
+new unit suite passes, and `--reconcile` is idempotent (a second run reports
+`0 section(s)`). Read-back: at the next `/openup-plan-feature` completion — its
+section should reach `completed` with no hand-edit.
+
+## Rollout
+
+`n/a — not user-facing.` Pure internal tooling: `sync-status.py` runs at
+`/openup-complete-task` and on demand; `--reconcile` is opt-in and idempotent;
+`openup-doctor` stays read-only. No flag — the new code path is additive and a
+no-op on repos with no section-style entries, so a flag would add no safety.
+Backout: revert the commit; the derived views regenerate.
 
 ## Verification
 
