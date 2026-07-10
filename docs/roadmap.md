@@ -328,3 +328,18 @@ T-002 (`/openup-sync-spec`) completed 2026-06-11 once T-008's readiness DAG un-b
 **Dependencies**: —
 
 **See**: `docs/changes/T-069/plan.md`
+
+---
+
+## T-070: validate-commit accepts the active task_id as the required tag
+**Status**: completed (2026-07-10)
+**Priority**: high
+**Value**: Closes a self-contradicting enforcement gate: `validate-commit.py`'s mandatory-tag check rejects the exact `[{task_id}]` tag its own error message tells you to append, whenever the active `task_id` is non-numeric (e.g. any `/openup-quick-task` id). The lane becomes uncommittable without an audited `[openup-skip]` bypass — observed live this session, forcing two bypasses on a trivial cleanup. Since the live hook is byte-identical to its shipped template, every consuming project inherits the trap.
+**Description**: In the mandatory-tag branch, accept the subject when it carries the lane's real `[{task_id}]` tag (regex-escaped, case-insensitive) OR any `[T-NNN]` (numeric alternative preserved); only reject when neither is present, so the hook's printed remedy is satisfiable for any active id. Sync live + template; extend the T-006 hook tests (non-numeric id + `[{id}]` passes; non-numeric id + no tag fails; numeric `[T-NNN]` still passes; `[openup-skip]` still bypasses).
+- mandatory-tag branch accepts literal `[{task_id}]` or any `[T-NNN]`
+- live↔template parity preserved
+- T-006 hook tests for the non-numeric-id cases
+
+**Dependencies**: —
+
+**See**: `docs/changes/T-070/plan.md`, `docs/explorations/2026-07-10-validate-commit-numeric-tag-gap.md`

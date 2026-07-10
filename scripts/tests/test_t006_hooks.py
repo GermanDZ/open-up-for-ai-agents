@@ -548,6 +548,32 @@ class ValidateCommitTests(unittest.TestCase):
         log = self.repo.dir / ".claude" / "memory" / "bypass-log.md"
         self.assertTrue(log.exists())
 
+    # T-070: the mandatory-tag check must accept the lane's own [task_id] tag —
+    # including a non-numeric quick-task id — so the hook's own printed remedy
+    # ("Append [task_id]") is satisfiable for any active id.
+    def test_accepts_literal_non_numeric_task_id(self):
+        self.repo.init_state(task_id="quick-remove-approve-plan")
+        proc = run_hook(
+            "validate-commit.py",
+            self._payload("docs: remove thing [quick-remove-approve-plan]"),
+            self.repo.dir)
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+
+    def test_rejects_non_numeric_id_without_tag(self):
+        self.repo.init_state(task_id="quick-remove-approve-plan")
+        proc = run_hook("validate-commit.py",
+                        self._payload("docs: remove thing"), self.repo.dir)
+        self.assertEqual(proc.returncode, 2)
+        self.assertIn("quick-remove-approve-plan", proc.stderr)
+
+    def test_accepts_numeric_tag_alternative_when_id_non_numeric(self):
+        # A [T-NNN] tag stays accepted even when the active lane id differs,
+        # so a commit referencing a related numeric task id isn't rejected.
+        self.repo.init_state(task_id="quick-remove-approve-plan")
+        proc = run_hook("validate-commit.py",
+                        self._payload("docs: relates to [T-042]"), self.repo.dir)
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+
 
 # --------------------------------------------------------------------------
 # on-stop.py

@@ -181,9 +181,15 @@ def main() -> None:
         sys.exit(2)
 
     # Mandatory-tag check: if an iteration is active with a task_id, the
-    # subject MUST carry a [T-XXX] tag.
+    # subject MUST carry the lane's own [task_id] tag — OR any [T-XXX] tag as an
+    # alternative (so a commit that references a related numeric task id still
+    # passes). The lane tag is matched literally (regex-escaped) so a non-numeric
+    # id like a quick-task slug is accepted; this keeps the error message's own
+    # suggestion ("Append [task_id]") satisfiable for any active id (T-070).
     task_id = state_task_id(cwd)
-    if task_id and not TASK_TAG_RE.search(subject):
+    lane_tag_re = re.compile(r"\[" + re.escape(task_id) + r"\]", re.IGNORECASE) if task_id else None
+    has_tag = bool(TASK_TAG_RE.search(subject)) or bool(lane_tag_re and lane_tag_re.search(subject))
+    if task_id and not has_tag:
         print(
             f"[validate-commit] ❌ Missing required task tag.\n\n"
             f"  Your message:    {subject!r}\n\n"
