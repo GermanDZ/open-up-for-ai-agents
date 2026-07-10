@@ -22,6 +22,11 @@ Design rules (mirror scripts/openup-claims.py):
 Subcommands:
   refresh   (default) Regenerate ``.openup/board.json`` and print it.
   top       Regenerate, then print the single top pickable lane (or exit 3).
+  top-n     Print up to N collision-free READY lanes (or exit 3).
+  resolve   Read-only: the §0–§1 /openup-next decision as one JSON object
+            (path ∈ resume|pick|promote|noop). Writes nothing (T-065).
+  status    Read-only superset diagnostic (active iteration + leases +
+            pickable lanes + promotable next) (T-065).
 
 Exit codes:
   0  success (refresh; or top found a pickable lane)
@@ -449,6 +454,149 @@ def cmd_top_n(args):
 
 
 # --------------------------------------------------------------------------
+# resolve / status — the §0–§1 precedence, computed once as read-only data (T-065)
+#
+# `resolve` folds the four inputs the model chains by hand every /openup-next
+# cycle (resumable-input → active-iteration → top-pickable → roadmap-next) into
+# ONE decision object. `status` is the superset diagnostic. Both are READ-ONLY:
+# they never write board.json, never run the reap — only `refresh` writes.
+# The individual verbs are *composed*, not re-implemented (agreement-by-
+# construction): promote reuses openup-roadmap.py's selector, so resolve's
+# promote pick is identical to `openup-roadmap.py next` on the same inputs.
+# --------------------------------------------------------------------------
+def _load_sibling(name, filename):
+    """Import a hyphenated sibling script as a module (same pattern as `claims`)."""
+    path = Path(__file__).resolve().parent / filename
+    spec = importlib.util.spec_from_file_location(name, path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)  # type: ignore[union-attr]
+    return mod
+
+
+def _active_iteration(root: Path):
+    """The active lane from this worktree's ``.openup/state.json`` (T-065).
+
+    Read-only: parses the state file directly rather than importing
+    openup-state.py (whose module-level REPO_ROOT would not track ``root``).
+    Returns ``{"task": id}`` or ``None`` (no state / no task / unreadable)."""
+    sp = root / ".openup" / "state.json"
+    if not sp.exists():
+        return None
+    try:
+        data = json.loads(sp.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    task = data.get("task_id")
+    return {"task": task} if task else None
+
+
+def _resumable_input(root: Path):
+    """The first answered input-request whose lane can resume (T-033/T-065).
+
+    Composes openup-input.py's ``find_resumable`` — the same list §0 reads.
+    Returns ``{"task": id, "request": path}`` or ``None``."""
+    inp = _load_sibling("openup_input", "openup-input.py")
+    rows = inp.find_resumable(root)
+    if rows:
+        task, req = rows[0]
+        return {"task": task, "request": req}
+    return None
+
+
+def _promote_next(root: Path, cdir: Path):
+    """The next promotable roadmap task (§1c), via openup-roadmap.py (T-064).
+
+    Read-only composition: invokes ``cmd_next`` with stdout/stderr captured so
+    the board's stdout stays clean. Returns ``(entry_or_None, reason)`` — the
+    reason is roadmap's own exhaustion message when nothing is promotable."""
+    rm = _load_sibling("openup_roadmap", "openup-roadmap.py")
+    ns = SimpleNamespace(root=str(root), claims_dir=str(cdir))
+    out, err = io.StringIO(), io.StringIO()
+    with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+        rc = rm.cmd_next(ns)
+    if rc == EXIT_OK:
+        try:
+            return json.loads(out.getvalue()), None
+        except json.JSONDecodeError:
+            return None, "roadmap next: unparseable entry."
+    return None, err.getvalue().strip() or "no promotable roadmap task."
+
+
+def _decision(path, reason, lane=None, resumable_input=None, active_iteration=None):
+    return {
+        "path": path,
+        "lane": lane,
+        "resumable_input": resumable_input,
+        "active_iteration": active_iteration,
+        "reason": reason,
+    }
+
+
+def resolve_decision(root: Path, cdir: Path):
+    """The §0–§1 precedence as one object (pure; no I/O side effects)."""
+    # §0 — an answered input-request resumes its lane before any new claim.
+    ri = _resumable_input(root)
+    if ri:
+        return _decision(
+            "resume", f"answered input for {ri['task']} — resume it first.",
+            lane={"task": ri["task"]}, resumable_input=ri)
+    # §1a — an already-active iteration continues from its next unchecked box.
+    ai = _active_iteration(root)
+    if ai:
+        return _decision(
+            "resume", f"active iteration {ai['task']} — continue it.",
+            lane={"task": ai["task"]}, active_iteration=ai)
+    # §1b — the top pickable change-folder lane.
+    board = build_board(root, cdir)  # read-only: no write_board, no reap
+    for lane in board["lanes"]:
+        if is_pickable(lane):
+            return _decision(
+                "pick", f"top pickable lane {lane['task']}.", lane=lane)
+    # §1c — promote the next pending roadmap task.
+    entry, promote_reason = _promote_next(root, cdir)
+    if entry:
+        return _decision(
+            "promote", f"promote roadmap task {entry['id']}.",
+            lane={"task": entry["id"], "title": entry.get("title"),
+                  "track": None, "next_action": "author spec + start"})
+    # §-noop — nothing pickable and nothing to promote.
+    return _decision(
+        "noop", f"{none_pickable_reason(board)} {promote_reason}".strip())
+
+
+def cmd_resolve(args):
+    root = resolve_root(args)
+    cdir = resolve_cdir(args, root)
+    print(json.dumps(resolve_decision(root, cdir), indent=2, ensure_ascii=False))
+    return EXIT_OK
+
+
+def cmd_status(args):
+    """Superset diagnostic for humans: active iteration + live leases +
+    pickable lanes + promotable next. Read-only (no write, no reap)."""
+    root = resolve_root(args)
+    cdir = resolve_cdir(args, root)
+    board = build_board(root, cdir)
+    pickable = [lane for lane in board["lanes"] if is_pickable(lane)]
+    leases = [
+        {"task": c.get("task_id"), "branch": c.get("branch"),
+         "worktree": c.get("worktree"), "last_heartbeat": c.get("last_heartbeat"),
+         "corrupt": bool(c.get("_corrupt"))}
+        for c in claims.live_claims(cdir)
+    ]
+    entry, _ = _promote_next(root, cdir)
+    payload = {
+        "active_iteration": _active_iteration(root),
+        "leases": leases,
+        "pickable": pickable,
+        "promotable_next": ({"task": entry["id"], "title": entry.get("title")}
+                            if entry else None),
+    }
+    print(json.dumps(payload, indent=2, ensure_ascii=False))
+    return EXIT_OK
+
+
+# --------------------------------------------------------------------------
 def build_parser():
     parser = argparse.ArgumentParser(
         prog="openup-board.py",
@@ -492,6 +640,22 @@ def build_parser():
     add_common(p_top_n)
     p_top_n.set_defaults(func=cmd_top_n)
 
+    p_resolve = sub.add_parser(
+        "resolve",
+        help="Print the §0–§1 /openup-next decision as one read-only JSON object "
+             "(path ∈ resume|pick|promote|noop). Writes nothing.",
+    )
+    add_common(p_resolve)
+    p_resolve.set_defaults(func=cmd_resolve)
+
+    p_status = sub.add_parser(
+        "status",
+        help="Read-only superset diagnostic: active iteration + live leases + "
+             "pickable lanes + promotable next.",
+    )
+    add_common(p_status)
+    p_status.set_defaults(func=cmd_status)
+
     return parser
 
 
@@ -508,7 +672,7 @@ def main(argv=None):
 
     raw = list(sys.argv[1:] if argv is None else argv)
     # Default subcommand is `refresh` when the first token isn't a known command.
-    if not raw or raw[0] not in {"refresh", "top", "top-n"}:
+    if not raw or raw[0] not in {"refresh", "top", "top-n", "resolve", "status"}:
         raw = ["refresh"] + raw
     args = build_parser().parse_args(raw)
     return args.func(args)

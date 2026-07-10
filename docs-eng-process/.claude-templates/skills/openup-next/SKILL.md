@@ -42,9 +42,10 @@ an outer loop (`/loop`, cron, or a human) runs it again.
 ## Success Criteria
 
 After this skill completes, ALL of these must be true:
-- [ ] `openup-input.py resumable` was checked **first**; any answered-input lane
-      was resumed (answers folded into the spec, lane un-suspended, request
-      archived) before a new lane was claimed.
+- [ ] `openup-board.py resolve` was called once to decide the cycle; on a
+      `resume` with `resumable_input`, the answered lane was resumed (answers
+      folded into the spec, lane un-suspended, request archived) before a new
+      lane was claimed.
 - [ ] Exactly one lane was advanced this cycle — by **resuming** the active
       iteration, **claiming** a READY lane, or **promoting** the next pending
       roadmap task into a new lane and starting it — OR the skill stopped cleanly
@@ -58,132 +59,67 @@ After this skill completes, ALL of these must be true:
 
 ## Process
 
-### 0. Resume any answered-input lane first (before claiming anything new)
+### 0–1. Resolve this cycle's lane — one call, branch on `.path` (T-065)
 
-A prior cycle may have **suspended** a lane on a question it could not resolve,
-recording it as an input-request. Before touching the board, check whether a
-human has answered — this is [Start-of-Run SOP](docs-eng-process/sops/start-of-run.md)
-Step 0, made first-class for the loop:
-
-```bash
-python3 scripts/openup-input.py resumable   # prints "<task>\t<request>" lines; nothing = none
-```
-
-- **Nothing printed** → no suspended lane is answered; continue to step 1.
-- **One or more lines** → resume the **first** task *before claiming any new
-  lane*:
-  1. Read the answers in the named request file.
-  2. **Fold the answers into the spec, not into code.** Re-run
-     `/openup-create-task-spec task_id: <task>` so the answers land in
-     `docs/changes/<task>/plan.md` through the rubric (fix-spec-first). An
-     answered request never auto-merges a behavior change — it only un-suspends
-     the lane and surfaces the answers.
-  3. **Un-suspend the lane**: remove the `awaiting-input:` line from that
-     plan.md's frontmatter (the board reports the lane `suspended` only while it
-     points at a `pending` request).
-  4. **Close the request**: set its frontmatter `status: processed` and move the
-     file to `docs/input-requests/archive/`.
-  5. That task is now this cycle's lane — skip the board's top pick and go
-     straight to step 2 (claim + work it).
-
-The board models a lane with a still-`pending` request as `suspended` (not
-generic `blocked`) and never picks it, so a question you raised cannot be
-silently re-selected before it is answered.
-
-### 1. Resolve this cycle's lane — resume → pick → promote
-
-Work the precedence in order. The first that yields a lane wins; only fall
-through to a no-op when none does. This is what makes the cycle *advance* instead
-of stopping to ask whether to create a spec.
-
-If `task_id` was passed, skip the precedence: run `python3 scripts/openup-board.py refresh`
-and select that lane from `lanes[]`; refuse only if it is not pickable
-(`state != "ready"`, or leased by another session, or `collides_with` set, or
-`depends_ok` false) and explain which condition failed.
-
-#### 1a. Resume — is an iteration already active?
+The whole §0–§1 precedence — resumable-input → active-iteration → top-pickable
+lane → promotable roadmap task → no-op — is computed **as data** by one
+read-only call. Do not chain `openup-input.py` / `openup-state.py` /
+`openup-board.py top` / `openup-roadmap.py next` by hand, and do not read the
+roadmap into context — `resolve` folds all four in:
 
 ```bash
-python3 scripts/openup-state.py get task_id 2>/dev/null   # exit 3 = no active iteration
+python3 scripts/openup-board.py resolve   # one JSON decision; always exit 0
 ```
 
-- **A task id is returned** (an iteration is started and not yet completed) →
-  that task is this cycle's lane. **Do NOT re-run `/openup-start-iteration`** —
-  the worktree, lease, and state already exist. Skip step 2, go straight to
-  step 3 and continue from its **next unchecked Operations box** (this is "carry
-  on where it stopped"). If every box is already ticked, the work is done →
-  jump to the legal exit in step 6 (`/openup-complete-task`).
-- **Exit 3 / nothing** → no active iteration; continue to 1b.
+It returns `{path, lane, resumable_input, active_iteration, reason}` where
+`path ∈ {resume, pick, promote, noop}`. Branch on `.path`:
 
-#### 1b. Pick — take the top pickable change-folder lane
+- **`resume`** — the lane is already claimed and must continue *before* any new
+  claim. Two sub-cases, distinguished by which field is set:
+  - `resumable_input` is set → a human answered a question that suspended this
+    lane. **Fold the answers into the spec, not into code** (fix-spec-first):
+    read the named request, re-run `/openup-create-task-spec task_id: <task>` so
+    the answers land in `docs/changes/<task>/plan.md` through the rubric, remove
+    the `awaiting-input:` line from that plan's frontmatter, and archive the
+    request (`status: processed` → `docs/input-requests/archive/`). Then work
+    that lane (step 3).
+  - `active_iteration` is set → an iteration is started and unfinished. **Do NOT
+    re-run `/openup-start-iteration`** — the worktree, lease, and state already
+    exist. Skip step 2; go to step 3 and continue from the **next unchecked
+    Operations box**. If every box is ticked, jump to the legal exit
+    (`/openup-complete-task`).
+- **`pick`** — `lane` is the top pickable change-folder lane (`{task, title,
+  track, hat, next_action, plan, …}`). A lane `resolve` calls pickable is one
+  `openup-claims.py preflight` will also clear, so step 2's claim won't surprise
+  you. Continue to step 2.
+- **`promote`** — `lane.task` is the deterministically-selected next roadmap task
+  (identical to `openup-roadmap.py next`: first `pending`/`planned` entry in
+  document order with satisfied deps, no active/archived change folder, no live
+  lease — so finished or in-flight work is never re-promoted). **Track selection
+  stays a model judgment** — `resolve` names *which* task; you choose *which
+  ceremony track*. Promote **by task shape**:
+  - **Implementation / change task** → `/openup-create-task-spec task_id: <id>`
+    (writes the REASONS-Canvas `plan.md` that becomes the lane), then step 2.
+  - **Inception artifact / requirements task** (Vision, use cases, risk list —
+    content is questions, not code) → not loop-shaped; author it through its own
+    skill inside a started iteration: `/openup-start-iteration task_id: <id>`
+    then `/openup-create-vision` / `/openup-create-use-case` (or
+    `/openup-plan-feature` at the idea stage). Drive human questions through
+    `/openup-request-input` so the lane suspends cleanly.
+- **`noop`** — nothing pickable and nothing promotable. **Stop cleanly** and
+  print `reason`. Make it actionable: if every roadmap row is `completed` and the
+  phase's exit criteria look met, name the next move — run `/openup-phase-review`
+  to advance the phase (a **product-manager decision** the loop surfaces, never
+  performs). If the roadmap is simply empty, say so.
 
-```bash
-python3 scripts/openup-board.py top    # prints the top pickable lane as JSON; exit 3 = none
-```
+If `task_id` was passed, skip the precedence and select that lane directly from
+`python3 scripts/openup-board.py top` / `refresh` `lanes[]`; refuse only if it is
+not pickable (`state != "ready"`, leased elsewhere, `collides_with` set, or
+`depends_ok` false) and say which condition failed.
 
-- **Exit 0** → you get the lane JSON: `{task, title, track, state, lease, hat, next_action, plan, collides_with, depends_ok}`. Continue with this lane (step 2). A lane the board calls `ready` is one `scripts/openup-claims.py preflight` will also clear — same dependency/collision logic — so the claim in step 2 will not surprise you. (An `elsewhere` lane — a live lease whose spec is committed on an unmerged branch / another worktree, T-049 — is **never** returned by `top`: it is in flight elsewhere, not pickable here.)
-- **Exit 3** → read the **reason on stderr** and branch:
-  - **"no pickable lane (… `N blocked` / `in-progress` / `elsewhere` / `suspended` …)"**
-    — local lanes exist but every one is held up. This is a genuine no-op:
-    **stop cleanly**, print the reason, do nothing else. (Run `openup-board.py refresh`
-    to show the full board if the user wants to see why.)
-  - **"no active lanes — every change folder is done/archived or absent."** *or*
-    **"no active local lanes (N in flight elsewhere) — roadmap may have promotable
-    work."** — there are no *local* plan-derived lanes (the second form means work
-    is in flight in another worktree, but its spec is not on this tree). Do **not**
-    stop yet: the roadmap may still have pending work to promote. Go to 1c.
-
-#### 1c. Promote — turn the next pending roadmap task into a lane, then start it
-
-Selection is **deterministic — the harness does it**, not the model (T-064).
-Do not read the whole roadmap into context; call the roadmap interface:
-
-```bash
-python3 scripts/openup-roadmap.py next   # prints the chosen entry as JSON; exit 3 = none
-```
-
-`next` mechanically implements this rule: the first `pending`/`planned` entry in
-the product-manager's given order (roadmap document order — never re-ranked)
-whose `depends-on` are all satisfied, that has **no change folder** (active
-`docs/changes/<id>/` **or** archived `docs/changes/archive/<id>/` — the latter
-skips a delivered-but-stale-`pending` task, so finished work is never
-re-promoted) and **no live lease** (a task in flight in another worktree holds a
-lease in the shared `--git-common-dir`, so it is skipped — the re-promote-trap
-guard, T-049). Deps count as satisfied on true delivery evidence (a `completed`
-status **or** an archived folder), so status-rot in a `## T-NNN:` section does
-not falsely block a successor. All of this is a skip-for-mechanical-reason, not a
-re-prioritization.
-
-- **Exit 0** → `next` printed the chosen entry as JSON (`id`, `title`, `status`,
-  `priority`, `depends_on`, `value`, `see`). That `id` is this cycle's task —
-  promote it **by task shape** below.
-- **Exit 3** → nothing promotable; read the stderr reason (`roadmap exhausted` /
-  `next pending <id> blocked on <dep>` / `all pending tasks in flight`) and take
-  the clean-no-op branch further down.
-
-Track selection stays a **model judgment** — `next` names *which* task, you still
-choose *which ceremony track* it runs on (the determinism boundary). Then promote
-the chosen task **by task shape**:
-
-- **Implementation / change task** → `/openup-create-task-spec task_id: <id>`.
-  This writes `docs/changes/<id>/plan.md` (REASONS Canvas + Operations boxes),
-  which becomes the lane. Then go to step 2 and start it this same cycle.
-- **Inception artifact / requirements task** (Vision, use cases, risk list — work
-  whose content is questions, not code) → it is **not loop-shaped**; do not force
-  the REASONS Canvas onto it. Author it through its own skill within a started
-  iteration: `/openup-start-iteration task_id: <id>` then `/openup-create-vision`
-  / `/openup-create-use-case` (or `/openup-plan-feature` if still at the idea
-  stage). Drive any human questions through `/openup-request-input` so the lane
-  suspends cleanly (step 0 resumes it once answered) rather than dead-ending.
-
-If the roadmap has **no** pending task to promote either, then there is genuinely
-nothing to do → **stop cleanly** and say so. Make the stop *actionable*:
-- **Every roadmap row is `completed` and the phase's exit criteria look met** →
-  the phase backlog is delivered. Name the next move explicitly: run
-  `/openup-phase-review` to advance to the next phase, then populate that phase's
-  roadmap section. That re-prioritization is a **product-manager decision** the
-  loop does not make on its own — surface it, do not perform it.
-- **The roadmap is simply empty** → say so and stop.
+For a human diagnostic superset (active iteration + all live leases + pickable
+lanes + promotable next), use `python3 scripts/openup-board.py status` — also
+read-only.
 
 ### 2. Claim it + create the worktree (delegate to start-iteration)
 
@@ -279,7 +215,8 @@ continue on `ADVANCED`. Any exit that is neither is a crash; treat it as `DONE`
 - [openup-create-handoff](../create-handoff/SKILL.md) — legal exit #2.
 - [openup-readiness](../readiness/SKILL.md) — the human-readable DAG report; `openup-board.py` is its machine-readable superset.
 - [openup-request-input](../request-input/SKILL.md) — how a cycle suspends on a question (creates the input-request + sets `awaiting-input`).
-- `scripts/openup-board.py` — the deterministic board generator (`refresh` / `top`).
+- `scripts/openup-board.py` — the deterministic board generator + precedence
+  resolver (`refresh` / `top` / `top-n` / `resolve` / `status`).
 - `scripts/openup-input.py` — maps answered input-requests back to resumable lanes (`resumable` / `list`).
 - `scripts/openup-loop.sh` — the recommended shell-loop driver (`--max-cycles`, `--stall-limit`, `--task-id`).
 

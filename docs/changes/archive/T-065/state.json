@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "task_id": "T-065",
+  "iteration": 36,
+  "phase": "construction",
+  "track": "standard",
+  "branch": "feat/T-065-board-resolve-skill-slimming",
+  "worktree": "/Users/germandz/personal-code/ai-dev-framework/open-up-for-ai-agents-T-065",
+  "session_id": "feat/T-065-board-resolve-skill-slimming",
+  "started_at": "2026-07-10T07:29:58Z",
+  "gates": {
+    "team_deployed": false,
+    "plan_persisted": true,
+    "log_written": true,
+    "roadmap_synced": true,
+    "retro_due": false
+  },
+  "iterations_since_retro": 0
+}

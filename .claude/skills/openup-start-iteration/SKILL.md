@@ -48,6 +48,22 @@ After this skill completes, ALL of these must be true:
 
 ## Process
 
+### 0. Pre-resolved lane? Skip the re-read (T-065)
+
+When `/openup-next` calls this skill it has **already** resolved the lane in one
+`openup-board.py resolve` call — the `task_id` and `track` you were handed *are*
+the decision. In that case **skip steps 1–2's re-read**: do not re-open
+`docs/project-status.md` to find the phase/iteration or `docs/roadmap.md` to
+"find the task" — you already have both. Read the phase + iteration number once,
+cheaply, from state (`python3 scripts/openup-state.py get phase` is unavailable
+pre-init, so take them from the caller / the task's `docs/changes/<id>/plan.md`),
+and go straight to step 3 (track is given) → step 5 (branch/worktree).
+
+Only when invoked **standalone** (a human runs `/openup-start-iteration` with no
+pre-resolved lane, or `task_id` is absent) do steps 1–2 below self-brief by
+reading status + roadmap. The guard is simply: *was I handed a `task_id`?* If
+yes, trust it; if no, read to discover it.
+
 ### 1. Read Project Status
 
 Read `docs/project-status.md` to establish context:
