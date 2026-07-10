@@ -1,15 +1,17 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 40
-**Iteration Goal**: T-069 — on-stop skips the run-log sweep-commit on trunk
+**Iteration**: 41
+**Iteration Goal**: T-070 — validate-commit accepts the active task_id as the required tag
 **Status**: completed
-**Current Task**: T-069
+**Current Task**: T-070
 **Iteration Started**: 2026-06-18
 **Last Updated**: 2026-07-10
 **Updated By**: sync-status.py
 
 ## Notes
+
+- **Iteration 41** (2026-07-10): T-070 — `validate-commit.py` now accepts the active lane's own `[task_id]` tag (regex-escaped, case-insensitive) OR any `[T-NNN]`, so the hook's printed remedy (`Append [task_id]`) is satisfiable for a non-numeric active id (e.g. a quick-task slug). Previously such a lane was uncommittable without `[openup-skip]` — the gate rejected the exact tag it told you to add. Synced live+template (byte-identical); +3 ValidateCommitTests (T-006 suite 43/43). Surfaced by this session's quick-task cleanup. Solo, standard, in-place.
 
 - **Iteration 40** (2026-07-10): on-stop.py no longer sweep-commits run-log shards on trunk — a local commit on main diverged from origin after a PR merged and broke `git pull`. Feature-branch sweep unchanged. Sibling fix to T-068.
 
