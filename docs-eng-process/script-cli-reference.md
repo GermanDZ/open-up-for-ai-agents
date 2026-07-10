@@ -98,6 +98,26 @@ refresh  [--root] [--claims-dir] [--out] [--reap-stale-after S] [--no-reap]
   Default threshold 1800s (`--reap-stale-after`); `--no-reap` skips it. The T-060
   invariant holds — a claim with **no** `last_heartbeat` is never reaped.
 
+## openup-roadmap.py — deterministic roadmap interface
+
+```
+list  [--status pending|planned|completed|all] [--root] [--claims-dir]
+                                        # matching entries as JSON, document order (default: pending+planned)
+get   T-NNN [--root] [--claims-dir]     # one entry as JSON; exit 3 if absent
+next  [--root] [--claims-dir]           # next promotable task as JSON; exit 3 = none (reason on stderr)
+```
+- **Read-only** — parses `docs/roadmap.md` (both entry shapes: table rows **and**
+  manual `## T-NNN:` sections) and never writes. Document order is the
+  product-manager's value order, consumed as-is (never re-ranked).
+- `next` is the deterministic promote-step selector for `/openup-next` §1c: first
+  `pending`/`planned` entry whose deps are satisfied, with **no change folder**
+  (active `docs/changes/<id>/` **or** archived `docs/changes/archive/<id>/`) and
+  **no live lease**. The archived-folder skip stops a delivered-but-stale-`pending`
+  task from being re-promoted (status-rot guard); deps count as satisfied on true
+  delivery evidence (`completed` status **or** archived folder). Exit-3 reasons
+  mirror `openup-board.py top` (`roadmap exhausted` / `next pending <id> blocked on
+  <dep>` / `all pending tasks in flight`). Track selection stays a model call.
+
 ## check-docs.py — work-product validator
 
 ```

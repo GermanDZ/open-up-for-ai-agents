@@ -13,6 +13,7 @@
 openup-state.py
 openup-state.schema.json
 openup-board.py
+openup-roadmap.py
 openup-claims.py
 openup-session.py
 openup-fence.py

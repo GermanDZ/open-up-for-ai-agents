@@ -135,18 +135,35 @@ python3 scripts/openup-board.py top    # prints the top pickable lane as JSON; e
 
 #### 1c. Promote — turn the next pending roadmap task into a lane, then start it
 
-Read `docs/roadmap.md` and select the **next pending task** — the first
-`pending`/`planned` entry in the product-manager's given order whose
-`depends-on` are satisfied, that has **no `docs/changes/<id>/` folder yet**, and
-that **does not already hold a live lease** (T-049). The last filter is
-mechanical: a task in flight in another worktree appears on the board as an
-`elsewhere` (or `in-progress`) lane even when its folder is absent from this
-tree, because the lease lives in the shared `--git-common-dir`. Skipping it
-prevents the re-promote trap — re-authoring a spec for work already underway,
-only to collide in pre-flight. Check it with the board (`openup-board.py refresh`
-→ any `elsewhere`/`in-progress` lane for that id) or `openup-claims.py list`;
-skip any pending id that has one. This is a skip-for-mechanical-reason, not a
-re-prioritization. Then promote the chosen task **by task shape**:
+Selection is **deterministic — the harness does it**, not the model (T-064).
+Do not read the whole roadmap into context; call the roadmap interface:
+
+```bash
+python3 scripts/openup-roadmap.py next   # prints the chosen entry as JSON; exit 3 = none
+```
+
+`next` mechanically implements this rule: the first `pending`/`planned` entry in
+the product-manager's given order (roadmap document order — never re-ranked)
+whose `depends-on` are all satisfied, that has **no change folder** (active
+`docs/changes/<id>/` **or** archived `docs/changes/archive/<id>/` — the latter
+skips a delivered-but-stale-`pending` task, so finished work is never
+re-promoted) and **no live lease** (a task in flight in another worktree holds a
+lease in the shared `--git-common-dir`, so it is skipped — the re-promote-trap
+guard, T-049). Deps count as satisfied on true delivery evidence (a `completed`
+status **or** an archived folder), so status-rot in a `## T-NNN:` section does
+not falsely block a successor. All of this is a skip-for-mechanical-reason, not a
+re-prioritization.
+
+- **Exit 0** → `next` printed the chosen entry as JSON (`id`, `title`, `status`,
+  `priority`, `depends_on`, `value`, `see`). That `id` is this cycle's task —
+  promote it **by task shape** below.
+- **Exit 3** → nothing promotable; read the stderr reason (`roadmap exhausted` /
+  `next pending <id> blocked on <dep>` / `all pending tasks in flight`) and take
+  the clean-no-op branch further down.
+
+Track selection stays a **model judgment** — `next` names *which* task, you still
+choose *which ceremony track* it runs on (the determinism boundary). Then promote
+the chosen task **by task shape**:
 
 - **Implementation / change task** → `/openup-create-task-spec task_id: <id>`.
   This writes `docs/changes/<id>/plan.md` (REASONS Canvas + Operations boxes),
