@@ -232,7 +232,7 @@ T-002 (`/openup-sync-spec`) completed 2026-06-11 once T-008's readiness DAG un-b
 ---
 
 ## T-063: openup-session.py begin|end + reap wiring in the sequential loop
-**Status**: pending
+**Status**: completed (2026-07-06)
 **Priority**: high
 **Value**: An unattended `/openup-next` loop survives its own crashes — a stale lease self-heals within one cycle instead of wedging the lane until a human runs `release` — which is the difference between "autonomous" and "babysat".
 **Description**: Add `scripts/openup-session.py` with atomic `begin` (reap + remote-check + claim + heartbeat + state-init + log in one process, with rollback on partial failure) and `end` (release + state-archive + log). Composition-only over existing `openup-claims.py`/`openup-state.py` — git worktree ops stay in the skills. Wire the T-060 reaper into `openup-board.py refresh` so a crashed session's stale lease self-heals within one cycle.
@@ -248,7 +248,7 @@ T-002 (`/openup-sync-spec`) completed 2026-06-11 once T-008's readiness DAG un-b
 ---
 
 ## T-064: openup-roadmap.py — deterministic roadmap interface
-**Status**: pending
+**Status**: completed (2026-07-10)
 **Priority**: high
 **Value**: Solo developers running `/openup-next` stop paying a re-read of the whole roadmap every cycle and stop getting divergent picks — promote-step selection becomes script-decided, so two sessions on identical inputs choose the same task.
 **Description**: Add `scripts/openup-roadmap.py` with `next` (mechanically implements `/openup-next` §1c's selection rule: first pending entry with satisfied deps, no change folder, no live lease — skipping in-flight-elsewhere ids), `list`, and `get`. Parses both roadmap entry shapes (table rows + manual `## T-NNN:` sections). Read-only. `/openup-next` §1c calls it instead of reading the roadmap into context. Track selection stays a model judgment.
@@ -280,7 +280,7 @@ T-002 (`/openup-sync-spec`) completed 2026-06-11 once T-008's readiness DAG un-b
 ---
 
 ## T-066: promote-selector remote delivered-but-unmerged guard
-**Status**: ready
+**Status**: completed (2026-07-10)
 **Priority**: high
 **Value**: `/openup-next` stops re-promoting — and re-implementing — a task that is already fully delivered in an open, unmerged PR. Today a completed-but-unmerged task is invisible to every local promote guard (no active folder, archived folder lives on the branch, lease released), so the loop wastes a whole cycle redoing finished work. This closes the last re-promote hole.
 **Description**: Add a remote-branch guard to `openup-roadmap.py cmd_next` (inherited by `openup-board.py resolve`'s promote branch): before promoting a candidate that passed the local in-flight checks, consult `origin` for a branch encoding the task id (reuse the T-044 `claims.remote_task_branches` helper). If one exists → skip as in-flight-elsewhere and surface "merge the PR", never re-promote. Fail-open (offline / no remote / git error → do not block), one `ls-remote` per invocation (cached), opt-out via `--no-remote-check`.
@@ -292,3 +292,19 @@ T-002 (`/openup-sync-spec`) completed 2026-06-11 once T-008's readiness DAG un-b
 **Dependencies**: T-064, T-065
 
 **See**: `docs/changes/T-066/plan.md`
+
+---
+
+## T-067: sync-status.py stamps section-style roadmap Status lines
+**Status**: completed (2026-07-10)
+**Priority**: high
+**Value**: Closes the silent roadmap status-rot: `sync-status.py` only stamps table-row Status cells, never the free-form `**Status**:` lines that `/openup-plan-feature` emits for `## T-NNN:` sections — so section entries show completed only when a human hand-edits them. T-063/T-064/T-066 rotted (pending/ready despite being merged). This makes complete-task auto-sync section entries, adds a self-healing `--reconcile` sweep, and surfaces the drift in `openup-doctor`.
+**Description**: (1) Extend `update_roadmap()` to stamp a `## <id>:` section's `**Status**:` line when no table row matches (same idempotent `completed (date)` convention). (2) Add `sync-status.py --reconcile` sweep that stamps `completed (<archival-date>)` for every `## T-NNN:` section with an archived change folder. (3) Add a read-only `warning` check in `openup-doctor` for archived-but-not-completed sections, pointing at `--reconcile`. (4) Backfill T-063/T-064/T-066 by running reconcile. (5) Path-coverage test.
+- `update_roadmap()` section-line fallback
+- `--reconcile` sweep (git archival date, idempotent)
+- `openup-doctor` section-status-drift warning (read-only)
+- Test + `script-cli-reference.md` entry
+
+**Dependencies**: —
+
+**See**: `docs/changes/T-067/plan.md`

@@ -270,6 +270,29 @@ def check_aggregate(repo: str) -> list[Finding]:
     return out
 
 
+def check_section_status_drift(repo: str) -> list[Finding]:
+    """Detect roadmap status-rot: a free-form '## T-NNN:' section whose change
+    folder is archived but whose Status is not 'completed' (T-067). Read-only —
+    invokes sync-status.py's --reconcile --dry-run; the fix stays in that owning
+    script (doctor never writes). Mirrors the 'stale derived view' warning."""
+    out: list[Finding] = []
+    chk = "roadmap-status-drift"
+    script = os.path.join(repo, "scripts", "sync-status.py")
+    if not os.path.isfile(script):
+        return out
+    code, output = run(_interp("sync-status.py") + [script, "--reconcile", "--dry-run"], repo)
+    if code != 0:
+        out.append(Finding(INFO, chk, f"could not check ({output.splitlines()[-1][:120] if output else code})"))
+        return out
+    drifted = [ln.split()[1] for ln in output.splitlines()
+               if ln.startswith("DRIFT ") and len(ln.split()) >= 2]
+    for task_id in drifted:
+        out.append(Finding(WARNING, chk,
+                           f"{task_id}: archived but roadmap Status not 'completed' — "
+                           f"run `python3 scripts/sync-status.py --reconcile`"))
+    return out
+
+
 # ── Reporting ────────────────────────────────────────────────────────────────
 def render_human(findings: list[Finding]) -> str:
     order = [ERROR, WARNING, INFO]
@@ -314,6 +337,7 @@ def main(argv=None) -> int:
     findings += check_framework_drift(repo, args.framework_path)
     findings += check_state_integrity(repo)
     findings += check_aggregate(repo)
+    findings += check_section_status_drift(repo)
 
     has_error = any(f.severity == ERROR for f in findings)
 
