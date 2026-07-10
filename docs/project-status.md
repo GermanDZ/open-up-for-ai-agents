@@ -1,15 +1,17 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 34
+**Iteration**: 35
 **Iteration Goal**: T-062 — Fix pre-existing `check-docs.py` failures (archived T-056 plan + t-059/t-060 iteration-plan frontmatter: status enum + duplicate id) so the complete-task 3a gate is green again
 **Status**: completed
-**Current Task**: T-063
+**Current Task**: T-064
 **Iteration Started**: 2026-06-18
-**Last Updated**: 2026-07-06
+**Last Updated**: 2026-07-10
 **Updated By**: sync-status.py
 
 ## Notes
+
+- **Iteration 35** (2026-07-10): T-064 — `scripts/openup-roadmap.py next|list|get`, a read-only interface over `docs/roadmap.md` (both table-row and manual `## T-NNN:` shapes). Makes `/openup-next` §1c's promote selection deterministic instead of model-judged: two sessions on identical inputs pick the same task and neither reads the whole roadmap into context. `next` excludes tasks with an active **or archived** change folder (the exploration-P2 re-promotion guard — a stale-`pending` delivered task like T-063 is never redone) and keys dep-satisfaction on true delivery evidence (completed status OR archived folder), so manual-section status-rot neither blocks a successor nor re-promotes finished work. Track selection stays a model call (the determinism boundary). 15 hermetic CLI tests incl. divergence=0 + read-only invariant. Solo, standard, worktree.
 
 - **Iteration 34** (2026-07-06): T-063 — `/openup-start-iteration` and `/openup-complete-task` now acquire/tear down via one atomic `openup-session.py begin|end`; `openup-board.py refresh` self-heals heartbeat-stale leases. `/openup-create-handoff` unchanged (keeps its lease to resume). Docs + manifest updated; live⇄template skills in sync.
 
