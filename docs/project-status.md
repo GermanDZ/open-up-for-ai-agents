@@ -1,15 +1,17 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 38
-**Iteration Goal**: T-067 — sync-status.py stamps section-style roadmap Status lines
+**Iteration**: 39
+**Iteration Goal**: T-068 — auto-log-commit logs to the worktree that received the commit
 **Status**: completed
-**Current Task**: T-067
+**Current Task**: T-068
 **Iteration Started**: 2026-06-18
 **Last Updated**: 2026-07-10
 **Updated By**: sync-status.py
 
 ## Notes
+
+- **Iteration 39** (2026-07-10): fixed `auto-log-commit` to route the run-log record to the worktree that received the commit (newest-HEAD match) instead of the pinned harness cwd — worktree commits no longer dirty main's shards or block `git pull`.
 
 - **Iteration 38** (2026-07-10): sync-status.py now stamps free-form `## T-NNN:` section Status lines (root-cause fix for plan-feature status-rot) + `--reconcile` self-heal sweep + read-only `openup-doctor` drift warning; backfilled T-063/T-064/T-066.
 
