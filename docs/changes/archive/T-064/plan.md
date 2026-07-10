@@ -1,7 +1,7 @@
 ---
 id: T-064
 title: "openup-roadmap.py — deterministic roadmap interface (next/list/get)"
-status: ready
+status: done
 priority: high
 estimate: 1 session
 plan: docs/iteration-plans/t-064-openup-roadmap-interface.md
