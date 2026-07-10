@@ -327,7 +327,7 @@ T-002 (`/openup-sync-spec`) completed 2026-06-11 once T-008's readiness DAG un-b
 ---
 
 ## T-069: on-stop skips the run-log sweep-commit on trunk
-**Status**: ready
+**Status**: completed (2026-07-10)
 **Priority**: high
 **Value**: Kills a recurring pull-breaking friction (sibling of T-068): `on-stop.py` sweeps leftover run-log shards into a `chore(process): sweep run-log shards [openup-skip]` commit on whatever branch is checked out — including `main`. A local commit on trunk diverges from origin the moment a PR merges, so the next `git pull` fails with "divergent branches". Observed this session after PR #68 merged.
 **Description**: Guard the sweep in `on-stop.py`: when HEAD is trunk (`main`/`master`/detected default via `get_trunk`), skip the `git commit` and leave the exempt shards uncommitted (they never block stop). Feature-branch sweep behavior is unchanged. No schema/gitignore/dirty-block change. Sync `.claude/` from the template; extend the T-006 hook tests with trunk-skip + feature-branch-still-sweeps + non-exempt-still-blocks cases.

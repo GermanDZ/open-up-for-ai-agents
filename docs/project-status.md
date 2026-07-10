@@ -1,15 +1,17 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 39
-**Iteration Goal**: T-068 — auto-log-commit logs to the worktree that received the commit
+**Iteration**: 40
+**Iteration Goal**: T-069 — on-stop skips the run-log sweep-commit on trunk
 **Status**: completed
-**Current Task**: T-068
+**Current Task**: T-069
 **Iteration Started**: 2026-06-18
 **Last Updated**: 2026-07-10
 **Updated By**: sync-status.py
 
 ## Notes
+
+- **Iteration 40** (2026-07-10): on-stop.py no longer sweep-commits run-log shards on trunk — a local commit on main diverged from origin after a PR merged and broke `git pull`. Feature-branch sweep unchanged. Sibling fix to T-068.
 
 - **Iteration 39** (2026-07-10): fixed `auto-log-commit` to route the run-log record to the worktree that received the commit (newest-HEAD match) instead of the pinned harness cwd — worktree commits no longer dirty main's shards or block `git pull`.
 
