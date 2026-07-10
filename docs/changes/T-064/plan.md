@@ -7,6 +7,7 @@ estimate: 1 session
 plan: docs/iteration-plans/t-064-openup-roadmap-interface.md
 depends-on: []
 blocks: [T-065]
+touches: [scripts/openup-roadmap.py, scripts/tests/test_openup_roadmap.py, scripts/process-manifest.txt, docs-eng-process/.claude-templates/skills/openup-next/SKILL.md, docs-eng-process/script-cli-reference.md]
 last-synced: ""
 ---
 
@@ -95,12 +96,12 @@ A single self-contained Python script that parses `docs/roadmap.md` into a flat 
 
 ## Operations
 
-- [ ] Write `scripts/openup-roadmap.py` with a roadmap parser that emits both table-row and `## T-NNN:` entries in document order; verify with `list --status all` against the live `docs/roadmap.md`.
-- [ ] Implement `list [--status ...]` and `get T-NNN` (JSON out; `get` exits non-zero on miss); verify `get T-064` returns the T-064 entry.
-- [ ] Implement `next` — deps-satisfied (status or archived-folder evidence) + no change folder (active **or archived** — the P2 re-promotion guard) + no live lease + T-049 elsewhere/in-progress skip; exit 3 with a specific stderr reason when nothing is promotable; verify it skips a stale-`pending` task with an archived folder, returns T-065 only after T-064 has a folder, and exit-3 "exhausted" on an all-completed fixture.
-- [ ] (tester) Add a fixture roadmap and assert **byte-identical** `next` output across two runs (divergence=0) plus the read-only invariant (`git status --porcelain` unchanged); wire it as a runnable check.
-- [ ] Update `.claude/skills/openup-next/SKILL.md` §1c to call `python3 scripts/openup-roadmap.py next` and branch on exit 0 vs 3, removing the "read the whole roadmap" instruction.
-- [ ] Add `openup-roadmap.py` to `process-manifest.txt` and its signatures to `docs-eng-process/script-cli-reference.md`.
+- [x] Write `scripts/openup-roadmap.py` with a roadmap parser that emits both table-row and `## T-NNN:` entries in document order; verify with `list --status all` against the live `docs/roadmap.md`.
+- [x] Implement `list [--status ...]` and `get T-NNN` (JSON out; `get` exits non-zero on miss); verify `get T-064` returns the T-064 entry.
+- [x] Implement `next` — deps-satisfied (status or archived-folder evidence) + no change folder (active **or archived** — the P2 re-promotion guard) + no live lease + T-049 elsewhere/in-progress skip; exit 3 with a specific stderr reason when nothing is promotable; verify it skips a stale-`pending` task with an archived folder, returns T-065 only after T-064 has a folder, and exit-3 "exhausted" on an all-completed fixture.
+- [x] (tester) Add a fixture roadmap and assert **byte-identical** `next` output across two runs (divergence=0) plus the read-only invariant (`git status --porcelain` unchanged); wire it as a runnable check.
+- [x] Update `.claude/skills/openup-next/SKILL.md` §1c to call `python3 scripts/openup-roadmap.py next` and branch on exit 0 vs 3, removing the "read the whole roadmap" instruction.
+- [x] Add `openup-roadmap.py` to `process-manifest.txt` and its signatures to `docs-eng-process/script-cli-reference.md`.
 
 ## Norms
 
