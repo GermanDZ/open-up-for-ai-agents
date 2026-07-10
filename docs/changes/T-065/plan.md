@@ -7,7 +7,7 @@ estimate: 1 session
 plan: docs/iteration-plans/t-065-openup-board-resolve-skill-slimming.md
 depends-on: [T-064]
 blocks: []
-touches: [scripts/openup-board.py, scripts/tests/test_openup_board_resolve.py, scripts/openup-loop.sh, scripts/process-manifest.txt, docs-eng-process/script-cli-reference.md, docs-eng-process/.claude-templates/skills/openup-next/SKILL.md, docs-eng-process/.claude-templates/skills/openup-start-iteration/SKILL.md]
+touches: [scripts/openup-board.py, scripts/tests/test_openup_board_resolve.py, scripts/openup-loop.sh, scripts/process-manifest.txt, docs-eng-process/script-cli-reference.md, docs-eng-process/.claude-templates/skills/openup-next/SKILL.md, docs-eng-process/.claude-templates/skills/openup-start-iteration/SKILL.md, .claude/skills/openup-start-iteration/SKILL.md, docs-eng-process/skills-guide.md]
 last-synced: ""
 ---
 
@@ -106,13 +106,13 @@ Add two read-only subcommands to the existing `openup-board.py` that *compose*, 
 
 ## Operations
 
-- [ ] Add `cmd_resolve` to `scripts/openup-board.py`: compose resumable-input → active-state → top-pickable → roadmap-next → noop into one read-only JSON object; wire the `resolve` subparser.
-- [ ] Add `cmd_status`: read-only superset diagnostic (active iteration + live leases + top-N + promotable queue); wire the `status` subparser.
-- [ ] (tester) Write `scripts/tests/test_openup_board_resolve.py`: one fixture per `path` (resume-active, resume-input, pick, promote, noop) + a read-only (no-mutation) assertion + a ≤40-line budget assertion.
-- [ ] Slim `openup-next/SKILL.md` §0–§1 in `docs-eng-process/.claude-templates/…` to a single `resolve` call + branch on `.path`; preserve the two-exit contract and sentinel line.
-- [ ] Add the pre-resolved-lane fast path to `openup-start-iteration/SKILL.md` (skip status/roadmap re-read when `task_id`+`track` are passed).
-- [ ] Add the `resolve` no-op pre-check to `scripts/openup-loop.sh` (stop without spawning a cycle process on `path:"noop"`).
-- [ ] Update `docs-eng-process/script-cli-reference.md` (+ `process-manifest.txt` if it tracks the new test) with `resolve` / `status` signatures; run `python3 scripts/sync-templates-to-claude.sh` so live skills match.
+- [x] Add `cmd_resolve` to `scripts/openup-board.py`: compose resumable-input → active-state → top-pickable → roadmap-next → noop into one read-only JSON object; wire the `resolve` subparser.
+- [x] Add `cmd_status`: read-only superset diagnostic (active iteration + live leases + top-N + promotable queue); wire the `status` subparser.
+- [x] (tester) Write `scripts/tests/test_openup_board_resolve.py`: one fixture per `path` (resume-active, resume-input, pick, promote, noop) + a read-only (no-mutation) assertion + a ≤40-line budget assertion.
+- [x] Slim `openup-next/SKILL.md` §0–§1 in `docs-eng-process/.claude-templates/…` to a single `resolve` call + branch on `.path`; preserve the two-exit contract and sentinel line.
+- [x] Add the pre-resolved-lane fast path to `openup-start-iteration/SKILL.md` (skip status/roadmap re-read when `task_id`+`track` are passed).
+- [x] Add the `resolve` no-op pre-check to `scripts/openup-loop.sh` (stop without spawning a cycle process on `path:"noop"`).
+- [x] Update `docs-eng-process/script-cli-reference.md` (+ `process-manifest.txt` if it tracks the new test) with `resolve` / `status` signatures; run `python3 scripts/sync-templates-to-claude.sh` so live skills match.
 
 ## Norms
 

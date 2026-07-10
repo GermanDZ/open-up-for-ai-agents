@@ -12,6 +12,8 @@
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 MAX_CYCLES=50
 STALL_LIMIT=3
 TASK_ARG=""
@@ -55,6 +57,18 @@ while (( cycle < MAX_CYCLES )); do
   cycle=$(( cycle + 1 ))
   echo ""
   echo "[openup-loop] === Cycle $cycle / $MAX_CYCLES ==="
+
+  # No-op pre-check (T-065): resolve the §0–§1 decision as data BEFORE spawning a
+  # cycle process. When the board resolves to `noop`, there is nothing to do — stop
+  # cleanly without paying for a `claude -p` process. `resolve` is read-only and
+  # always exits 0; a parse/tooling failure falls through to the normal cycle
+  # (fail-open — never skip real work on a bad read).
+  precheck=$(python3 "$SCRIPT_DIR/openup-board.py" resolve 2>/dev/null || true)
+  if echo "$precheck" | grep -Eq '"path":[[:space:]]*"noop"'; then
+    reason=$(echo "$precheck" | grep -o '"reason":[[:space:]]*"[^"]*"' | sed 's/.*"reason":[[:space:]]*"//;s/"$//' || true)
+    echo "[openup-loop] Board resolves to no-op — stopping without spawning a cycle: ${reason:-nothing to do}"
+    exit 0
+  fi
 
   out=$(claude -p "$PROMPT" 2>&1)
   echo "$out"

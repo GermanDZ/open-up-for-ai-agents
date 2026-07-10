@@ -847,9 +847,10 @@ Run ONE OpenUP delivery cycle — resume the active iteration if one stopped mid
 **Success Criteria**
 
 After this skill completes, ALL of these must be true:
-- [ ] `openup-input.py resumable` was checked **first**; any answered-input lane
-      was resumed (answers folded into the spec, lane un-suspended, request
-      archived) before a new lane was claimed.
+- [ ] `openup-board.py resolve` was called once to decide the cycle; on a
+      `resume` with `resumable_input`, the answered lane was resumed (answers
+      folded into the spec, lane un-suspended, request archived) before a new
+      lane was claimed.
 - [ ] Exactly one lane was advanced this cycle — by **resuming** the active
       iteration, **claiming** a READY lane, or **promoting** the next pending
       roadmap task into a new lane and starting it — OR the skill stopped cleanly

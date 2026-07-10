@@ -1,0 +1,1 @@
+{"run_id": "T-065-iter36", "event": "session_begin", "task_id": "T-065", "goal": "T-065 \u2014 openup-board.py resolve/status verbs (precedence-as-data) + slim /openup-next \u00a70-\u00a71 and start-iteration double-read", "branch": "feat/T-065-board-resolve-skill-slimming", "phase": "construction", "ts": "2026-07-10T07:29:59Z"}
