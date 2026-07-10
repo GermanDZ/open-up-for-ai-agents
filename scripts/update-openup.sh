@@ -2,13 +2,13 @@
 # update-openup.sh - Update script to run from any project directory.
 #
 # RECOMMENDED USAGE (download, review, then run — do NOT pipe to a shell):
-#   git clone --depth 1 --branch v2.0.0 \
+#   git clone --depth 1 --branch v2.1.0 \
 #     https://github.com/GermanDZ/open-up-for-ai-agents.git /tmp/openup
 #   # review /tmp/openup, then:
 #   bash /tmp/openup/scripts/update-openup.sh
 #
 # By default this script pins to the latest released TAG (never `main`). Override with:
-#   OPENUP_REF=v2.0.0  ./scripts/update-openup.sh   # pin to an exact tag (recommended)
+#   OPENUP_REF=v2.1.0  ./scripts/update-openup.sh   # pin to an exact tag (recommended)
 #   OPENUP_BRANCH=main ./scripts/update-openup.sh   # opt in to the unpinned tip (NOT recommended)
 #
 # Piping a remote script straight into `bash` is intentionally not the documented
