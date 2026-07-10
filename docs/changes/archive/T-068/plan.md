@@ -1,7 +1,7 @@
 ---
 id: T-068
 title: auto-log-commit logs to the worktree that received the commit (not the pinned harness cwd)
-status: ready   # proposed → ready → in-progress → done → verified
+status: done
 priority: high   # critical | high | medium | low
 estimate: 1 session
 plan: ""
