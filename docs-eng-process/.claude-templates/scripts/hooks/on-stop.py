@@ -177,25 +177,44 @@ def main() -> None:
             sys.exit(2)
         else:
             # Only the hook-managed log tail is dirty (no real work pending) —
-            # otherwise `non_exempt` above would have blocked. Sweep it into a
-            # log-only [openup-skip] commit so the session ends on a CLEAN tree
-            # instead of leaving the tail dangling until the next code commit.
-            # This commit runs via subprocess (not the Bash tool), so the
-            # PostToolUse auto-log-commit hook does not fire on it — there is no
-            # new record and therefore no tail-chase. Fail open on any git error
-            # (e.g. missing identity): a stop hook must never trap the session.
-            code, _ = run(
-                "git add docs/agent-logs/runs/ && "
-                'git commit -m "chore(process): sweep run-log shards '
-                '[openup-skip]"',
-                cwd,
-            )
-            if code == 0:
+            # otherwise `non_exempt` above would have blocked.
+            #
+            # On TRUNK, do NOT sweep-commit (T-069): a local commit on
+            # main/master diverges from origin the moment a PR merges into it, so
+            # the next `git pull` fails with "divergent branches". The shards are
+            # already exempt from the dirty-block above, so leaving them
+            # uncommitted here is safe — stop still proceeds, and trunk never
+            # gains a local-only commit over log noise. (On a feature branch the
+            # sweep commit rides the PR or dies with the branch, so it stays.)
+            trunk = get_trunk(cwd)
+            _, cur = run("git rev-parse --abbrev-ref HEAD", cwd)
+            cur = cur.strip()
+            if cur in ("main", "master") or cur == trunk:
                 print(
-                    "[on-stop] ✓ Swept the run-log shards into a "
-                    "log-only commit — tree is clean.",
+                    "[on-stop] On trunk — leaving run-log shards uncommitted "
+                    "(a sweep-commit on trunk would diverge from origin).",
                     file=sys.stderr,
                 )
+            else:
+                # Sweep into a log-only [openup-skip] commit so the session ends
+                # on a CLEAN tree instead of leaving the tail dangling until the
+                # next code commit. This commit runs via subprocess (not the Bash
+                # tool), so the PostToolUse auto-log-commit hook does not fire on
+                # it — there is no new record and therefore no tail-chase. Fail
+                # open on any git error (e.g. missing identity): a stop hook must
+                # never trap the session.
+                code, _ = run(
+                    "git add docs/agent-logs/runs/ && "
+                    'git commit -m "chore(process): sweep run-log shards '
+                    '[openup-skip]"',
+                    cwd,
+                )
+                if code == 0:
+                    print(
+                        "[on-stop] ✓ Swept the run-log shards into a "
+                        "log-only commit — tree is clean.",
+                        file=sys.stderr,
+                    )
 
     # 2. Unmet-gate block (only when an iteration is active) ──────────────────
     try:

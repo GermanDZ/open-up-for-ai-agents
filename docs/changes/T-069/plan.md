@@ -126,12 +126,12 @@ unchanged. Mirror the template edit into `.claude/scripts/hooks/` via
 
 ## Operations
 
-- [ ] Add a trunk guard in on-stop's exempt-shard sweep branch: resolve
+- [x] Add a trunk guard in on-stop's exempt-shard sweep branch: resolve
       `get_trunk` + current branch; skip the `git commit` (print a note) when on
       trunk, else sweep as before.
-- [ ] Run `scripts/sync-templates-to-claude.sh` so `.claude/` matches the
+- [x] Run `scripts/sync-templates-to-claude.sh` so `.claude/` matches the
       template (check-claude-sync green).
-- [ ] (tester) Extend `scripts/tests/test_t006_hooks.py`: on `main` with only a
+- [x] (tester) Extend `scripts/tests/test_t006_hooks.py`: on `main` with only a
       dirty shard → no commit, HEAD unchanged, exit 0 (R1); on `feature/x` →
       sweep commit still created (R2); non-exempt dirty on `main` → still blocks
       (R3). Run the full `scripts/tests/` suite.
