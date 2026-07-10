@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "task_id": "T-066",
+  "iteration": 37,
+  "phase": "construction",
+  "track": "standard",
+  "branch": "feat/T-066-promote-remote-pr-guard",
+  "worktree": "/Users/germandz/personal-code/ai-dev-framework/open-up-for-ai-agents-T-066",
+  "session_id": "feat/T-066-promote-remote-pr-guard",
+  "started_at": "2026-07-10T10:13:05Z",
+  "gates": {
+    "team_deployed": false,
+    "plan_persisted": "docs/changes/T-066/plan.md",
+    "log_written": true,
+    "roadmap_synced": true,
+    "retro_due": false
+  },
+  "iterations_since_retro": 0
+}

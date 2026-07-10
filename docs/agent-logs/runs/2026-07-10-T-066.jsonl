@@ -1,2 +1,3 @@
 {"run_id": "90c3c867129147b197d4da98897d3a92", "event": "session_begin", "task_id": "T-066", "goal": "T-066 \u2014 add a remote delivered-but-unmerged guard to openup-roadmap.py cmd_next so /openup-next never re-promotes a task already delivered in an open PR", "branch": "feat/T-066-promote-remote-pr-guard", "phase": "construction", "ts": "2026-07-10T10:13:06Z"}
 {"event": "iteration_complete", "task_id": "T-066", "branch": "feat/T-066-promote-remote-pr-guard", "phase": "construction", "ts": "2026-07-10T10:27:28Z"}
+{"event": "session_end", "task_id": "T-066", "ts": "2026-07-10T10:27:48Z"}

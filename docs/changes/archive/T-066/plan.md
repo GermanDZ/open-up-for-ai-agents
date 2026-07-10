@@ -1,7 +1,7 @@
 ---
 id: T-066
 title: Promote-selector remote delivered-but-unmerged guard
-status: ready   # proposed → ready → in-progress → done → verified
+status: done
 priority: high   # critical | high | medium | low
 estimate: 1 session
 plan: docs/roadmap.md#t-066-promote-selector-remote-delivered-but-unmerged-guard
