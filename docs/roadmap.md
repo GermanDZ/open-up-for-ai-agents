@@ -264,7 +264,7 @@ T-002 (`/openup-sync-spec`) completed 2026-06-11 once T-008's readiness DAG un-b
 ---
 
 ## T-065: openup-board.py status/resolve verb + skill slimming
-**Status**: ready ([spec](changes/T-065/plan.md))
+**Status**: completed (2026-07-10)
 **Priority**: high
 **Value**: State discovery collapses to one call returning ≤~40 lines of JSON, and the per-cycle skill text shrinks — so the loop stops spending tokens just to learn "where are we", every cycle, compounding.
 **Description**: Add `openup-board.py resolve` (the §0–§1 precedence — resume/pick/promote/noop — computed once as data, folding in resumable-input + state + board-top + roadmap-next) and `status` (superset diagnostic). Read-only. Slim `/openup-next` §0–§1 to a single `resolve` call, cut `/openup-start-iteration`'s double status/roadmap re-read, and give `openup-loop.sh` a no-op pre-check that avoids spawning a cycle process.
