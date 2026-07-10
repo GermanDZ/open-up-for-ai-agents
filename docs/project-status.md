@@ -1,15 +1,17 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 36
+**Iteration**: 37
 **Iteration Goal**: T-062 — Fix pre-existing `check-docs.py` failures (archived T-056 plan + t-059/t-060 iteration-plan frontmatter: status enum + duplicate id) so the complete-task 3a gate is green again
 **Status**: completed
-**Current Task**: T-065
+**Current Task**: T-066
 **Iteration Started**: 2026-06-18
 **Last Updated**: 2026-07-10
 **Updated By**: sync-status.py
 
 ## Notes
+
+- **Iteration 37** (2026-07-10): T-066 — added a remote delivered-but-unmerged guard to `openup-roadmap.py cmd_next` (inherited by `openup-board.py resolve`). `/openup-next` no longer re-promotes a task already delivered in an open PR (the T-065/PR-#64 incident); consults `origin` once per cycle, fail-open, `--no-remote-check` opt-out.
 
 - **Iteration 36** (2026-07-10): T-065 — `openup-board.py resolve`/`status` verbs fold the whole /openup-next §0–§1 precedence (resumable-input → active-iteration → top-pickable → roadmap-`next` → noop) into ONE read-only JSON decision, composing the existing verbs (promote pick is identical to `openup-roadmap.py next` by construction). `/openup-next` §0–§1 collapses to a single `resolve` call (312→247 lines; sentinel + two exits intact); `start-iteration` skips its status/roadmap re-read on a pre-resolved lane; `openup-loop.sh` stops on a no-op board without spawning a cycle process. 9 hermetic tests (all 5 paths + read-only byte-identity + ≤40-line budget + divergence=0). Solo, standard, worktree.
 
