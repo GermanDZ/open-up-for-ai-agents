@@ -296,7 +296,7 @@ T-002 (`/openup-sync-spec`) completed 2026-06-11 once T-008's readiness DAG un-b
 ---
 
 ## T-067: sync-status.py stamps section-style roadmap Status lines
-**Status**: ready
+**Status**: completed (2026-07-10)
 **Priority**: high
 **Value**: Closes the silent roadmap status-rot: `sync-status.py` only stamps table-row Status cells, never the free-form `**Status**:` lines that `/openup-plan-feature` emits for `## T-NNN:` sections — so section entries show completed only when a human hand-edits them. T-063/T-064/T-066 rotted (pending/ready despite being merged). This makes complete-task auto-sync section entries, adds a self-healing `--reconcile` sweep, and surfaces the drift in `openup-doctor`.
 **Description**: (1) Extend `update_roadmap()` to stamp a `## <id>:` section's `**Status**:` line when no table row matches (same idempotent `completed (date)` convention). (2) Add `sync-status.py --reconcile` sweep that stamps `completed (<archival-date>)` for every `## T-NNN:` section with an archived change folder. (3) Add a read-only `warning` check in `openup-doctor` for archived-but-not-completed sections, pointing at `--reconcile`. (4) Backfill T-063/T-064/T-066 by running reconcile. (5) Path-coverage test.

@@ -1,15 +1,17 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 37
-**Iteration Goal**: T-062 — Fix pre-existing `check-docs.py` failures (archived T-056 plan + t-059/t-060 iteration-plan frontmatter: status enum + duplicate id) so the complete-task 3a gate is green again
+**Iteration**: 38
+**Iteration Goal**: T-067 — sync-status.py stamps section-style roadmap Status lines
 **Status**: completed
-**Current Task**: T-066
+**Current Task**: T-067
 **Iteration Started**: 2026-06-18
 **Last Updated**: 2026-07-10
 **Updated By**: sync-status.py
 
 ## Notes
+
+- **Iteration 38** (2026-07-10): sync-status.py now stamps free-form `## T-NNN:` section Status lines (root-cause fix for plan-feature status-rot) + `--reconcile` self-heal sweep + read-only `openup-doctor` drift warning; backfilled T-063/T-064/T-066.
 
 - **Iteration 37** (2026-07-10): T-066 — added a remote delivered-but-unmerged guard to `openup-roadmap.py cmd_next` (inherited by `openup-board.py resolve`). `/openup-next` no longer re-promotes a task already delivered in an open PR (the T-065/PR-#64 incident); consults `origin` once per cycle, fail-open, `--no-remote-check` opt-out.
 
