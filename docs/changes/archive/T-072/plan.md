@@ -1,7 +1,7 @@
 ---
 id: T-072
 title: Reference OpenAI-compatible driver (`openup-agent run`)
-status: ready   # proposed → ready → in-progress → done → verified
+status: done   # proposed → ready → in-progress → done → verified  (verified = after owner live-model acceptance)
 priority: high   # critical | high | medium | low
 estimate: 2–3 sessions   # rough size
 plan: docs/plans/2026-06-10-process-v2-claude-code-harness.md   # program roadmap block: "Planned: Harness-optional OpenUP core"

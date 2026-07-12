@@ -407,7 +407,7 @@ reproduced with parity. Keep `check-model-tiers.py` and the sync/parity checks g
 ---
 
 ## T-072: Reference OpenAI-compatible driver (`openup-agent run`)
-**Status**: in-progress
+**Status**: completed (2026-07-12)
 **Priority**: high
 **Value**: Proves OpenUP is genuinely harness-optional — a practitioner with no
 Claude Code (or any harness) can drive a delivery cycle on a local/non-Anthropic
