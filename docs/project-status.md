@@ -1,12 +1,12 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 41
-**Iteration Goal**: T-070 — validate-commit accepts the active task_id as the required tag
-**Status**: completed
-**Current Task**: T-070
+**Iteration**: 42
+**Iteration Goal**: T-071 — Neutral procedure pack + runtime tier map + re-pointed Claude Code adapter
+**Status**: in-progress
+**Current Task**: T-071
 **Iteration Started**: 2026-06-18
-**Last Updated**: 2026-07-10
+**Last Updated**: 2026-07-12
 **Updated By**: sync-status.py
 
 ## Notes

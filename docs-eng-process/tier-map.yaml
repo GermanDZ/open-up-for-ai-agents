@@ -1,0 +1,30 @@
+# Runtime tier → model map for the harness-neutral OpenUP procedure pack (T-071).
+#
+# The neutral pack (docs-eng-process/procedures/openup-*.md) declares only a tier
+# NAME per procedure (`tier:`). NO concrete model string lives in the pack. This
+# file is the single place model choices are made, keyed by target harness:
+#
+#   * claude-code — consumed by scripts/render-claude-adapter.py + the
+#     sync-templates-to-claude.sh adapter to reproduce today's `.claude/`
+#     `model:` frontmatter with parity. These five values are the source of
+#     truth check-model-tiers.py validates the generated `.claude/` against.
+#   * driver — consumed by the reference OpenAI-compatible driver (T-072).
+#     Values are env-placeholder model NAMES resolved at runtime against whatever
+#     the LLM_API_URL server surfaces (owner decision 6: tiers matched by name).
+#
+# The five tier names are the editorial tiers from docs-eng-process/model-tiers.md.
+# An unknown tier name is a hard error in every consumer — never silently defaulted.
+
+claude-code:
+  scribe: haiku
+  coordination: haiku
+  authoring: sonnet
+  quality-gate: inherit
+  reasoning: inherit
+
+driver:
+  scribe: "${OPENUP_MODEL_SMALL:-local-small}"
+  coordination: "${OPENUP_MODEL_SMALL:-local-small}"
+  authoring: "${OPENUP_MODEL_MID:-local-mid}"
+  quality-gate: "${OPENUP_MODEL_MAIN:-local-main}"
+  reasoning: "${OPENUP_MODEL_MAIN:-local-main}"
