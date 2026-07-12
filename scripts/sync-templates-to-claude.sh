@@ -60,6 +60,15 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 DEV_PROCESS_DIR="${OPENUP_TEMPLATES_DIR:-$PROJECT_ROOT/docs-eng-process/.claude-templates}"
 CLAUDE_DIR="$PROJECT_ROOT/.claude"
 
+# Neutral procedure pack (T-071): the single editable source of skill bodies.
+# Skills are generated from here and translated to Claude frontmatter by
+# render-claude-adapter.py (tier: -> model: via tier-map.yaml). The other
+# template trees (rubrics/hooks/config/agents/teammates/teams/CLAUDE.md) are
+# still synced verbatim from DEV_PROCESS_DIR.
+PROCEDURES_DIR="${OPENUP_PROCEDURES_DIR:-$PROJECT_ROOT/docs-eng-process/procedures}"
+TIER_MAP="${OPENUP_TIER_MAP:-$PROJECT_ROOT/docs-eng-process/tier-map.yaml}"
+RENDER_ADAPTER="$SCRIPT_DIR/render-claude-adapter.py"
+
 # Functions
 log_info() {
   echo -e "${BLUE}[INFO]${NC} $1"
@@ -157,18 +166,31 @@ echo ""
 #   deep, so grouping subdirectories (openup-phases/, openup-artifacts/, openup-workflow/)
 #   must NOT be created — doing so is exactly what broke slash-command discovery (T-022).
 #   The templates are already flat; this mirrors scripts/sync-from-framework.sh.
+#   Source of truth is the neutral pack ($PROCEDURES_DIR/openup-<name>.md); each
+#   is rendered to Claude frontmatter by render-claude-adapter.py before copy.
 log_info "Syncing skills..."
 echo ""
-src_dir="$DEV_PROCESS_DIR/skills"
-if [ -d "$src_dir" ]; then
-  for skill_src in "$src_dir"/*/; do
-    [ -d "$skill_src" ] || continue
-    skill_name=$(basename "$skill_src")
-    skill_file="$skill_src/SKILL.md"
-    if [ -f "$skill_file" ]; then
-      copy_item "$skill_file" "$CLAUDE_DIR/skills/$skill_name/SKILL.md" "skills/$skill_name"
+if [ -d "$PROCEDURES_DIR" ]; then
+  for proc in "$PROCEDURES_DIR"/openup-*.md; do
+    [ -f "$proc" ] || continue
+    skill_name=$(basename "$proc" .md)
+    if [ "$DRY_RUN" = true ]; then
+      copy_item "$proc" "$CLAUDE_DIR/skills/$skill_name/SKILL.md" "skills/$skill_name"
+      continue
     fi
+    rendered="$(mktemp)"
+    if python3 "$RENDER_ADAPTER" "$proc" --tier-map "$TIER_MAP" --target claude-code > "$rendered"; then
+      copy_item "$rendered" "$CLAUDE_DIR/skills/$skill_name/SKILL.md" "skills/$skill_name"
+    else
+      log_error "Failed to render $skill_name from neutral pack ($proc)"
+      rm -f "$rendered"
+      exit 1
+    fi
+    rm -f "$rendered"
   done
+else
+  log_error "Neutral procedure pack not found: $PROCEDURES_DIR"
+  exit 1
 fi
 
 # Sync rubrics — quality rubrics the skills' grading steps read.

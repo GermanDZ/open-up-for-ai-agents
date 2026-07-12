@@ -15,6 +15,7 @@ touches:
   - scripts/render-claude-adapter.py
   - scripts/check-model-tiers.py
   - docs-eng-process/.claude-templates/skills/
+  - docs/iteration-plans/t-071-neutral-procedure-pack.md
 last-synced: ""
 ---
 
@@ -104,13 +105,13 @@ Extract each `.claude-templates/skills/openup-<name>/SKILL.md` into a flat neutr
 
 ## Operations
 
-- [ ] Snapshot the current `.claude/skills/` tree (copy to a temp dir) as the parity baseline before any change.
-- [ ] Author `docs-eng-process/tier-map.yaml` with `claude-code` (reproducing today's haiku/sonnet/inherit assignments) and `driver` columns, plus `docs-eng-process/procedure-frontmatter.md` documenting the neutral schema.
-- [ ] Extract all 35 skills into `docs-eng-process/procedures/openup-<name>.md`, rewriting `model:` → `tier:` and adding `capabilities:`; copy bodies verbatim.
-- [ ] Write `scripts/render-claude-adapter.py` (neutral→Claude frontmatter translation) and re-point `scripts/sync-templates-to-claude.sh`'s skills loop at the pack via the helper.
-- [ ] Update `scripts/check-model-tiers.py` to read tiers from the pack's `tier:` and validate the generated `.claude/` `model:` against the map's `claude-code` column.
-- [ ] (tester) Run the parity diff (baseline snapshot vs regenerated `.claude/skills/`), `check-model-tiers.py --check`, and the round-trip edit test; confirm zero semantic diff.
-- [ ] Remove or stub `.claude-templates/skills/` so exactly one source of truth remains; re-run the full sync + checks green.
+- [x] Snapshot the current `.claude/skills/` tree (copy to a temp dir) as the parity baseline before any change.
+- [x] Author `docs-eng-process/tier-map.yaml` with `claude-code` (reproducing today's haiku/sonnet/inherit assignments) and `driver` columns, plus `docs-eng-process/procedure-frontmatter.md` documenting the neutral schema.
+- [x] Extract all 35 skills into `docs-eng-process/procedures/openup-<name>.md`, rewriting `model:` → `tier:` and adding `capabilities:`; copy bodies verbatim.
+- [x] Write `scripts/render-claude-adapter.py` (neutral→Claude frontmatter translation) and re-point `scripts/sync-templates-to-claude.sh`'s skills loop at the pack via the helper.
+- [x] Update `scripts/check-model-tiers.py` to read tiers from the pack's `tier:` and validate the generated `.claude/` `model:` against the map's `claude-code` column.
+- [x] (tester) Run the parity diff (baseline snapshot vs regenerated `.claude/skills/`), `check-model-tiers.py --check`, and the round-trip edit test; confirm zero semantic diff. **Result: 0/35 byte-diff; all gates green.**
+- [ ] **(increment 2 — handed off, see design.md DD4)** Remove or stub `.claude-templates/skills/` so exactly one *tracked* source remains. Fans out to `check-claude-sync.sh`, `check-skills-guide.py`, and downstream `sync-from-framework.sh` (all read `.claude-templates/skills/`), plus an owner-facing distribution decision. Re-run full sync + all gates green.
 
 ## Norms
 

@@ -1,0 +1,118 @@
+---
+name: openup-inception
+description: Initialize and manage Inception phase activities - define scope, vision, and feasibility
+tier: coordination
+capabilities: {required: [read_write_files, exec], optional: []}
+arguments:
+  - name: activity
+    description: Specific activity to perform (initiate, check-status, next-steps)
+    required: false
+---
+
+# Inception Phase
+
+This skill guides you through the Inception phase of OpenUP - defining scope, vision, and feasibility.
+
+## When to Use
+
+Use this skill when:
+- Starting a new project and need to define scope and vision
+- Need to identify key stakeholders and risks
+- Preparing to move from idea to validated business case
+- Checking if Inception phase is complete
+- Getting guidance on next steps in Inception
+
+## When NOT to Use
+
+Do NOT use this skill when:
+- Currently in Elaboration, Construction, or Transition phase (use appropriate phase skill)
+- Need to create specific artifacts like vision documents or use cases (use artifact skills)
+- Already have clear vision and architecture baseline (move to Elaboration)
+- Looking for iteration planning (use `/openup-create-iteration-plan`)
+
+## Success Criteria
+
+After using this skill, verify:
+- [ ] Phase status is clearly understood (initiated, in-progress, or complete)
+- [ ] Key artifacts are identified or created (vision, risk list, roadmap)
+- [ ] Next steps are clearly defined
+- [ ] Stakeholders and risks are documented
+
+## Inception Overview
+
+**Goal**: Understand what to build and identify key risks
+**Duration**: Typically 2-4 weeks
+**Key Milestone**: Lifecycle Objectives
+
+## Phase Objectives
+
+1. Define the project's vision
+2. Understand the problem to be solved
+3. Identify key stakeholders
+4. Define initial scope
+5. Identify major risks
+6. Demonstrate viability with a business case
+
+## Completion Criteria
+
+- [ ] Vision document approved by stakeholders
+- [ ] Key use cases identified (20-30% detailed)
+- [ ] Major risks documented with mitigation strategies
+- [ ] Initial project plan with cost/schedule estimates
+- [ ] Business case demonstrates viability
+- [ ] Stakeholder agreement to proceed
+
+## Process
+
+### 1. Read Project Status
+
+Read `docs/project-status.md` to:
+- Confirm phase is `inception`
+- Check iteration goals
+- Review active work items
+
+### 2. Based on Activity
+
+**`initiate`**: Start Inception phase
+- Update `docs/project-status.md` to set `phase: inception`
+- Create initial `docs/vision.md` from template
+- Create initial `docs/risk-list.md` from template
+- Create `docs/roadmap.md` with initial backlog
+
+**`check-status`**: Review progress
+- Check all completion criteria above
+- List what's done and what remains
+- Identify blockers
+
+**`next-steps`**: Get recommendations
+- Suggest next tasks based on current state
+- Prioritize by dependencies and value
+
+## Key Work Products
+
+- **Vision** (`docs/vision.md`) - Project vision and scope
+- **Use Cases** (`docs/use-cases/*.md`) - Key use cases
+- **Risk List** (`docs/risk-list.md`) - Identified risks
+- **Project Plan** (`docs/project-plan.md`) - Initial plan
+- **Glossary** (`docs/glossary.md`) - Project terminology
+
+## Recommended Team
+
+For Inception phase work, create a team with:
+- **analyst** - Lead requirements and vision
+- **project-manager** - Plan and coordinate
+- Add **architect** for technical feasibility assessment
+
+## References
+
+- Inception Phase: `docs-eng-process/openup-knowledge-base/practice-management/risk_value_lifecycle/guidances/concepts/phase-inception.md`
+- Analyst Role: `docs-eng-process/openup-knowledge-base/core/role/roles/analyst-6.md`
+- Vision Template: `docs-eng-process/templates/vision.md`
+
+## See Also
+
+- [openup-create-vision](../../openup-artifacts/create-vision/SKILL.md) - Generate vision document
+- [openup-shared-vision](../../openup-artifacts/shared-vision/SKILL.md) - Create shared technical vision
+- [openup-create-risk-list](../../openup-artifacts/create-risk-list/SKILL.md) - Create risk assessment
+- [openup-elaboration](../elaboration/SKILL.md) - Next phase after Inception
+- [openup-start-iteration](../../openup-workflow/start-iteration/SKILL.md) - Begin iteration planning

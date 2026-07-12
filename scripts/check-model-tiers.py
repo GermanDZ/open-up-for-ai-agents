@@ -30,7 +30,11 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_ROOT = SCRIPT_DIR.parent
 TEMPLATES = REPO_ROOT / "docs-eng-process" / ".claude-templates"
-SKILLS_DIR = TEMPLATES / "skills"
+# Skills now come from the harness-neutral procedure pack (T-071): each declares
+# a tier NAME resolved to a model via tier-map.yaml. Agents are unchanged — still
+# read `model:` directly from the .claude-templates/agents tree.
+PROCEDURES_DIR = REPO_ROOT / "docs-eng-process" / "procedures"
+TIER_MAP_PATH = REPO_ROOT / "docs-eng-process" / "tier-map.yaml"
 AGENTS_DIR = TEMPLATES / "agents"
 DOC = REPO_ROOT / "docs-eng-process" / "model-tiers.md"
 
@@ -67,6 +71,48 @@ def collect(paths):
     return rows, missing
 
 
+def load_tier_map(path):
+    """Parse the simple two-level tier-map.yaml with the standard library only.
+
+    Structure: `target:` at column 0, then indented `tier: model` lines.
+    Returns {target: {tier: model}}. Mirrors scripts/render-claude-adapter.py.
+    """
+    result, current = {}, None
+    for raw in Path(path).read_text(encoding="utf-8").splitlines():
+        line = raw.split("#", 1)[0].rstrip()
+        if not line.strip():
+            continue
+        if not line[0].isspace():
+            current = {}
+            result[line.rstrip(":").strip()] = current
+        elif current is not None:
+            k, _, v = line.strip().partition(":")
+            current[k.strip()] = v.strip().strip('"').strip("'")
+    return result
+
+
+def collect_skills(procedures_dir, tier_map, target="claude-code"):
+    """Read `tier:` from the neutral pack and resolve to a model via tier-map.
+
+    Returns (rows, missing) as [(name, model)] / [name]. A procedure with no
+    `tier:` — or a `tier:` absent from the target column (unknown tier, no silent
+    default) — is reported as missing so --check fails loudly.
+    """
+    rows, missing = [], []
+    col = tier_map.get(target, {})
+    for p in sorted(Path(procedures_dir).glob("openup-*.md")):
+        text = p.read_text(encoding="utf-8")
+        name = frontmatter_field(text, "name") or p.stem
+        tier = frontmatter_field(text, "tier")
+        if tier is None:
+            missing.append(name)
+        elif tier not in col:
+            missing.append("%s (unknown tier '%s')" % (name, tier))
+        else:
+            rows.append((name, col[tier]))
+    return rows, missing
+
+
 def render_table(rows, header):
     rows = sorted(rows, key=lambda r: (MODEL_ORDER.get(r[1], 99), r[0]))
     lines = ["| %s | Model |" % header, "|%s|-------|" % ("-" * (len(header) + 2))]
@@ -93,8 +139,11 @@ def replace_block(doc_text, marker, body):
     return pat.sub(begin + "\n" + body + "\n" + end, doc_text)
 
 
-def build(doc_text, templates=TEMPLATES, doc=DOC):
-    skill_rows, skill_missing = collect((templates / "skills").glob("*/SKILL.md"))
+def build(doc_text, templates=TEMPLATES, doc=DOC,
+          procedures=PROCEDURES_DIR, tier_map=None):
+    if tier_map is None:
+        tier_map = load_tier_map(TIER_MAP_PATH)
+    skill_rows, skill_missing = collect_skills(procedures, tier_map)
     agent_rows, agent_missing = collect((templates / "agents").glob("*.md"))
 
     skill_body = render_table(skill_rows, "Skill") + "\n\n" + totals_line(skill_rows)
@@ -111,7 +160,11 @@ def main(argv):
     g.add_argument("--check", action="store_true", help="exit nonzero on drift (CI)")
     g.add_argument("--write", action="store_true", help="regenerate the tables in place")
     ap.add_argument("--templates-dir", default=str(TEMPLATES),
-                    help="override .claude-templates dir (for tests)")
+                    help="override .claude-templates dir — agents live here (for tests)")
+    ap.add_argument("--procedures-dir", default=str(PROCEDURES_DIR),
+                    help="override the neutral procedure pack dir (for tests)")
+    ap.add_argument("--tier-map", default=str(TIER_MAP_PATH),
+                    help="override tier-map.yaml (for tests)")
     ap.add_argument("--doc", default=str(DOC),
                     help="override model-tiers.md path (for tests)")
     ap.add_argument("-q", "--quiet", action="store_true",
@@ -119,13 +172,17 @@ def main(argv):
     args = ap.parse_args(argv)
 
     templates = Path(args.templates_dir)
+    procedures = Path(args.procedures_dir)
+    tier_map = load_tier_map(args.tier_map)
     doc = Path(args.doc)
     doc_text = doc.read_text(encoding="utf-8")
-    new_text, missing = build(doc_text, templates=templates, doc=doc)
+    new_text, missing = build(doc_text, templates=templates, doc=doc,
+                              procedures=procedures, tier_map=tier_map)
 
     if missing:
         sys.stderr.write(
-            "error: missing `model:` frontmatter in: %s\n" % ", ".join(sorted(missing))
+            "error: skill missing `tier:` (or agent missing `model:`), or unknown "
+            "tier name: %s\n" % ", ".join(sorted(missing))
         )
         return EXIT_DRIFT
 
@@ -146,8 +203,8 @@ def main(argv):
         )
         return EXIT_DRIFT
     if not args.quiet:
-        n = len(list((templates / "skills").glob("*/SKILL.md")))
-        print("model-tiers.md is in sync (%d skills, all have model:)." % n)
+        n = len(list(procedures.glob("openup-*.md")))
+        print("model-tiers.md is in sync (%d skills, all have tier:)." % n)
     return EXIT_OK
 
 
