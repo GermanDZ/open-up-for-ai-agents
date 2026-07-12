@@ -1,7 +1,7 @@
 ---
 id: T-074
 title: Human-in-the-loop input handling in the reference driver
-status: ready   # proposed → ready → in-progress → done → verified
+status: done   # proposed → ready → in-progress → done → verified
 priority: high
 estimate: 1–2 sessions
 plan: docs/plans/2026-06-10-process-v2-claude-code-harness.md   # program block: "Planned: Harness-optional OpenUP core"
