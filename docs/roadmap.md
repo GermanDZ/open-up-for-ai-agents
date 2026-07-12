@@ -367,15 +367,18 @@ T-002 (`/openup-sync-spec`) completed 2026-06-11 once T-008's readiness DAG un-b
   (6) model tiers are runtime-name-matched (tier *name* → concrete model resolved
   per harness at runtime — no Claude model strings in the pack).
 - **Ordered deliverables**: T-071 (Layer 1 — neutral pack + Claude Code adapter
-  parity) → T-072 (Layer 3 — reference OpenAI-compatible driver) → T-073
-  (Layer 4 — FastAPI service). T-073 starts only once a **named consumer** exists
-  (exploration Pushback 1).
+  parity) ✅ → T-072 (Layer 3 — reference OpenAI-compatible driver) ✅ → **T-074
+  (human-in-the-loop input handling in the driver)** → T-073 (Layer 4 — FastAPI
+  service). T-074 is ordered **ahead of** T-073 (PM decision 2026-07-12): it makes
+  the driver usable for procedures that ask blocking questions, and is a
+  precondition for a genuinely useful service. T-073 still starts only once a
+  **named consumer** exists (exploration Pushback 1).
 - **Program acceptance**: one full `/openup-next`-style cycle end-to-end on
   **(a)** Claude Code and **(b)** the reference driver on a non-Anthropic/local
   model, each producing fence-clean, validator-clean commits.
-- **Next step**: T-071 done (Layer 1 complete — neutral pack + Claude Code adapter
-  at byte parity, single editable source via generated mirror). Run
-  `/openup-start-iteration task_id: T-072` (Layer 3 — reference OpenAI-compatible driver).
+- **Next step**: T-071 ✅, T-072 ✅ (reference driver merged, PR #76 — live
+  LM-Studio acceptance pending to reach `verified`). Run
+  `/openup-start-iteration task_id: T-074` (human-in-the-loop input handling).
 
 ---
 
@@ -433,6 +436,40 @@ endpoint surfaces. Full iteration plan authored when promoted.
 
 ---
 
+## T-074: Human-in-the-loop input handling in the reference driver
+**Status**: pending
+**Priority**: high
+**Value**: The reference driver (T-072) can only drive procedures that never need
+a human — it auto-proceeds and has no way to ask a question. But many OpenUP
+procedures hit **blocking questions** (`/openup-request-input`, plan-gate approval)
+that are the whole point of the process staying safe. Without this, a practitioner
+on a local model cannot run a realistic cycle end-to-end; with it, the driver
+surfaces the question, suspends cleanly, and resumes on the answer — reusing the
+async input-request machinery the harness already has. It is also the precondition
+for a genuinely useful T-073 service (answering questions over HTTP), which is why
+the PM orders it **ahead of** T-073.
+**Description**: Add driver support for questions that must be answered by a human,
+reusing OpenUP's existing async input-request flow (`/openup-request-input` →
+`awaiting-input` frontmatter → `openup-input.py resumable` → `/openup-next` resume).
+Two modes governed by one flag (`--interactive`, default off):
+- *Interactive CLI*: prompt on the controlling TTY, block for the answer, feed it back into the loop.
+- *Async / non-interactive (CI, service)*: create the input-request doc, set
+  `awaiting-input`, and terminate with a distinct **suspend sentinel + exit code** so
+  an outer loop suspends the lane; resume folds the answer back via the existing path.
+Mechanism (decide at promote): a 7th tool `ask_user(question, options?)` vs a
+driver-level gate that emits the request-input. Same flag governs plan-gate approval
+(the exploration's open question). Full iteration plan authored when promoted.
+- `ask_user` mechanism (interactive TTY + async suspend-and-persist) wired into the loop
+- Reuses `/openup-request-input` + `openup-input.py` resume path (no new machinery)
+- Distinct suspend sentinel + exit code for the non-interactive/service case
+- Hermetic tests: interactive answer round-trip + async suspend/resume, mock endpoint
+
+**Dependencies**: T-072
+
+**See**: `Planned: Harness-optional OpenUP core` block above + `docs/changes/archive/T-072/design.md` §Follow-on (captured shape) + `docs/explorations/2026-07-12-harness-agnostic-openup.md`
+
+---
+
 ## T-073: FastAPI service wrapper over the reference driver
 **Status**: pending
 **Priority**: medium
@@ -453,6 +490,6 @@ authored when promoted.
 - Sandboxing decision (local-bind default + exec allowlist) at promote
 - **Precondition**: a named consumer exists before this task is promoted
 
-**Dependencies**: T-072
+**Dependencies**: T-072, T-074
 
 **See**: `Planned: Harness-optional OpenUP core` block above + `docs/explorations/2026-07-12-harness-agnostic-openup.md` — full iteration plan authored on promote
