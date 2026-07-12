@@ -53,19 +53,32 @@ removal is **not** a one-liner — four consumers read `.claude-templates/skills
 - `check-model-tiers.py` re-pointed: tiers read from the pack's `tier:`, resolved through the `claude-code` column.
 - `.claude-templates/skills/` kept (redundant, still byte-equal to the generated `.claude/skills/`), so `check-claude-sync.sh` and `check-skills-guide.py` stay green untouched.
 
-**Increment 2 (follow-up, handed off) — reach single tracked source + a
-distribution decision that is owner-facing:**
-- Rewire `check-claude-sync.sh` and `check-skills-guide.py` off `.claude-templates/skills/` (compare/read the pack via the adapter).
-- **Design decision for the owner:** how does downstream distribution work without
-  `.claude-templates/skills/`? Options: (A) `sync-templates`/a generator also emits
-  `.claude-templates/skills/` as a *generated* mirror (single editable source = pack;
-  downstream + gates unchanged) — lowest disruption; (B) point `sync-from-framework.sh`
-  at the pack and render on the fly, remove `.claude-templates/skills/` entirely;
-  (C) ship the pack itself downstream (aligns with T-072's harness-neutral premise).
-  Recommend surfacing to the product-manager/owner — it shapes what "harness-neutral
-  distribution" means before T-072.
-- Then remove/stub `.claude-templates/skills/` and update Requirement 5's single-source check.
+**Increment 2 (follow-up) — reach a single EDITABLE source via a generated mirror.**
 
-Rationale: increment 1 is self-contained, reviewable, and green; increment 2's
-consumer set + distribution question is a distinct decision that shouldn't be
-resolved inline by execution (value/shape call, per the OpenUP execution-is-mechanical rule).
+**OWNER DECISION 2026-07-12: Option A — generated mirror.** The pack stays the
+single *editable* source; `.claude-templates/skills/` is retained but becomes a
+*derived* mirror **rendered from the pack** (Claude-format, via the adapter — i.e.
+byte-identical to the generated `.claude/skills/`). Downstream `sync-from-framework.sh`
+and the two gates (`check-claude-sync.sh`, `check-skills-guide.py`) keep working
+**unchanged** because they still read `.claude-templates/skills/` — now generated.
+Options B (point sync at the pack, delete the tree) and C (ship the pack downstream)
+were declined for increment 2 (C aligns with T-072 and may return later).
+
+Requirement 5 ("single source of truth") is met by *editable*-source count = 1: the
+success-measure check (edit a body in the pack → regenerate → change appears in
+`.claude-templates/skills/` with no hand-edit) holds.
+
+Increment 2 work items (Option A):
+1. Add a generator that renders `.claude-templates/skills/openup-<name>/SKILL.md`
+   from the pack via `render-claude-adapter.py` (extend `sync-templates-to-claude.sh`
+   or a sibling script). The mirror is committed/tracked but never hand-edited.
+2. Add a drift guard: `.claude-templates/skills/` must equal `render(pack)` (a
+   `--check` mode), wired into pre-commit alongside the existing gates, so a
+   hand-edit to the mirror fails CI. Point contributors at the pack.
+3. Update `touches` to add the generator/guard surface before starting; the mirror
+   itself stays in `.claude-templates/skills/` (already in `touches`).
+4. Update Requirement 5 / the single-source success-measure check to assert
+   *editable*-source = 1 (mirror is generated).
+
+Rationale: increment 1 was self-contained, reviewable, and green; the distribution
+question was an owner/value call (per OpenUP execution-is-mechanical), now resolved.
