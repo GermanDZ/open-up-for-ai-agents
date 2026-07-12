@@ -64,6 +64,22 @@ These live in `scripts/check-model-tiers.py` / `scripts/docs-index.py` territory
 the T-072 lane's `touches` — fixing them is a separate task (the write-fence would reject
 touching them here). Flagged so they are not mistaken for regressions.
 
+## DD8 — User-facing docs (scope addition, increment 2)
+
+Owner feedback after increment 1: the config+usage guidance lived only in
+`docs-eng-process/reference-driver.md` (framework internals) — not discoverable to a
+*user* deciding how to run OpenUP. Fix-spec-first: `plan.md` touches + Structure +
+Operations were extended, then:
+- `reference-driver.md` expanded into a full user guide (quick start, env-var table,
+  per-endpoint recipes for LM Studio / Ollama / vLLM / OpenAI, first-run walkthrough,
+  exit-code + troubleshooting tables).
+- `RUNNING-AGENTS.md` gained a first-class **"Running with the harness-free reference
+  driver"** section alongside Cursor CLI / Claude Code, plus an Additional Resources link.
+- `README.md` gained a "Harness-free / local models" pointer under *For AI Agents*.
+
+No duplication: `RUNNING-AGENTS.md` / `README.md` summarize and link the single
+source of truth (`reference-driver.md`).
+
 ## Read-back for the Success Measure
 
 The falsifiable expectation (program acceptance, non-Anthropic half) is an **owner live

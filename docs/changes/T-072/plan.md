@@ -13,6 +13,8 @@ touches:
   - scripts/tests/test_openup_agent.py
   - scripts/tests/test_openup_agent_tools.py
   - docs-eng-process/reference-driver.md
+  - RUNNING-AGENTS.md
+  - README.md
   - docs/changes/T-072/
 last-synced: ""
 ---
@@ -180,10 +182,11 @@ judgment only; every deterministic step is code the driver owns.
 - `scripts/openup_agent/tiers.py` — load `tier-map.yaml` driver column + `${ENV:-default}` expansion.
 - `scripts/tests/test_openup_agent.py` — hermetic loop test against a stdlib mock endpoint.
 - `scripts/tests/test_openup_agent_tools.py` — unit tests for the six tools + exec allowlist.
-- `docs-eng-process/reference-driver.md` — usage + the owner's live LM-Studio run checklist.
+- `docs-eng-process/reference-driver.md` — full user guide: config, endpoints (LM Studio / Ollama / vLLM / OpenAI), tool surface, gates, troubleshooting, owner live-run checklist.
 
 **Modify:**
-- (none expected — the driver is additive and consumes T-071 artifacts read-only)
+- `RUNNING-AGENTS.md` — add the harness-free reference driver as a first-class third way to run OpenUP (alongside Cursor CLI / Claude Code), linking the full guide.
+- `README.md` — add a discoverable pointer to the reference driver / harness-optional path.
 
 **Do not touch:**
 - `docs-eng-process/procedures/`, `docs-eng-process/tier-map.yaml`, `scripts/render-claude-adapter.py`, `.claude/` — T-071 surface; the driver reads it, never rewrites it.
@@ -200,6 +203,7 @@ judgment only; every deterministic step is code the driver owns.
 - [x] (tester) Write `test_openup_agent_tools.py` (six tools + exec allowlist, hermetic) and `test_openup_agent.py` (a stdlib `http.server` mock scripted to drive a trivial procedure to a terminal sentinel — zero real network, asserts tool dispatch + gate invocation + clean exit). **Result: 38/38 green.**
 - [x] Author `docs-eng-process/reference-driver.md`: usage, env vars, tool surface, and the **owner's manual live-run checklist** for the LM Studio end-to-end acceptance (the non-Anthropic half of program acceptance).
 - [x] (tester) Run the full suite (`python3 -m unittest discover -s scripts/tests`) plus a mock-endpoint dry-run of `--procedure next`; confirm the loop stays fence-/validator-clean and terminates on the sentinel. **Result: 38 driver tests green; CLI e2e exit 0 + sentinel; 5 failures are pre-existing on base (see design.md).**
+- [x] Surface user-facing config+usage guidance: expand `docs-eng-process/reference-driver.md` into a full user guide (install-free setup, `LLM_API_URL`/`LLM_API_KEY`/`OPENUP_MODEL_*` config, per-endpoint recipes for LM Studio / Ollama / vLLM / OpenAI, a first-run walkthrough, troubleshooting), add a "harness-free reference driver" section to `RUNNING-AGENTS.md`, and a discoverable pointer in `README.md`.
 
 ## Norms
 
