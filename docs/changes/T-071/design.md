@@ -1,5 +1,35 @@
 # T-071 — In-flight design decisions
 
+## Completion verification — increment 2 (2026-07-12)
+
+Requirement grade vs the increment-2 diff (`git diff origin/harness-optional...HEAD`
++ working tree). Reqs 1–4 were graded ✅ and merged in increment 1 (PR #74); reqs
+re-confirmed green here via the live gates.
+
+- ✅ **Req 1** (neutral pack, no model strings) — pack unchanged this increment;
+  `grep -rlE '^\s*model:\s*(inherit|haiku|sonnet)' docs-eng-process/procedures/` empty.
+- ✅ **Req 2** (tier-map resolves) — `check-model-tiers.py --check` green (11/13/11).
+- ✅ **Req 3** (sync regenerates `.claude/skills/` at parity) — `check-claude-sync.sh`
+  green (66 files); full `sync-templates-to-claude.sh` run leaves zero diff.
+- ✅ **Req 4** (`check-model-tiers.py --check` passes) — green.
+- ✅ **Req 5** (single *editable* source; `.claude-templates/skills/` a generated
+  mirror with a drift guard) — `scripts/render-skills-mirror.py` (`--write`/`--check`)
+  added; `sync-templates-to-claude.sh` regenerates the mirror; guard wired into
+  `.githooks/pre-commit` + `openup-doctor.py`; `render-skills-mirror.py --check` green
+  (35 skills byte-equal to `render(pack)`); round-trip verified (hand-edit mirror →
+  guard exits 1 → `--write` restores byte-parity); 7/7 unit tests pass. No second
+  *editable* copy of any body exists.
+
+**Success measure (step 1b):** the instrumentation is the drift guard itself —
+`render-skills-mirror.py --check` fails on any mirror hand-edit — committed in this
+diff and wired into the pre-commit + doctor gates. ✅ exists.
+
+**Pre-existing defect (out of lane, flagged for follow-up):** `scripts/tests/
+test_check_model_tiers.py` has 4 failing fixture tests — its fixtures write skills
+with `model:` frontmatter, but increment 1 re-pointed `check-model-tiers.py` to read
+`tier:` from the pack. The live-repo invariant test passes and the `--check` gate is
+green. `check-model-tiers.py` and its test are unchanged by this lane; not in `touches`.
+
 ## DD1 — Tier assignment (model → tier name)
 
 `model:` alone can't recover the tier name (haiku ⇒ {scribe, coordination};

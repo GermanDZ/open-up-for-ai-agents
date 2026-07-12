@@ -229,6 +229,7 @@ _AGGREGATED = [
     ("build-trace-model.py --check", ["build-trace-model.py", "--check"], WARNING),
     ("check-skills-guide.py --check", ["check-skills-guide.py", "--check"], WARNING),
     ("check-model-tiers.py --check", ["check-model-tiers.py", "--check"], WARNING),
+    ("render-skills-mirror.py --check", ["render-skills-mirror.py", "--check"], WARNING),
     ("check-claude-sync.sh", ["check-claude-sync.sh"], WARNING),
 ]
 

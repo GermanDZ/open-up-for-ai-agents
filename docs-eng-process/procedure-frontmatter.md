@@ -78,5 +78,23 @@ Claude Code ignores unknown keys, so the adapter **drops** `capabilities` on emi
 3. Everything else (name, description, arguments, fit, body) passes through verbatim.
 
 Result is byte-identical to today's hand-synced `.claude/skills/<name>/SKILL.md`.
+
+## Tracked Claude-format mirror (`.claude-templates/skills/`)
+
+`.claude/skills/` is gitignored (a local generated surface). The git-**tracked**
+Claude-format tree is `docs-eng-process/.claude-templates/skills/openup-<name>/SKILL.md`,
+which two gates (`check-claude-sync.sh`, `check-skills-guide.py`) and the downstream
+`sync-from-framework.sh` still read. To keep a single *editable* source it is a
+**generated mirror** of the pack, not a second copy (T-071 increment 2, owner
+decision 2026-07-12 Option A):
+
+- `scripts/render-skills-mirror.py --write` renders every mirror `SKILL.md` from the
+  pack (byte-identical to the `claude-code` adapter output). `sync-templates-to-claude.sh`
+  calls it as part of a normal sync.
+- `scripts/render-skills-mirror.py --check` is the drift guard: it fails if the mirror
+  differs from `render(pack)`, is missing a pack procedure, or holds a stale skill with
+  no pack source. It is wired into `.githooks/pre-commit` and `openup-doctor.py`.
+
+**Never hand-edit the mirror** — edit the body in the pack and re-run the generator.
 `scripts/check-model-tiers.py` reads `tier:` from the pack as the source of truth
 and validates the generated `model:` against the same `tier-map.yaml` column.

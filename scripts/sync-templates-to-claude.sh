@@ -68,6 +68,7 @@ CLAUDE_DIR="$PROJECT_ROOT/.claude"
 PROCEDURES_DIR="${OPENUP_PROCEDURES_DIR:-$PROJECT_ROOT/docs-eng-process/procedures}"
 TIER_MAP="${OPENUP_TIER_MAP:-$PROJECT_ROOT/docs-eng-process/tier-map.yaml}"
 RENDER_ADAPTER="$SCRIPT_DIR/render-claude-adapter.py"
+RENDER_MIRROR="$SCRIPT_DIR/render-skills-mirror.py"
 
 # Functions
 log_info() {
@@ -191,6 +192,22 @@ if [ -d "$PROCEDURES_DIR" ]; then
 else
   log_error "Neutral procedure pack not found: $PROCEDURES_DIR"
   exit 1
+fi
+
+# Regenerate the tracked Claude-format mirror from the pack (T-071 increment 2,
+# Option A). docs-eng-process/.claude-templates/skills/ is a DERIVED mirror — the
+# two gates (check-claude-sync.sh, check-skills-guide.py) and downstream
+# sync-from-framework.sh still read it, so it must be kept byte-equal to the pack.
+# The pack is the single editable source; never hand-edit the mirror.
+log_info "Regenerating .claude-templates/skills/ mirror from the pack..."
+echo ""
+if [ "$DRY_RUN" = true ]; then
+  log_info "Would regenerate .claude-templates/skills/ from the pack"
+else
+  if ! python3 "$RENDER_MIRROR" --write --quiet; then
+    log_error "Failed to regenerate .claude-templates/skills/ mirror from the pack"
+    exit 1
+  fi
 fi
 
 # Sync rubrics — quality rubrics the skills' grading steps read.
