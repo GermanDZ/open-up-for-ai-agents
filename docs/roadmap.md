@@ -343,3 +343,114 @@ T-002 (`/openup-sync-spec`) completed 2026-06-11 once T-008's readiness DAG un-b
 **Dependencies**: —
 
 **See**: `docs/changes/T-070/plan.md`, `docs/explorations/2026-07-10-validate-commit-numeric-tag-gap.md`
+
+---
+
+<!-- plan-hook: 2026-07-12 -->
+### Planned: Harness-optional OpenUP core (integration branch `harness-optional`)
+
+- **Status**: `planned` (awaiting implementation)
+- **Integration branch**: `harness-optional` — all program work merges here;
+  lanes branch off `main`, PRs target `harness-optional`; `main` stays clean.
+- **Exploration**: [explorations/2026-07-12-harness-agnostic-openup.md](explorations/2026-07-12-harness-agnostic-openup.md)
+- **Created**: 2026-07-12
+- **Goal**: Make OpenUP **harness-optional** — a core of files + Python + git
+  usable with no harness, each harness an optional adapter over one neutral
+  procedure pack. Claude Code stays **first-class** (its adapter reproduces
+  today's `.claude/`); prove the loop runs on a bare, non-Anthropic LLM.
+- **Owner decisions (2026-07-12)**: (1) integration branch `harness-optional`;
+  (2) git-centric enforcement (pre-push fence + git hooks) is the accepted
+  opinion; (3) reference driver targets an OpenAI-compatible endpoint via
+  `LLM_API_URL` + `LLM_API_KEY` (owner runs LM Studio); (4) Claude Code
+  first-class, Cursor/Codex deferred, de-"Claude-flavoring" allowed only where it
+  doesn't degrade Claude Code; (5) frontmatter schema open to change;
+  (6) model tiers are runtime-name-matched (tier *name* → concrete model resolved
+  per harness at runtime — no Claude model strings in the pack).
+- **Ordered deliverables**: T-071 (Layer 1 — neutral pack + Claude Code adapter
+  parity) → T-072 (Layer 3 — reference OpenAI-compatible driver) → T-073
+  (Layer 4 — FastAPI service). T-073 starts only once a **named consumer** exists
+  (exploration Pushback 1).
+- **Program acceptance**: one full `/openup-next`-style cycle end-to-end on
+  **(a)** Claude Code and **(b)** the reference driver on a non-Anthropic/local
+  model, each producing fence-clean, validator-clean commits.
+- **Next step**: Run `/openup-start-iteration task_id: T-071`
+
+---
+
+## T-071: Neutral procedure pack + runtime tier map + re-pointed Claude Code adapter
+**Status**: pending
+**Priority**: high
+**Value**: The framework maintainer gets a single source of truth for every
+procedure body and Claude Code keeps working unchanged — the same pack a
+non-Claude driver (T-072) can read, which is the whole premise of a
+harness-optional OpenUP. Removes the Claude-shaped canonical home and the
+hardcoded Claude model strings without touching the Claude Code experience.
+**Description**: Extract the 35 skill bodies from `.claude-templates/skills/` into
+a harness-neutral pack (`docs-eng-process/procedures/openup-*.md`) with a neutral
+frontmatter schema — tiers declared as runtime-resolved **names** (`tier:`) plus a
+`capabilities:` required/optional split — and a `tier-map.yaml` resolving tier name
+→ concrete model per target. Re-point `sync-templates-to-claude.sh` at the pack as
+a translating adapter (via a `render-claude-adapter.py` helper) so `.claude/` is
+reproduced with parity. Keep `check-model-tiers.py` and the sync/parity checks green.
+- Neutral procedure pack (`docs-eng-process/procedures/`) — no Claude model strings
+- `tier-map.yaml` runtime tier→model map (`claude-code` + `driver` columns)
+- `sync-templates-to-claude.sh` re-pointed as translating adapter + `render-claude-adapter.py`
+- Parity: generated `.claude/skills/` matches today's; `check-model-tiers.py --check` green
+- Single source of truth: `.claude-templates/skills/` removed/stubbed
+
+**Dependencies**: —
+
+**See**: `docs/iteration-plans/t-071-neutral-procedure-pack.md`
+
+---
+
+## T-072: Reference OpenAI-compatible driver (`openup-agent run`)
+**Status**: pending
+**Priority**: high
+**Value**: Proves OpenUP is genuinely harness-optional — a practitioner with no
+Claude Code (or any harness) can drive a delivery cycle on a local/non-Anthropic
+model, because the deterministic steps (board, fence, validators, sync) are code
+and only judgment steps need the LLM. This is the falsifiable half of the program
+acceptance test.
+**Description**: A plain Python agentic loop — `openup-agent run --dir <path>
+--procedure next` — over any OpenAI-compatible chat-completions endpoint
+(`LLM_API_URL` + `LLM_API_KEY`; owner runs LM Studio). Minimal 6-tool surface
+(`read_file`, `write_file`, `edit_file`, `list_dir`/`glob`, `grep`, `exec`); the
+driver owns the loop so hooks become deterministic code it runs itself
+(`check-docs.py`, the fence, state updates). Reads the T-071 neutral pack directly;
+resolves tiers via the `tier-map.yaml` `driver` column against the models the
+endpoint surfaces. Full iteration plan authored when promoted.
+- `openup-agent run --dir --procedure` loop (OpenAI-compatible, env-configured)
+- 6-tool surface (exec narrowed to a git + `scripts/*.py` allowlist for safety)
+- Deterministic hook enforcement in the loop (fence + `check-docs.py` + state)
+- Runtime tier resolution against endpoint-surfaced model names
+
+**Dependencies**: T-071
+
+**See**: `Planned: Harness-optional OpenUP core` block above + `docs/explorations/2026-07-12-harness-agnostic-openup.md` — full iteration plan authored on promote
+
+---
+
+## T-073: FastAPI service wrapper over the reference driver
+**Status**: pending
+**Priority**: medium
+**Value**: Lets a named consumer (CI job, web UI, or a second machine) run an
+OpenUP cycle against a directory over HTTP without a local harness — but only
+once such a consumer actually exists, so we don't build a remote-code-execution
+surface ahead of demand.
+**Description**: A thin FastAPI wrapper over the T-072 driver: `POST /runs
+{dir, procedure, args, llm:{base_url, model}}` → run id; `GET /runs/{id}` (status +
+log stream); `GET /projects/board` / `/status` (thin wrappers over
+`openup-board.py` / `sync-status.py`). OpenAPI schema comes for free. **Gated**:
+does not start until a named consumer is identified (exploration Pushback 1);
+sandboxing (local-only bind by default, exec allowlist, container-per-run) is a
+design question resolved at promote, not built up front. Full iteration plan
+authored when promoted.
+- `POST /runs` + `GET /runs/{id}` + board/status read wrappers
+- OpenAPI schema surfaced by FastAPI
+- Sandboxing decision (local-bind default + exec allowlist) at promote
+- **Precondition**: a named consumer exists before this task is promoted
+
+**Dependencies**: T-072
+
+**See**: `Planned: Harness-optional OpenUP core` block above + `docs/explorations/2026-07-12-harness-agnostic-openup.md` — full iteration plan authored on promote
