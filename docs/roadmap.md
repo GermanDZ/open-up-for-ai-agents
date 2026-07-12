@@ -378,7 +378,7 @@ T-002 (`/openup-sync-spec`) completed 2026-06-11 once T-008's readiness DAG un-b
 ---
 
 ## T-071: Neutral procedure pack + runtime tier map + re-pointed Claude Code adapter
-**Status**: pending
+**Status**: in-progress
 **Priority**: high
 **Value**: The framework maintainer gets a single source of truth for every
 procedure body and Claude Code keeps working unchanged — the same pack a
