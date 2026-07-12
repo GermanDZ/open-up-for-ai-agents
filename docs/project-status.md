@@ -1,10 +1,10 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 43
-**Iteration Goal**: T-072 — Reference OpenAI-compatible driver (`openup-agent run`)
-**Status**: in-progress
-**Current Task**: T-072
+**Iteration**: 44
+**Iteration Goal**: T-074 — Human-in-the-loop input handling in the reference driver
+**Status**: completed
+**Current Task**: T-074
 **Iteration Started**: 2026-06-18
 **Last Updated**: 2026-07-12
 **Updated By**: sync-status.py
