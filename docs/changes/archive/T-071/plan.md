@@ -1,7 +1,7 @@
 ---
 id: T-071
 title: Neutral procedure pack + runtime tier map + re-pointed Claude Code adapter
-status: ready   # proposed → ready → in-progress → done → verified
+status: verified
 priority: high   # critical | high | medium | low
 estimate: 2–3 sessions   # rough size
 plan: docs/iteration-plans/t-071-neutral-procedure-pack.md   # originating iteration plan

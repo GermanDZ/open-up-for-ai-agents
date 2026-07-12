@@ -4,3 +4,5 @@
 {"run_id": "32980569a1e549a2bd1dd3ab0a995775", "event": "commit", "task_id": "T-071", "branch": "feat/T-071-neutral-procedure-pack", "sha": "7a9878b1ef6faa52989cc901e1c93ffa203b36da", "model": null, "session_id": "feat/T-071-neutral-procedure-pack", "ts": "2026-07-12T18:45:42Z"}
 {"run_id": "c4239d107eee4dfa8625a41c81303cdd", "event": "commit", "task_id": "T-071", "branch": "feat/T-071-neutral-procedure-pack", "sha": "05d0fab0e61004a12e8d502e5187fb9b646acb56", "model": null, "session_id": "feat/T-071-neutral-procedure-pack", "ts": "2026-07-12T18:50:11Z"}
 {"run_id": "15941f1db269400e929b71604b1aaf63", "event": "commit", "task_id": "T-071", "branch": "feat/T-071-neutral-procedure-pack", "sha": "cf241dacb6fd158b1e8210a21258ffdc9a1fe345", "model": null, "session_id": "feat/T-071-neutral-procedure-pack", "ts": "2026-07-12T19:01:27Z"}
+{"event": "iteration_complete", "task_id": "T-071", "branch": "feat/T-071-neutral-procedure-pack", "phase": "construction", "ts": "2026-07-12T19:03:51Z"}
+{"event": "session_end", "task_id": "T-071", "ts": "2026-07-12T19:04:49Z"}
