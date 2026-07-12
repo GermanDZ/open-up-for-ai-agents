@@ -1,10 +1,10 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 42
-**Iteration Goal**: T-071 — Neutral procedure pack + runtime tier map + re-pointed Claude Code adapter
+**Iteration**: 43
+**Iteration Goal**: T-072 — Reference OpenAI-compatible driver (`openup-agent run`)
 **Status**: in-progress
-**Current Task**: T-071
+**Current Task**: T-072
 **Iteration Started**: 2026-06-18
 **Last Updated**: 2026-07-12
 **Updated By**: sync-status.py
