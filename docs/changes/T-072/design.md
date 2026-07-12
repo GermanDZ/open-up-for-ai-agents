@@ -80,6 +80,36 @@ Operations were extended, then:
 No duplication: `RUNNING-AGENTS.md` / `README.md` summarize and link the single
 source of truth (`reference-driver.md`).
 
+## Follow-on (owner input) — human-answerable questions in the driver
+
+Owner flagged during T-072: the harness-free driver will need **tool support for
+questions that must be answered by a human**. T-072 deliberately scoped this out —
+the plan gate **auto-proceeds** (DD6) and there is no `ask_user` mechanism — so this
+is a **follow-on task**, not part of this lane. Captured here so it is not lost;
+recommend the **product-manager** promote it into a roadmap entry (candidate
+**T-074 — "Human-in-the-loop input handling in the reference driver"**), value-ordered
+against T-073.
+
+Proposed shape (to be detailed at promote — not committed here):
+- **Reuse the existing async input-request machinery**, don't invent a new one. OpenUP
+  already suspends a lane on a blocking question via `/openup-request-input`
+  (`awaiting-input` frontmatter + an input-request doc) and resumes it by folding the
+  human answer back through `openup-input.py resumable` → `/openup-next` (the `resume`
+  path). The driver needs to (a) detect the "needs a human" condition and (b) route it.
+- **Two modes, one flag** (likely `--interactive` / default non-interactive):
+  - *Interactive CLI:* prompt on the controlling TTY, block for the answer, feed it
+    back into the loop.
+  - *Async / non-interactive (CI, service):* call `request-input` (create the doc, set
+    `awaiting-input`), then **terminate with a distinct suspend sentinel/exit code** so
+    an outer loop suspends the lane cleanly; resume happens later via the existing path.
+- Mechanism: probably a **7th tool** `ask_user(question, options?)` or a driver-level
+  gate that emits the request-input; decide at promote.
+- Ties to the exploration open question "plan-mode gating: hard stop awaiting
+  confirmation vs auto-approve" — same family; the same flag likely governs both.
+- **Relationship to T-073:** the FastAPI service is where async Q&A over HTTP matters
+  most (a caller answers via e.g. `POST /runs/{id}/answer`); this may partly fold into
+  T-073 or land just before it. The PM decides the order.
+
 ## Read-back for the Success Measure
 
 The falsifiable expectation (program acceptance, non-Anthropic half) is an **owner live

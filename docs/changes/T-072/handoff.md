@@ -27,7 +27,8 @@
 - **5 failing tests in the full suite** (`check-model-tiers` ×4, `docs-index` ×1) → **pre-existing**, reproduced identically on a clean `harness-optional` worktree with no T-072 code (macOS `/private/var` symlink + a check-model-tiers fixture-isolation issue). Out of this lane's `touches`; not a regression. Detail in `design.md`.
 
 ## 4. Open questions
+- **NEW follow-on (owner input) — human-answerable questions.** The driver needs tool support for questions a human must answer (blocking `request-input`, plan-gate approvals); T-072 scoped this out (auto-proceeds, DD6). Recommend the **product-manager** promote a roadmap entry (candidate **T-074 — human-in-the-loop input handling in the reference driver**), value-ordered vs T-073. Proposed shape (reuse the existing async input-request machinery) is in `design.md` §Follow-on.
+- **Interactive plan gate** — same family as the item above: the driver auto-proceeds today; a `--interactive` mode would govern both plan-gate approval and human questions.
 - **Merge mechanics** — PR #76 targets `harness-optional`. Merging into the integration branch is the owner's call (I did not auto-merge). The lane keeps its lease + state so `/openup-next` will not re-promote T-072; the open `origin` PR also trips the T-066 delivered-but-unmerged guard.
-- **Interactive plan gate** — the driver auto-proceeds (no interactive plan approval); the real enforcement is the driver-run gates. Interactive gating was scoped to the service (T-073). Confirm this is acceptable for the reference driver.
 - **T-073 precondition** — the FastAPI service stays gated on a *named consumer* (exploration Pushback 1). Not promotable until one exists.
 - Otherwise: none — spec assumptions (procedure-agnostic, one-model-per-run, stdlib-only, exec allowlist) are recorded as vetoable in `plan.md` / `design.md`.
