@@ -34,6 +34,11 @@ GATES = [
 
 DEFAULT_MAX_ITERATIONS = 50
 
+# Async human-input suspend: distinct sentinel + exit code so an outer loop can
+# tell "suspended, awaiting a human answer" apart from success/error (T-074).
+SUSPEND_SENTINEL = "OPENUP-AGENT: SUSPENDED"
+EXIT_SUSPEND = 5
+
 
 class ConfigError(Exception):
     """Missing/invalid runtime configuration (env, procedure, tier)."""
@@ -93,8 +98,60 @@ def run_gates(root):
     return ok, "\n".join(lines)
 
 
-def _dispatch_tool_calls(tool_impl, tool_calls):
-    """Run each tool call; return the list of role:tool result messages."""
+def _tool_msg(call, content):
+    return {"role": "tool", "tool_call_id": call.get("id", ""), "content": str(content)}
+
+
+def _active_task(root):
+    """Read the active lane's task_id from .openup/state.json under root (or None)."""
+    p = Path(root) / ".openup" / "state.json"
+    if not p.exists():
+        return None
+    try:
+        return json.loads(p.read_text(encoding="utf-8")).get("task_id")
+    except (json.JSONDecodeError, OSError):
+        return None
+
+
+def _prompt_tty(question, options):
+    """Default interactive prompt: ask on the TTY, return a line of input."""
+    sys.stderr.write("\n[openup-agent] the procedure needs your input:\n  %s\n" % question)
+    if options:
+        for i, opt in enumerate(options, 1):
+            sys.stderr.write("    %d) %s\n" % (i, opt))
+    sys.stderr.flush()
+    try:
+        return input("answer> ").strip()
+    except EOFError:
+        return ""
+
+
+def _create_request(root, task_id, question, options):
+    """Create an input-request (+ suspend the lane) via the deterministic
+    openup-input.py creator. Returns the request path, or an error string."""
+    argv = ["python3", "scripts/openup-input.py", "request", "--root", str(root),
+            "--title", (question[:60] or "Question"), "--question", question, "--json"]
+    if task_id:
+        argv += ["--task-id", task_id]
+    for opt in options or []:
+        argv += ["--option", opt]
+    proc = subprocess.run(argv, cwd=str(root), capture_output=True, text=True)
+    if proc.returncode != 0:
+        return "(request creation failed: %s)" % (proc.stderr or proc.stdout)[:300]
+    try:
+        return json.loads(proc.stdout)["request"]
+    except (json.JSONDecodeError, KeyError):
+        return proc.stdout.strip()
+
+
+def _dispatch_tool_calls(tool_impl, tool_calls, interactive, root, task_id, ask):
+    """Run each tool call. Returns (messages, suspend_request_or_None).
+
+    `ask_user` is intercepted here (not dispatched through Tools): interactive
+    mode returns the human's answer as the tool result; async mode creates an
+    input-request, suspends the lane, and signals the loop to stop by returning
+    the request path as the second element.
+    """
     results = []
     for call in tool_calls:
         fn = call.get("function", {})
@@ -103,27 +160,40 @@ def _dispatch_tool_calls(tool_impl, tool_calls):
         try:
             args = json.loads(raw_args) if isinstance(raw_args, str) else raw_args
         except json.JSONDecodeError as e:
-            result = "ERROR: could not parse arguments for %s: %s" % (name, e)
-        else:
-            result = tool_impl.dispatch(name, args)
+            results.append(_tool_msg(call, "ERROR: could not parse arguments for %s: %s" % (name, e)))
+            continue
+
+        if name == "ask_user":
+            question = args.get("question", "")
+            options = args.get("options")
+            if interactive:
+                answer = ask(question, options)
+                _log("ask_user (interactive) -> %d chars" % len(answer or ""))
+                results.append(_tool_msg(call, "User answered: %s" % answer))
+                continue
+            request = _create_request(root, task_id, question, options)
+            _log("ask_user (async) -> suspended into %s" % request)
+            results.append(_tool_msg(call, "SUSPENDED: created input-request %s" % request))
+            return results, request
+
+        result = tool_impl.dispatch(name, args)
         _log("tool %s -> %d chars" % (name, len(str(result))))
-        results.append({
-            "role": "tool",
-            "tool_call_id": call.get("id", ""),
-            "content": str(result),
-        })
-    return results
+        results.append(_tool_msg(call, result))
+    return results, None
 
 
 def run(dir, procedure, max_iterations=DEFAULT_MAX_ITERATIONS, env=None,
-        _completion=None):
+        interactive=False, _completion=None, _ask=None):
     """Drive `procedure` under `dir`. Return an int exit code.
 
-    `_completion` is a test seam: a callable(model, messages, tools) -> response
-    dict replacing the live llm.chat_completion.
+    `interactive` makes `ask_user` prompt on the TTY and wait; otherwise a human
+    question suspends the run into an input-request (exit 5). `_completion` and
+    `_ask` are test seams replacing the live LLM call and the TTY prompt.
     """
     env = os.environ if env is None else env
     root = Path(dir).resolve()
+    ask = _ask or _prompt_tty
+    task_id = _active_task(root)
 
     try:
         api_url, api_key = _env_config(env)
@@ -162,7 +232,13 @@ def run(dir, procedure, max_iterations=DEFAULT_MAX_ITERATIONS, env=None,
         messages.append(message)
 
         if tool_calls:
-            messages.extend(_dispatch_tool_calls(tool_impl, tool_calls))
+            tool_msgs, suspend = _dispatch_tool_calls(
+                tool_impl, tool_calls, interactive, root, task_id, ask)
+            messages.extend(tool_msgs)
+            if suspend is not None:
+                _log("procedure suspended on iteration %d awaiting human input" % i)
+                print("%s — %s" % (SUSPEND_SENTINEL, suspend))
+                return EXIT_SUSPEND
             continue
 
         content = message.get("content") or ""

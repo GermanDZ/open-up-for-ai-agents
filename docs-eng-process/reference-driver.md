@@ -79,6 +79,9 @@ python3 scripts/openup-agent.py run --dir <path> --procedure <name> [--max-itera
   in the pack works (the driver is procedure-agnostic).
 - `--max-iterations` — turn cap before the loop gives up (default 50). Raise it for
   weaker models that take more turns.
+- `--interactive` — answer the procedure's questions on the TTY. Without it (the
+  default), a question **suspends** the run into an input-request for async resolution
+  (see [Asking the human](#asking-the-human--ask_user)).
 
 ---
 
@@ -138,10 +141,35 @@ The model is handed exactly six tools (OpenAI function definitions), all rooted 
 | `glob(pattern)` | discover change folders, templates (also lists a dir via `dir/*`) |
 | `grep(pattern, path?)` | find task IDs, frontmatter |
 | `exec(command, cwd?)` | run **allowlisted** commands only: `git <subcmd>` or `python3 scripts/<script>.py …` |
+| `ask_user(question, options?)` | ask the human a blocking question (7th tool — see below) |
 
 `exec` refuses anything outside the allowlist **without spawning a process**, and
 every file tool refuses paths that escape `--dir` — a bare model gets the
 deterministic OpenUP scripts, not an arbitrary shell.
+
+## Asking the human — `ask_user`
+
+Many OpenUP procedures legitimately hit a **blocking question** — a choice the specs
+and repo don't answer. The model raises it with the `ask_user(question, options?)`
+tool, and the driver handles it one of two ways:
+
+- **`--interactive`** — the driver prints the question on the TTY, waits for your
+  answer, and feeds it back into the loop. Good for running the driver at your desk.
+- **default (non-interactive)** — the driver creates an OpenUP **input-request** under
+  `docs/input-requests/`, sets `awaiting-input:` on the active lane's `plan.md` (so the
+  board reports it `suspended`), prints `OPENUP-AGENT: SUSPENDED — <request-path>`, and
+  exits **5**. Good for CI / unattended runs.
+
+The async path reuses OpenUP's existing input-request machinery unchanged. To resume
+after answering:
+
+1. Open the printed request file, fill in the `**Answer**:` section, and set its
+   frontmatter `status: pending → answered`.
+2. Run `/openup-next` (or `python3 scripts/openup-input.py resumable`) — the answered
+   request is mapped back to its lane and the work continues.
+
+The deterministic creator is also available directly for any harness:
+`python3 scripts/openup-input.py request --task-id T-NNN --title "…" --question "…" [--option …]`.
 
 ## Deterministic gate enforcement
 
@@ -164,6 +192,7 @@ skipped, so the driver stays usable on partial trees.
 | 2 | configuration error | `LLM_API_URL` unset, procedure not found, unknown tier |
 | 3 | endpoint / transport error | endpoint down, 401/404, non-JSON response |
 | 4 | max iterations reached, no clean sentinel | model never finished, or a gate never passed |
+| 5 | suspended, awaiting a human answer | `ask_user` in non-interactive mode ([above](#asking-the-human--ask_user)) |
 
 ## Troubleshooting
 

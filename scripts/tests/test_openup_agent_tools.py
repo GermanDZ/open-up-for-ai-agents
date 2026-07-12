@@ -140,7 +140,14 @@ class ToolsTest(unittest.TestCase):
     def test_tool_defs_cover_named_surface(self):
         names = {d["function"]["name"] for d in tools.TOOL_DEFS}
         self.assertEqual(names, set(tools.TOOL_NAMES))
-        self.assertEqual(len(tools.TOOL_DEFS), 6)
+        self.assertEqual(len(tools.TOOL_DEFS), 7)  # six + ask_user (T-074)
+
+    def test_ask_user_advertised_but_not_dispatched(self):
+        # ask_user is a 7th advertised tool intercepted by the loop, not Tools.
+        self.assertIn("ask_user", tools.TOOL_NAMES)
+        self.assertNotIn("ask_user", tools.DISPATCH_TOOL_NAMES)
+        self.assertEqual(len(tools.DISPATCH_TOOL_NAMES), 6)
+        self.assertIn("unknown tool", self.t.dispatch("ask_user", {"question": "?"}))
 
 
 if __name__ == "__main__":

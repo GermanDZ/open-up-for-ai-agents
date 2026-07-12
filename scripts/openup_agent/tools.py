@@ -158,7 +158,7 @@ class Tools:
     def dispatch(self, name, arguments):
         """Call tool `name` with a dict of arguments; unknown tool -> error string."""
         fn = getattr(self, name, None)
-        if fn is None or name not in TOOL_NAMES:
+        if fn is None or name not in DISPATCH_TOOL_NAMES:
             return "ERROR: unknown tool '%s'" % name
         try:
             return fn(**arguments)
@@ -166,7 +166,11 @@ class Tools:
             return "ERROR: bad arguments for %s: %s" % (name, e)
 
 
-TOOL_NAMES = ("read_file", "write_file", "edit_file", "glob", "grep", "exec")
+# The six dispatchable file/shell tools. `ask_user` is a 7th advertised tool but
+# is intercepted by the loop (interactive TTY prompt vs async suspend), not
+# dispatched through Tools — see loop._dispatch_tool_calls.
+DISPATCH_TOOL_NAMES = ("read_file", "write_file", "edit_file", "glob", "grep", "exec")
+TOOL_NAMES = DISPATCH_TOOL_NAMES + ("ask_user",)
 
 # OpenAI-style function/tool definitions advertised to the model.
 TOOL_DEFS = [
@@ -256,6 +260,30 @@ TOOL_DEFS = [
                     "cwd": {"type": "string", "description": "optional subdir of the working root"},
                 },
                 "required": ["command"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "ask_user",
+            "description": (
+                "Ask the human a question that genuinely needs their decision (a blocking "
+                "choice the spec/docs don't answer). In interactive mode you get their answer "
+                "back and continue; otherwise the run suspends into an OpenUP input-request for "
+                "async resolution — do NOT call this for questions you can answer from the repo."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "question": {"type": "string"},
+                    "options": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "optional multiple-choice options",
+                    },
+                },
+                "required": ["question"],
             },
         },
     },
