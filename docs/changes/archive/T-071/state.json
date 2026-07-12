@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "task_id": "T-071",
+  "iteration": 42,
+  "phase": "construction",
+  "track": "full",
+  "branch": "feat/T-071-neutral-procedure-pack",
+  "worktree": "/Users/germandz/personal-code/ai-dev-framework/open-up-for-ai-agents-T-071",
+  "session_id": "feat/T-071-neutral-procedure-pack",
+  "started_at": "2026-07-12T18:09:22Z",
+  "gates": {
+    "team_deployed": false,
+    "plan_persisted": "docs/iteration-plans/t-071-neutral-procedure-pack.md",
+    "log_written": true,
+    "roadmap_synced": true,
+    "retro_due": false
+  },
+  "iterations_since_retro": 0
+}

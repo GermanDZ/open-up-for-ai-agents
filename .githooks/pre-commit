@@ -31,6 +31,20 @@ if [ "${SKIP_CLAUDE_SYNC_CHECK:-}" = "1" ]; then
   exit 0
 fi
 
+# Enforce that the tracked Claude-format skill mirror
+# (docs-eng-process/.claude-templates/skills/) stays generated from the neutral
+# procedure pack (T-071). The pack is the single editable source; a hand-edit to
+# the mirror instead of the pack is drift and must be caught here.
+if [ -x "$ROOT/scripts/render-skills-mirror.py" ] && command -v python3 >/dev/null 2>&1; then
+  if ! python3 "$ROOT/scripts/render-skills-mirror.py" --check --quiet; then
+    echo "" >&2
+    echo "Commit blocked: .claude-templates/skills/ has drifted from the procedure pack." >&2
+    echo "  - Edit bodies in docs-eng-process/procedures/openup-<name>.md (the source)." >&2
+    echo "  - Run:  python3 scripts/render-skills-mirror.py --write" >&2
+    exit 1
+  fi
+fi
+
 if ! "$ROOT/scripts/check-claude-sync.sh"; then
   echo "" >&2
   echo "Commit blocked. Either:" >&2

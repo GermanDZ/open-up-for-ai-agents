@@ -1,7 +1,7 @@
 ---
 id: T-071
 title: Neutral procedure pack + runtime tier map + re-pointed Claude Code adapter
-status: ready   # proposed → ready → in-progress → done → verified
+status: verified
 priority: high   # critical | high | medium | low
 estimate: 2–3 sessions   # rough size
 plan: docs/iteration-plans/t-071-neutral-procedure-pack.md   # originating iteration plan
@@ -13,7 +13,11 @@ touches:
   - docs-eng-process/procedure-frontmatter.md
   - scripts/sync-templates-to-claude.sh
   - scripts/render-claude-adapter.py
+  - scripts/render-skills-mirror.py
   - scripts/check-model-tiers.py
+  - scripts/openup-doctor.py
+  - scripts/tests/test_render_skills_mirror.py
+  - .githooks/pre-commit
   - docs-eng-process/.claude-templates/skills/
   - docs/iteration-plans/t-071-neutral-procedure-pack.md
 last-synced: ""
@@ -52,8 +56,8 @@ State the *why* the spec needs but the code can't show:
    - **Given** a snapshot of the current `.claude/skills/` **When** the re-pointed adapter runs over the neutral pack **Then** each generated `SKILL.md` has the same body and the same frontmatter key/value set (including the concrete `model:` restored via the map) as the snapshot — zero semantic diff.
 4. `python3 scripts/check-model-tiers.py --check` passes and `model-tiers.md` still renders the correct per-skill tiers after the source of tiers moves to the pack.
    - **Given** the neutral pack + generated `.claude/` **When** `check-model-tiers.py --check` runs **Then** it exits 0 and the per-skill tier table matches the pack's `tier:` values resolved through the map.
-5. Exactly one source of truth for a procedure body remains: `.claude-templates/skills/` is removed or reduced to a generated/redirect stub.
-   - **Given** the completed change **When** a procedure body is edited **only** in the neutral pack and the adapter is re-run **Then** the change appears in `.claude/skills/` with no hand-edit to any `.claude-templates/` or `.claude/` file, and no second editable copy of the body exists.
+5. Exactly one **editable** source of truth for a procedure body remains: the neutral pack. `.claude-templates/skills/` is retained but becomes a **generated mirror** rendered from the pack (owner decision 2026-07-12, Option A — see design.md DD4), never hand-edited, with a drift guard enforcing it.
+   - **Given** the completed change **When** a procedure body is edited **only** in the neutral pack and the sync/mirror generator is re-run **Then** the change appears in both `.claude/skills/` and the `.claude-templates/skills/` mirror with no hand-edit to either, and `render-skills-mirror.py --check` fails on any hand-edit to the mirror — so no second *editable* copy of the body exists.
 
 ## Behavior Delta
 
@@ -92,11 +96,14 @@ Extract each `.claude-templates/skills/openup-<name>/SKILL.md` into a flat neutr
 - `docs-eng-process/procedures/openup-<name>.md` (35 files)
 - `docs-eng-process/tier-map.yaml`
 - `scripts/render-claude-adapter.py`
+- `scripts/render-skills-mirror.py` — (increment 2) generate/verify the `.claude-templates/skills/` mirror from the pack
+- `scripts/tests/test_render_skills_mirror.py` — (increment 2) unit tests for the mirror generator + drift guard
 - `docs-eng-process/procedure-frontmatter.md`
 
 **Modify:**
-- `scripts/sync-templates-to-claude.sh` — re-point skills loop at the pack; call render helper
+- `scripts/sync-templates-to-claude.sh` — re-point skills loop at the pack; call render helper; (increment 2) also regenerate the tracked mirror
 - `scripts/check-model-tiers.py` — source tiers from the pack's `tier:`; validate generated `model:`
+- `.githooks/pre-commit` + `scripts/openup-doctor.py` — (increment 2) wire the mirror drift guard alongside the existing gates
 
 **Do not touch:**
 - `.claude-templates/{rubrics,scripts/hooks,config,agents,teammates,teams}/`, `CLAUDE.md` — not the procedure pack; stay verbatim-synced (owner decision 4, out of scope)
@@ -111,7 +118,7 @@ Extract each `.claude-templates/skills/openup-<name>/SKILL.md` into a flat neutr
 - [x] Write `scripts/render-claude-adapter.py` (neutral→Claude frontmatter translation) and re-point `scripts/sync-templates-to-claude.sh`'s skills loop at the pack via the helper.
 - [x] Update `scripts/check-model-tiers.py` to read tiers from the pack's `tier:` and validate the generated `.claude/` `model:` against the map's `claude-code` column.
 - [x] (tester) Run the parity diff (baseline snapshot vs regenerated `.claude/skills/`), `check-model-tiers.py --check`, and the round-trip edit test; confirm zero semantic diff. **Result: 0/35 byte-diff; all gates green.**
-- [ ] **(increment 2 — handed off, see design.md DD4)** Remove or stub `.claude-templates/skills/` so exactly one *tracked* source remains. Fans out to `check-claude-sync.sh`, `check-skills-guide.py`, and downstream `sync-from-framework.sh` (all read `.claude-templates/skills/`), plus an owner-facing distribution decision. Re-run full sync + all gates green.
+- [x] **(increment 2 — Option A generated mirror, see design.md DD4)** `.claude-templates/skills/` retained as a **generated mirror** rendered from the pack (owner decision 2026-07-12). Added `scripts/render-skills-mirror.py` (`--write`/`--check`); `sync-templates-to-claude.sh` regenerates the mirror from the pack; the drift guard (`--check`) is wired into `.githooks/pre-commit` and `openup-doctor.py`; `check-claude-sync.sh`, `check-skills-guide.py`, and `sync-from-framework.sh` keep reading the mirror unchanged. Full sync + all four skill gates green (`render-skills-mirror --check`, `check-model-tiers --check`, `check-skills-guide --check`, `check-claude-sync`); round-trip (hand-edit mirror → guard fails → `--write` restores byte-parity) verified. Single *editable* source = the pack.
 
 ## Norms
 

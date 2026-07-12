@@ -373,12 +373,14 @@ T-002 (`/openup-sync-spec`) completed 2026-06-11 once T-008's readiness DAG un-b
 - **Program acceptance**: one full `/openup-next`-style cycle end-to-end on
   **(a)** Claude Code and **(b)** the reference driver on a non-Anthropic/local
   model, each producing fence-clean, validator-clean commits.
-- **Next step**: Run `/openup-start-iteration task_id: T-071`
+- **Next step**: T-071 done (Layer 1 complete — neutral pack + Claude Code adapter
+  at byte parity, single editable source via generated mirror). Run
+  `/openup-start-iteration task_id: T-072` (Layer 3 — reference OpenAI-compatible driver).
 
 ---
 
 ## T-071: Neutral procedure pack + runtime tier map + re-pointed Claude Code adapter
-**Status**: in-progress
+**Status**: completed (2026-07-12)
 **Priority**: high
 **Value**: The framework maintainer gets a single source of truth for every
 procedure body and Claude Code keeps working unchanged — the same pack a

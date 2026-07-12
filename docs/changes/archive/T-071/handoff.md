@@ -12,7 +12,13 @@ Increment 1 (this branch) established the harness-neutral procedure pack as the 
 - [x] `sync-templates-to-claude.sh` regenerates `.claude/skills/` from the pack at **byte parity** (0/35 diff vs pre-change snapshot).
 - [x] `check-model-tiers.py --check` green (reads `tier:` from the pack, resolves via the map).
 - [x] `check-claude-sync.sh` + `check-skills-guide.py` green (still via the retained `.claude-templates/skills/`).
-- [ ] **(increment 2)** `.claude-templates/skills/` removed or stubbed so exactly one *tracked* source remains; Requirement 5 / single-source success measure met.
+- [x] **(increment 2)** `.claude-templates/skills/` retained as a **generated mirror** of the pack (owner decision 2026-07-12, Option A); `render-skills-mirror.py` (`--write`/`--check`) generates + guards it, wired into `sync-templates-to-claude.sh`, `.githooks/pre-commit`, and `openup-doctor.py`. Requirement 5 met by *editable*-source count = 1 (the pack). All four skill gates green; round-trip verified.
+
+> **Note (pre-existing, out of this lane):** `scripts/tests/test_check_model_tiers.py`
+> has 4 failing fixture tests — they write skills with `model:` frontmatter, but
+> increment 1 re-pointed `check-model-tiers.py` to read `tier:` from the pack, so the
+> fixtures are stale. The live-repo invariant test passes and the `--check` gate is
+> green. Not touched here (not in this lane's `touches`); flag for a follow-up quick-task.
 
 ## 2. How to exercise it (test cases)
 1. `bash scripts/sync-templates-to-claude.sh` → regenerates `.claude/skills/` from the pack (no errors).
