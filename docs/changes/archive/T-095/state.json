@@ -1,0 +1,21 @@
+{
+  "schema": 2,
+  "task_id": "T-095",
+  "iteration": 63,
+  "iteration_id": null,
+  "cycle": 1,
+  "phase": "construction",
+  "track": "standard",
+  "branch": "feature/T-095-next-cycle",
+  "worktree": "/Users/germandz/personal-code/ai-dev-framework/open-up-for-ai-agents-T-095",
+  "session_id": "feature/T-095-next-cycle",
+  "started_at": "2026-07-13T16:10:14Z",
+  "gates": {
+    "team_deployed": false,
+    "plan_persisted": "docs/changes/T-095/plan.md",
+    "log_written": true,
+    "roadmap_synced": true,
+    "retro_due": false
+  },
+  "iterations_since_retro": 8
+}

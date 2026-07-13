@@ -1,7 +1,7 @@
 ---
 id: T-095
 title: scripts/next-cycle — one guided command from empty project to delivery loop
-status: ready   # proposed → ready → in-progress → done → verified
+status: done
 priority: high   # critical | high | medium | low
 estimate: 1 session
 plan: docs/explorations/2026-07-13-deterministic-cycle-engine.md
