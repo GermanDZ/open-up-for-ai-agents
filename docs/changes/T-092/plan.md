@@ -222,7 +222,7 @@ completion, exits — is untouched T-089 code.
       full driver+bench+cycle suites unmodified (Req 5, 6)
 - [x] (analyst) Document recovery mode (both cases, flag, merge rule, exit
       semantics) in `reference-driver.md` + `script-cli-reference.md`
-- [ ] (tester) Run full suites + `openup-spec-scenarios.py check` on this spec
+- [x] (tester) Run full suites + `openup-spec-scenarios.py check` on this spec
       + `check-docs.py` + `openup-fence.py check --base harness-optional`;
       re-run the my-product manual scenario expectation against the fixture
       tests; record results in `docs/changes/T-092/design.md`
