@@ -1,7 +1,7 @@
 ---
 id: T-079
 title: Parallel Construction iterations (non-colliding clusters)
-status: ready   # proposed → ready → in-progress → done → verified
+status: done   # proposed → ready → in-progress → done → verified
 priority: medium   # critical | high | medium | low
 estimate: 2-3 sessions
 plan: docs/explorations/2026-07-13-phase-aware-loop-redesign.md
@@ -322,7 +322,7 @@ program.
   `docs-eng-process/script-cli-reference.md`.
 - [x] Regenerate the skills mirror (`render-skills-mirror.py --write`) +
   `sync-templates-to-claude.sh`.
-- [ ] (tester) Run the full suite + `check-docs.py`(+`--coverage`) +
+- [x] (tester) Run the full suite + `check-docs.py`(+`--coverage`) +
   `openup-fence.py check --base harness-optional`; confirm green.
 
 ## Norms

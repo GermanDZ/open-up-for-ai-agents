@@ -592,7 +592,7 @@ authored when promoted.
 ---
 
 ## T-079: Parallel Construction iterations (non-colliding clusters)
-**Status**: pending
+**Status**: completed (2026-07-13)
 **Priority**: medium
 **Value**: Low-dependency features deliver concurrently — the planner partitions committed work items into non-colliding iteration clusters (disjoint `touches` + use-case dependencies), lifting the existing lane-collision machinery one level to compress Construction wall-clock without a human wiring parallelism; and because each big Construction iteration is named/numbered with its tasks prefixed by that iteration id, work from concurrent iterations stays easy to track and never id-collides.
 **Description**: Number/name each "big" Construction iteration and prefix its task ids with that iteration id (`<iter-id>-NNN`, built on T-077's minting), so tasks from different concurrent iterations are trivially attributable to their iteration and cannot collide on ids. Allow N concurrent iterations whose committed work items have disjoint `touches` and use-case dependencies; `openup-board.py` already computes collisions, and the planner partitions committed work items into non-colliding clusters. Depends on worktree-per-lane (live-run finding F5) for isolation.
