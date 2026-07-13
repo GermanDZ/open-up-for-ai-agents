@@ -220,7 +220,7 @@ completion, exits — is untouched T-089 code.
 - [x] Wire `recover` default-on through `run_cycle` + `--no-recover` CLI flag;
       prove opt-out byte-equivalence and non-recovery-path invariance; run the
       full driver+bench+cycle suites unmodified (Req 5, 6)
-- [ ] (analyst) Document recovery mode (both cases, flag, merge rule, exit
+- [x] (analyst) Document recovery mode (both cases, flag, merge rule, exit
       semantics) in `reference-driver.md` + `script-cli-reference.md`
 - [ ] (tester) Run full suites + `openup-spec-scenarios.py check` on this spec
       + `check-docs.py` + `openup-fence.py check --base harness-optional`;

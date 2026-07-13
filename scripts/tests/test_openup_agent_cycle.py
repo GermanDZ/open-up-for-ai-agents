@@ -211,6 +211,31 @@ class DecisionDispatchTest(CycleFixture):
                                      for l in self._calls()))
                 self.assertFalse((self.root / ".openup" / "state.json").exists())
 
+    def test_noop_without_roadmap_hints_inception(self):
+        """T-092: a fresh project (no docs/roadmap.md) gets told what rebuilds
+        the state instead of a bare DONE."""
+        self._set_decision(_decision("noop", reason="roadmap exhausted"))
+        self._git("add", "-A"); self._git("commit", "-m", "d", "-q")
+        import io, contextlib
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            rc = cycle.run_cycle(str(self.root), env=self.env)
+        self.assertEqual(rc, 0)
+        self.assertIn("no docs/roadmap.md yet", buf.getvalue())
+        self.assertIn("openup-create-vision", buf.getvalue())
+
+    def test_noop_with_roadmap_has_no_hint(self):
+        (self.root / "docs").mkdir(exist_ok=True)
+        (self.root / "docs" / "roadmap.md").write_text("# Roadmap\n")
+        self._set_decision(_decision("noop", reason="board empty"))
+        self._git("add", "-A"); self._git("commit", "-m", "d", "-q")
+        import io, contextlib
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            rc = cycle.run_cycle(str(self.root), env=self.env)
+        self.assertEqual(rc, 0)
+        self.assertNotIn("no docs/roadmap.md", buf.getvalue())
+
     def test_pick_acquires_via_session_begin_without_llm(self):
         self._seed_lane([(False, "(developer) Write docs/scratch/out.md saying hello")])
         subrun_calls = []

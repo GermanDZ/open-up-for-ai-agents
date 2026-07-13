@@ -732,7 +732,18 @@ def run_cycle(dir, env=None, step_max_iterations=DEFAULT_STEP_MAX_ITERATIONS,
             return EXIT_UNSUPPORTED
 
     if path == "noop":
-        print("OPENUP-NEXT: DONE — %s" % (reason or "nothing to do"))
+        msg = decision.get("reason") or "nothing to do"
+        if not (root / "docs" / "roadmap.md").exists():
+            # A fresh bootstrapped project: nothing is promotable because
+            # Inception never ran. Say what rebuilds the state (T-092) —
+            # recovery cannot invent the product, only the human can.
+            msg += (" | no docs/roadmap.md yet — a fresh project needs "
+                    "Inception first: author the vision + initial roadmap "
+                    "(e.g. `openup-agent.py run --procedure "
+                    "openup-create-vision --instruction ...`; see "
+                    "docs-eng-process/getting-started-reference-driver.md), "
+                    "then re-run cycle")
+        print("OPENUP-NEXT: DONE — %s" % msg)
         return EXIT_OK
     if path in UNSUPPORTED_PATHS:
         _log("FATAL: decision path '%s' is not supported by the cycle engine "
