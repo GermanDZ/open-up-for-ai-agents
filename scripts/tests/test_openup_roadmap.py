@@ -217,6 +217,42 @@ class Next(unittest.TestCase):
         self.assertEqual(a.stdout, b.stdout)  # divergence == 0
 
 
+class MissingRoadmap(unittest.TestCase):
+    """T-093 — a freshly bootstrapped project has no docs/roadmap.md yet; the
+    CLI must degrade cleanly (crash observed live via openup-agent.py cycle →
+    openup-board.py resolve → cmd_next → FileNotFoundError)."""
+
+    def _repo_without_roadmap(self):
+        root, cdir = make_repo()
+        (root / "docs" / "roadmap.md").unlink()
+        return root, cdir
+
+    def test_list_yields_empty_array(self):
+        root, cdir = self._repo_without_roadmap()
+        out = json.loads(run(root, cdir, "list", expect=OK).stdout)
+        self.assertEqual(out, [])
+
+    def test_get_exits_none(self):
+        root, cdir = self._repo_without_roadmap()
+        run(root, cdir, "get", "T-101", expect=NONE)
+
+    def test_next_exits_none_not_traceback(self):
+        root, cdir = self._repo_without_roadmap()
+        proc = run(root, cdir, "next", "--no-remote-check", expect=NONE)
+        self.assertNotIn("Traceback", proc.stderr)
+
+    def test_board_resolve_returns_decision(self):
+        root, cdir = self._repo_without_roadmap()
+        board = Path(__file__).resolve().parents[1] / "openup-board.py"
+        proc = subprocess.run(
+            [sys.executable, str(board), "resolve",
+             "--root", str(root), "--claims-dir", str(cdir)],
+            capture_output=True, text=True)
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        decision = json.loads(proc.stdout)
+        self.assertIn(decision["path"], ("noop", "milestone-review", "plan-iteration"))
+
+
 class RemoteGuard(unittest.TestCase):
     """T-066: a task delivered in an open, unmerged PR shows up on ``origin`` as a
     branch encoding its id — invisible to the local folder/lease guards. ``next``
