@@ -202,7 +202,7 @@ is input the human was going to have to produce anyway, just pre-shaped.
       (Req 6)
 - [x] (analyst) Update `getting-started-reference-driver.md` (one-command
       path first), `reference-driver.md`, `script-cli-reference.md`
-- [ ] (tester) Run the wrapper suite + full driver/cycle suites +
+- [x] (tester) Run the wrapper suite + full driver/cycle suites +
       `openup-spec-scenarios.py check` + `check-docs.py` + `openup-fence.py
       check --base harness-optional`; live-walk the guided stages on the
       my-product fixture where no endpoint is needed (env block, template
