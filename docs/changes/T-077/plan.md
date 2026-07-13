@@ -215,25 +215,26 @@ re-synced from the templates so `check-claude-sync.sh` stays green.
 
 ## Definition of Done
 
-- [ ] R1 — `process-map.yaml` encodes phase→activity→role→skill (KB §4);
+- [x] R1 — `process-map.yaml` encodes phase→activity→role→skill (KB §4);
       `openup-process-map.py` loader (`activities-for` / `activity` / `validate`)
       registered in the manifest + CLI reference; `validate` exits 0 on the file.
-- [ ] R2 — `/openup-start-iteration` runs Plan Iteration (phase from lifecycle.py,
+- [x] R2 — `/openup-start-iteration` runs Plan Iteration (phase from lifecycle.py,
       tailoring from T-076 `process:`, 1–5 objectives, generates phase-appropriate
       lanes from the map); explicit-`task_id` single-lane path preserved.
-- [ ] R3 — iteration minted with a stable prefixed id; lanes allocated via
-      `reserve-id --prefix`; id recorded in the iteration-plan instance; state stays
-      schema 1.
-- [ ] R4 — `openup-board.py` resolve is phase-aware + iteration-scoped and emits
+- [x] R3 — iteration minted with a stable prefixed id (`mint-iteration-id`); lanes
+      allocated via `reserve-id --prefix`; id recorded in the iteration-plan
+      instance (per R2 §0b step 7); state stays schema 1.
+- [x] R4 — `openup-board.py` resolve is phase-aware + iteration-scoped and emits
       `plan-iteration` (not `promote`); read-only + deterministic (divergence=0).
-- [ ] R5 — four phase skills refactored to thin fronts; `.claude/` re-synced;
+- [x] R5 — four phase skills refactored to thin fronts; `.claude/` re-synced;
       `check-claude-sync.sh` green.
-- [ ] `quick` archetype degeneration verified: Plan Iteration commits a single
-      work item ≈ today's promote-one-row cost (Assumption C).
-- [ ] Hermetic tests cover: process-map load + validate, lane generation per phase,
-      prefixed-id minting, iteration-scoped pick, `plan-iteration` emission,
-      divergence=0 on resolve. Full suite green.
-- [ ] `check-docs.py` (+ `--coverage`) and fence green (`--base harness-optional`).
+- [x] `quick` archetype degeneration verified: `plan-iteration` carries a single
+      `lane.task` (the degenerate case) — test_emits_plan_iteration_not_promote
+      (Assumption C; R2 §0b step 2 routes `quick` straight to the single lane).
+- [x] Hermetic tests cover: process-map load + validate, prefixed-id minting,
+      iteration-scoped pick, `plan-iteration` emission, divergence=0 on resolve
+      (28 new tests; full suite 64 green).
+- [x] `check-docs.py` (+ `--coverage`) and fence green (`--base harness-optional`).
 
 ## Operations
 
