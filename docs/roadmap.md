@@ -779,7 +779,7 @@ authored when promoted.
 ---
 
 ## T-095: `scripts/next-cycle` — one guided command from empty project to delivery loop
-**Status**: pending
+**Status**: completed (2026-07-13)
 **Priority**: high
 **Value**: A practitioner should need to remember exactly one command. Today the fresh-project path is four manual steps (env exports, brief authoring, a create-vision invocation with a composed --instruction, then cycle) and every typed exit code demands interpretation; the wrapper makes the tooling guide the human instead (asked for verbatim by the user on 2026-07-13: "I want to run a single command like ./scripts/next-cycle and the tooling must guide me").
 **Description**: New executable `scripts/next-cycle` (stdlib-only, shipped via process-manifest): loads `.openup/agent.env` (KEY=VALUE) into the environment; if `LLM_API_URL` is missing, prompts for endpoint/model config on a TTY (offering to persist it) or prints a copy-paste setup block; on a fresh project (no vision, no roadmap) with no stakeholder brief, writes a template brief to `docs/inputs/stakeholder-brief.md` and asks the human to fill it; with a filled brief, runs the create-vision Inception step (vision + initial roadmap) via `openup-agent.py run`; otherwise runs ONE `openup-agent.py cycle`, passing `--interactive` when stdin is a TTY; translates every exit code into plain next-step guidance (5 → the request file to answer; 6/7/8 → what to fix; ADVANCED → re-run to continue). Composes the driver only — no new engine behavior.

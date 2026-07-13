@@ -1,15 +1,17 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 62
-**Iteration Goal**: T-094 — Cycle recovery — consent-gated LLM replenishment when nothing is promotable
+**Iteration**: 63
+**Iteration Goal**: T-095 — `scripts/next-cycle` — one guided command from empty project to delivery loop
 **Status**: completed
-**Current Task**: T-094
+**Current Task**: T-095
 **Iteration Started**: 2026-06-18
 **Last Updated**: 2026-07-13
 **Updated By**: sync-status.py
 
 ## Notes
+
+**Iteration 63** (2026-07-13): T-095 — `./scripts/next-cycle`, the **guided single entry point** (verbatim user ask: one command, the tooling guides). Stdlib-only executable wrapper, pure composition over `openup-agent.py`: loads `.openup/agent.env` (exported vars win); missing `LLM_API_URL` → interactive setup with optional persist on a TTY, copy-paste export block + exit 2 off-TTY; fresh project (no vision/roadmap) → writes a **template stakeholder brief** (marker-checked, never overwrites a human's file) and stops — the one genuinely human step; filled brief → runs the Inception authoring (create-vision → vision + initial 5-8-row roadmap) so the next run lands in the T-092/T-094 pipeline; otherwise → ONE `cycle` per run, `--interactive` auto-added on a TTY. Every typed exit (0/2/3/4/5/6/7/8) translates to plain next-step guidance on **stderr** while the driver's stdout sentinel passes through **byte-exact** with exit-code passthrough — outer loops consume it exactly like `cycle` (`while ./scripts/next-cycle; do :; done`). Shipped via process-manifest (installer preserves the exec bit — asserted by a test running the real `install_process_clis`). Docs: getting-started-reference-driver leads with the one-command path; reference-driver + CLI reference updated. +13 hermetic tests (fake-driver fixture records argv/env; 136 suite green, zero pre-existing tests touched); spec-scenarios, check-docs, fence (--base harness-optional) green. Solo, standard, worktree, on harness-optional.
 
 **Iteration 62** (2026-07-13): T-094 — **consent-gated replenishment**, the last loop-strand recovery: when even T-092 recovery has nothing deterministic left (roadmap present but exhausted/blocked mid-phase, or a non-advancing recovery round), `cycle` now **asks before acting** — a TTY yes/no under `--interactive`, else an input-request (multiple-choice, lane-less) + SUSPEND sentinel + exit 5 via the T-074 machinery, remembered in `.openup/cycle.json` so a pending ask re-suspends every later cycle without duplicates. An answered **yes** runs ONE bounded **product-manager**-hat sub-run (new additive `instruction=` override skips the change-folder briefing — the pass belongs to no lane) that appends 1–5 pending roadmap entries with Value rationales; acceptance is deterministic (`openup-roadmap.py next` must then find something promotable + check-docs) or the cycle fails typed with nothing committed; on success the `[openup-skip]` roadmap commit lands and the SAME invocation chains replenish → T-092 spec-authoring → pick → ADVANCED (proven end-to-end hermetically, hats product-manager→analyst, commit order asserted). An answered **no** is durable (consumed; clean DONE, never re-asked); interactive decline is per-run. `--auto-replenish` deliberately deferred — the LLM proposes, the human consents, scope is never invented silently (PM value-ordering authority). Recovery restructured into a bounded loop (Case B once; ≤2 rounds of Case A|replenish; ≤1 ask). Req 7 amended fix-spec-first BEFORE code (T-092 DD7 learning applied proactively): exactly one pre-existing test switched to `recover=False`, the only failure observed. +9 tests (123 driver+bench+cycle+roadmap green); spec-scenarios, check-docs, fence (--base harness-optional) green. Solo, standard, worktree, on harness-optional.
 

@@ -25,6 +25,23 @@ This guide is task-oriented and covers two common starting points:
 
 ---
 
+## The short version — one command (T-095)
+
+```bash
+./scripts/next-cycle
+```
+
+Run it repeatedly; the tooling guides you through every stage instead of you
+remembering the steps below: no endpoint configured → it prompts (TTY) or
+prints the setup block, and loads `.openup/agent.env` on every run; fresh
+project → it writes a template stakeholder brief for you to fill (the one
+genuinely human step); filled brief → it runs the Inception authoring (vision
++ initial roadmap); anything after that → one delivery cycle per run, with
+every exit translated into plain next-step guidance (an exit 5 means: answer
+the named file under `docs/input-requests/`, re-run). The sections below
+describe what it does under the hood — read them when you want the manual
+controls.
+
 ## Prerequisites (both scenarios)
 
 1. **`python3` (3.8+) and `git`.** The driver is stdlib-only — nothing to `pip install`.

@@ -1,7 +1,7 @@
 ---
 id: T-095
 title: scripts/next-cycle — one guided command from empty project to delivery loop
-status: ready   # proposed → ready → in-progress → done → verified
+status: done
 priority: high   # critical | high | medium | low
 estimate: 1 session
 plan: docs/explorations/2026-07-13-deterministic-cycle-engine.md
@@ -191,18 +191,18 @@ is input the human was going to have to produce anyway, just pre-shaped.
 
 ## Operations
 
-- [ ] Implement `scripts/next-cycle`: agent.env loader, env guidance
+- [x] Implement `scripts/next-cycle`: agent.env loader, env guidance
       (TTY prompt + persist / off-TTY setup block), stage detection, template
       brief writer with marker, Inception invocation, single TTY-aware cycle
       invocation, exit translation with stdout passthrough (Req 1-5)
-- [ ] Add `scripts/tests/test_next_cycle.py` — fake-driver fixture recording
+- [x] Add `scripts/tests/test_next_cycle.py` — fake-driver fixture recording
       argv + canned exits/sentinels; cover all six requirements' scenarios
-- [ ] Register `next-cycle` in `scripts/process-manifest.txt` and verify a
+- [x] Register `next-cycle` in `scripts/process-manifest.txt` and verify a
       fresh `install_process_clis` lands it executable with the shebang
       (Req 6)
-- [ ] (analyst) Update `getting-started-reference-driver.md` (one-command
+- [x] (analyst) Update `getting-started-reference-driver.md` (one-command
       path first), `reference-driver.md`, `script-cli-reference.md`
-- [ ] (tester) Run the wrapper suite + full driver/cycle suites +
+- [x] (tester) Run the wrapper suite + full driver/cycle suites +
       `openup-spec-scenarios.py check` + `check-docs.py` + `openup-fence.py
       check --base harness-optional`; live-walk the guided stages on the
       my-product fixture where no endpoint is needed (env block, template

@@ -1,0 +1,241 @@
+#!/usr/bin/env python3
+"""next-cycle — the one guided command from empty project to delivery loop (T-095).
+
+Run ``./scripts/next-cycle`` repeatedly; the tooling tells you what it needs
+and does everything else:
+
+    no endpoint config  -> prompts for it (TTY) or prints the setup block
+    fresh project       -> writes a template stakeholder brief for you to fill
+    filled brief        -> runs the Inception step (vision + initial roadmap)
+    otherwise           -> runs ONE delivery cycle (openup-agent.py cycle)
+
+Guidance is stderr-only; the driver's stdout sentinel passes through verbatim
+and the exit code is the driver's — so an outer loop can consume this wrapper
+exactly like ``cycle`` (``while ./scripts/next-cycle; do :; done``).
+
+Pure composition over scripts/openup-agent.py — no engine logic lives here.
+Stdlib-only.
+"""
+
+import argparse
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+AGENT_ENV_REL = Path(".openup") / "agent.env"
+BRIEF_REL = Path("docs") / "inputs" / "stakeholder-brief.md"
+
+TEMPLATE_MARKER = "<!-- template: replace every section with your product's reality -->"
+
+BRIEF_TEMPLATE = """\
+%s
+
+# Stakeholder Brief — <project name>
+
+## The situation
+
+<Who has what problem today? What have they already tried? Why does it fail?>
+
+## Who cares (stakeholders)
+
+- **<role>** — <what they need from this>
+- **<role>** — <what they need from this>
+
+## What they want (desired outcomes)
+
+- <observable outcome, not a feature list>
+- <observable outcome>
+
+## Constraints & context
+
+- <scale, platform, non-negotiables>
+
+## Explicitly out of scope (for now)
+
+- <the things v1 will NOT do>
+""" % TEMPLATE_MARKER
+
+VISION_INSTRUCTION = (
+    "read docs/inputs/stakeholder-brief.md; produce docs/vision.md, and also "
+    "author an initial docs/roadmap.md with 5-8 pending entries (a table with "
+    "ID, Title, Status, Priority, Dependencies, Value columns) covering the "
+    "path from the first use cases to the core features"
+)
+
+ENV_SETUP_BLOCK = """\
+No LLM endpoint is configured. Point the driver at any OpenAI-compatible
+server, either by exporting the variables:
+
+    export LLM_API_URL=http://localhost:1234/v1   # LM Studio / Ollama / vLLM
+    export LLM_API_KEY=                            # may be empty for local servers
+    export OPENUP_MODEL_MAIN=<model name>          # reasoning / quality-gate tier
+    export OPENUP_MODEL_MID=<model name>           # authoring tier (specs, docs)
+
+or by writing them (KEY=VALUE, one per line) to .openup/agent.env — this
+command loads that file on every run. Then re-run ./scripts/next-cycle"""
+
+
+def _say(msg):
+    for line in msg.splitlines():
+        sys.stderr.write("[next-cycle] %s\n" % line)
+    sys.stderr.flush()
+
+
+def load_agent_env(root, env):
+    """Fold .openup/agent.env (KEY=VALUE, # comments) into env — never
+    overriding variables that are already set."""
+    path = Path(root) / AGENT_ENV_REL
+    if not path.exists():
+        return
+    for raw in path.read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        env.setdefault(key.strip(), value.strip())
+
+
+def ensure_env(root, env, interactive, ask=None):
+    """True when LLM config is present (prompting for it on a TTY)."""
+    if env.get("LLM_API_URL"):
+        return True
+    if not interactive:
+        _say(ENV_SETUP_BLOCK)
+        return False
+    ask = ask or (lambda prompt: input(prompt).strip())
+    _say("No LLM endpoint configured yet — let's set one up.")
+    url = ask("endpoint URL (e.g. http://localhost:1234/v1)> ")
+    if not url:
+        _say(ENV_SETUP_BLOCK)
+        return False
+    key = ask("API key (empty is fine for local servers)> ")
+    main = ask("main-tier model name> ")
+    mid = ask("authoring-tier model name (empty = same as main)> ") or main
+    values = {"LLM_API_URL": url, "LLM_API_KEY": key,
+              "OPENUP_MODEL_MAIN": main, "OPENUP_MODEL_MID": mid}
+    env.update(values)
+    save = ask("save to .openup/agent.env for next time? (yes/no)> ")
+    if (save or "").lower().startswith("y"):
+        path = Path(root) / AGENT_ENV_REL
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("".join("%s=%s\n" % kv for kv in values.items()),
+                        encoding="utf-8")
+        _say("saved %s" % AGENT_ENV_REL)
+    return True
+
+
+def brief_state(root):
+    path = Path(root) / BRIEF_REL
+    if not path.exists():
+        return "missing"
+    if TEMPLATE_MARKER in path.read_text(encoding="utf-8"):
+        return "template"
+    return "filled"
+
+
+def write_template_brief(root):
+    path = Path(root) / BRIEF_REL
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(BRIEF_TEMPLATE, encoding="utf-8")
+
+
+def run_driver(root, args, env):
+    """Run one openup-agent.py invocation. stderr streams through live;
+    stdout (the sentinel) is captured, re-emitted verbatim, and returned so
+    the guidance can read it."""
+    argv = [sys.executable, str(Path(root) / "scripts" / "openup-agent.py")] + args
+    proc = subprocess.run(argv, cwd=str(root), env=env,
+                          stdout=subprocess.PIPE, text=True)
+    if proc.stdout:
+        sys.stdout.write(proc.stdout)
+        sys.stdout.flush()
+    return proc.returncode, proc.stdout or ""
+
+
+def guidance(rc, stdout, stage):
+    if rc == 0:
+        if "ADVANCED" in stdout:
+            return "progress! run ./scripts/next-cycle again to continue."
+        if stage == "inception":
+            return "vision + roadmap authored — run ./scripts/next-cycle again to start delivering."
+        return "nothing to do right now — the sentinel line above says why."
+    return {
+        2: "configuration problem — check the exports / .openup/agent.env "
+           "values above (endpoint URL, model names) and re-run.",
+        3: "the LLM endpoint did not respond — is the server at LLM_API_URL "
+           "running? start it and re-run.",
+        4: "the model hit its turn cap without finishing — re-run to retry; "
+           "weaker models may need a higher cap (openup-agent.py cycle "
+           "--step-max-iterations 15).",
+        5: "waiting on YOU: open the input-request file named above, set "
+           "`status: answered`, fill the `**Answer**:` line (or tick an "
+           "option), then re-run ./scripts/next-cycle.",
+        6: "a deterministic gate failed — read the report above, fix it, and "
+           "re-run (the step will be retried).",
+        7: "this decision path is not automated yet (see T-090/T-091) — run "
+           "`python3 scripts/openup-agent.py run --dir . --procedure next` "
+           "for it, or reprioritize the roadmap.",
+        8: "a command or step failed — the log above names it; fix and re-run.",
+    }.get(rc, "unexpected exit %d — read the log above." % rc)
+
+
+def main(argv=None):
+    ap = argparse.ArgumentParser(
+        prog="next-cycle",
+        description="Guided single entry point: env -> brief -> Inception -> "
+                    "one delivery cycle, with plain next-step guidance.")
+    ap.add_argument("--dir", default=".", help="OpenUP project root (default: .)")
+    args = ap.parse_args(argv)
+
+    root = Path(args.dir).resolve()
+    if not (root / "scripts" / "openup-agent.py").exists():
+        _say("%s has no scripts/openup-agent.py — run this from an OpenUP "
+             "project root (or pass --dir)." % root)
+        return 2
+
+    interactive = sys.stdin.isatty()
+    env = dict(os.environ)
+    load_agent_env(root, env)
+    if not ensure_env(root, env, interactive):
+        return 2
+
+    fresh = not ((root / "docs" / "vision.md").exists()
+                 or (root / "docs" / "roadmap.md").exists())
+    if fresh:
+        state = brief_state(root)
+        if state == "missing":
+            write_template_brief(root)
+            _say("this is a fresh project, and only you know what the product "
+                 "is.\nI wrote a template brief to %s —\nfill in every section "
+                 "with your product's reality, then re-run ./scripts/next-cycle"
+                 % BRIEF_REL)
+            return 0
+        if state == "template":
+            _say("the stakeholder brief at %s still contains the template "
+                 "marker —\nreplace every section with your product's reality "
+                 "(and delete the marker line), then re-run ./scripts/next-cycle"
+                 % BRIEF_REL)
+            return 0
+        _say("brief found — running Inception: the LLM authors docs/vision.md "
+             "+ an initial docs/roadmap.md from it (a few minutes on a local "
+             "model) …")
+        driver_args = ["run", "--dir", str(root),
+                       "--procedure", "openup-create-vision",
+                       "--instruction", VISION_INSTRUCTION]
+        if interactive:
+            driver_args.append("--interactive")
+        rc, out = run_driver(root, driver_args, env)
+        _say(guidance(rc, out, "inception"))
+        return rc
+
+    driver_args = ["cycle", "--dir", str(root)]
+    if interactive:
+        driver_args.append("--interactive")
+    rc, out = run_driver(root, driver_args, env)
+    _say(guidance(rc, out, "cycle"))
+    return rc
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -196,6 +196,22 @@ the sentinel is honored only once the gates are clean. Enforcement never depends
 the model remembering to check. A gate whose script is absent under `--dir` is
 skipped, so the driver stays usable on partial trees.
 
+## The guided entry point — `scripts/next-cycle` (T-095)
+
+```
+./scripts/next-cycle [--dir PATH]
+```
+
+The one command a practitioner needs to remember. A thin, stdlib-only wrapper
+that composes the driver: it loads `.openup/agent.env`, guides missing
+endpoint config (TTY prompt with optional persist, or a copy-paste block +
+exit 2), writes a template stakeholder brief on a fresh project (never
+overwriting a human's file), runs the Inception authoring once the brief is
+filled, and otherwise runs ONE `cycle` (adding `--interactive` on a TTY) —
+translating every typed exit into next-step guidance on stderr while the
+driver's stdout sentinel passes through byte-exact. Outer loops can consume it
+exactly like `cycle`: `while ./scripts/next-cycle; do :; done`.
+
 ## The cycle engine — `openup-agent.py cycle` (T-089)
 
 ```
