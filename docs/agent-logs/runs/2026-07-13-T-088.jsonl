@@ -1,0 +1,1 @@
+{"event": "session_begin", "task_id": "T-088", "goal": "Ship the reference driver via process-manifest so bootstrapped projects can run it", "branch": "feat/T-088-ship-driver", "phase": "construction", "ts": "2026-07-13T14:24:47Z"}
