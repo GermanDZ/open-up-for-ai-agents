@@ -1,7 +1,7 @@
 ---
 id: T-094
 title: Cycle recovery — consent-gated LLM replenishment when nothing is promotable
-status: ready   # proposed → ready → in-progress → done → verified
+status: done
 priority: high   # critical | high | medium | low
 estimate: 1 session
 plan: docs/explorations/2026-07-13-deterministic-cycle-engine.md
