@@ -33,6 +33,12 @@ GATES = [
     ("check-docs", ["python3", "scripts/check-docs.py"]),
 ]
 
+# Gate exit codes that mean "inapplicable here" (skip, don't fail): the fence
+# returns 3 when there is no lane/state to fence — e.g. a fresh-project procedure
+# run (create-vision in Inception) that never went through start-iteration. That
+# is not a violation, so treat it like an absent gate. A real lane still fences.
+GATE_INAPPLICABLE = {"fence": {3}}
+
 DEFAULT_MAX_ITERATIONS = 50
 
 # Async human-input suspend: distinct sentinel + exit code so an outer loop can
@@ -115,6 +121,8 @@ def run_gates(root):
         proc = subprocess.run(argv, cwd=str(root), capture_output=True, text=True)
         if proc.returncode == 0:
             lines.append("%s: OK" % label)
+        elif proc.returncode in GATE_INAPPLICABLE.get(label, set()):
+            lines.append("%s: skipped (inapplicable, exit %d)" % (label, proc.returncode))
         else:
             ok = False
             detail = (proc.stdout + proc.stderr).strip()
@@ -207,12 +215,14 @@ def _dispatch_tool_calls(tool_impl, tool_calls, interactive, root, task_id, ask)
 
 
 def run(dir, procedure, max_iterations=DEFAULT_MAX_ITERATIONS, env=None,
-        interactive=False, _completion=None, _ask=None):
+        interactive=False, instruction=None, _completion=None, _ask=None):
     """Drive `procedure` under `dir`. Return an int exit code.
 
     `interactive` makes `ask_user` prompt on the TTY and wait; otherwise a human
-    question suspends the run into an input-request (exit 5). `_completion` and
-    `_ask` are test seams replacing the live LLM call and the TTY prompt.
+    question suspends the run into an input-request (exit 5). `instruction`, when
+    given, is extra task context appended to the initial user message (e.g. the
+    stakeholder brief to read for a vision run). `_completion` and `_ask` are test
+    seams replacing the live LLM call and the TTY prompt.
     """
     env = os.environ if env is None else env
     root = Path(dir).resolve()
@@ -234,9 +244,12 @@ def run(dir, procedure, max_iterations=DEFAULT_MAX_ITERATIONS, env=None,
          % (procedure, model, llm.completions_url(api_url), root))
 
     tool_impl = tools.Tools(root)
+    user_msg = "Execute the procedure now."
+    if instruction:
+        user_msg += "\n\nTask context:\n" + instruction
     messages = [
         {"role": "system", "content": _system_prompt(root, procedure, procedure_text)},
-        {"role": "user", "content": "Execute the procedure now."},
+        {"role": "user", "content": user_msg},
     ]
 
     usage_log = env.get("OPENUP_AGENT_USAGE_LOG")

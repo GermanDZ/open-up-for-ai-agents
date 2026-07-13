@@ -234,5 +234,108 @@ class BenchHarnessTest(unittest.TestCase):
         self.assertTrue((out / "run-01.driver.log").exists())
 
 
+# ---------------------------------------------------------------------------
+# T-083 — inception-vision scenario (drive create-vision, produce docs/vision.md)
+# ---------------------------------------------------------------------------
+
+_VISION_MD = (
+    "# Vision — ShareShed\n\n"
+    "## Problem Statement\nNeighbors own idle tools; there is no safe, simple way "
+    "to lend and borrow them within a community.\n\n"
+    "## Proposed Solution\nShareShed is a phone-friendly web app for verified "
+    "neighbors to list, reserve, and return tools.\n\n"
+    "## Stakeholders\nBorrowers, lenders, and the community administrator.\n\n"
+    "## Key Features\nCatalogue, reservations, return reminders, membership.\n\n"
+    "## Success Criteria\nTool utilization rises and overdue returns stay low in "
+    "the first season.\n"
+)
+
+# Records whether the driver relayed the scenario's --instruction (it references
+# the brief path, which appears nowhere else).
+_vision = {"instruction_seen": False}
+
+
+class _VisionHandler(BaseHTTPRequestHandler):
+    def do_POST(self):
+        length = int(self.headers.get("Content-Length", 0))
+        req = json.loads(self.rfile.read(length))
+        blob = json.dumps(req.get("messages", []))
+        if "docs/inputs/stakeholder-brief.md" in blob:
+            _vision["instruction_seen"] = True
+        turn = sum(1 for m in req.get("messages", []) if m.get("role") == "assistant")
+        if turn == 0:
+            payload = _asst(tool_calls=[_tool_call("v1", "write_file",
+                            {"path": "docs/vision.md", "content": _VISION_MD})])
+        else:
+            payload = _asst(content="OPENUP-CREATE-VISION: DONE — vision authored")
+        body = json.dumps(payload).encode()
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def log_message(self, *a):
+        pass
+
+
+class VisionScenarioTest(unittest.TestCase):
+    def setUp(self):
+        _vision["instruction_seen"] = False
+        self.server = HTTPServer(("127.0.0.1", 0), _VisionHandler)
+        self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
+        self.thread.start()
+        self.url = "http://127.0.0.1:%d/v1" % self.server.server_address[1]
+        self.tmp = tempfile.TemporaryDirectory()
+
+    def tearDown(self):
+        self.server.shutdown()
+        self.server.server_close()
+        self.tmp.cleanup()
+
+    def test_vision_scenario_scores_valid_vision(self):
+        out = Path(self.tmp.name) / "out"
+        work = Path(self.tmp.name) / "work"
+        env = dict(os.environ)
+        env.update({"LLM_API_URL": self.url, "LLM_API_KEY": "k",
+                    "OPENUP_MODEL_MAIN": "mock", "OPENUP_MODEL_MID": "mock",
+                    "OPENUP_MODEL_SMALL": "mock"})
+        scenario = str(_REPO / "scripts" / "bench-scenarios" / "inception-vision")
+        args = bench.build_parser().parse_args([
+            "--repo", str(_REPO), "--runs", "1", "--out", str(out),
+            "--workdir", str(work), "--scenario", scenario,
+            "--max-iterations", "6", "--timeout", "120",
+        ])
+        rc = bench.run_batch(args, env)
+        self.assertEqual(rc, 0)
+        rec = json.loads((out / "results.jsonl").read_text().splitlines()[0])
+        # Drove create-vision (from scenario.json), produced a sectioned vision,
+        # and relayed the instruction that pointed at the brief.
+        self.assertEqual(rec["outcome"], "pass")
+        self.assertTrue(rec["work"]["deliverable_produced"])
+        self.assertEqual(rec["work"]["missing_markers"], [])
+        self.assertTrue(_vision["instruction_seen"])
+        # No lane to fence on a fresh create-vision run → fence is inapplicable
+        # (treated clean), so this counts as a clean pass.
+        self.assertTrue(rec["gates"]["fence"])
+        agg = json.loads((out / "summary.json").read_text())
+        self.assertEqual(agg["meta"]["procedure"], "openup-create-vision")
+        self.assertEqual(agg["clean_passes"], 1)
+
+    def test_missing_section_fails_the_check(self):
+        """required_markers is real: a vision missing a section fails."""
+        fixture = Path(self.tmp.name) / "fx"
+        seed_sha, scenario = bench.build_fixture(
+            _REPO, fixture,
+            Path(_REPO / "scripts" / "bench-scenarios" / "inception-vision"),
+            include_working_tree=False)
+        (fixture / "docs").mkdir(exist_ok=True)
+        (fixture / "docs" / "vision.md").write_text(
+            "# Vision — ShareShed\nProblem and Stakeholder but no success section.\n")
+        work = bench.work_delta(fixture, seed_sha, scenario)
+        self.assertFalse(work["deliverable_produced"])
+        self.assertIn("Success", work["missing_markers"])
+
+
 if __name__ == "__main__":
     unittest.main()

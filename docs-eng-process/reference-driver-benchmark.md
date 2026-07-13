@@ -152,20 +152,46 @@ completion trail.
 
 ---
 
+## The two built-in scenarios
+
+| Scenario | What it benchmarks | How |
+|---|---|---|
+| `quick-doc` (default) | Can the model **drive the `next` continue-loop** to complete a trivial seeded lane? | Seeds one READY change-folder lane; drives `next`; success = a one-line edit + clean cycle. |
+| `inception-vision` | Can the model turn a **stakeholder brief into a Vision doc** — the framework's real first-iteration value? | Seeds a fresh project + `docs/inputs/stakeholder-brief.md`; drives `openup-create-vision` with an `--instruction` to read the brief; success = a `docs/vision.md` containing the required sections. |
+
+```bash
+# The realistic "stakeholder brief → Vision" benchmark:
+python3 scripts/openup-agent-bench.py --repo . --runs 5 \
+    --scenario scripts/bench-scenarios/inception-vision
+```
+
+`inception-vision` drives a **single authoring procedure** (not the full `next`
+ceremony), so it is far cheaper and more deterministic — the tightest measure of
+"can this model produce a valid vision from a brief."
+
 ## Authoring a new scenario
 
-A scenario is a directory with:
+A scenario is a directory with a `scenario.json` and an `overlay/` tree copied onto
+the fixture before the seed commit. `scenario.json` keys:
 
-- `scenario.json` — `{name, description, expect_pick, deliverable_file,
-  deliverable_marker}`. `expect_pick` is the lane id `resolve` must pick;
-  `deliverable_file` + `deliverable_marker` are the ground-truth work check.
-- `overlay/` — a file tree copied onto the fixture before the seed commit (e.g. a
-  `docs/changes/<id>/plan.md` defining a READY lane).
+| Key | Purpose |
+|---|---|
+| `name`, `description` | Identity. |
+| `procedure` | Default procedure to drive (e.g. `openup-create-vision`). A `--procedure` flag overrides it. |
+| `instruction` | Passed to the driver as `--instruction` — extra task context (e.g. "read the brief at … and produce the vision"). |
+| `expect_pick` | **Optional.** A change-folder lane id `resolve` must pick. Present ⇒ the harness asserts `resolve == pick` before running (lane-based scenarios like `quick-doc`). Omit for procedure-direct scenarios (like `inception-vision`) that seed no lane. |
+| `deliverable_file` + `required_markers` | The ground-truth success check: the file must exist and contain **every** marker in the list. `missing_markers` in the record shows which were absent (so a partial result is diagnosable). `deliverable_marker` (single string) is the back-compat form. |
 
-Point the harness at it with `--scenario path/to/dir`. Keep the deliverable trivial
-and inside the lane's declared `touches` so a clean cycle is fence-clean by
-construction — the benchmark measures whether the driver can *drive the process*,
-not solve a hard problem.
+Keep the deliverable check anchored on **brief-fidelity + structural markers** (for
+`inception-vision`: the project name `ShareShed` plus `Problem` / `Stakeholder` /
+`Success`) so it proves the model both *used the input* and *produced the artifact's
+shape* — not that it solved a hard problem.
+
+> **Non-lane procedures and the fence.** A procedure-direct run (no
+> start-iteration, so no lane/state) has nothing for the write-fence to check — the
+> fence returns exit 3 ("no task"), which the driver and the harness both treat as
+> **inapplicable (skip)**, not a failure. `check-docs` still validates the output. A
+> run inside a real started lane is still fully fenced.
 
 ---
 

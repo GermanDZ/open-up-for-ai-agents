@@ -1,0 +1,4 @@
+{"event": "session_begin", "task_id": "T-083", "goal": "Benchmark scenario: stakeholder brief -> Vision doc via create-vision (driver --instruction + richer scenario format)", "branch": "feat/T-083-inception-vision-scenario", "phase": "construction", "ts": "2026-07-13T13:29:44Z"}
+{"run_id": "b0360185b4d1485b96072e9a0c83a1f5", "event": "commit", "task_id": "T-083", "branch": "feat/T-083-inception-vision-scenario", "sha": "631874ff9fcfe3dfa772a2e60e6a46dccdf71667", "model": null, "session_id": "feat/T-083-inception-vision-scenario", "ts": "2026-07-13T13:38:26Z"}
+{"run_id": "1b0a2cc173da4fd587e9469bf89a69ce", "event": "commit", "task_id": "T-083", "branch": "feat/T-083-inception-vision-scenario", "sha": "a4085173531a2d1f7a08a6261e0a704ec3c483ed", "model": null, "session_id": "feat/T-083-inception-vision-scenario", "ts": "2026-07-13T13:39:47Z"}
+{"event": "session_end", "task_id": "T-083", "ts": "2026-07-13T13:40:30Z"}

@@ -73,7 +73,7 @@ same model and the loop still runs.
 ### CLI flags
 
 ```
-python3 scripts/openup-agent.py run --dir <path> --procedure <name> [--max-iterations N]
+python3 scripts/openup-agent.py run --dir <path> --procedure <name> [--max-iterations N] [--instruction TEXT]
 ```
 
 - `--dir` — the OpenUP project root (must contain `docs-eng-process/procedures/`).
@@ -81,6 +81,11 @@ python3 scripts/openup-agent.py run --dir <path> --procedure <name> [--max-itera
   in the pack works (the driver is procedure-agnostic).
 - `--max-iterations` — turn cap before the loop gives up (default 50). Raise it for
   weaker models that take more turns.
+- `--instruction TEXT` — extra task context appended to the driver's initial user
+  message (e.g. *"read the stakeholder brief at docs/inputs/stakeholder-brief.md and
+  produce the vision"*). This is how you hand a procedure its inputs when it normally
+  takes arguments (`openup-create-vision` wants a project name + problem statement).
+  Absent ⇒ unchanged behavior.
 - `--interactive` — answer the procedure's questions on the TTY. Without it (the
   default), a question **suspends** the run into an input-request for async resolution
   (see [Asking the human](#asking-the-human--ask_user)).
