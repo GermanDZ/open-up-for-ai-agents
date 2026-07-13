@@ -659,3 +659,15 @@ authored when promoted.
 **Dependencies**: T-080, T-072
 
 **See**: `docs/changes/archive/T-083/plan.md` + `docs-eng-process/reference-driver-benchmark.md`
+
+---
+
+## T-084: Benchmark harness archives each run's deliverable for inspection
+**Status**: completed (2026-07-13)
+**Priority**: medium
+**Value**: A vision batch scored 5/5 clean but the produced `docs/vision.md` files died with the torn-down fixtures — quality was unreadable without `--keep`. Now every run's deliverable survives.
+**Description**: Each run copies its `deliverable_file` into `<out>/run-NN.<basename>` (e.g. `run-01.vision.md`) before teardown, recording the path in `deliverable_archived` — so batches keep the artifacts they scored for reading + cross-model diffing. Additive; no scoring change.
+
+**Dependencies**: T-080, T-083
+
+**See**: `docs/changes/archive/T-084/plan.md`
