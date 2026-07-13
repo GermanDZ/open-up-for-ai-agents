@@ -73,7 +73,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-from . import loop, navigator, plan_iteration, tiers
+from . import assess, loop, navigator, plan_iteration, tiers
 
 EXIT_OK = 0
 EXIT_CONFIG = 2
@@ -88,10 +88,11 @@ DEFAULT_STEP_MAX_ITERATIONS = 10
 DEFAULT_STEP_TIER = "authoring"
 
 # Decision paths this slice does NOT run, and the roadmap task that will.
+# Decision paths the engine still cannot advance on its own. assess-iteration and
+# milestone-review are handled (T-091); plan-iteration is handled under recovery
+# (T-090/T-092), so it only lands here under --no-recover.
 UNSUPPORTED_PATHS = {
-    "plan-iteration": "T-090",
-    "assess-iteration": "T-091",
-    "milestone-review": "T-091",
+    "plan-iteration": "T-090 (only reachable here under --no-recover)",
 }
 
 BOX_RE = re.compile(r"^- \[( |x)\] (.*\S)\s*$")
@@ -1009,10 +1010,45 @@ def _run_plan_iteration(root, phase, env, step_tier, cap, interactive,
         roadmap_pending=roadmap_pending, lifecycle=lifecycle, log=_log)
 
 
+def _run_assess(root, decision, env, step_tier, cap, interactive, _completion,
+                _subrun):
+    """Wire the real callables into assess.run_assess (T-091): the grading
+    sub-run, gates, and git-commit. Kept thin — the assess logic lives in
+    assess.py."""
+    root = Path(root)
+    try:
+        model = tiers.resolve_tier_model(root, step_tier, target="driver", env=env)
+    except tiers.TierError as e:
+        _log("FATAL: %s" % e)
+        return EXIT_CONFIG
+
+    def dispatch(instruction, system_prompt):
+        _log("assess: grading sub-run (tier=%s, model=%s)" % (step_tier, model))
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            rc = loop.run(dir=str(root), procedure="assess-iteration",
+                          max_iterations=cap, env=env, interactive=interactive,
+                          instruction=instruction, system_prompt=system_prompt,
+                          model=model, _completion=_completion)
+        out = buf.getvalue().strip()
+        if rc == EXIT_SUSPEND and out:
+            print(out.splitlines()[-1])
+        return rc
+
+    def git_commit(paths, message):
+        _git(["add"] + list(paths), root, check=True)
+        _git(["commit", "-m", message], root, check=True)
+
+    return assess.run_assess(root, decision, dispatch=dispatch,
+                             run_gates=lambda: loop.run_gates(root),
+                             git_commit=git_commit, log=_log)
+
+
 def run_cycle(dir, env=None, step_max_iterations=DEFAULT_STEP_MAX_ITERATIONS,
               step_tier=DEFAULT_STEP_TIER, interactive=False, recover=True,
               navigate=True, _completion=None, _subrun=None, _ask=None,
-              _navigator=None, _plan_iteration=None):
+              _navigator=None, _plan_iteration=None, _assess=None,
+              _milestone=None):
     """Run ONE delivery cycle under ``dir``. Returns an int exit code.
 
     ``recover`` (default True, T-092/T-094) lets the engine rebuild blocking
@@ -1144,6 +1180,20 @@ def run_cycle(dir, env=None, step_max_iterations=DEFAULT_STEP_MAX_ITERATIONS,
                     "then re-run cycle")
         print("OPENUP-NEXT: DONE — %s" % msg)
         return EXIT_OK
+    if path == "assess-iteration":
+        # T-091: grade the exhausted iteration and record ## Assessment.
+        if _assess is not None:
+            return _assess(root, decision)
+        return _run_assess(root, decision, env, step_tier,
+                           step_max_iterations, interactive, _completion, _subrun)
+    if path == "milestone-review":
+        # T-091: prepare evidence + pause for the human go/no-go (zero LLM).
+        if _milestone is not None:
+            return _milestone(root, decision)
+        return assess.run_milestone(
+            root, decision, runner=lambda r, argv: (lambda p: (p.returncode, p.stdout))(
+                _run(["python3"] + list(argv), r)),
+            log=_log, suspend_sentinel=loop.SUSPEND_SENTINEL)
     if path in UNSUPPORTED_PATHS:
         _log("FATAL: decision path '%s' is not supported by the cycle engine "
              "core — it lands with %s. Use the `next` procedure (or the Claude "

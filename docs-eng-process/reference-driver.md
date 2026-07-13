@@ -276,11 +276,11 @@ then** ticks the box — so a gate failure (exit 6) leaves the box unchecked and
 a re-run retries the step. All inter-step state lives in the repo (boxes,
 `.openup/state.json`, the lease): a killed cycle resumes at the first unchecked
 box. `ask_user` inside a sub-run suspends the whole cycle (exit 5) exactly like
-`run`. `plan-iteration` is handled under recovery (single-row promote for
-construction/transition, full Plan Iteration for authoring phases — see below);
-`assess-iteration`/`milestone-review` still exit 7 (they land with T-091), so
-use `run --procedure next` (or the Claude Code skills) for those meanwhile.
-`scripts/openup-loop.sh` keeps driving the `next` procedure until that parity.
+`run`. As of T-091 the engine has **full `/openup-next` parity** — every
+`resolve` decision path is handled: `pick`/`resume` (T-089), `plan-iteration`
+(T-090/T-092, under recovery), and `assess-iteration`/`milestone-review`
+(T-091, see below). Only `plan-iteration` under `--no-recover` still exits 7.
+`scripts/openup-loop.sh` can now drive `cycle` end-to-end.
 
 ### Recovery mode (T-092, default on)
 
@@ -340,7 +340,26 @@ restores the bare typed exits below.
   spec aborts with a typed exit before the instance is written (no half-planned
   iteration is left picked). The re-resolve then picks the first lane, so
   Inception on a bootstrapped project (the ShareShed flow) runs end-to-end through
-  `cycle`. `assess-iteration`/`milestone-review` remain T-091.
+  `cycle`.
+- **Assess (T-091, one grading sub-run).** When a T-090-planned iteration's
+  committed lanes are all delivered and its instance has no `## Assessment`,
+  `resolve` returns `assess-iteration`. Done-ness is already code (it fired the
+  decision); the engine runs **one** bounded grading sub-run to grade the
+  **non-derivable** evaluation criteria against repo evidence (objectives met?
+  demo verdict), writing `.openup/assessment.json`, then **deterministically
+  appends** an `## Assessment` section to the iteration-plan instance (criteria
+  grades + evidence, demo scope, excluded items, discovered-work notes, verdict),
+  gates + commits it, and emits `OPENUP-NEXT: ADVANCED — assessed <iteration>`.
+  It records evidence; it does **not** auto-enqueue discovered work as roadmap
+  scope (that stays behind the T-094 consent gate) and never advances a phase.
+- **Milestone (T-091, zero LLM).** When the roadmap is drained and the phase's
+  exit criteria are met with no milestone record, `resolve` returns
+  `milestone-review`. The engine prepares the evidence and raises the human
+  go/no-go as a T-074 input-request (GO / NO-GO), prints the SUSPEND sentinel, and
+  exits 5 — remembered in `.openup/cycle.json` so a re-run re-suspends without a
+  duplicate. It **records evidence and pauses; it never advances the phase** — the
+  human go/no-go + `openup-lifecycle.py` own that, exactly like
+  `/openup-phase-review`.
 
 ## Exit codes
 
@@ -352,7 +371,7 @@ restores the bare typed exits below.
 | 4 | max iterations reached, no clean sentinel | model never finished, or a gate never passed |
 | 5 | suspended, awaiting a human answer | `ask_user` in non-interactive mode ([above](#asking-the-human--ask_user)) |
 | 6 | `cycle`: gate failed after a step | fence / check-docs red; the box stays unticked |
-| 7 | `cycle`: decision path unsupported | assess / milestone before T-091; plan-iteration only under `--no-recover` or when recovery/planning cannot advance |
+| 7 | `cycle`: decision path unsupported | `plan-iteration` only under `--no-recover` (or when recovery/planning cannot advance); every path is otherwise handled (T-091 parity) |
 | 8 | `cycle`: script-step or ceremony command failed | a box's command exited non-zero; session begin refused |
 
 ## Troubleshooting

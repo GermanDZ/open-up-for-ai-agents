@@ -69,5 +69,6 @@ openup_agent/llm.py
 openup_agent/loop.py
 openup_agent/navigator.py
 openup_agent/plan_iteration.py
+openup_agent/assess.py
 openup_agent/tiers.py
 openup_agent/tools.py

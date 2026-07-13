@@ -230,12 +230,13 @@ class DecisionDispatchTest(CycleFixture):
         self.assertIn("OPENUP-NEXT: DONE — board empty", buf.getvalue())
 
     def test_unsupported_paths_exit_typed_without_begin(self):
-        for path in ("plan-iteration", "assess-iteration", "milestone-review"):
+        # T-091: assess-iteration + milestone-review are now handled; only
+        # plan-iteration remains unsupported, and only under --no-recover (T-090
+        # handles it under recovery). Assess/milestone dispatch is covered by
+        # AssessDispatchTest.
+        for path in ("plan-iteration",):
             with self.subTest(path=path):
                 self._set_decision(_decision(path, task="C3"))
-                # recover=False: this asserts the T-089 baseline that T-092
-                # deliberately changes for plan-iteration's default (Req 5/6);
-                # default-recover behavior is covered by the Recovery* classes.
                 rc = cycle.run_cycle(str(self.root), env=self.env, recover=False)
                 self.assertEqual(rc, cycle.EXIT_UNSUPPORTED)
                 # no session begin ran, no state was created
@@ -556,11 +557,19 @@ class RecoveryCaseBTest(CycleFixture):
         self.assertTrue((self.root / "docs" / "changes" / self.TASK /
                          "plan.md").exists())
 
-    def test_assess_iteration_untouched_by_recovery(self):
+    def test_assess_iteration_dispatched_not_case_b(self):
+        # T-091: Case B (done-lane reconcile) does not fire for assess-iteration;
+        # the decision goes straight to the assess handler.
         self._seed_done_lane(decision_path="assess-iteration")
+        hit = {}
+
+        def fake_assess(root, decision):
+            hit["yes"] = True
+            return 0
         rc = cycle.run_cycle(str(self.root), env=self.env, navigate=False,
-                             _subrun=self._fail_subrun)
-        self.assertEqual(rc, cycle.EXIT_UNSUPPORTED)
+                             _subrun=self._fail_subrun, _assess=fake_assess)
+        self.assertTrue(hit.get("yes"))
+        self.assertEqual(rc, 0)
         self.assertTrue((self.root / "docs" / "changes" / self.TASK /
                          "plan.md").exists())  # no closure side effects
 
@@ -897,6 +906,49 @@ class PlanIterationDispatchTest(CycleFixture):
             str(self.root), env=self.env, _subrun=subrun,
             _plan_iteration=lambda *a: self.fail("handler ran for construction"))
         self.assertNotEqual(rc, 0)  # promote rejected the proposed spec
+
+
+# --------------------------------------------------------------------------
+# Assess + milestone wiring (T-091)
+# --------------------------------------------------------------------------
+class AssessMilestoneDispatchTest(CycleFixture):
+    def test_assess_iteration_invokes_handler(self):
+        self._set_decision(_decision("assess-iteration", task="I1"))
+        self._git("add", "-A"); self._git("commit", "-m", "d", "-q")
+        hit = {}
+
+        def fake_assess(root, dec):
+            hit["a"] = True
+            return 0
+        rc = cycle.run_cycle(str(self.root), env=self.env, navigate=False,
+                             _assess=fake_assess)
+        self.assertTrue(hit.get("a"))
+        self.assertEqual(rc, 0)
+
+    def test_milestone_invokes_handler_and_suspends(self):
+        self._set_decision(_decision("milestone-review", task="inception"))
+        self._git("add", "-A"); self._git("commit", "-m", "d", "-q")
+        hit = {}
+
+        def fake_ms(root, dec):
+            hit["m"] = True
+            return cycle.EXIT_SUSPEND
+        rc = cycle.run_cycle(str(self.root), env=self.env, navigate=False,
+                             _milestone=fake_ms)
+        self.assertTrue(hit.get("m"))
+        self.assertEqual(rc, cycle.EXIT_SUSPEND)
+
+    def test_milestone_review_no_longer_unsupported(self):
+        # Real handler (no seam): creates a go/no-go request + suspends (exit 5).
+        self._set_decision(_decision("milestone-review", task="inception"))
+        self._git("add", "-A"); self._git("commit", "-m", "d", "-q")
+        import io, contextlib
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            rc = cycle.run_cycle(str(self.root), env=self.env, navigate=False)
+        self.assertEqual(rc, cycle.EXIT_SUSPEND)
+        reqs = list((self.root / "docs" / "input-requests").glob("*.md"))
+        self.assertEqual(len(reqs), 1)
 
 
 if __name__ == "__main__":

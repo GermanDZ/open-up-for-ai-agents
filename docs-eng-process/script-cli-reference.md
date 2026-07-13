@@ -322,10 +322,16 @@ cycle  --dir PATH [--step-max-iterations 10] [--step-tier authoring]
   one bounded **process-navigator** sub-run picks the next procedure from the
   process map + lifecycle status + a Ring-1 artifact survey and runs it, or
   raises a missing human input as an input-request (exit 5); product scope stays
-  behind the T-094 consent gate. Exit 6 =
+  behind the T-094 consent gate. Assess + milestone (T-091 — full `/openup-next`
+  parity): `assess-iteration` grades the exhausted iteration's non-derivable
+  criteria in one bounded sub-run and appends a deterministic `## Assessment`
+  section to its iteration-plan instance (`ADVANCED` sentinel; discovered work
+  recorded, not auto-enqueued); `milestone-review` prepares evidence and raises
+  the human go/no-go as an input-request (zero LLM, `SUSPEND` exit 5, no dup,
+  never advances the phase). Exit 6 =
   gate failed after a step (box left unticked, re-run retries), 7 = decision
-  path not supported (assess/milestone → T-091; plan-iteration only under
-  `--no-recover` or when recovery cannot advance), 8 = a script-step /
+  path not supported (`plan-iteration` only under `--no-recover`; every path is
+  otherwise handled), 8 = a script-step /
   session / recovery command failed. Full model + step
   classification: [reference-driver.md](reference-driver.md).
 

@@ -14,6 +14,13 @@ arguments:
 
 # Phase Review (milestone go/no-go)
 
+> **Ceremony authority (T-091):** under the reference-driver `cycle` engine, the
+> `milestone-review` path is **zero-LLM** — the engine prepares the evidence and
+> raises the go/no-go input-request itself, suspending (exit 5) without advancing
+> the phase (see [reference-driver.md](../reference-driver.md) → milestone). This
+> procedure is the human-readable description of that pause + the go/no-go
+> content. In the Claude Code harness the model performs it in-context below.
+
 The **project-lifecycle** gate: at a phase boundary OpenUP pauses for a human
 go/no-go (LCO → LCA → IOC → PR) before advancing. This skill prepares the
 derived evidence, **pauses for that human decision** via the T-074 input-request
