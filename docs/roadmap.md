@@ -576,7 +576,7 @@ authored when promoted.
 ---
 
 ## T-078: assess-iteration + milestone-review wiring
-**Status**: ready
+**Status**: in-progress
 **Priority**: high
 **Value**: The loop *converges* instead of draining a queue — at iteration end it verifies evaluation criteria, demos only completed acceptance-tested work, feeds discovered work back, and at a phase boundary pauses for a human go/no-go rather than silently rolling on. This is the safety-critical human decision point the framework exists to provide.
 **Description**: New `/openup-assess-iteration` (or an upgraded `/openup-retrospective`) running Assess Results: check evaluation criteria, demo completed acceptance-tested work only, feed new work/defects back into the roadmap, write the assessment into the iteration-plan instance, and trigger `/openup-phase-review` when the Development Case says the phase is done. Add resolve paths `plan-iteration` / `assess-iteration` / `milestone-review` to `openup-next` + `openup-agent.py` procedures; the milestone-review path pauses via the T-074 `/openup-request-input` machinery and records the human decision (never advances a phase itself). The DONE sentinel changes meaning from "roadmap empty" to "milestone-review pending human input / PR milestone accepted".

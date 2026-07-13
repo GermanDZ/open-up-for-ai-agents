@@ -1,10 +1,10 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 47
-**Iteration Goal**: T-077 — process-map.yaml + phase-aware plan-iteration
-**Status**: completed
-**Current Task**: T-077
+**Iteration**: 48
+**Iteration Goal**: T-078 — assess-iteration + milestone-review wiring
+**Status**: in-progress
+**Current Task**: T-078
 **Iteration Started**: 2026-06-18
 **Last Updated**: 2026-07-13
 **Updated By**: sync-status.py
