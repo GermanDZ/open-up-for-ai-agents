@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "task_id": "T-076",
+  "iteration": 46,
+  "phase": "construction",
+  "track": "standard",
+  "branch": "feat/T-076-development-case-config",
+  "worktree": "/Users/germandz/personal-code/ai-dev-framework/open-up-for-ai-agents-T-076",
+  "session_id": "feat/T-076-development-case-config",
+  "started_at": "2026-07-13T08:05:12Z",
+  "gates": {
+    "team_deployed": false,
+    "plan_persisted": true,
+    "log_written": true,
+    "roadmap_synced": true,
+    "retro_due": false
+  },
+  "iterations_since_retro": 1
+}

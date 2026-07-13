@@ -294,6 +294,47 @@ def check_section_status_drift(repo: str) -> list[Finding]:
     return out
 
 
+def check_process_config(repo: str) -> list[Finding]:
+    """Report the Development Case (`process:` section of docs/project-config.yaml,
+    T-076) status. Read-only: reuses check-docs.py's structural validator. INFO
+    when absent/valid, WARNING (never ERROR) when malformed — the human-readable
+    pointer at check-docs.py, which is the actual gate (run by check_aggregate)."""
+    import importlib.util
+    out: list[Finding] = []
+    chk = "process-config"
+    config = os.path.join(repo, "docs", "project-config.yaml")
+    checker = os.path.join(repo, "scripts", "check-docs.py")
+    if not os.path.isfile(checker):
+        return out
+    if not os.path.isfile(config):
+        out.append(Finding(INFO, chk,
+                           "no docs/project-config.yaml — framework defaults apply"))
+        return out
+    try:
+        spec = importlib.util.spec_from_file_location("_openup_check_docs", checker)
+        cd = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(cd)  # type: ignore[union-attr]
+        from pathlib import Path
+        findings = cd.validate_process_config(Path(config))
+        process = cd.parse_process_section(Path(config).read_text(encoding="utf-8"))
+    except Exception as exc:  # never let a diagnostic crash the doctor
+        out.append(Finding(INFO, chk, f"could not check ({exc})"))
+        return out
+    if process is None:
+        out.append(Finding(INFO, chk,
+                           "no `process:` section — framework defaults apply"))
+        return out
+    if findings:
+        for f in findings:
+            out.append(Finding(WARNING, chk,
+                               f"invalid `process:` section — {f.message} "
+                               f"(run `python3 scripts/check-docs.py`)"))
+    else:
+        arche = process.get("archetype", "?")
+        out.append(Finding(INFO, chk, f"Development Case: archetype={arche}"))
+    return out
+
+
 # ── Reporting ────────────────────────────────────────────────────────────────
 def render_human(findings: list[Finding]) -> str:
     order = [ERROR, WARNING, INFO]
@@ -339,6 +380,7 @@ def main(argv=None) -> int:
     findings += check_state_integrity(repo)
     findings += check_aggregate(repo)
     findings += check_section_status_drift(repo)
+    findings += check_process_config(repo)
 
     has_error = any(f.severity == ERROR for f in findings)
 

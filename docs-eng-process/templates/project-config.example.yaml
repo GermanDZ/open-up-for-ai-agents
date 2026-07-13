@@ -40,3 +40,17 @@ rules:
 #   coverage: true               # set false to drop --coverage from the hook run
 #   severity:                    # per-rule override; key = "type -> relation -> target"
 #     "requirement -> verified-by -> test-case": advisory
+
+# process: OpenUP's Development Case made machine-readable (T-076). An archetype
+# sets per-phase defaults (iteration budgets, required artifacts, exit criteria,
+# milestone-review formality); any explicit phases: key overrides that default.
+# Absent = framework defaults apply. Structurally validated by check-docs.py.
+# Full archetype tables + precedence: docs-eng-process/project-config.md
+# process:
+#   archetype: product           # quick | mvp | product  (sets the defaults below)
+#   phases:                      # optional per-phase overrides of the archetype
+#     inception:    { iterations: 1, artifacts: [vision, use-case-outline, risk-list] }
+#     elaboration:  { iterations: auto, artifacts: [architecture-notebook, detailed-use-cases, test-plan], exit: architecture-validated }
+#     construction: { iterations: many, parallel: true }
+#     transition:   { gate: human }
+#   milestone_review: human      # human | auto-assess (auto only for minor milestones)

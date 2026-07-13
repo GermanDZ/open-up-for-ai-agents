@@ -151,6 +151,24 @@ checklist per hop) and by task-spec `## Rollout` default states. The three names
 are the documented example, **not** a schema — any ordered list works. Left
 commented, deployment behaves as the single-hop framework default.
 
+Also **append** this commented `process:` starter — the machine-readable
+Development Case that tailors the whole lifecycle by archetype (added here for
+the same reason: the template is OpenUP-layer read-only):
+
+```yaml
+# process:                  # Development Case — tailor the lifecycle by archetype
+#   archetype: product      # quick | mvp | product  (sets the per-phase defaults)
+#   # phases: {}            # optional: override any phase's defaults, e.g.
+#   #   construction: { iterations: many, parallel: true }
+#   milestone_review: human # human | auto-assess (auto only for minor milestones)
+```
+
+Uncommented, `archetype` selects a per-phase default set (`quick` degenerates to
+today's `/openup-quick-task` ceremony; `product` sizes Elaboration to open
+architectural risk); any explicit `phases:` key overrides that default. The
+section is structurally validated by `check-docs.py`. Left commented, the
+framework defaults apply. Full mapping: `docs-eng-process/project-config.md`.
+
 ### 4. Configure Agent Teams (if not skipped)
 
 **Check if agent teams are enabled:**

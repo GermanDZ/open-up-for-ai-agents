@@ -543,7 +543,7 @@ authored when promoted.
 ---
 
 ## T-076: Development Case config (`process:` section + archetypes)
-**Status**: pending
+**Status**: completed (2026-07-13)
 **Priority**: high
 **Value**: A project maintainer tailors the whole lifecycle from one config block — the same engine runs a quick script, an MVP, or a full product by data — so ceremony matches scope instead of being one-size-fits-all (the quick archetype must degenerate to today's `/openup-quick-task` token cost, or the design fails its own efficiency bar).
 **Description**: Extend `docs/project-config.yaml` with a `process:` section — OpenUP's Development Case made machine-readable: an `archetype` (quick | mvp | product) setting per-phase defaults (iteration budgets, required artifact set per milestone, exit criteria, milestone-review formality: human | auto-assess). Validate the section in `check-docs.py` / `openup-doctor`. Precedence extends the existing framework-rubric → project-rules chain documented in `docs-eng-process/project-config.md`.
