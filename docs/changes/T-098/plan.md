@@ -158,16 +158,16 @@ finish_reason. Both additions are opt-in / behavior-preserving when their trigge
 
 ## Operations
 
-- [ ] Add `VISION_INSTRUCTION` + `_bootstrap_step(root, facts)` to `navigator.py`
+- [x] Add `VISION_INSTRUCTION` + `_bootstrap_step(root, facts)` to `navigator.py`
   and wire the fast-path into `run_navigator` before the LLM sub-run (scaffold /
   run create-vision; else defer to the LLM navigator).
-- [ ] Add `_append_debug` + the `OPENUP_AGENT_DEBUG_LOG` hook to `loop.run`
+- [x] Add `_append_debug` + the `OPENUP_AGENT_DEBUG_LOG` hook to `loop.run`
   (mirroring `_append_usage`; snapshot request messages + response).
-- [ ] (tester) Navigator fast-path tests + a debug-log test (set → one record;
+- [x] (tester) Navigator fast-path tests + a debug-log test (set → one record;
   unset → no file, behavior unchanged).
-- [ ] Update `reference-driver.md` (navigator fast-path) + `script-cli-reference.md`
+- [x] Update `reference-driver.md` (navigator fast-path) + `script-cli-reference.md`
   (`OPENUP_AGENT_DEBUG_LOG`).
-- [ ] (tester) Full driver+navigator suite green; `check-docs`,
+- [x] (tester) Full driver+navigator suite green; `check-docs`,
   `openup-spec-scenarios`, `openup-fence.py check --base harness-optional` green.
 
 ## Norms

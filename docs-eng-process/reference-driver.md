@@ -59,6 +59,7 @@ All configuration is environment variables — nothing to edit in the repo.
 | `OPENUP_MODEL_MID` | optional | Model for the `authoring` tier. Falls back to `local-mid` if unset. |
 | `OPENUP_MODEL_SMALL` | optional | Model for the `scribe` / `coordination` tiers. Falls back to `local-small` if unset. |
 | `OPENUP_AGENT_USAGE_LOG` | optional | Path to append one JSON line per LLM call — `{iteration, model, latency_ms, usage:{prompt_tokens, completion_tokens, total_tokens}}`. Unset ⇒ no file, no behavior change. Used by the benchmark harness (see [reference-driver-benchmark.md](reference-driver-benchmark.md)). |
+| `OPENUP_AGENT_DEBUG_LOG` | optional | Path to append one JSON line per LLM call with the **full interaction** — `{iteration, model, request:[messages…], response:{content, tool_calls, finish_reason}}`. The transcript to inspect *why* a (weak local) model misbehaved — e.g. skipped a required `write_file` or emitted the sentinel too early. Unset ⇒ no file, no behavior change; write failures are swallowed. |
 | `OPENUP_AGENT_TIMEOUT` | optional | Per-LLM-call socket timeout in seconds (default **600**). Raise it for slow local models with long generations. A call that exceeds it surfaces as a clean `endpoint-error` (exit 3), never an uncaught crash. |
 
 \* If your endpoint requires auth and `LLM_API_KEY` is empty, you'll get an HTTP 401
@@ -222,8 +223,15 @@ the process, not with the wrapper.
 ### The process navigator (T-096)
 
 When the deterministic layers find nothing to execute (a `noop` — most often a
-fresh project with no `docs/roadmap.md`), `cycle` runs ONE bounded
-**process-navigator** sub-run instead of printing a hardcoded hint. The
+fresh project with no `docs/roadmap.md`), the navigator first handles the
+**unambiguous Inception bootstrap in code** (T-098), *without* an LLM call — so a
+fresh project converges even when a weak model fails to emit a decision file: at
+`phase: inception` with no `docs/vision.md`, if there is no filled stakeholder
+brief it scaffolds the brief template (below); if a filled brief exists it runs
+`openup-create-vision` directly (the model only *authors*, which it does
+reliably). Only a genuinely ambiguous state (a vision already exists but the loop
+is stuck) falls through to ONE bounded **process-navigator** sub-run instead of a
+hardcoded hint. The
 navigator is handed *facts* computed in code — the process map
 (`process-map.yaml`), `openup-lifecycle.py status`, a Ring-1 artifact survey
 (which of vision/roadmap/use-cases/architecture exist), and the procedures

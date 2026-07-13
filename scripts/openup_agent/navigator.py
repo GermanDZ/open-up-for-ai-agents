@@ -75,6 +75,16 @@ TEMPLATE_MARKER = ("<!-- template: replace every section with your product's "
 
 SCAFFOLDABLE = frozenset({DEFAULT_INPUT_PATH})
 
+# The standard instruction for the deterministic create-vision bootstrap step
+# (T-098): with a filled brief and no vision, authoring the vision + an initial
+# roadmap is the unambiguous next move — the LLM only *authors* (reliable), so
+# navigation does not depend on it emitting a decision file.
+VISION_INSTRUCTION = (
+    "read docs/inputs/stakeholder-brief.md; produce docs/vision.md, and also "
+    "author an initial docs/roadmap.md with 5-8 pending entries (a table with "
+    "ID, Title, Status, Priority, Dependencies, Value columns) covering the path "
+    "from the first use cases to the core features")
+
 BRIEF_TEMPLATE = """\
 %s
 
@@ -332,6 +342,30 @@ def _default_input_path(root):
     return DEFAULT_INPUT_PATH
 
 
+def _bootstrap_step(root, facts):
+    """The deterministic Inception-bootstrap decision (T-098) — no navigator LLM.
+
+    The fresh pre-vision states are unambiguous, so the driver must not depend on
+    a weak model emitting a decision file to get past them:
+      - inception, no vision, no filled brief -> ("scaffold", brief_path)
+      - inception, filled brief, no vision     -> ("procedure", "openup-create-vision", instruction)
+    Returns None for any other state (a vision exists, a non-inception phase, or
+    create-vision is not in the procedures index) — those defer to the LLM
+    navigator.
+    """
+    phase = (facts.get("phase") or "").strip().lower()
+    if phase != "inception":
+        return None
+    ring1 = facts.get("ring1_artifacts") or {}
+    if ring1.get("vision"):
+        return None
+    if not ring1.get("stakeholder_brief"):
+        return ("scaffold", DEFAULT_INPUT_PATH)
+    if "openup-create-vision" not in (facts.get("procedures_index") or []):
+        return None
+    return ("procedure", "openup-create-vision", VISION_INSTRUCTION)
+
+
 def _scaffold_input(root, rel_path, missing, log, print_, suspend_sentinel):
     """Scaffold a fillable template at ``rel_path`` (never clobbering a filled or
     partially-filled file) and suspend, guiding the human to fill it. This is the
@@ -407,6 +441,20 @@ def run_navigator(root, *, dispatch, run_procedure, runner=_subprocess_runner,
     log("navigating: phase=%s, ring1=%s"
         % (facts.get("phase"),
            {k: v for k, v in facts.get("ring1_artifacts", {}).items() if v}))
+
+    # T-098: handle the unambiguous Inception bootstrap deterministically — do NOT
+    # spend (or depend on) a navigator LLM call a weak model may not complete.
+    boot = _bootstrap_step(root, facts)
+    if boot is not None:
+        if boot[0] == "scaffold":
+            log("navigator: fresh Inception, no brief — scaffolding %s "
+                "(deterministic, no navigator LLM)" % boot[1])
+            return _scaffold_input(root, boot[1], ["a stakeholder brief"],
+                                   log, print_, suspend_sentinel)
+        # ("procedure", name, instruction): filled brief, no vision → author it.
+        log("navigator: filled brief, no vision — running %s deterministically "
+            "(no navigator LLM; the model only authors)" % boot[1])
+        return run_procedure(boot[1], boot[2])
 
     _clear_decision(root)  # never read a stale decision
     instruction = render_navigator_instruction(facts)

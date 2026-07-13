@@ -79,6 +79,37 @@ def _append_usage(path, iteration, model, latency_ms, response):
         _log("usage-log write failed (%s); continuing" % e)
 
 
+def _append_debug(path, iteration, model, request_messages, response):
+    """Append one FULL LLM interaction to OPENUP_AGENT_DEBUG_LOG (T-098) — the
+    request messages sent and the raw response (content, tool calls, finish
+    reason) — so a weak model's behavior (e.g. skipping a required write_file, or
+    emitting the sentinel too early) is inspectable. Opt-in side channel: when the
+    env var is unset the caller never invokes this, so the driver's behavior is
+    byte-for-byte unchanged. Write failures are swallowed — instrumentation must
+    never break a run."""
+    choice = {}
+    if isinstance(response, dict):
+        choices = response.get("choices") or []
+        if choices and isinstance(choices[0], dict):
+            choice = choices[0]
+    msg = choice.get("message") or {}
+    record = {
+        "iteration": iteration,
+        "model": model,
+        "request": request_messages,
+        "response": {
+            "content": msg.get("content"),
+            "tool_calls": msg.get("tool_calls") or [],
+            "finish_reason": choice.get("finish_reason"),
+        },
+    }
+    try:
+        with open(path, "a", encoding="utf-8") as fh:
+            fh.write(json.dumps(record, ensure_ascii=False, default=str) + "\n")
+    except OSError as e:
+        _log("debug-log write failed (%s); continuing" % e)
+
+
 def _env_config(env):
     api_url = env.get("LLM_API_URL")
     if not api_url:
@@ -265,6 +296,7 @@ def run(dir, procedure, max_iterations=DEFAULT_MAX_ITERATIONS, env=None,
     ]
 
     usage_log = env.get("OPENUP_AGENT_USAGE_LOG")
+    debug_log = env.get("OPENUP_AGENT_DEBUG_LOG")
     try:
         req_timeout = int(env.get("OPENUP_AGENT_TIMEOUT", "600"))
     except ValueError:
@@ -283,6 +315,8 @@ def run(dir, procedure, max_iterations=DEFAULT_MAX_ITERATIONS, env=None,
             if usage_log:
                 _append_usage(usage_log, i, model,
                               int((time.monotonic() - _t0) * 1000), response)
+            if debug_log:
+                _append_debug(debug_log, i, model, list(messages), response)
             message = llm.first_message(response)
         except llm.LLMError as e:
             _log("FATAL: endpoint error on iteration %d: %s" % (i, e))
