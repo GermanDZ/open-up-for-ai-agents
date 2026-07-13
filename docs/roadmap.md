@@ -493,3 +493,114 @@ authored when promoted.
 **Dependencies**: T-072, T-074
 
 **See**: `Planned: Harness-optional OpenUP core` block above + `docs/explorations/2026-07-12-harness-agnostic-openup.md` — full iteration plan authored on promote
+
+---
+
+<!-- plan-hook: 2026-07-13 -->
+### Planned: Phase-aware OpenUP loop — make the automated cycle follow the lifecycle
+
+- **Status**: `planned` (awaiting implementation)
+- **Exploration**: [explorations/2026-07-13-phase-aware-loop-redesign.md](explorations/2026-07-13-phase-aware-loop-redesign.md) (gap analysis + redesign) + [explorations/2026-07-13-openup-kb-process-model.md](explorations/2026-07-13-openup-kb-process-model.md) (authoritative KB distillation)
+- **Created**: 2026-07-13
+- **Goal**: Make the automated loop *follow* OpenUP's three-layer state machine —
+  start each cycle from the product's current phase, run real iterations composed
+  of per-role activities, and pause for a human milestone go/no-go — instead of
+  running a flat task queue the model re-invents each session. Adds the two missing
+  outer layers (project lifecycle + iteration lifecycle) over the working
+  micro-increment layer; lanes, leases, and the write-fence stay unchanged.
+- **Design principles**: derive-don't-author (phase/iteration state from
+  deterministic scripts reading repo facts, never model judgment mid-loop); humans
+  own the go/no-go (the loop prepares evidence and pauses via the T-074
+  input-request machinery — it never advances a phase itself); tailoring is data (a
+  per-project Development Case in config); the micro-increment layer is untouched.
+- **Ordered deliverables**: T-075 (lifecycle status — read-only, unblocks all) →
+  T-076 (Development Case config) → T-077 (process-map + phase-aware plan-iteration
+  — biggest slice) → T-078 (assess-iteration + milestone-review — the convergence
+  step) → T-079 (parallel iterations). Full iteration plan authored per task on
+  promote, as the harness-optional program does.
+- **Program acceptance**: one `/openup-next`-driven cycle resolves the current
+  phase mechanically, plans a phase-appropriate iteration, executes it, runs Assess
+  Results, and — at a phase boundary — pauses for a human milestone decision rather
+  than draining to an empty queue.
+- **Next step**: Run `/openup-start-iteration task_id: T-075`.
+
+---
+
+## T-075: openup-lifecycle.py status + milestone decision records
+**Status**: pending
+**Priority**: high
+**Value**: Everyone driving the loop gets an honest, derived answer to "what phase are we in and what does this milestone still need" — read from repo facts, not a stale hand-set label — which is the foundation every later slice reads from, and the smallest safe first step (advisory only, no loop behavior change).
+**Description**: New read-only `scripts/openup-lifecycle.py status` computing the current phase + per-milestone criteria state from work-product instances and their `status:` frontmatter (T-038 typed traceability), roadmap rows, archived change folders, and milestone decision records. Add `docs/product/milestones/<phase>-<cycle>.md` records (human go/no-go, written only via `/openup-phase-review`) as the source of truth for "phase advanced"; `phase` in `.openup/state.json` becomes a cache stamped from this status. Same never-hand-edit rule as the board. No loop behavior change yet.
+- `scripts/openup-lifecycle.py status` (derived phase + milestone criteria, read-only)
+- `docs/product/milestones/` decision records + `cycle` counter (supports return-to-Construction)
+- `phase` in state becomes a derived cache (no longer hand-set via `project-status.md`)
+- Entry in `process-manifest.txt` + `script-cli-reference.md`
+
+**Dependencies**: —
+
+**See**: `docs/explorations/2026-07-13-phase-aware-loop-redesign.md` §3.1, §5 — full iteration plan authored on promote
+
+---
+
+## T-076: Development Case config (`process:` section + archetypes)
+**Status**: pending
+**Priority**: high
+**Value**: A project maintainer tailors the whole lifecycle from one config block — the same engine runs a quick script, an MVP, or a full product by data — so ceremony matches scope instead of being one-size-fits-all (the quick archetype must degenerate to today's `/openup-quick-task` token cost, or the design fails its own efficiency bar).
+**Description**: Extend `docs/project-config.yaml` with a `process:` section — OpenUP's Development Case made machine-readable: an `archetype` (quick | mvp | product) setting per-phase defaults (iteration budgets, required artifact set per milestone, exit criteria, milestone-review formality: human | auto-assess). Validate the section in `check-docs.py` / `openup-doctor`. Precedence extends the existing framework-rubric → project-rules chain documented in `docs-eng-process/project-config.md`.
+- `process:` section + archetype defaults (quick/mvp/product) in `project-config.yaml`
+- Schema + validation in `check-docs.py`; read-only drift warning in `openup-doctor`
+- Development Case mapping + precedence documented in `docs-eng-process/project-config.md`
+- Commented starter block emitted by `/openup-init`
+
+**Dependencies**: —
+
+**See**: `docs/explorations/2026-07-13-phase-aware-loop-redesign.md` §3.2, §5 — full iteration plan authored on promote
+
+---
+
+## T-077: process-map.yaml + phase-aware plan-iteration
+**Status**: pending
+**Priority**: high
+**Value**: The loop stops re-inventing a process each run — `/openup-start-iteration` becomes real Plan Iteration, generating phase-appropriate lanes (vision/use-case/risk in Inception; architecture/skeleton/test in Elaboration; dev/test in Construction) from a data-encoded process map, so a human no longer hand-writes each roadmap row and the four phase skills stop being parallel manual guidance. Biggest slice.
+**Description**: New framework-owned `docs-eng-process/process-map.yaml` encoding phase → activity → role → skill (KB §3/§4 as data). `/openup-start-iteration` becomes Plan Iteration proper: 1–5 objectives from risk list + PM value order + phase objectives, commits work items, and generates non-hand-written lanes from the map. Each planned iteration is minted with a stable id/name (e.g. `C3` = Construction iteration 3), and its committed work-item / lane ids are allocated **under that prefix** (`C3-NNN`) via the existing `openup-claims.py reserve-id --prefix` machinery — so every task is traceable to its iteration by id. `openup-board.py` / `openup-roadmap.py` resolve becomes lifecycle-aware and iteration-scoped; the one-row-at-a-time promote path dissolves into plan-iteration (quick archetype degenerates to ~today's single-work-item behavior). Phase skills become thin fronts over the map.
+- `docs-eng-process/process-map.yaml` (phase→activity→role→skill)
+- `/openup-start-iteration` = Plan Iteration (objective-driven; generates phase-appropriate lanes)
+- Iteration minted with a stable id/name; work-item / lane ids allocated under that prefix (`<iter-id>-NNN`, reusing `openup-claims.py --prefix`)
+- lifecycle-aware, iteration-scoped resolve in `openup-board.py` / `openup-roadmap.py`; promote → plan-iteration
+- Phase skills refactored to thin fronts over the map
+
+**Dependencies**: T-075, T-076
+
+**See**: `docs/explorations/2026-07-13-phase-aware-loop-redesign.md` §3.3, §3.4, §5 — full iteration plan authored on promote
+
+---
+
+## T-078: assess-iteration + milestone-review wiring
+**Status**: pending
+**Priority**: high
+**Value**: The loop *converges* instead of draining a queue — at iteration end it verifies evaluation criteria, demos only completed acceptance-tested work, feeds discovered work back, and at a phase boundary pauses for a human go/no-go rather than silently rolling on. This is the safety-critical human decision point the framework exists to provide.
+**Description**: New `/openup-assess-iteration` (or an upgraded `/openup-retrospective`) running Assess Results: check evaluation criteria, demo completed acceptance-tested work only, feed new work/defects back into the roadmap, write the assessment into the iteration-plan instance, and trigger `/openup-phase-review` when the Development Case says the phase is done. Add resolve paths `plan-iteration` / `assess-iteration` / `milestone-review` to `openup-next` + `openup-agent.py` procedures; the milestone-review path pauses via the T-074 `/openup-request-input` machinery and records the human decision (never advances a phase itself). The DONE sentinel changes meaning from "roadmap empty" to "milestone-review pending human input / PR milestone accepted".
+- `/openup-assess-iteration` (Assess Results incl. phase-end trigger)
+- `openup-next` + `openup-agent.py` procedures gain plan-iteration / assess-iteration / milestone-review paths
+- `/openup-phase-review` wired into the loop: pauses via T-074 input-request, writes the milestone record
+- `.openup/state.json` schema 2 (`iteration_id`, `cycle`; `phase` = derived cache)
+
+**Dependencies**: T-075, T-077
+
+**See**: `docs/explorations/2026-07-13-phase-aware-loop-redesign.md` §3.4, §3.5, §5 — full iteration plan authored on promote
+
+---
+
+## T-079: Parallel Construction iterations (non-colliding clusters)
+**Status**: pending
+**Priority**: medium
+**Value**: Low-dependency features deliver concurrently — the planner partitions committed work items into non-colliding iteration clusters (disjoint `touches` + use-case dependencies), lifting the existing lane-collision machinery one level to compress Construction wall-clock without a human wiring parallelism; and because each big Construction iteration is named/numbered with its tasks prefixed by that iteration id, work from concurrent iterations stays easy to track and never id-collides.
+**Description**: Number/name each "big" Construction iteration and prefix its task ids with that iteration id (`<iter-id>-NNN`, built on T-077's minting), so tasks from different concurrent iterations are trivially attributable to their iteration and cannot collide on ids. Allow N concurrent iterations whose committed work items have disjoint `touches` and use-case dependencies; `openup-board.py` already computes collisions, and the planner partitions committed work items into non-colliding clusters. Depends on worktree-per-lane (live-run finding F5) for isolation.
+- Named/numbered Construction iterations; task ids carry the iteration prefix (`<iter-id>-NNN`) for cross-iteration tracking + collision-free ids
+- Planner partitions committed work items into non-colliding iteration clusters
+- N concurrent iterations over disjoint `touches` / use-case deps (reuses board collision machinery)
+- Worktree-per-lane isolation (live-run F5)
+
+**Dependencies**: T-077
+
+**See**: `docs/explorations/2026-07-13-phase-aware-loop-redesign.md` §3.6, §5 — full iteration plan authored on promote
