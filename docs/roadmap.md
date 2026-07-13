@@ -611,7 +611,7 @@ authored when promoted.
 ---
 
 ## T-080: Reference-driver acceptance/benchmark harness
-**Status**: in-progress
+**Status**: completed (2026-07-13)
 **Priority**: high
 **Value**: Turns the T-072 **AC-program** live acceptance run (the owner step that was attempted, errored, and never recorded) into a repeatable, isolated, instrumented harness — so the reference driver can be run on a local/non-Anthropic model on demand to (a) record the AC-program pass/fail, (b) benchmark different models across many runs, and (c) regression-test changes to skills / the procedure pack / the driver tools by comparing runs before and after.
 **Description**: A stdlib-only `scripts/openup-agent-bench.py` that, per run, `git clone --local`s the repo under test into a throwaway fixture, seeds a deterministic micro-task (one READY change-folder lane so `resolve` picks it, not the gated backlog), runs `openup-agent.py run --procedure next` as a subprocess (timeout + usage log), and recomputes outcome + gate-cleanliness + latency/iterations + work-delta + tokens on the fixture — aggregating N runs to `results.jsonl` + `summary.md`. Adds one env-gated (`OPENUP_AGENT_USAGE_LOG`) per-call usage capture to the loop (zero default behavior change). Hermetically validated against a mock endpoint; live runs are the owner's. + test plan `docs-eng-process/reference-driver-benchmark.md`.

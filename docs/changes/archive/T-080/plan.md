@@ -1,7 +1,7 @@
 ---
 id: T-080
 title: Reference-driver acceptance/benchmark harness (repeatable AC-program runner)
-status: ready   # proposed → ready → in-progress → done → verified
+status: done   # proposed → ready → in-progress → done → verified
 priority: high   # critical | high | medium | low
 estimate: 1-2 sessions
 plan: docs/explorations/2026-07-12-harness-agnostic-openup.md
@@ -120,7 +120,7 @@ INVEST — ✅ Independent (wraps delivered T-072; nothing depends on it) · ✅
    The real repo is never written to; fixtures are removed after capture unless
    `--keep`.
    - **Given** `--repo <clean-repo> --runs 2` **When** the harness runs **Then** two
-     independent fixtures are cloned+seeded+driven and the source repo's
+     independent fixtures are built+seeded+driven and the source repo's
      `git status` is unchanged.
    - **Given** `--include-working-tree` **When** a fixture is built **Then** the
      source's uncommitted tracked diff is applied into the fixture before seeding.
