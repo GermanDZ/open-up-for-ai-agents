@@ -332,5 +332,43 @@ class CoverageTests(_FixtureBase):
         self.assertIn("coverage-gap", found)
 
 
+class ChangeFolderRefTests(_FixtureBase):
+    """T-090: a change folder is the system's work-item instance, so a
+    work-product may traces-from a change-folder id even though its plan.md is a
+    task-spec (no typed frontmatter)."""
+
+    def _lane(self, lane_id):
+        # A plain task-spec (status ready) — NOT a typed maturity instance.
+        d = self.docs / "changes" / lane_id
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "plan.md").write_text(
+            "---\nid: %s\nstatus: ready\npriority: high\n---\n# %s\n"
+            "## Operations\n- [ ] do it\n" % (lane_id, lane_id), encoding="utf-8")
+
+    def _iteration_plan(self, traces):
+        write_instance(self.docs, "phases/inception/iteration-I1-plan.md",
+                       frontmatter=[
+                           "type: iteration-plan", "id: IP-I1",
+                           "title: Iteration I1", "status: approved",
+                           "traces-from: [%s]" % ", ".join(traces),
+                           "owner-role: project-manager", "iteration: inception-1"],
+                       body="## Evaluation Criteria\n- done")
+
+    def test_iteration_plan_tracing_change_folder_resolves(self):
+        self._lane("I1-001")
+        self._lane("I1-002")
+        self._iteration_plan(["I1-001", "I1-002"])
+        proc = run(self.docs, expect=OK)
+        data, found = codes(proc)
+        self.assertTrue(data["ok"])
+        self.assertNotIn("dangling-ref", found)
+
+    def test_ref_to_missing_change_folder_still_dangles(self):
+        self._iteration_plan(["I1-999"])  # no such change folder
+        proc = run(self.docs, expect=FAIL)
+        _, found = codes(proc)
+        self.assertIn("dangling-ref", found)
+
+
 if __name__ == "__main__":
     unittest.main()

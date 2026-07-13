@@ -844,5 +844,60 @@ class NavigatorDispatchTest(CycleFixture):
         self.assertEqual(rc, 0)
 
 
+# --------------------------------------------------------------------------
+# Plan Iteration wiring (T-090)
+# --------------------------------------------------------------------------
+class PlanIterationDispatchTest(CycleFixture):
+    """run_cycle routes an authoring-phase plan-iteration to the Plan Iteration
+    handler, and a construction-phase one to the single-row promote."""
+
+    def _decide(self, phase, task="I1"):
+        d = _decision("plan-iteration", task=task,
+                      reason="plan a %s iteration" % phase, phase=phase)
+        d["lane"]["title"] = phase
+        self._set_decision(d)
+        self._git("add", "-A"); self._git("commit", "-m", "d", "-q")
+
+    def test_authoring_phase_invokes_handler_then_picks(self):
+        self._decide("inception")
+        called = {}
+
+        def fake_pi(root, decision, phase):
+            called["phase"] = phase
+            # the handler planned a lane; seed it ready + flip the decision to pick
+            self._seed_lane([(False, "(developer) Write docs/scratch/o.md hi")],
+                            task="I1-001")
+            return 0
+
+        def subrun(task, box, instruction):
+            out = self.root / "docs" / "scratch"
+            out.mkdir(parents=True, exist_ok=True)
+            (out / "o.md").write_text("hi\n")
+            return 0
+
+        rc = cycle.run_cycle(str(self.root), env=self.env,
+                             _plan_iteration=fake_pi, _subrun=subrun)
+        self.assertEqual(called.get("phase"), "inception")
+        self.assertEqual(rc, 0)
+
+    def test_construction_phase_bypasses_handler(self):
+        self._decide("construction", task="T-901")
+
+        def subrun(task, box, instruction):
+            # recover_missing_spec path authors the named spec (proposed → the
+            # recovery rejects it, returning a typed exit — enough to prove the
+            # single-row promote ran and the Plan Iteration handler did not).
+            d = self.root / "docs" / "changes" / "T-901"
+            d.mkdir(parents=True, exist_ok=True)
+            (d / "plan.md").write_text(
+                "---\nid: T-901\nstatus: proposed\n---\n# T-901\n")
+            return 0
+
+        rc = cycle.run_cycle(
+            str(self.root), env=self.env, _subrun=subrun,
+            _plan_iteration=lambda *a: self.fail("handler ran for construction"))
+        self.assertNotEqual(rc, 0)  # promote rejected the proposed spec
+
+
 if __name__ == "__main__":
     unittest.main()

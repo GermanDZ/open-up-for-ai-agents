@@ -73,7 +73,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-from . import loop, navigator, tiers
+from . import loop, navigator, plan_iteration, tiers
 
 EXIT_OK = 0
 EXIT_CONFIG = 2
@@ -904,10 +904,115 @@ def _run_navigator(root, env, step_tier, cap, interactive, _completion, _subrun)
         log=_log, suspend_sentinel=loop.SUSPEND_SENTINEL)
 
 
+def _run_plan_iteration(root, phase, env, step_tier, cap, interactive,
+                        _completion, _subrun):
+    """Wire the real driver callables into plan_iteration.run_plan_iteration
+    (T-090): the objectives sub-run, the per-lane spec sub-run (reusing
+    _dispatch_judgment), gates, git-commit, and the deterministic script ops
+    (mint/activities/reserve/partition/roadmap/lifecycle). Kept thin — the
+    planning logic lives in plan_iteration.py."""
+    root = Path(root)
+    try:
+        model = tiers.resolve_tier_model(root, step_tier, target="driver", env=env)
+    except tiers.TierError as e:
+        _log("FATAL: %s" % e)
+        return EXIT_CONFIG
+
+    def _runner(argv):
+        p = _run(argv, root)
+        return p.returncode, p.stdout
+
+    def dispatch_objectives(instruction, system_prompt):
+        _log("plan-iteration: objectives sub-run (tier=%s, model=%s)"
+             % (step_tier, model))
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            rc = loop.run(dir=str(root), procedure="plan-objectives",
+                          max_iterations=cap, env=env, interactive=interactive,
+                          instruction=instruction, system_prompt=system_prompt,
+                          model=model, _completion=_completion)
+        out = buf.getvalue().strip()
+        if rc == EXIT_SUSPEND and out:
+            print(out.splitlines()[-1])
+        return rc
+
+    def dispatch_spec(lane_id, instruction):
+        box = {"hat": "analyst", "marker": None, "body": instruction}
+        try:
+            return _dispatch_judgment(root, lane_id, box, env, step_tier, cap,
+                                      interactive, None, _completion, _subrun,
+                                      instruction=instruction)
+        except tiers.TierError as e:
+            _log("FATAL: %s" % e)
+            return EXIT_CONFIG
+
+    def git_commit(paths, message):
+        _git(["add"] + list(paths), root, check=True)
+        _git(["commit", "-m", message], root, check=True)
+
+    def mint_id(ph):
+        rc, out = _runner(["python3", "scripts/openup-process-map.py",
+                           "mint-iteration-id", ph])
+        return out.strip().splitlines()[-1] if rc == 0 and out.strip() else ""
+
+    def activities_for(ph):
+        rc, out = _runner(["python3", "scripts/openup-process-map.py",
+                           "activities-for", ph, "--json"])
+        if rc != 0:
+            return []
+        try:
+            return json.loads(out)
+        except json.JSONDecodeError:
+            return []
+
+    def reserve_id(prefix, session):
+        rc, out = _runner(["python3", "scripts/openup-claims.py", "reserve-id",
+                           "--prefix", prefix, "--pad", "3",
+                           "--session-id", session])
+        return out.strip().splitlines()[-1] if rc == 0 and out.strip() else ""
+
+    def partition(candidates):
+        p = subprocess.run(
+            [sys.executable, "scripts/openup-board.py", "partition", "--stdin"],
+            cwd=str(root), input=json.dumps(candidates),
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        if p.returncode != 0:
+            raise CycleError("partition failed: %s" % p.stderr.strip()[:200])
+        return json.loads(p.stdout)
+
+    def roadmap_pending():
+        rc, out = _runner(["python3", "scripts/openup-roadmap.py", "list",
+                           "--status", "pending"])
+        if rc != 0:
+            return []
+        try:
+            data = json.loads(out)
+            return [e.get("title", "") for e in data] if isinstance(data, list) else []
+        except json.JSONDecodeError:
+            return []
+
+    def lifecycle():
+        rc, out = _runner(["python3", "scripts/openup-lifecycle.py", "status",
+                           "--json"])
+        if rc != 0:
+            return {}
+        try:
+            return json.loads(out)
+        except json.JSONDecodeError:
+            return {}
+
+    return plan_iteration.run_plan_iteration(
+        root, phase, dispatch_objectives=dispatch_objectives,
+        dispatch_spec=dispatch_spec, run_gates=lambda: loop.run_gates(root),
+        git_commit=git_commit, mint_id=mint_id, activities_for=activities_for,
+        reserve_id=reserve_id, partition=partition,
+        roadmap_pending=roadmap_pending, lifecycle=lifecycle, log=_log)
+
+
 def run_cycle(dir, env=None, step_max_iterations=DEFAULT_STEP_MAX_ITERATIONS,
               step_tier=DEFAULT_STEP_TIER, interactive=False, recover=True,
               navigate=True, _completion=None, _subrun=None, _ask=None,
-              _navigator=None):
+              _navigator=None, _plan_iteration=None):
     """Run ONE delivery cycle under ``dir``. Returns an int exit code.
 
     ``recover`` (default True, T-092/T-094) lets the engine rebuild blocking
@@ -958,20 +1063,45 @@ def run_cycle(dir, env=None, step_max_iterations=DEFAULT_STEP_MAX_ITERATIONS,
     replenished = False
     while recover:
         if path == "plan-iteration":
-            rc = recover_missing_spec(root, decision, env, step_tier,
-                                      step_max_iterations, interactive,
-                                      _completion, _subrun)
-            if rc == EXIT_OK:
+            # T-090: for an authoring phase (inception/elaboration) plan a full
+            # phase-appropriate iteration; otherwise keep the T-092 single-row
+            # promote (construction/transition feature delivery, unchanged).
+            iter_phase = (decision.get("phase") or "").lower()
+            if iter_phase in plan_iteration.AUTHORING_PHASES:
+                if _plan_iteration is not None:
+                    rc = _plan_iteration(root, decision, iter_phase)
+                else:
+                    rc = _run_plan_iteration(
+                        root, iter_phase, env, step_tier, step_max_iterations,
+                        interactive, _completion, _subrun)
+                if rc == EXIT_SUSPEND:
+                    _log("plan-iteration suspended awaiting human input")
+                    return EXIT_SUSPEND
+                if rc != EXIT_OK:
+                    return rc if rc in (EXIT_CONFIG, EXIT_ENDPOINT,
+                                        EXIT_MAX_ITERATIONS) else EXIT_STEP
                 decision = resolve_decision(root)
                 path = decision.get("path")
-                _log("decision after spec recovery: path=%s — %s"
+                _log("decision after plan-iteration: path=%s — %s"
                      % (path, decision.get("reason") or ""))
                 if path in ("pick", "resume"):
                     break
-                # authored but not advanced — fall through to the stuck check
-            elif rc != EXIT_UNSUPPORTED:
-                return rc
-            # rc == EXIT_UNSUPPORTED: blocked lane — a stuck state too (T2)
+                # planned but not advanced — fall through to the stuck check
+            else:
+                rc = recover_missing_spec(root, decision, env, step_tier,
+                                          step_max_iterations, interactive,
+                                          _completion, _subrun)
+                if rc == EXIT_OK:
+                    decision = resolve_decision(root)
+                    path = decision.get("path")
+                    _log("decision after spec recovery: path=%s — %s"
+                         % (path, decision.get("reason") or ""))
+                    if path in ("pick", "resume"):
+                        break
+                    # authored but not advanced — fall through to the stuck check
+                elif rc != EXIT_UNSUPPORTED:
+                    return rc
+                # rc == EXIT_UNSUPPORTED: blocked lane — a stuck state too (T2)
         # Stuck (T-094): nothing deterministic left, roadmap present, one shot.
         if (path in ("noop", "plan-iteration") and not replenished
                 and (root / "docs" / "roadmap.md").exists()):

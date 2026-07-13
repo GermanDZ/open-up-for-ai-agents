@@ -542,6 +542,25 @@ def check(docs_dir: Path, schema: dict, model: dict, coverage: bool = False):
         if isinstance(iid, str) and iid:
             id_index.setdefault(iid, []).append((fm.get("type"), rel))
 
+    # Change folders ARE the work-item instances in this system (T-090): the
+    # board, claims, and the cycle engine all key a work item by its
+    # docs/changes/<id>/ folder, whose plan.md is a task-spec (status ready→done),
+    # not a typed maturity instance. So a work-product may `traces-from` a
+    # change-folder id — most notably a cycle-planned iteration-plan tracing its
+    # I1-00x/C1-00x lanes. Register each change folder as an implicit `work-item`
+    # so those refs resolve (the trace model already allows iteration-plan →
+    # work-item). A real typed instance with the same id always wins.
+    changes_dir = docs_dir / "changes"
+    for base in (changes_dir, changes_dir / "archive"):
+        if not base.is_dir():
+            continue
+        for folder in sorted(base.iterdir()):
+            if folder.name == "archive" or not folder.is_dir():
+                continue
+            if (folder / "plan.md").exists() and folder.name not in id_index:
+                id_index.setdefault(folder.name, []).append(
+                    ("work-item", str(folder.relative_to(docs_dir.parent))))
+
     for iid, entries in sorted(id_index.items()):
         if len(entries) > 1:
             where = ", ".join(p for _, p in entries)

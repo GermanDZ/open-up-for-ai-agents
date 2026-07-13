@@ -276,9 +276,10 @@ then** ticks the box — so a gate failure (exit 6) leaves the box unchecked and
 a re-run retries the step. All inter-step state lives in the repo (boxes,
 `.openup/state.json`, the lease): a killed cycle resumes at the first unchecked
 box. `ask_user` inside a sub-run suspends the whole cycle (exit 5) exactly like
-`run`. Decision paths beyond pick/resume (`plan-iteration`,
-`assess-iteration`, `milestone-review`) exit 7 — they land with T-090/T-091;
-use `run --procedure next` (or the Claude Code skills) for them meanwhile.
+`run`. `plan-iteration` is handled under recovery (single-row promote for
+construction/transition, full Plan Iteration for authoring phases — see below);
+`assess-iteration`/`milestone-review` still exit 7 (they land with T-091), so
+use `run --procedure next` (or the Claude Code skills) for those meanwhile.
 `scripts/openup-loop.sh` keeps driving the `next` procedure until that parity.
 
 ### Recovery mode (T-092, default on)
@@ -321,8 +322,25 @@ restores the bare typed exits below.
   (`check-docs.py`, plus `openup-spec-scenarios.py` when present), committed,
   and the re-resolved `pick` runs **in the same invocation**. One recovery
   round only — a decision that does not advance to `pick`/`resume` exits 7 as
-  before. Multi-item Plan Iteration (minting, objectives, clusters) remains
-  T-090; `assess-iteration`/`milestone-review` remain T-091.
+  before. This single-row promote is the **construction/transition** path (and
+  the degenerate one-work-item case); the multi-lane Plan Iteration below is the
+  **authoring-phase** path.
+- **Plan Iteration (T-090, authoring phases).** For an `inception`/`elaboration`
+  `plan-iteration` decision with no active iteration, the engine plans a full
+  phase-appropriate iteration deterministically (porting `/openup-start-iteration`
+  §0b into code): it mints the iteration id (`openup-process-map.py
+  mint-iteration-id`), runs **one** bounded sub-run to choose 1–5 objectives,
+  generates one lane per phase activity from `activities-for(phase)` with
+  iteration-prefixed ids (`I1-001`, reserved via `openup-claims.py reserve-id
+  --prefix`), partitions them (T-079), authors **each lane's spec** with one
+  bounded sub-run (gated by `check-docs.py`, committed), and writes the
+  `type: iteration-plan` instance under `docs/phases/<phase>/` (tracing every
+  lane id, with evaluation criteria). Only the objectives + per-lane specs are
+  LLM calls; mint/activities/reserve/partition/instance are code. A failed lane
+  spec aborts with a typed exit before the instance is written (no half-planned
+  iteration is left picked). The re-resolve then picks the first lane, so
+  Inception on a bootstrapped project (the ShareShed flow) runs end-to-end through
+  `cycle`. `assess-iteration`/`milestone-review` remain T-091.
 
 ## Exit codes
 
@@ -334,7 +352,7 @@ restores the bare typed exits below.
 | 4 | max iterations reached, no clean sentinel | model never finished, or a gate never passed |
 | 5 | suspended, awaiting a human answer | `ask_user` in non-interactive mode ([above](#asking-the-human--ask_user)) |
 | 6 | `cycle`: gate failed after a step | fence / check-docs red; the box stays unticked |
-| 7 | `cycle`: decision path unsupported | assess / milestone before T-091; plan-iteration only under `--no-recover` or when recovery cannot advance |
+| 7 | `cycle`: decision path unsupported | assess / milestone before T-091; plan-iteration only under `--no-recover` or when recovery/planning cannot advance |
 | 8 | `cycle`: script-step or ceremony command failed | a box's command exited non-zero; session begin refused |
 
 ## Troubleshooting
