@@ -790,6 +790,18 @@ authored when promoted.
 
 ---
 
+## T-097: Navigator scaffolds a fillable artifact instead of an unanswerable input-request
+**Status**: completed (2026-07-13)
+**Priority**: high
+**Value**: Fixes a live non-converging loop — a fresh project's `next-cycle` re-suspended forever because the navigator raised an input-request for a missing stakeholder brief (which answering a text field cannot produce). Now it scaffolds a fillable template and detects when it's filled.
+**Description**: A missing human artifact (decision `input_path` or the fresh-project brief default) scaffolds a marker-guarded template + exit-5 guidance instead of a T-074 input-request; the Ring-1 survey treats a still-templated scaffold as absent so a filled brief advances the loop; a filled/partial file is never overwritten; genuine short-answer questions still use an input-request.
+
+**Dependencies**: T-096
+
+**See**: found live on my-product (2026-07-13)
+
+---
+
 ## T-096: Process-agnostic `next-cycle` — LLM process navigator behind the driver
 **Status**: completed (2026-07-13)
 **Priority**: high
