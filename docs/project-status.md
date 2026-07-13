@@ -1,15 +1,17 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 45
-**Iteration Goal**: T-075 — openup-lifecycle.py status + milestone decision records
+**Iteration**: 46
+**Iteration Goal**: T-076 — Development Case config (`process:` section + archetypes)
 **Status**: completed
-**Current Task**: T-075
+**Current Task**: T-076
 **Iteration Started**: 2026-06-18
 **Last Updated**: 2026-07-13
 **Updated By**: sync-status.py
 
 ## Notes
+
+- **Iteration 46** (2026-07-13): T-076 — Development Case `process:` config. Extended `docs/project-config.yaml` with a machine-readable Development Case: an `archetype` (quick|mvp|product) setting per-phase defaults (iteration budgets, artifacts, exit, milestone formality), overridable per phase. Stdlib-only nested parser + structural validator in `check-docs.py` (malformed blocks completion, absent passes), read-only `process-config` INFO/WARNING in `openup-doctor`, Development Case tables + precedence in `project-config.md`, commented starter via `/openup-init` + example. `quick` degenerates to today's quick-task ceremony (the efficiency guardrail). +19 tests (422 suite green). Solo, standard, worktree, on harness-optional.
 
 - **Iteration 42** (2026-07-12): T-071 increment 2 — `.claude-templates/skills/` is now a generated mirror of the neutral procedure pack (owner decision Option A). New `render-skills-mirror.py` (--write/--check) regenerates + guards it; guard wired into pre-commit + openup-doctor. Single editable source (the pack) reached; all four skill gates green.
 
