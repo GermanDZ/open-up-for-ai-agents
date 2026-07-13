@@ -1,15 +1,17 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 50
+**Iteration**: 51
 **Iteration Goal**: T-080 — Reference-driver acceptance/benchmark harness
 **Status**: completed
-**Current Task**: T-080
+**Current Task**: T-081
 **Iteration Started**: 2026-06-18
 **Last Updated**: 2026-07-13
 **Updated By**: sync-status.py
 
 ## Notes
+
+**Iteration 51** (2026-07-13, quick): T-081 — the benchmark harness (T-080) now records + surfaces the driver's failure reason instead of swallowing it. Each run record gains `fatal` (the driver's `FATAL:` line), `stderr_tail`, and `stdout_tail`; the full driver stdout/stderr is written to `<out>/run-NN.driver.log`; on any non-`pass` outcome the reason is `_log`'d to the bench stderr and listed in a new `## Failures` section of `summary.md`. Prompted by the first live batch (all runs `endpoint-error`, reason hidden — turned out to be a transient endpoint-not-ready). Additive, no behavior change to a passing run. +1 hermetic test (forced endpoint-error against an unreachable URL asserts `fatal`/`stderr_tail`/driver log; 22 driver+bench tests green). Fence (`--base harness-optional`) green. Solo, quick, worktree, on harness-optional.
 
 **Iteration 50** (2026-07-13): T-080 — reference-driver acceptance/benchmark harness, turning the T-072 **AC-program** live run (the owner step that was attempted, errored, and never recorded) into a repeatable, isolated, instrumented tool. New stdlib-only **`scripts/openup-agent-bench.py`**: per run it snapshots the repo under test with `git archive HEAD` (or the working tree, `--include-working-tree`) into a **fresh `git init` project OUTSIDE the repo** (owner requirement — a new dir, a new git project), seeds a deterministic micro-task (`scripts/bench-scenarios/quick-doc` — one READY change-folder lane so `resolve` picks it, not the gated backlog), points the fence base (`origin/main`) at the seed commit (which **removes the origin/main-vs-integration-branch base artifact that broke earlier informal runs**), runs `openup-agent.py run --procedure next` as a subprocess (timeout + usage log), and **recomputes** outcome (from the driver's typed exit code) + gate-cleanliness (fence + check-docs on the fixture) + work-delta (deliverable really produced, commits, files) + tokens/latency/iterations — aggregating N runs to `results.jsonl` + `summary.json` + `summary.md` (pass rate, mean/median tokens/iterations/wall, outcome histogram). Adds one **env-gated** (`OPENUP_AGENT_USAGE_LOG`) per-call `{iteration, model, latency_ms, usage}` capture to `loop.py` — zero default behavior change (the driver's 41 tests unchanged). Serves three jobs: AC-program acceptance, model benchmarking, and process-change regression (`--include-working-tree` benchmarks uncommitted skill/procedure/tool edits). +5 hermetic tests (mock `http.server` drives the whole pipeline; 46 driver+bench tests green) + `docs-eng-process/reference-driver-benchmark.md` runbook. Live batches are the owner's step (this env can't reach localhost). Solo, standard, worktree, on harness-optional. NB: 2 pre-existing suite failures (`test_openup_state` schema==1, `test_openup_board_resolve::test_promote_roadmap_task`) are stale vs the T-078 schema-2 / T-077 plan-iteration rename — reproduced on the clean base, outside this lane's touches, not a T-080 regression.
 

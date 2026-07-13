@@ -622,4 +622,16 @@ authored when promoted.
 
 **Dependencies**: T-072
 
-**See**: `docs/changes/T-080/plan.md` + `docs-eng-process/reference-driver.md`
+**See**: `docs/changes/archive/T-080/plan.md` + `docs-eng-process/reference-driver.md`
+
+---
+
+## T-081: Benchmark harness surfaces the driver's failure reason
+**Status**: completed (2026-07-13)
+**Priority**: high
+**Value**: The first live benchmark batch returned `endpoint-error` on every run but the harness swallowed the driver's stderr, hiding the reason (a transient endpoint-not-ready) and forcing a manual side-run to diagnose. This closes that observability gap so any non-pass run explains itself.
+**Description**: Each run record gains `fatal` (the driver's `FATAL:` line) + `stderr_tail` + `stdout_tail`; the full driver stdout/stderr is written to `<out>/run-NN.driver.log`; on any non-`pass` outcome the reason is logged to the bench stderr and listed in a new `## Failures` section of `summary.md`. Additive, no behavior change to a passing run.
+
+**Dependencies**: T-080
+
+**See**: `docs/changes/archive/T-081/plan.md`

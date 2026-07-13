@@ -1,1 +1,3 @@
 {"event": "session_begin", "task_id": "T-081", "goal": "Benchmark harness records + surfaces the driver's failure reason", "branch": "feat/T-081-bench-stderr-capture", "phase": "construction", "ts": "2026-07-13T12:08:35Z"}
+{"run_id": "a6f4802af738403bb5dc58fda3e03069", "event": "commit", "task_id": "T-081", "branch": "feat/T-081-bench-stderr-capture", "sha": "a2503990552e134172db66d9a96063b6bce9535a", "model": null, "session_id": "feat/T-081-bench-stderr-capture", "ts": "2026-07-13T12:11:24Z"}
+{"event": "session_end", "task_id": "T-081", "ts": "2026-07-13T12:12:05Z"}
