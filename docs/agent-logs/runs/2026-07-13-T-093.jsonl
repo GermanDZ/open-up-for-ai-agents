@@ -1,0 +1,2 @@
+{"run_id": "cycle-fix-20260713", "event": "session_begin", "task_id": "T-093", "goal": "T-093 \u2014 roadmap CLI fail-soft on missing docs/roadmap.md", "branch": "quick/T-093-roadmap-missing-fix", "phase": "construction", "ts": "2026-07-13T15:35:59Z"}
+{"run_id": "ac9117a2bfa049ada0b41308ccbf2e6f", "event": "commit", "task_id": "T-093", "branch": "quick/T-093-roadmap-missing-fix", "sha": "5b0e346435b4ae97ada8b81b4973d6cd53d927d9", "model": null, "session_id": "quick/T-093-roadmap-missing-fix", "ts": "2026-07-13T15:35:59Z"}

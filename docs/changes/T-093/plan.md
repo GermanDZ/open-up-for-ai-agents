@@ -22,6 +22,6 @@ project). Fix: treat a missing roadmap as empty (`""`) so `list` → `[]`,
 
 ## Operations
 
-- [ ] Guard `_roadmap_text` (missing file → empty string, docstring states the
+- [x] Guard `_roadmap_text` (missing file → empty string, docstring states the
       fresh-project rationale); add a hermetic no-roadmap test asserting
       `next`/`list` degrade cleanly and `resolve` returns a decision

@@ -227,7 +227,17 @@ def _repo_root(args) -> Path:
 
 
 def _roadmap_text(root: Path) -> str:
-    return (root / "docs" / "roadmap.md").read_text(encoding="utf-8")
+    """The roadmap's text, or "" when the file does not exist (T-093).
+
+    A freshly bootstrapped project has no docs/roadmap.md until Inception
+    authors it — that is a valid state, not an error: `list` yields [],
+    `get`/`next` exit 3, and openup-board.py `resolve` degrades to a clean
+    decision instead of a FileNotFoundError traceback.
+    """
+    try:
+        return (root / "docs" / "roadmap.md").read_text(encoding="utf-8")
+    except FileNotFoundError:
+        return ""
 
 
 def _status_matches(entry_status: str, want: str) -> bool:
