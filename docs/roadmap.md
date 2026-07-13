@@ -499,7 +499,7 @@ authored when promoted.
 <!-- plan-hook: 2026-07-13 -->
 ### Planned: Phase-aware OpenUP loop — make the automated cycle follow the lifecycle
 
-- **Status**: `planned` (awaiting implementation)
+- **Status**: `completed` (2026-07-13 — all of T-075…T-079 delivered on `harness-optional`)
 - **Exploration**: [explorations/2026-07-13-phase-aware-loop-redesign.md](explorations/2026-07-13-phase-aware-loop-redesign.md) (gap analysis + redesign) + [explorations/2026-07-13-openup-kb-process-model.md](explorations/2026-07-13-openup-kb-process-model.md) (authoritative KB distillation)
 - **Created**: 2026-07-13
 - **Goal**: Make the automated loop *follow* OpenUP's three-layer state machine —
@@ -522,7 +522,10 @@ authored when promoted.
   phase mechanically, plans a phase-appropriate iteration, executes it, runs Assess
   Results, and — at a phase boundary — pauses for a human milestone decision rather
   than draining to an empty queue.
-- **Next step**: Run `/openup-start-iteration task_id: T-075`.
+- **Next step**: Program complete — T-079 (parallel iterations) merged the final
+  slice. The loop now resolves the phase, plans a phase-appropriate iteration
+  (partitioned into concurrent non-colliding clusters where the work is disjoint),
+  converges via Assess Results, and pauses at a phase boundary for a human go/no-go.
 
 ---
 
