@@ -68,6 +68,27 @@ work-remains / already-assessed / recorded / pending-work negatives).
 `## Assessment` section (step 3), and `/openup-phase-review` writing the milestone
 record on GO (step 4). Step 2 is detection only.
 
+## DD3 — /openup-assess-iteration procedure (Operations step 3, delivered)
+
+New `docs-eng-process/procedures/openup-assess-iteration.md` (tier: authoring).
+Six steps: read the iteration-plan contract → grade evaluation criteria from repo
+evidence → demo only completed+acceptance-tested items (exclude+name the rest) →
+feed discovered work/defects back as pending roadmap items → append the
+`## Assessment` section (the marker `resolve` reads; sanctioned progress state,
+like a ticked box — no `/openup-create-iteration-plan` re-run unless objectives
+changed) → phase-end trigger that **names** `/openup-phase-review` but never
+advances the phase. Composes `/openup-retrospective` for the reflection/cadence
+half rather than duplicating it.
+
+**No manifest edit.** `process-manifest.txt` lists runtime *scripts*, not
+procedures; the pack is glob-discovered by `render-skills-mirror.py` and
+`check-skills-guide.py`. Delivery here = author pack → `render-skills-mirror
+--write` (36 skills, +1) → `check-model-tiers --write` + `check-skills-guide
+--write` (both tables regen) → `sync-templates`. The committed mirror is
+`.claude-templates/skills/…`; `.claude/skills/…` is gitignored (regenerated at
+session start). All four guards (render/model-tiers/skills-guide/claude-sync)
+exit 0.
+
 **Note (framework flaw surfaced at start).** Committing the spec fired the
 auto-log hook → `log_written=true`; with `roadmap_synced=true` both standard-track
 gates were true and `sync-status.py` derived **completed** for a just-started
