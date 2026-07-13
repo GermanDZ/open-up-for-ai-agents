@@ -303,22 +303,22 @@ program.
 
 ## Operations
 
-- [ ] Add a pure `partition_workitems(root, ids)` helper + `cmd_partition` +
+- [x] Add a pure `partition_workitems(root, ids)` helper + `cmd_partition` +
   argparse wiring to `scripts/openup-board.py` (connected components over
   `touches`-overlap ∪ `depends-on`; deterministic, order-stable output), read-only
   and exit 0.
-- [ ] Author hermetic tests: the three clustering shapes (disjoint→2, overlap→1,
+- [x] Author hermetic tests: the three clustering shapes (disjoint→2, overlap→1,
   dependency→1), single-item→1, order-stability (Req 2), the two-iteration
   unscoped-pick behavior (Req 4), and worktree distinctness (Req 5).
-- [ ] Update `docs-eng-process/procedures/openup-start-iteration.md` §0b (step 6/7)
+- [x] Update `docs-eng-process/procedures/openup-start-iteration.md` §0b (step 6/7)
   — partition the generated work items and mint one iteration per cluster via the
   offset-`mint-iteration-id` rule + `reserve-id --prefix`; author one iteration-plan
   instance per cluster; single-cluster path stays identical to T-077.
-- [ ] Document the worktree-per-lane isolation guarantee + the
+- [x] Document the worktree-per-lane isolation guarantee + the
   one-iteration-per-cluster model in `docs-eng-process/parallel-lanes.md`.
-- [ ] Register the `partition` subcommand in
+- [x] Register the `partition` subcommand in
   `docs-eng-process/script-cli-reference.md`.
-- [ ] Regenerate the skills mirror (`render-skills-mirror.py --write`) +
+- [x] Regenerate the skills mirror (`render-skills-mirror.py --write`) +
   `sync-templates-to-claude.sh`.
 - [ ] (tester) Run the full suite + `check-docs.py`(+`--coverage`) +
   `openup-fence.py check --base harness-optional`; confirm green.

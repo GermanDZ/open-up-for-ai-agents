@@ -98,6 +98,7 @@ end    --task-id --archive-to PATH [--status done] [--branch B] [--no-push]
 ```
 top      [--root] [--claims-dir]        # top pickable lane as JSON; exit 3 = none pickable
 top-n N  [--root] [--claims-dir]        # up to N collision-free READY lanes as JSON array; exit 3 = none
+partition [ID …] [--stdin] [--root]     # cluster work items into non-colliding iteration groups; JSON array of clusters; exit 0
 resolve  [--root] [--claims-dir]        # §0–§1 /openup-next decision as ONE JSON object; always exit 0
 status   [--root] [--claims-dir]        # read-only diagnostic superset (active + leases + pickable + promotable)
 refresh  [--root] [--claims-dir] [--out] [--reap-stale-after S] [--no-reap]
@@ -120,6 +121,17 @@ refresh  [--root] [--claims-dir] [--out] [--reap-stale-after S] [--no-reap]
   session's lane self-heals from `in-progress` to `ready` within one refresh.
   Default threshold 1800s (`--reap-stale-after`); `--no-reap` skips it. The T-060
   invariant holds — a claim with **no** `last_heartbeat` is never reaped.
+- `partition` (T-079) clusters work items into **non-colliding iteration groups**
+  — the connected components of the `touches`-overlap ∪ `depends-on` graph (the
+  same `claims.touches_overlap` the write-fence uses). Positional `ID`s read
+  `touches`/`depends-on` from each `docs/changes/<id>/plan.md`; `--stdin` reads a
+  JSON array of `{id, touches, depends-on}` instead (Plan Iteration partitions
+  *planned* items before assigning cluster-prefixed ids). Output is a
+  deterministic, order-stable JSON array of clusters (each a list of ids);
+  read-only, always exit 0. Distinct clusters are disjoint in `touches` and
+  dependency-free, hence safe to run as **concurrent iterations** (one per
+  cluster; see [parallel-lanes.md](parallel-lanes.md)). A single cluster
+  degenerates to today's one sequential iteration.
 
 ## openup-roadmap.py — deterministic roadmap interface
 
