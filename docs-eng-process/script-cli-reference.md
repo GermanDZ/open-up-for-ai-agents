@@ -276,8 +276,27 @@ learnings     …   # append a dated iteration-learnings entry
 - Run `--help` on each subcommand for its fields. The scribe only ever writes
   fully-specified content; it never authors timestamps or decisions.
 
+## openup-agent-bench.py — reference-driver benchmark harness (T-080)
+
+```
+[--repo .] [--runs N] [--procedure next] [--scenario DIR] [--out DIR]
+[--workdir DIR] [--max-iterations 50] [--timeout 1800]
+[--include-working-tree] [--keep]
+```
+- Runs the T-072 reference driver (`openup-agent.py run --procedure next`) N times
+  against an **isolated fresh-`git init` fixture** (built with `git archive HEAD`
+  outside the repo, seeded with a deterministic micro-task so `resolve` picks it),
+  recording **outcome + gate re-check + tokens + latency + iterations + work-delta**
+  and aggregating to `results.jsonl` + `summary.md`. The repo under test is never
+  written to. Endpoint/model come from the driver's env (`LLM_API_URL`,
+  `OPENUP_MODEL_MAIN`, …). Reads token/latency via the driver's opt-in
+  `OPENUP_AGENT_USAGE_LOG`. Full runbook + metric definitions:
+  [reference-driver-benchmark.md](reference-driver-benchmark.md).
+
 ## See also
 
 - `scripts/README.md` — what each script is for.
 - `docs-eng-process/state-file.md`, `parallel-work.md`, `tracks.md` — the
   processes these CLIs implement.
+- `docs-eng-process/reference-driver.md` + `reference-driver-benchmark.md` — the
+  harness-optional driver and its benchmark harness.

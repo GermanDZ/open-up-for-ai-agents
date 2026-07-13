@@ -250,25 +250,25 @@ driver, so the harness has the same zero-install footprint.
 
 ## Operations
 
-- [ ] Add env-gated `OPENUP_AGENT_USAGE_LOG` per-call capture to
+- [x] Add env-gated `OPENUP_AGENT_USAGE_LOG` per-call capture to
   `scripts/openup_agent/loop.py` (iteration, model, latency_ms, usage) + a unit test
   for the set and unset paths; document the env var in `reference-driver.md`.
-- [ ] Build `scripts/bench-scenarios/quick-doc/` — a deterministic seed (one
+- [x] Build `scripts/bench-scenarios/quick-doc/` — a deterministic seed (one
   quick-track READY change-folder lane + roadmap row) that `openup-board.py resolve`
   picks; assert `resolve == pick` on the seeded fixture.
-- [ ] Write `scripts/openup-agent-bench.py` — clone-isolate + seed + subprocess-run
+- [x] Write `scripts/openup-agent-bench.py` — clone-isolate + seed + subprocess-run
   the driver (timeout, usage-log) + post-run measurement (outcome, gate re-check,
   latency/iterations, work-delta, tokens) + `results.jsonl` + `summary.md`
   aggregation; `--repo/--runs/--procedure/--scenario/--out/--timeout/--max-iterations/
   --include-working-tree/--keep` flags; stdlib-only.
-- [ ] Author `scripts/tests/test_openup_agent_bench.py` — drive the whole harness
+- [x] Author `scripts/tests/test_openup_agent_bench.py` — drive the whole harness
   against a mock endpoint (scripted `http.server`), asserting fixture isolation,
   seeding, metric capture, and aggregation with no live model.
-- [ ] Write `docs-eng-process/reference-driver-benchmark.md` (purpose, isolation/
+- [x] Write `docs-eng-process/reference-driver-benchmark.md` (purpose, isolation/
   scenario model, env+flags, per-endpoint recipes, metric definitions, batch
   comparison, AC-program pass criterion); register the script in
   `script-cli-reference.md`.
-- [ ] (tester) Run the driver + bench test suites + `check-docs.py` +
+- [x] (tester) Run the driver + bench test suites + `check-docs.py` +
   `openup-fence.py check --base harness-optional`; confirm green.
 
 ## Norms
