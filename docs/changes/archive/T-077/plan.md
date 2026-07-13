@@ -1,7 +1,7 @@
 ---
 id: T-077
 title: process-map.yaml + phase-aware plan-iteration
-status: pending
+status: done
 priority: high   # critical | high | medium | low
 estimate: 2-3 sessions
 plan: docs/explorations/2026-07-13-phase-aware-loop-redesign.md

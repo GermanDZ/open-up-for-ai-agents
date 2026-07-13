@@ -559,7 +559,7 @@ authored when promoted.
 ---
 
 ## T-077: process-map.yaml + phase-aware plan-iteration
-**Status**: in-progress
+**Status**: completed (2026-07-13)
 **Priority**: high
 **Value**: The loop stops re-inventing a process each run — `/openup-start-iteration` becomes real Plan Iteration, generating phase-appropriate lanes (vision/use-case/risk in Inception; architecture/skeleton/test in Elaboration; dev/test in Construction) from a data-encoded process map, so a human no longer hand-writes each roadmap row and the four phase skills stop being parallel manual guidance. Biggest slice.
 **Description**: New framework-owned `docs-eng-process/process-map.yaml` encoding phase → activity → role → skill (KB §3/§4 as data). `/openup-start-iteration` becomes Plan Iteration proper: 1–5 objectives from risk list + PM value order + phase objectives, commits work items, and generates non-hand-written lanes from the map. Each planned iteration is minted with a stable id/name (e.g. `C3` = Construction iteration 3), and its committed work-item / lane ids are allocated **under that prefix** (`C3-NNN`) via the existing `openup-claims.py reserve-id --prefix` machinery — so every task is traceable to its iteration by id. `openup-board.py` / `openup-roadmap.py` resolve becomes lifecycle-aware and iteration-scoped; the one-row-at-a-time promote path dissolves into plan-iteration (quick archetype degenerates to ~today's single-work-item behavior). Phase skills become thin fronts over the map.

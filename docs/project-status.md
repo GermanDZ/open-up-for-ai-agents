@@ -3,13 +3,15 @@
 **Phase**: construction
 **Iteration**: 47
 **Iteration Goal**: T-077 — process-map.yaml + phase-aware plan-iteration
-**Status**: in-progress
+**Status**: completed
 **Current Task**: T-077
 **Iteration Started**: 2026-06-18
 **Last Updated**: 2026-07-13
 **Updated By**: sync-status.py
 
 ## Notes
+
+- **Iteration 47** (2026-07-13): T-077 — process-map.yaml + phase-aware Plan Iteration (the biggest slice of the phase-aware-loop program). New framework-owned `docs-eng-process/process-map.yaml` encoding KB §4 (phase→activity→role→skill) + stdlib-only `openup-process-map.py` loader (`activities-for` / `activity` / `phase-letter` / `mint-iteration-id` / `validate`, registered in manifest + CLI reference). `/openup-start-iteration` gains a **Plan Iteration** mode (§0b): derive phase from `openup-lifecycle.py`, read the T-076 `process:` tailoring, choose 1–5 objectives, and generate phase-appropriate work-item lanes from the map — the explicit-`task_id` single-lane path is preserved and `quick` degenerates to one work item. Iterations are minted with a stable repo-monotonic id (`C3`; legacy `T-NNN` never inflates the ordinal) and lanes are allocated under that prefix via the existing `reserve-id --prefix`. `openup-board.py` resolve is now **phase-aware + iteration-scoped**: `pick` stays within the active iteration (derived from live leases), and the `promote` path is relabelled **`plan-iteration`** carrying the derived phase — with a `legacy_path: "promote"` alias + a forward-compat note in `openup-next` so the loop keeps working until T-078 wires the new paths. Four phase skills refactored to thin fronts over the map. State stays **schema 1** (iteration id lives in the iteration-plan instance; schema 2 / `iteration_id`+`cycle` is T-078). +28 hermetic tests (64 suite green); process-map validate, render-mirror, claude-sync, check-docs+coverage, and fence (`--base harness-optional`) all green. Solo, standard, worktree, on harness-optional. (Note: started on the `full` track, corrected to `standard` at completion to match how it actually ran — solo, no team/rubric, per the program's precedent.)
 
 - **Iteration 46** (2026-07-13): T-076 — Development Case `process:` config. Extended `docs/project-config.yaml` with a machine-readable Development Case: an `archetype` (quick|mvp|product) setting per-phase defaults (iteration budgets, artifacts, exit, milestone formality), overridable per phase. Stdlib-only nested parser + structural validator in `check-docs.py` (malformed blocks completion, absent passes), read-only `process-config` INFO/WARNING in `openup-doctor`, Development Case tables + precedence in `project-config.md`, commented starter via `/openup-init` + example. `quick` degenerates to today's quick-task ceremony (the efficiency guardrail). +19 tests (422 suite green). Solo, standard, worktree, on harness-optional.
 
