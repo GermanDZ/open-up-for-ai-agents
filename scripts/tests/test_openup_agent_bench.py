@@ -211,6 +211,28 @@ class BenchHarnessTest(unittest.TestCase):
         self.assertEqual(agg["clean_passes"], 2)
         self.assertEqual(agg["pass_rate"], 1.0)
 
+    def test_endpoint_error_reason_is_surfaced(self):
+        """T-081 — a non-pass run records the driver's FATAL reason + stderr tail
+        and writes a per-run driver log (no manual side-run needed)."""
+        out = Path(self.tmp.name) / "out"
+        work = Path(self.tmp.name) / "work"
+        env = dict(os.environ)
+        env["LLM_API_URL"] = "http://127.0.0.1:1/v1"  # nothing listens on port 1
+        env["LLM_API_KEY"] = "k"
+        env["OPENUP_MODEL_MAIN"] = "mock-model"
+        args = bench.build_parser().parse_args([
+            "--repo", str(_REPO), "--runs", "1", "--out", str(out),
+            "--workdir", str(work), "--max-iterations", "2", "--timeout", "120",
+        ])
+        rc = bench.run_batch(args, env)
+        self.assertEqual(rc, 0)  # the batch completes even though the run failed
+        rec = json.loads((out / "results.jsonl").read_text().splitlines()[0])
+        self.assertEqual(rec["outcome"], "endpoint-error")
+        self.assertIsNotNone(rec["fatal"])
+        self.assertIn("FATAL", rec["fatal"])
+        self.assertTrue(rec["stderr_tail"])
+        self.assertTrue((out / "run-01.driver.log").exists())
+
 
 if __name__ == "__main__":
     unittest.main()
