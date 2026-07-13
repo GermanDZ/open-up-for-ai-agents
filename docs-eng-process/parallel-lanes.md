@@ -151,6 +151,54 @@ python3 scripts/openup-claims.py list-ids                                    # l
 - `--prefix`/`--pad` cover phase-iteration ID schemes (`C3-001` …) for
   `/openup-plan-feature`; the default `T-`/3 serves `/openup-create-task-spec`.
 
+## Parallel Construction iterations: non-colliding clusters (T-079)
+
+The lease/fence machinery above coordinates parallel **lanes**. Plan Iteration
+lifts that same collision rule **one level** to run parallel **iterations**:
+instead of committing every generated work item to one sequential iteration, it
+partitions them into **non-colliding clusters** and mints **one named iteration
+per cluster**.
+
+```bash
+# Partition a set of work items into concurrently-runnable clusters.
+python3 scripts/openup-board.py partition C3-001 C3-002 C3-003     # reads change folders
+echo '[{"id":"wi-1","touches":[…],"depends-on":[]}, …]' \
+  | python3 scripts/openup-board.py partition --stdin              # planned items (pre-id)
+# → [["wi-1","wi-2"],["wi-3"]]   one inner list per cluster
+```
+
+- **The clustering rule.** Two work items share a cluster iff their `touches`
+  **prefix-overlap** (the *same* `claims.touches_overlap` the write-fence
+  enforces) **or** either lists the other in `depends-on`. Clusters are the
+  **connected components** of that graph — so distinct clusters are, by
+  construction, mutually disjoint in `touches` **and** dependency-free across
+  clusters. That is exactly the property that makes them safe to run at the same
+  time. Output is deterministic and order-stable (natural id order); the call is
+  read-only.
+- **One iteration per cluster.** Each cluster gets its own minted iteration id
+  (`C3`, `C4`, … — the base id offset by cluster index) and its work-item ids are
+  allocated under **that** prefix (`C3-001…`, `C4-001…`, via `reserve-id
+  --prefix`). Cross-iteration ids therefore never collide, and every task is
+  trivially attributable to its iteration by id.
+- **How the board runs them concurrently — no new pick code.** While a single
+  iteration is active the board **scopes** `pick` to that iteration's prefix. The
+  moment a *second* cluster's lane also holds a live lease,
+  `_active_iteration_prefix` sees two prefixes, returns `None`, and `pick`
+  **un-scopes** — selecting the top collision-free lane across both iterations.
+  So concurrency falls out of the existing collision machinery; an outer `/loop`
+  or a second agent begins the other cluster's first lane to actually parallelize.
+- **Worktree-per-lane isolation (live-run F5).** Each started lane runs in its
+  **own** git worktree (`openup-session.py begin` creates one per branch —
+  branch-per-lane = worktree-per-lane). Two concurrently-active lanes from
+  different clusters therefore occupy **distinct checkouts** and cannot interleave
+  edits on disk — the disjoint-`touches` guarantee (no shared surface) and the
+  disjoint-worktree guarantee (no shared checkout) together make the parallel
+  iterations safe.
+- **Degenerate case = today.** A single returned cluster (the common case, and
+  always the `quick` archetype's single work item) mints exactly one iteration —
+  identical to the sequential T-077 behavior. Parallelism is opt-in **by the
+  structure of the work**, never forced.
+
 ## Conflict recovery recipe
 
 If a PR reports conflicts in `docs/roadmap.md` or `docs/project-status.md`:

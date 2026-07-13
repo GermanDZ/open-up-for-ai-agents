@@ -1,15 +1,17 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 48
-**Iteration Goal**: T-078 — assess-iteration + milestone-review wiring
+**Iteration**: 49
+**Iteration Goal**: T-079 — Parallel Construction iterations (non-colliding clusters)
 **Status**: completed
-**Current Task**: T-078
+**Current Task**: T-079
 **Iteration Started**: 2026-06-18
 **Last Updated**: 2026-07-13
 **Updated By**: sync-status.py
 
 ## Notes
+
+**Iteration 49** (2026-07-13): T-079 — parallel Construction iterations (non-colliding clusters), the final slice of the phase-aware-loop program. New read-only **`openup-board.py partition`** subcommand clusters work items into concurrently-runnable groups — the **connected components** of the `touches`-overlap ∪ `depends-on` graph (built on the *same* `claims.touches_overlap` the write-fence enforces), so distinct clusters are guaranteed disjoint in `touches` and dependency-free across clusters. Two input modes: positional ids read `touches`/`depends-on` from each `docs/changes/<id>/plan.md`; `--stdin` reads a JSON array of `{id, touches, depends-on}` so **Plan Iteration partitions planned items before assigning cluster-prefixed ids** (no folder renames). Output is deterministic and order-stable (natural id order), always exit 0. **`/openup-start-iteration` §0b** now sketches candidate work items, partitions them (§6a), and mints **one named iteration per cluster** (§6b) — base `mint-iteration-id` offset by cluster index → `C3`, `C4`, … — with each cluster's ids allocated under its own prefix and its own iteration-plan instance. A **single** cluster (the common case, always the `quick` archetype's single item) degenerates to exactly T-077's one sequential iteration — parallelism is opt-in **by the structure of the work**, never forced. No new board pick/resolve code: `_active_iteration_prefix` already un-scopes `pick` when several iteration prefixes hold live leases, so disjoint clusters run concurrently the moment their first lanes begin — each lane in its own worktree (branch-per-lane = worktree-per-lane, live-run F5), documented + asserted. `parallel-lanes.md` + `script-cli-reference.md` document the model. +16 hermetic tests (101 suite green); check-docs, skills-mirror/claude-sync, spec-scenarios, and fence (`--base harness-optional`) all green. Solo, standard, worktree, on harness-optional.
 
 **Iteration 48** (2026-07-13): T-078 — assess-iteration + milestone-review wiring (the convergence slice of the phase-aware-loop program). `openup-board.py resolve` now emits two lifecycle decision paths — **`assess-iteration`** (a minted iteration whose committed `C3-NNN` lanes are all done but whose iteration-plan instance has no `## Assessment` yet) and **`milestone-review`** (roadmap drained + phase exit criteria met + no milestone record for phase+cycle) — detected purely from data (iteration-prefixed `traces-from`, `openup-lifecycle.py status`), so single-lane/promote flows are provably unchanged (live board still resolves `resume T-078`). New **`/openup-assess-iteration`** procedure (Assess Results: grade evaluation criteria from repo evidence, demo only completed acceptance-tested work, feed discovered work back, append `## Assessment`, trigger the milestone at a phase boundary). **`/openup-phase-review`** rewired into the loop as a two-cycle async pause: create-and-wait on the milestone go/no-go via T-074 `/openup-request-input`, then on an answered GO write `docs/product/milestones/<phase>-<cycle>.md` — never advancing the phase in code (the record is the source of truth). **`openup-next`** consumes both paths, drops the T-077 promote transition note for real Development-Case-driven Plan-Iteration delegation, and reframes the DONE sentinel as a phase-gate signal (`milestone-review pending human input`). State bumped to **schema 2** (`iteration_id`, `cycle`; `phase` = derived cache) with additive schema-1→2 auto-migration on read. +21 hermetic tests (85 suite green); check-docs+coverage, render/model-tiers/skills-guide/claude-sync, and fence (`--base harness-optional`) all green. Solo, standard, worktree, on harness-optional.
 
