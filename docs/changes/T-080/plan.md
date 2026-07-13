@@ -58,13 +58,17 @@ INVEST — ✅ Independent (wraps delivered T-072; nothing depends on it) · ✅
   object, so tokens/latency per call are unobservable. This task adds a **single
   additive capture hook** (an env-gated per-call jsonl) — zero behavior change when
   the env is unset — rather than changing the loop's contract.
-- **Isolation model (owner decision, this task).** Each run executes against a
-  **fresh `git clone --local` fixture** of the repo under test, seeded with a
-  **tiny deterministic micro-task** (one READY change-folder lane) so `resolve`
-  picks it at §1b (ahead of the real, gated backlog like T-073) and the driver runs
-  a small, comparable `next` cycle. The real repo is never touched; runs are
-  reproducible. An opt-in flag overlays the source's uncommitted working tree so a
-  maintainer can benchmark *in-progress* skill/procedure/tool edits.
+- **Isolation model (owner decision, this task — refined mid-flight).** Each run
+  executes against a **fresh, freshly-`git init`'d project built OUTSIDE the repo
+  under test** (owner requirement: "a new directory, a new git project"). The repo
+  is snapshotted with `git archive HEAD` (or the working tree, with
+  `--include-working-tree`) into a temp dir and `git init`'d — no source history or
+  remotes. It is seeded with a **tiny deterministic micro-task** (one READY
+  change-folder lane) so `resolve` picks it at §1b (ahead of the real, gated
+  backlog like T-073). The real repo is never touched; runs are reproducible. A
+  clean git-init fixture also **removes the `origin/main`-vs-integration-branch
+  fence-base artifact** that broke earlier informal runs — the seed commit is the
+  fence base.
 - **Scope boundary.** This is a **test/measurement harness** — it does not change
   the driver's behavior (only adds an opt-in usage log), the procedure pack, or the
   micro-increment layer. It runs on `harness-optional` (where the driver lives).
@@ -79,10 +83,11 @@ INVEST — ✅ Independent (wraps delivered T-072; nothing depends on it) · ✅
 > **Assumption:** the usage hook is a new **env var `OPENUP_AGENT_USAGE_LOG`** — a
 > path the loop appends `{iteration, model, usage, latency_ms}` to per completion;
 > unset ⇒ no file, no behavior change. *(Vetoable at review.)*
-> **Assumption:** the fixture is a `git clone --local --no-hardlinks` of `--repo`
-> (full isolation: separate object store + separate `.git/openup` claims dir), reset
-> by re-cloning each run — not a shared worktree (which shares the claims lease dir).
-> *(Vetoable at review.)*
+> **Decision (owner, mid-flight):** the fixture is a **fresh `git init` project
+> built from `git archive HEAD`** (or the working tree) into a temp dir OUTSIDE the
+> repo — a brand-new git project, per the owner's requirement — not a
+> `git clone`. This gives full isolation AND a clean base ref (the seed commit),
+> sidestepping the fence's `origin/main` base artifact.
 > **Assumption:** the default scenario `quick-doc` seeds ONE `quick`-track READY
 > change-folder lane whose single `## Operations` step is a trivial deterministic
 > edit (append a line to a scratch doc under its own `touches`), so a completed
@@ -107,11 +112,13 @@ INVEST — ✅ Independent (wraps delivered T-072; nothing depends on it) · ✅
      created and the existing tests pass unchanged.
 
 2. **`openup-agent-bench.py` runs an isolated, seeded fixture per run.** For each of
-   `--runs N`: it `git clone --local`s `--repo` into a temp fixture, applies the
-   selected scenario seed and commits it, then runs `openup-agent.py run --dir
-   <fixture> --procedure <p>` as a subprocess with `OPENUP_AGENT_USAGE_LOG` pointed
-   into the fixture and a wall-clock `--timeout`. The real repo is never written to;
-   fixtures are removed after capture unless `--keep`.
+   `--runs N`: it snapshots `--repo` with `git archive HEAD` (or the working tree)
+   into a temp dir OUTSIDE the repo, `git init`s it, applies the scenario seed and
+   commits it (that seed commit becomes the fence base via `origin/main`), then runs
+   `openup-agent.py run --dir <fixture> --procedure <p>` as a subprocess with
+   `OPENUP_AGENT_USAGE_LOG` pointed into the fixture and a wall-clock `--timeout`.
+   The real repo is never written to; fixtures are removed after capture unless
+   `--keep`.
    - **Given** `--repo <clean-repo> --runs 2` **When** the harness runs **Then** two
      independent fixtures are cloned+seeded+driven and the source repo's
      `git status` is unchanged.
@@ -119,11 +126,12 @@ INVEST — ✅ Independent (wraps delivered T-072; nothing depends on it) · ✅
      source's uncommitted tracked diff is applied into the fixture before seeding.
 
 3. **A built-in, pluggable seed scenario.** `quick-doc` (default) seeds one
-   `quick`-track READY change-folder lane (`plan.md` with valid instance
-   frontmatter + a one-step `## Operations`) and its roadmap row, such that
+   `quick`-track READY change-folder lane (`plan.md` with board-readable
+   frontmatter + a one-step `## Operations`) via an `overlay/` tree, such that
    `openup-board.py resolve` on the fixture returns `pick` for that lane (not the
-   repo's real backlog). `--scenario <dir>` overlays a custom scenario directory
-   instead.
+   repo's real backlog — no roadmap row is needed because a READY change folder is
+   picked at §1b). `--scenario <dir>` overlays a custom scenario directory instead;
+   `scenario.json` carries `expect_pick` + the deliverable ground-truth check.
    - **Given** the seeded fixture **When** `openup-board.py resolve` runs on it
      **Then** `path == "pick"` and `lane.task` is the seeded id.
 
