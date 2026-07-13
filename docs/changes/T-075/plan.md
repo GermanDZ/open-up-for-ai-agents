@@ -169,8 +169,8 @@ round-trip.
 
 ## Operations
 
-- [ ] (developer) Implement `scripts/openup-lifecycle.py` (`status`, `stamp-phase`)
-- [ ] (developer) Define `docs/product/milestones/` format + `README.md`
-- [ ] (developer) Register in `process-manifest.txt` + `script-cli-reference.md`
-- [ ] (tester) Hermetic tests for R1–R4
-- [ ] (developer) Run check-docs + fence; sync `.claude/` if any skill/template touched
+- [x] (developer) Implement `scripts/openup-lifecycle.py` (`status`, `stamp-phase`)
+- [x] (developer) Define `docs/product/milestones/` format + `README.md`
+- [x] (developer) Register in `process-manifest.txt` + `script-cli-reference.md`
+- [x] (tester) Hermetic tests for R1–R4
+- [x] (developer) Run check-docs + fence; sync `.claude/` if any skill/template touched

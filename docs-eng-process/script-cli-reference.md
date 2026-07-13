@@ -191,6 +191,27 @@ openup-doctor.py [--repo-root DIR] [--framework-path DIR] [--json]
   exit 2. `sync-status.py` is intentionally excluded (it writes; no read-only
   mode).
 
+## openup-lifecycle.py — derived project-lifecycle status (phase + milestones)
+
+```
+openup-lifecycle.py [--repo-root DIR] [--state-dir DIR] status [--json]
+openup-lifecycle.py [--repo-root DIR] [--state-dir DIR] stamp-phase
+```
+- **Read-only `status`** — derives the current **phase** + **cycle** and each
+  milestone-exit **criterion** state (`met` | `unmet` | `human-judgment`).
+  Sibling to `openup-board.py`: same never-hand-edit rule. Phase authority is the
+  **milestone decision records** in `docs/product/milestones/<phase>-<cycle>.md`
+  (human go/no-go, authored only by `/openup-phase-review`); with **no records**
+  it falls back to `.openup/state.json`'s `phase` and flags `source:
+  state-fallback` (no fabricated history). Criteria are marked `met`/`unmet` only
+  when mechanically verifiable (a typed work-product instance exists, per T-038);
+  judgment criteria (architecture *validated* = tested skeleton, stakeholder
+  concurrence) are reported `human-judgment`, never auto-`met`. A malformed
+  milestone record → **exit 2** naming the file.
+- **`stamp-phase`** — writes the derived phase into `.openup/state.json`
+  (idempotent; `phase` is a derived cache, no longer hand-set via
+  `project-status.md`). Exit 3 when there is no state file.
+
 ## openup-scribe.py — deterministic scribe writes
 
 ```
