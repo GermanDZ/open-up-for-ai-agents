@@ -1,15 +1,17 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 61
-**Iteration Goal**: T-092 — Cycle recovery mode — degenerate plan-iteration bridge (rebuild the missing spec, continue)
+**Iteration**: 62
+**Iteration Goal**: T-094 — Cycle recovery — consent-gated LLM replenishment when nothing is promotable
 **Status**: completed
-**Current Task**: T-092
+**Current Task**: T-094
 **Iteration Started**: 2026-06-18
 **Last Updated**: 2026-07-13
 **Updated By**: sync-status.py
 
 ## Notes
+
+**Iteration 62** (2026-07-13): T-094 — **consent-gated replenishment**, the last loop-strand recovery: when even T-092 recovery has nothing deterministic left (roadmap present but exhausted/blocked mid-phase, or a non-advancing recovery round), `cycle` now **asks before acting** — a TTY yes/no under `--interactive`, else an input-request (multiple-choice, lane-less) + SUSPEND sentinel + exit 5 via the T-074 machinery, remembered in `.openup/cycle.json` so a pending ask re-suspends every later cycle without duplicates. An answered **yes** runs ONE bounded **product-manager**-hat sub-run (new additive `instruction=` override skips the change-folder briefing — the pass belongs to no lane) that appends 1–5 pending roadmap entries with Value rationales; acceptance is deterministic (`openup-roadmap.py next` must then find something promotable + check-docs) or the cycle fails typed with nothing committed; on success the `[openup-skip]` roadmap commit lands and the SAME invocation chains replenish → T-092 spec-authoring → pick → ADVANCED (proven end-to-end hermetically, hats product-manager→analyst, commit order asserted). An answered **no** is durable (consumed; clean DONE, never re-asked); interactive decline is per-run. `--auto-replenish` deliberately deferred — the LLM proposes, the human consents, scope is never invented silently (PM value-ordering authority). Recovery restructured into a bounded loop (Case B once; ≤2 rounds of Case A|replenish; ≤1 ask). Req 7 amended fix-spec-first BEFORE code (T-092 DD7 learning applied proactively): exactly one pre-existing test switched to `recover=False`, the only failure observed. +9 tests (123 driver+bench+cycle+roadmap green); spec-scenarios, check-docs, fence (--base harness-optional) green. Solo, standard, worktree, on harness-optional.
 
 **Iteration 60** (2026-07-13, quick): T-093 — `openup-roadmap.py` no longer crashes a freshly bootstrapped project: `_roadmap_text` treats a missing `docs/roadmap.md` as empty (a valid pre-Inception state), so `list` → `[]`, `get`/`next` → exit 3, and `openup-board.py resolve` / `openup-agent.py cycle` degrade to a clean noop decision instead of a FileNotFoundError traceback (found live on a fresh `bootstrap-project.sh` project the moment `cycle` walked the promote path — every earlier consumer dodged it because bench fixtures always seed a READY lane). +4 hermetic tests (26 roadmap suite green) incl. resolve-returns-decision on a roadmapless repo. Verified on the reproduced fixture: `cycle` now prints `OPENUP-NEXT: DONE — … roadmap exhausted`. Solo, quick, in-place, on harness-optional.
 

@@ -767,7 +767,7 @@ authored when promoted.
 ---
 
 ## T-094: Cycle recovery — consent-gated LLM replenishment when nothing is promotable
-**Status**: pending
+**Status**: completed (2026-07-13)
 **Priority**: high
 **Value**: Post-T-092 the loop still strands on the one gap recovery can't fix alone: a present-but-exhausted (or fully blocked) roadmap mid-phase. The missing ingredient is product judgment — what's next — which must not be invented silently by an unattended loop; asking the human first keeps the product-manager value-ordering authority intact while making the recovery complete.
 **Description**: When `openup-agent.py cycle` (recovery on) hits a **stuck** decision — `noop` with `docs/roadmap.md` present but nothing promotable while the phase's exit criteria are unmet, or a non-advancing recovery round — it asks for consent to run an LLM planning pass: with `--interactive`, a TTY prompt; otherwise an input-request + suspend (exit 5, T-074 machinery), whose answered "yes" resumes the cycle. On consent, ONE bounded **product-manager-hat** sub-run reads vision + roadmap + project status + risk list and appends **1–5 pending roadmap rows, each with a Value rationale** (sanctioned planning-artifact edit), commits, re-resolves → `plan-iteration` → T-092 Case A authors the first spec and the same cycle continues. Proposed rows stay pending/human-editable (consent up front, veto after). An `--auto-replenish` flag may skip the ask for deliberately unattended loops (decided at promote). Deliberately shares its judgment step with T-090's choose-objectives (same PM call via the sad path) — T-090 reuses, not duplicates, it. Fresh-no-roadmap (Inception hint, T-092) and assess/milestone (T-091) are out of scope.
