@@ -815,7 +815,7 @@ authored when promoted.
 ---
 
 ## T-091: Cycle engine — assess + milestone paths; pack ceremony/judgment split
-**Status**: pending
+**Status**: completed (2026-07-13)
 **Priority**: medium
 **Value**: Cycle reaches full `/openup-next` parity (same sentinels, same human gates) and the prose–code drift risk is closed: ceremony authority moves to the engine, procedures slim to judgment content (what a good artifact looks like), Claude Code path unchanged.
 **Description**: `cycle` handles `assess-iteration` (done-ness derived in code; a grading sub-run for non-derivable criteria; feed-back + `## Assessment` appended deterministically) and `milestone-review` (evidence + input-request pause, zero LLM); DONE-sentinel parity; slim the affected procedures' ceremony sections to describe the engine. Program acceptance measured here via the T-080 benchmark.

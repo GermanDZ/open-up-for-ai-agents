@@ -1,7 +1,7 @@
 ---
 id: T-091
 title: Cycle engine — assess + milestone paths; pack ceremony/judgment split
-status: ready   # proposed → ready → in-progress → done → verified
+status: done
 priority: medium   # critical | high | medium | low
 estimate: 1–2 sessions
 plan: docs/explorations/2026-07-13-deterministic-cycle-engine.md

@@ -1,3 +1,4 @@
 {"run_id": "T-091-9eb2485", "event": "session_begin", "task_id": "T-091", "goal": "T-091 \u2014 cycle assess + milestone paths", "branch": "feat/T-091-cycle-assess-milestone", "phase": "construction", "ts": "2026-07-13T17:32:29Z"}
 {"run_id": "acc550a51cf34528bc1c335573bae7ae", "event": "commit", "task_id": "T-091", "branch": "feat/T-091-cycle-assess-milestone", "sha": "91330da8a9fd559aa26becfece60346cde04de19", "model": null, "session_id": "feat/T-091-cycle-assess-milestone", "ts": "2026-07-13T17:32:30Z"}
 {"run_id": "dbbcdcf2961e42b1aa009502ea2db018", "event": "commit", "task_id": "T-091", "branch": "feat/T-091-cycle-assess-milestone", "sha": "f04bc369429554f8a24266dc30de4d5125cbd367", "model": null, "session_id": "feat/T-091-cycle-assess-milestone", "ts": "2026-07-13T17:43:13Z"}
+{"event": "session_end", "task_id": "T-091", "ts": "2026-07-13T17:43:52Z"}
