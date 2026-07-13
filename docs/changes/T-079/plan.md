@@ -12,6 +12,8 @@ touches:
   - docs-eng-process/procedures/openup-start-iteration.md
   - docs-eng-process/parallel-lanes.md
   - docs-eng-process/script-cli-reference.md
+  - docs-eng-process/.claude-templates/skills/openup-start-iteration/
+  - .claude/skills/openup-start-iteration/
   - docs/changes/
   - tests/
 last-synced: ""
