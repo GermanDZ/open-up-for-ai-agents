@@ -1,0 +1,7 @@
+{
+  "name": "quick-doc",
+  "description": "One quick-track READY change-folder lane whose single Operations step is a trivial deterministic edit. The driver's `next` cycle should pick it, make the edit, tick the box, and complete the lane fence-clean.",
+  "expect_pick": "BENCH-001",
+  "deliverable_file": "docs/bench-scratch/note.md",
+  "deliverable_marker": "bench ok"
+}

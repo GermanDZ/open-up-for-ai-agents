@@ -16,6 +16,7 @@ import os
 import re
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 from . import llm, tiers, tools
@@ -47,6 +48,29 @@ class ConfigError(Exception):
 def _log(msg):
     sys.stderr.write("[openup-agent] %s\n" % msg)
     sys.stderr.flush()
+
+
+def _append_usage(path, iteration, model, latency_ms, response):
+    """Append one per-completion usage record to OPENUP_AGENT_USAGE_LOG (T-080).
+
+    Opt-in benchmarking side channel: when the env var is set, one JSON line per
+    LLM call records the endpoint's `usage` object (verbatim; ``{}`` if omitted)
+    plus the iteration, model, and measured latency. When the var is unset the
+    caller never invokes this, so the driver's behavior is byte-for-byte
+    unchanged. Failures to write are swallowed — instrumentation must never break
+    a run.
+    """
+    record = {
+        "iteration": iteration,
+        "model": model,
+        "latency_ms": latency_ms,
+        "usage": (response.get("usage") or {}) if isinstance(response, dict) else {},
+    }
+    try:
+        with open(path, "a", encoding="utf-8") as fh:
+            fh.write(json.dumps(record, ensure_ascii=False) + "\n")
+    except OSError as e:
+        _log("usage-log write failed (%s); continuing" % e)
 
 
 def _env_config(env):
@@ -215,6 +239,8 @@ def run(dir, procedure, max_iterations=DEFAULT_MAX_ITERATIONS, env=None,
         {"role": "user", "content": "Execute the procedure now."},
     ]
 
+    usage_log = env.get("OPENUP_AGENT_USAGE_LOG")
+
     def complete(msgs):
         if _completion is not None:
             return _completion(model, msgs, tools.TOOL_DEFS)
@@ -222,7 +248,11 @@ def run(dir, procedure, max_iterations=DEFAULT_MAX_ITERATIONS, env=None,
 
     for i in range(1, max_iterations + 1):
         try:
+            _t0 = time.monotonic()
             response = complete(messages)
+            if usage_log:
+                _append_usage(usage_log, i, model,
+                              int((time.monotonic() - _t0) * 1000), response)
             message = llm.first_message(response)
         except llm.LLMError as e:
             _log("FATAL: endpoint error on iteration %d: %s" % (i, e))
