@@ -70,6 +70,8 @@
 
 ## Success-measure read-back (pending, owner-side)
 
+✅ instrumentation — `OPENUP_AGENT_USAGE_LOG` per-call capture pre-exists (T-080, `scripts/openup_agent/loop.py::_append_usage`); this diff adds the `cycle-quick-doc` scenario + bench `command` support that produce the comparable `summary.json` batches. Read-back: owner's next live bench batch after merge (record here + roadmap program block).
+
 The ≥5× token claim is measured on a live local model: run
 `python3 scripts/openup-agent-bench.py --scenario scripts/bench-scenarios/cycle-quick-doc --runs 5`
 and compare `summary.json` `tokens_total` against a same-model `quick-doc`
