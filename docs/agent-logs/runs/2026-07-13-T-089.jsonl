@@ -1,0 +1,1 @@
+{"run_id": "20260713-T-089-start", "event": "session_begin", "task_id": "T-089", "goal": "T-089 \u2014 cycle engine core: deterministic pick/resume + Operations-step executor in the reference driver (openup-agent.py cycle)", "branch": "feature/T-089-cycle-engine-core", "phase": "construction", "ts": "2026-07-13T14:49:47Z"}

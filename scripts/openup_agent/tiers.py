@@ -94,17 +94,14 @@ def procedure_path(root, procedure):
     return Path(root, *PROCEDURES_REL, "openup-%s.md" % name)
 
 
-def resolve_model(root, procedure, target="driver", env=None):
-    """Resolve the model for `procedure` via the tier-map `target` column.
+def resolve_tier_model(root, tier, target="driver", env=None):
+    """Resolve a bare tier NAME via the tier-map `target` column (T-089).
 
-    Raises TierError if the procedure file is missing, has no `tier:`, or the
-    tier name is absent from the target column (no silent default).
+    The procedure-independent half of `resolve_model` — used by the cycle
+    engine, whose step-scoped sub-runs carry a tier directly instead of a
+    procedure file. Raises TierError on an unknown tier/column (no silent
+    default).
     """
-    proc_path = procedure_path(root, procedure)
-    if not proc_path.exists():
-        raise TierError("procedure file not found: %s" % proc_path)
-    tier = read_procedure_tier(proc_path.read_text(encoding="utf-8"))
-
     tier_map = load_tier_map(Path(root, *TIER_MAP_REL))
     column = tier_map.get(target)
     if column is None:
@@ -115,3 +112,16 @@ def resolve_model(root, procedure, target="driver", env=None):
             % (tier, target)
         )
     return expand_placeholder(column[tier], env=env)
+
+
+def resolve_model(root, procedure, target="driver", env=None):
+    """Resolve the model for `procedure` via the tier-map `target` column.
+
+    Raises TierError if the procedure file is missing, has no `tier:`, or the
+    tier name is absent from the target column (no silent default).
+    """
+    proc_path = procedure_path(root, procedure)
+    if not proc_path.exists():
+        raise TierError("procedure file not found: %s" % proc_path)
+    tier = read_procedure_tier(proc_path.read_text(encoding="utf-8"))
+    return resolve_tier_model(root, tier, target=target, env=env)

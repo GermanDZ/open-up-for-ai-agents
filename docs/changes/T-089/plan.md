@@ -240,16 +240,16 @@ procedure-direct mode; `cycle` is additive and explicitly invoked.
 
 ## Operations
 
-- [ ] Implement `cycle.py` decision + acquire wiring: `resolve` → typed
+- [x] Implement `cycle.py` decision + acquire wiring: `resolve` → typed
       dispatch (pick/resume proceed; noop → DONE sentinel; other paths → typed
       unsupported exit) → in-place branch + `openup-session.py begin`; hermetic
       tests for all five dispatch outcomes (Req 1, 7)
-- [ ] Implement the Operations-step executor: box parser + classifier
+- [x] Implement the Operations-step executor: box parser + classifier
       (pattern + marker override), script-step subprocess exec, judgment-step
       bounded `loop.run()` sub-run with instruction builder (box + hat + change
       folder), gates-then-tick ordering with typed gate-failure exit; hermetic
       tests incl. resume-at-second-box (Req 2, 3, 4, 6)
-- [ ] Implement deterministic completion: status flip → status-note shard →
+- [x] Implement deterministic completion: status flip → status-note shard →
       `sync-status.py` → archive → commit → `session end` → `OPENUP-NEXT:
       ADVANCED` sentinel on stdout, exit 0; hermetic end-to-end fixture test
       (Req 5)
