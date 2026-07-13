@@ -71,7 +71,10 @@ The last stdout line is a JSON one-liner (`{"out":…, "pass_rate":…,
    exit code; gate-cleanliness and work-delta are **recomputed on the fixture**;
    tokens/latency come from the usage log.
 6. **Aggregate.** All runs fold into `results.jsonl` + `summary.json` +
-   `summary.md` under `--out` (default `<repo>/.openup/bench/<stamp>/`).
+   `summary.md` under `--out` (default `<repo>/.openup/bench/<stamp>/`). Each run's
+   **deliverable is archived** into `<out>/run-NN.<basename>` (e.g.
+   `run-01.vision.md`) — so the artifact a run scored survives fixture teardown and
+   you can read/compare it (across models) **without `--keep`**.
 
 ---
 

@@ -453,6 +453,15 @@ def run_batch(args, env):
             record["seed_resolves_pick"] = ok
             if args.keep:
                 record["fixture"] = str(fixture)
+            # Archive the run's deliverable into the results dir so the artifact a
+            # batch scored survives fixture teardown (read/compare visions without
+            # --keep). Named run-NN.<basename> (e.g. run-01.vision.md).
+            record["deliverable_archived"] = None
+            df = scenario.get("deliverable_file")
+            if df and (fixture / df).exists():
+                dest = out_dir / ("run-%02d.%s" % (n, Path(df).name))
+                shutil.copy2(fixture / df, dest)
+                record["deliverable_archived"] = dest.name
             # Always persist the full driver stdout/stderr — the definitive
             # per-run debug log — so a failure never needs a manual side-run.
             (out_dir / ("run-%02d.driver.log" % n)).write_text(
