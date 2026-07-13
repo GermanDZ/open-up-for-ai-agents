@@ -54,6 +54,7 @@ All configuration is environment variables — nothing to edit in the repo.
 | `OPENUP_MODEL_MID` | optional | Model for the `authoring` tier. Falls back to `local-mid` if unset. |
 | `OPENUP_MODEL_SMALL` | optional | Model for the `scribe` / `coordination` tiers. Falls back to `local-small` if unset. |
 | `OPENUP_AGENT_USAGE_LOG` | optional | Path to append one JSON line per LLM call — `{iteration, model, latency_ms, usage:{prompt_tokens, completion_tokens, total_tokens}}`. Unset ⇒ no file, no behavior change. Used by the benchmark harness (see [reference-driver-benchmark.md](reference-driver-benchmark.md)). |
+| `OPENUP_AGENT_TIMEOUT` | optional | Per-LLM-call socket timeout in seconds (default **600**). Raise it for slow local models with long generations. A call that exceeds it surfaces as a clean `endpoint-error` (exit 3), never an uncaught crash. |
 
 \* If your endpoint requires auth and `LLM_API_KEY` is empty, you'll get an HTTP 401
 from the endpoint (surfaced as exit 3).

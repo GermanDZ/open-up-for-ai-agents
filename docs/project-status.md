@@ -1,15 +1,17 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 51
+**Iteration**: 52
 **Iteration Goal**: T-080 — Reference-driver acceptance/benchmark harness
 **Status**: completed
-**Current Task**: T-081
+**Current Task**: T-082
 **Iteration Started**: 2026-06-18
 **Last Updated**: 2026-07-13
 **Updated By**: sync-status.py
 
 ## Notes
+
+**Iteration 52** (2026-07-13, quick): T-082 — driver LLM client no longer crashes on a slow response. Found by the T-080 benchmark (batch 20260713-150411 run 3: uncaught `TimeoutError: timed out` during `getresponse()` → exit 1 `error`). `llm.chat_completion` only caught `HTTPError`/`URLError`, but a socket-read timeout raises a bare `TimeoutError` (an `OSError`, not a `URLError`), so it escaped `LLMError` and killed the run. Fix: catch `(TimeoutError, OSError)` after the specific handlers → `LLMError` (loop returns a clean `endpoint-error` exit 3, retryable, surfaced in the bench `## Failures`), raise the default per-call timeout **120→600s**, and make it configurable via **`OPENUP_AGENT_TIMEOUT`** (read in `loop.run`, passed through; documented in `reference-driver.md`). +4 tests (socket-timeout & OSError → LLMError; loop exits 3 on timeout; env plumb-through). 26 driver+bench tests green; fence (`--base harness-optional`) green. Solo, quick, worktree, on harness-optional.
 
 **Iteration 51** (2026-07-13, quick): T-081 — the benchmark harness (T-080) now records + surfaces the driver's failure reason instead of swallowing it. Each run record gains `fatal` (the driver's `FATAL:` line), `stderr_tail`, and `stdout_tail`; the full driver stdout/stderr is written to `<out>/run-NN.driver.log`; on any non-`pass` outcome the reason is `_log`'d to the bench stderr and listed in a new `## Failures` section of `summary.md`. Prompted by the first live batch (all runs `endpoint-error`, reason hidden — turned out to be a transient endpoint-not-ready). Additive, no behavior change to a passing run. +1 hermetic test (forced endpoint-error against an unreachable URL asserts `fatal`/`stderr_tail`/driver log; 22 driver+bench tests green). Fence (`--base harness-optional`) green. Solo, quick, worktree, on harness-optional.
 

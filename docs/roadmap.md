@@ -635,3 +635,15 @@ authored when promoted.
 **Dependencies**: T-080
 
 **See**: `docs/changes/archive/T-081/plan.md`
+
+---
+
+## T-082: Driver LLM client — handle slow-response timeout instead of crashing
+**Status**: completed (2026-07-13)
+**Priority**: high
+**Value**: Found by the T-080 benchmark on a live local model: a slow LLM response fired the 120s per-call timeout as an uncaught `TimeoutError` and **crashed the whole run** (exit 1) instead of surfacing a clean, retryable error. On a local big model this recurs.
+**Description**: `llm.chat_completion` now catches `(TimeoutError, OSError)` → `LLMError` (loop exits 3 `endpoint-error`, never an uncaught crash), the default per-call timeout rises 120→600s, and it's configurable via `OPENUP_AGENT_TIMEOUT`. +4 tests; env documented in `reference-driver.md`.
+
+**Dependencies**: T-072 (found via T-080)
+
+**See**: `docs/changes/archive/T-082/plan.md`

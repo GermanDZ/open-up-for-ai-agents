@@ -30,7 +30,7 @@ def completions_url(api_url):
 
 
 def chat_completion(api_url, api_key, model, messages, tools=None,
-                    temperature=0, timeout=120, _opener=None):
+                    temperature=0, timeout=600, _opener=None):
     """POST one chat-completions request; return the parsed JSON response.
 
     `_opener` is an injection seam for tests (a callable taking a urllib.request
@@ -56,6 +56,15 @@ def chat_completion(api_url, api_key, model, messages, tools=None,
         raise LLMError("HTTP %s from endpoint: %s" % (e.code, detail[:500]))
     except urllib.error.URLError as e:
         raise LLMError("cannot reach endpoint %s: %s" % (api_url, e.reason))
+    except (TimeoutError, OSError) as e:
+        # A socket timeout during getresponse()/read raises a bare TimeoutError
+        # (a subclass of OSError, NOT of URLError) — on a slow local model this
+        # is common. Surface it as a clean, retryable LLMError so the loop exits
+        # 3 (endpoint-error) instead of crashing the run with an uncaught
+        # exception (exit 1). Raise OPENUP_AGENT_TIMEOUT for legitimately slow
+        # generations.
+        raise LLMError("transport failure after %ss talking to %s: %s"
+                       % (timeout, api_url, e))
     try:
         return json.loads(body)
     except json.JSONDecodeError as e:
