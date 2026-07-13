@@ -262,7 +262,7 @@ procedure-direct mode; `cycle` is additive and explicitly invoked.
 - [x] (analyst) Document `cycle` in `reference-driver.md` +
       `script-cli-reference.md` (signature, exit codes, sub-run contract,
       loop.sh non-change)
-- [ ] (tester) Run the full driver+bench suites plus `openup-spec-scenarios.py
+- [x] (tester) Run the full driver+bench suites plus `openup-spec-scenarios.py
       check`, `check-docs.py`, and `openup-fence.py check --base
       harness-optional`; record results + any deviations in
       `docs/changes/T-089/design.md`
