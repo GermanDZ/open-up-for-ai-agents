@@ -731,6 +731,7 @@ authored when promoted.
   = 37–50 iters / 1–2M tokens / inconsistent; a single authoring procedure = ~8
   iters / ~59k tokens / 3/3 clean. The ~20–30× gap is LLM-interpreted ceremony.
 - **Ordered deliverables**: T-089 (cycle core: pick/resume + step executor) →
+  T-092 (recovery bridge: degenerate plan-iteration) →
   T-090 (plan-iteration path) → T-091 (assess + milestone paths + pack
   ceremony/judgment split). Full iteration plan authored per task on promote.
 - **Program acceptance (falsifiable)**: on the same local model/scenario, a
@@ -749,6 +750,18 @@ authored when promoted.
 **Dependencies**: T-072, T-080
 
 **See**: `docs/explorations/2026-07-13-deterministic-cycle-engine.md` §3, §6 — full iteration plan authored on promote
+
+---
+
+## T-092: Cycle recovery mode — degenerate plan-iteration bridge (rebuild the missing spec, continue)
+**Status**: pending
+**Priority**: high
+**Value**: A `cycle` loop on a real project stalls at exit 7 the moment the board says plan-iteration (my-product, 2026-07-13 live test) — yet the decision already names the next work item. One bounded spec-authoring sub-run turns "cannot proceed deterministically" into "rebuild the missing doc, then continue", keeping the loop end-to-end on local models without resurrecting the 1–2M-token `next` path. Cheap bridge, ordered before the full T-090 generalization.
+**Description**: When `openup-board.py resolve` returns `plan-iteration`, `openup-agent.py cycle` runs the T-077 quick-archetype degenerate case in-engine: take the decision's `lane.task` (the next promotable roadmap item), author its `docs/changes/<id>/plan.md` via ONE bounded judgment sub-run carrying the create-task-spec content contract (typed frontmatter incl. `touches`, G/W/T scenarios, `## Operations` boxes authored to the engine's step conventions), gate it (`openup-spec-scenarios.py check` + `check-docs.py`), commit the spec, re-resolve → `pick` → continue the SAME cycle. `assess-iteration` / `milestone-review` keep their typed exit 7 (T-091 scope). Flag/default decided at promote (leaning: on by default; `--no-recover` opts out to preserve the bare exit-7 signal).
+
+**Dependencies**: T-089
+
+**See**: seeded from the my-product live test (cycle stalls at plan-iteration) — full iteration plan authored on promote
 
 ---
 
