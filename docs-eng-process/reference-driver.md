@@ -230,10 +230,19 @@ navigator is handed *facts* computed in code — the process map
 index — and returns, as a structured file (`.openup/navigator-decision.json`,
 the T-072 pattern): the next procedure to run + its `--instruction`, or the
 **missing human input**. The driver then runs that procedure directly (for
-process-artifact authoring — vision, use-cases, architecture, iteration plan) or
-raises the missing input as an input-request and suspends (exit 5). Product
-scope is never invented here: anything that would append roadmap entries stays
-behind the T-094 consent gate. Disable navigation with `cycle --no-navigate`
+process-artifact authoring — vision, use-cases, architecture, iteration plan).
+
+When the missing input is a **document the human authors** (a stakeholder brief),
+the driver **scaffolds a fillable template** at its path (the decision's
+`input_path`, or the fresh-project brief default `docs/inputs/stakeholder-brief.md`)
+and suspends (exit 5), guiding the human to fill it and re-run — an input-request
+cannot produce a document, so raising one would never converge (T-097). The
+template is marker-guarded: a still-templated scaffold reads as *absent* in the
+Ring-1 survey (so a filled brief, not the empty scaffold, is what advances the
+loop), and a filled or partially-filled file is never overwritten. A genuine
+short-answer **question** (no artifact path) still raises a T-074 input-request.
+Product scope is never invented here: anything that would append roadmap entries
+stays behind the T-094 consent gate. Disable navigation with `cycle --no-navigate`
 (restores the pre-T-096 hardcoded Inception hint).
 
 ## The cycle engine — `openup-agent.py cycle` (T-089)

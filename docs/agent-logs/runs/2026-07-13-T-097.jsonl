@@ -1,0 +1,2 @@
+{"run_id": "T-097-a1538b9", "event": "session_begin", "task_id": "T-097", "goal": "T-097 \u2014 navigator scaffolds fillable artifact", "branch": "fix/T-097-navigator-artifact-scaffold", "phase": "construction", "ts": "2026-07-13T18:03:39Z"}
+{"run_id": "1e12fbccd8d244fe8256c8008853a68d", "event": "commit", "task_id": "T-097", "branch": "fix/T-097-navigator-artifact-scaffold", "sha": "2b6bebe68c84ed88de58c466776502f0ad354e1b", "model": null, "session_id": "fix/T-097-navigator-artifact-scaffold", "ts": "2026-07-13T18:03:40Z"}

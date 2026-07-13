@@ -118,9 +118,11 @@ def guidance(rc, stdout):
         4: "the model hit its turn cap without finishing — re-run to retry; "
            "weaker models may need a higher cap (openup-agent.py cycle "
            "--step-max-iterations 15).",
-        5: "waiting on YOU: open the input-request file named above, set "
-           "`status: answered`, fill the `**Answer**:` line (or tick an "
-           "option), then re-run ./scripts/next-cycle.",
+        5: "waiting on YOU: the line above names the file to act on — either "
+           "fill in the template document it points to (e.g. a stakeholder "
+           "brief), or, for an input-request, set `status: answered` and fill "
+           "the `**Answer**:` line (or tick an option). Then re-run "
+           "./scripts/next-cycle.",
         6: "a deterministic gate failed — read the report above, fix it, and "
            "re-run (the step will be retried).",
         7: "this decision path is not automated yet (see T-090/T-091) — run "

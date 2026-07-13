@@ -49,8 +49,11 @@ PROCESS_ARTIFACT_PROCEDURES = frozenset({
     "openup-create-test-plan",
 })
 
-# Ring-1 artifacts surveyed (existence only — the LLM classifies, it does not
-# hunt the filesystem). label -> repo-relative path.
+# Ring-1 artifacts surveyed. label -> repo-relative path. A path in
+# SCAFFOLDABLE is a human-authored artifact the navigator can scaffold as a
+# template; it counts as *present* only when it exists AND lacks the template
+# marker (a still-templated scaffold reads as absent, so a filled artifact — not
+# the empty scaffold — advances the loop).
 RING1_ARTIFACTS = (
     ("vision", "docs/vision.md"),
     ("roadmap", "docs/roadmap.md"),
@@ -59,6 +62,46 @@ RING1_ARTIFACTS = (
     ("risk_list", "docs/risk-list.md"),
     ("stakeholder_brief", "docs/inputs/stakeholder-brief.md"),
 )
+
+# The default human-input artifact for a fresh Inception project (the input the
+# create-vision procedure reads). Used when the navigator flags a missing input
+# but a weak model omits an explicit ``input_path`` — so convergence never
+# depends on the model naming it.
+DEFAULT_INPUT_PATH = "docs/inputs/stakeholder-brief.md"
+
+# Marker distinguishing an unfilled scaffold from a human-filled artifact.
+TEMPLATE_MARKER = ("<!-- template: replace every section with your product's "
+                   "reality, delete this line, then re-run ./scripts/next-cycle -->")
+
+SCAFFOLDABLE = frozenset({DEFAULT_INPUT_PATH})
+
+BRIEF_TEMPLATE = """\
+%s
+
+# Stakeholder Brief — <project name>
+
+## The situation
+
+<Who has what problem today? What have they already tried? Why does it fail?>
+
+## Who cares (stakeholders)
+
+- **<role>** — <what they need from this>
+- **<role>** — <what they need from this>
+
+## What they want (desired outcomes)
+
+- <observable outcome, not a feature list>
+- <observable outcome>
+
+## Constraints & context
+
+- <scale, platform, non-negotiables>
+
+## Explicitly out of scope (for now)
+
+- <the things v1 will NOT do>
+""" % TEMPLATE_MARKER
 
 NAVIGATOR_SYSTEM_PROMPT = """\
 You are the OpenUP process navigator. The deterministic engine has found nothing
@@ -73,6 +116,7 @@ EXACTLY this JSON shape and nothing else:
   "procedure": "<an openup-* procedure name, or null>",
   "instruction": "<the --instruction text to hand that procedure, or empty>",
   "missing_inputs": ["<a human input the process needs before any procedure can run>"],
+  "input_path": "<repo-relative file the human should author for that input, or empty>",
   "rationale": "<one line: which phase/activity and why>"
 }
 
@@ -82,7 +126,10 @@ Rules:
   procedures index.
 - If a required HUMAN input is absent (e.g. no vision AND no stakeholder brief to
   author one from), set "procedure": null and list the concrete missing input in
-  "missing_inputs" — describe what the human must provide, not a procedure.
+  "missing_inputs" — describe what the human must provide, not a procedure. When
+  that input is a **document the human writes** (e.g. a stakeholder brief), set
+  "input_path" to where it belongs (e.g. "docs/inputs/stakeholder-brief.md") so a
+  fillable template can be scaffolded for them.
 - If a procedure CAN run, set "missing_inputs": [] and give it a concrete
   "instruction" (what to read, what to produce).
 - If nothing is actionable and nothing is missing (the project is genuinely
@@ -128,9 +175,22 @@ def _phase_activities(root, phase, runner):
         return []
 
 
+def _is_present(root, rel):
+    """True if the artifact exists — and, for a scaffoldable one, is not still a
+    bare template (marker present ⇒ unfilled ⇒ counts as absent)."""
+    path = Path(root) / rel
+    if not path.exists():
+        return False
+    if rel in SCAFFOLDABLE:
+        try:
+            return TEMPLATE_MARKER not in path.read_text(encoding="utf-8")
+        except OSError:
+            return False
+    return True
+
+
 def _ring1_survey(root):
-    root = Path(root)
-    return {label: (root / rel).exists() for label, rel in RING1_ARTIFACTS}
+    return {label: _is_present(root, rel) for label, rel in RING1_ARTIFACTS}
 
 
 def _procedures_index(root):
@@ -193,6 +253,7 @@ def read_navigator_decision(root):
         "procedure": procedure,
         "instruction": str(raw.get("instruction") or "").strip(),
         "missing_inputs": missing,
+        "input_path": str(raw.get("input_path") or "").strip(),
         "rationale": str(raw.get("rationale") or "").strip(),
     }
 
@@ -253,9 +314,58 @@ def _request_open(root, rel_path):
     return True
 
 
+def _generic_template(missing):
+    return ("%s\n\n# Input needed\n\nThe process needs this from you:\n\n%s\n\n"
+            "Replace this with your content, delete the marker line above, then "
+            "re-run ./scripts/next-cycle.\n"
+            % (TEMPLATE_MARKER, "\n".join("- %s" % m for m in missing)))
+
+
+def _default_input_path(root):
+    """The canonical human-input artifact for a fresh pre-Inception project: the
+    stakeholder brief, when neither a vision nor a filled brief exists yet.
+    Returns "" when no default applies (e.g. a vision already exists)."""
+    if _is_present(root, "docs/vision.md"):
+        return ""
+    if _is_present(root, DEFAULT_INPUT_PATH):
+        return ""  # a filled brief already exists — not a scaffolding case
+    return DEFAULT_INPUT_PATH
+
+
+def _scaffold_input(root, rel_path, missing, log, print_, suspend_sentinel):
+    """Scaffold a fillable template at ``rel_path`` (never clobbering a filled or
+    partially-filled file) and suspend, guiding the human to fill it. This is the
+    artifact affordance a bare input-request cannot provide (T-097)."""
+    path = Path(root) / rel_path
+    body = BRIEF_TEMPLATE if rel_path == DEFAULT_INPUT_PATH else _generic_template(missing)
+    if path.exists():
+        try:
+            existing = path.read_text(encoding="utf-8")
+        except OSError:
+            existing = ""
+        if TEMPLATE_MARKER not in existing:
+            # Already filled — the loop should have advanced; re-guide anyway.
+            log("navigator: %s exists and is filled — re-run to proceed" % rel_path)
+            print_("%s — %s (already filled; re-run ./scripts/next-cycle)"
+                   % (suspend_sentinel, rel_path))
+            return NAV_SUSPEND
+        log("navigator: %s already scaffolded (still a template) — awaiting fill"
+            % rel_path)
+    else:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(body, encoding="utf-8")
+        log("navigator: scaffolded a template at %s for the human to fill"
+            % rel_path)
+    print_("%s — fill %s (a template is there), then re-run ./scripts/next-cycle"
+           % (suspend_sentinel, rel_path))
+    return NAV_SUSPEND
+
+
 def _raise_missing_input(root, missing, runner, log, print_, suspend_sentinel):
     """Ensure a single input-request captures the missing human input and
-    suspend (exit 5). Re-suspends an already-open request without duplicating."""
+    suspend (exit 5). Re-suspends an already-open request without duplicating.
+    Used only for a genuine short-answer question — a missing *artifact* is
+    scaffolded instead (see _scaffold_input)."""
     nav = _read_meta(root).get("navigator") or {}
     existing = nav.get("request")
     if _request_open(root, existing):
@@ -319,6 +429,14 @@ def run_navigator(root, *, dispatch, run_procedure, runner=_subprocess_runner,
            decision["rationale"][:120]))
 
     if decision["missing_inputs"]:
+        # A missing human *artifact* (the LLM's input_path, or the fresh-project
+        # brief default) gets a fillable template — an input-request cannot
+        # produce a document, so it would never converge (T-097). A genuine
+        # short-answer question with no artifact path still uses the request.
+        artifact = decision["input_path"] or _default_input_path(root)
+        if artifact:
+            return _scaffold_input(root, artifact, decision["missing_inputs"],
+                                   log, print_, suspend_sentinel)
         return _raise_missing_input(root, decision["missing_inputs"], runner,
                                     log, print_, suspend_sentinel)
 

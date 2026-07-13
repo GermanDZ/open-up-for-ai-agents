@@ -150,19 +150,19 @@ artifact path. Generalize the wrapper's exit-5 line.
 
 ## Operations
 
-- [ ] Add to `navigator.py`: `TEMPLATE_MARKER`, `BRIEF_TEMPLATE`,
+- [x] Add to `navigator.py`: `TEMPLATE_MARKER`, `BRIEF_TEMPLATE`,
   `DEFAULT_INPUT_PATH`, `_scaffold_input(root, path, guidance)`, and make
   `_ring1_survey` treat a marker-containing artifact as absent.
-- [ ] Add `input_path` to the decision schema (`read_navigator_decision` +
+- [x] Add `input_path` to the decision schema (`read_navigator_decision` +
   system-prompt guidance) and rewrite `run_navigator`'s missing-input branch:
   resolve a path (decision `input_path` → inception-brief default), scaffold +
   guide + suspend when resolvable; else fall back to the input-request.
-- [ ] Generalize `scripts/next-cycle` exit-5 guidance to name the template-fill
+- [x] Generalize `scripts/next-cycle` exit-5 guidance to name the template-fill
   path as well as the input-request.
-- [ ] (tester) Add navigator tests (scaffold, converge-on-filled, no-clobber,
+- [x] (tester) Add navigator tests (scaffold, converge-on-filled, no-clobber,
   genuine-question-requests) + a next-cycle guidance test.
-- [ ] Update the navigator section of `docs-eng-process/reference-driver.md`.
-- [ ] (tester) Full driver+navigator+next-cycle suite green; `check-docs`,
+- [x] Update the navigator section of `docs-eng-process/reference-driver.md`.
+- [x] (tester) Full driver+navigator+next-cycle suite green; `check-docs`,
   `openup-spec-scenarios`, `openup-fence.py check --base harness-optional` green.
 
 ## Norms
