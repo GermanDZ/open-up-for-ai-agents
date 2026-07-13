@@ -1,15 +1,17 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 59
+**Iteration**: 60
 **Iteration Goal**: T-089 — Cycle engine core — deterministic pick/resume + Operations-step executor
 **Status**: completed
-**Current Task**: T-089
+**Current Task**: T-093
 **Iteration Started**: 2026-06-18
 **Last Updated**: 2026-07-13
 **Updated By**: sync-status.py
 
 ## Notes
+
+**Iteration 60** (2026-07-13, quick): T-093 — `openup-roadmap.py` no longer crashes a freshly bootstrapped project: `_roadmap_text` treats a missing `docs/roadmap.md` as empty (a valid pre-Inception state), so `list` → `[]`, `get`/`next` → exit 3, and `openup-board.py resolve` / `openup-agent.py cycle` degrade to a clean noop decision instead of a FileNotFoundError traceback (found live on a fresh `bootstrap-project.sh` project the moment `cycle` walked the promote path — every earlier consumer dodged it because bench fixtures always seed a READY lane). +4 hermetic tests (26 roadmap suite green) incl. resolve-returns-decision on a roadmapless repo. Verified on the reproduced fixture: `cycle` now prints `OPENUP-NEXT: DONE — … roadmap exhausted`. Solo, quick, in-place, on harness-optional.
 
 **Iteration 59** (2026-07-13): T-089 — cycle engine core, the first slice of the deterministic-cycle-engine program (invert the reference driver's control: ceremony as code, LLM only at judgment points). New `openup-agent.py cycle --dir <project>` (module `scripts/openup_agent/cycle.py`, stdlib-only): **board resolve → session begin → per-Operations-box executor → gates → deterministic completion**, composing the existing scripts as subprocesses (board/session/state/sync/fence/check-docs — never reimplemented). Box classification: extractable `git`/`python3` command (backticked, or token-to-EOL; bare `scripts/x.py` span gets python3) ⇒ **script-step, zero LLM**; `(auto)`/`(judgment)` markers override; anything else ⇒ **judgment sub-run** — a fresh, bounded `loop.run()` (default cap 10, tier `authoring`→MID) with a step-scoped instruction (box text + role hat + change-folder briefing), enabled by additive `loop.run(system_prompt=, model=)` params (default path byte-unchanged). **Gates run before the tick**, so a failed gate (exit 6) leaves the box unchecked and a re-run retries; all inter-step state is the repo (boxes/state/lease) ⇒ crash-safe resume for free. Completion mirrors complete-task per-track: status→done, shard, log-event+gate, sync-status (fail-open on bootstrapped trees), gates, retro incr, atomic `session end`, archive, commit, merge-back — sentinel parity `OPENUP-NEXT: ADVANCED/DONE`. Typed exits 6/7/8 added (gate-failure / unsupported-path[T-090/T-091] / step-failure), consumed by the bench. New `cycle-quick-doc` scenario + bench `command` support (scenario or `--command`) make the ≥5× token claim measurable vs the `quick-doc` baseline (hermetic run: 2 LLM calls total vs 37–50 live-next iters; the live read-back is the owner's batch — this env has no endpoint). Shipped via process-manifest (30 CLIs; fresh install verified). +21 tests (76 driver+bench+cycle green; 55 pre-existing pass unmodified). check-docs, spec-scenarios, fence (--base harness-optional) green. Solo, standard, worktree, on harness-optional.
 

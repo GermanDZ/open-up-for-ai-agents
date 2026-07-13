@@ -1,7 +1,7 @@
 ---
 id: T-093
 title: openup-roadmap.py — fail-soft on missing docs/roadmap.md (fresh-project crash)
-status: ready
+status: done
 priority: high
 track: quick
 touches:
