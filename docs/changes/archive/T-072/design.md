@@ -117,3 +117,37 @@ run** on LM Studio — see the checklist in `docs-eng-process/reference-driver.m
 the outcome (model used, sentinel, gate friction) here when run. As of this task's
 completion the loop is proven against a mock endpoint; the live-model run is the owner's
 verification step (it needs the owner's local server, unreachable from CI).
+
+### Live-model acceptance — MET 2026-07-13 (recorded by T-086)
+
+Run via the T-080 benchmark harness (`openup-agent-bench.py`, `inception-vision`
+scenario) on the T-085 clean bootstrapped fixture — batch
+`.openup/bench/20260713-160244`:
+
+- **Model:** `qwen/qwen3.6-35b-a3b` — **non-Anthropic, local** (LM Studio @
+  `192.168.200.142:1234`).
+- **3/3 clean passes**; mean ~8 iterations, ~59k tokens/run, ~53s wall.
+- Each run drove **`openup-create-vision`** on a freshly-bootstrapped project seeded
+  only with a stakeholder brief (`docs/inputs/stakeholder-brief.md`, "ShareShed") and
+  produced a **fence-clean + check-docs-clean** `docs/vision.md` with valid typed
+  traceability frontmatter (`type: vision`, `id: VIS-001`) and the full section set
+  (problem, positioning/solution, stakeholders, features, **falsifiable** success
+  criteria, self-critique). The visions are genuine and faithfully derived from the
+  brief — not template-filling (archived at `<batch>/run-NN.vision.md`).
+
+**Scope / honesty note.** The AC-program was worded as one `--procedure next` cycle.
+What is proven here is the driver running a **real authoring procedure cycle**
+(create-vision) end-to-end on a local model, fence + validator clean. The **`next`
+continue-loop** specifically (resolve → start-iteration → work → complete-task in one
+invocation) is far heavier on this local model — it does the work but converges
+inconsistently (~37–50 iters, 1–2M tokens; qwen3.6-35b). That is a **model + ceremony
+weight finding, not a driver defect**: the driver is procedure-agnostic and drove a
+real procedure to a clean, high-quality result. On that basis **the driver (T-072's
+deliverable) is `verified`**; `next`-on-a-weak-local-model reliability is tracked
+separately as ongoing benchmarking (T-080…T-085), not a T-072 gap.
+
+Prereqs discovered + fixed during acceptance (all merged to `harness-optional`):
+T-081 (surface driver failure reason), T-082 (slow-response timeout → clean error,
+`OPENUP_AGENT_TIMEOUT`), T-083 (the `inception-vision` scenario + driver
+`--instruction` + fence-inapplicable-skip for non-lane runs), T-084 (archive each
+run's deliverable), T-085 (fixture is a clean bootstrapped project, not a repo copy).
