@@ -292,7 +292,12 @@ cycle  --dir PATH [--step-max-iterations 10] [--step-tier authoring]
   ADVANCED/DONE`). Recovery (T-092, default on; `--no-recover` opts out): a
   done-but-unclosed lane is archived/merged before planning (zero LLM), and a
   `plan-iteration` decision's missing spec is authored by one bounded analyst
-  sub-run, gated + committed, then picked in the same invocation. Exit 6 =
+  sub-run, gated + committed, then picked in the same invocation; when nothing
+  is promotable at all, the engine asks for consent (TTY under
+  `--interactive`, else input-request + suspend exit 5) before ONE
+  product-manager replenishment pass proposes new pending roadmap entries
+  (T-094 — accepted only if `openup-roadmap.py next` then succeeds; an
+  answered `no` is durable). Exit 6 =
   gate failed after a step (box left unticked, re-run retries), 7 = decision
   path not supported (assess/milestone → T-091; plan-iteration only under
   `--no-recover` or when recovery cannot advance), 8 = a script-step /

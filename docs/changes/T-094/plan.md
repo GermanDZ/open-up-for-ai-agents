@@ -217,7 +217,7 @@ consent memory.
       chain
 - [x] Prove invariance: full driver+bench+cycle+roadmap suites pass unmodified
       (Req 7)
-- [ ] (analyst) Document replenishment (triggers, ask flow, answer semantics,
+- [x] (analyst) Document replenishment (triggers, ask flow, answer semantics,
       acceptance gate, deferred `--auto-replenish`) in `reference-driver.md` +
       `script-cli-reference.md`
 - [ ] (tester) Run suites + `openup-spec-scenarios.py check` on this spec +

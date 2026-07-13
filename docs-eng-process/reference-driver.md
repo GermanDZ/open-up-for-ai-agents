@@ -255,6 +255,24 @@ restores the bare typed exits below.
   working tree skips closure (commit or stash first); a merge conflict exits 8
   with the branch left intact. This stops the loop from planning new work atop
   an unfinished delivery (the live my-product T-001 case).
+- **Consent-gated replenishment (T-094).** When nothing is promotable at all
+  — the roadmap exists but is exhausted or fully blocked mid-phase, or a
+  recovery round cannot advance — the engine **asks before acting**: under
+  `--interactive` a TTY yes/no prompt; otherwise it creates an input-request
+  (multiple-choice yes/no, owned by no lane), prints the SUSPEND sentinel, and
+  exits 5. The request path is remembered in `.openup/cycle.json`: while it is
+  `pending` every stuck cycle re-suspends pointing at it (no duplicates);
+  flipping it to `status: answered` with `yes` (ticked option or the
+  `**Answer**:` line) lets the next cycle run ONE bounded
+  **product-manager**-hat sub-run that appends 1–5 pending roadmap entries
+  (each with a Value rationale, ids reserved via `openup-claims.py
+  reserve-id`). Acceptance is deterministic — `openup-roadmap.py next` must
+  find something promotable (plus `check-docs`) or the cycle fails typed with
+  nothing committed; on success the roadmap commit lands `[openup-skip]` and
+  the SAME invocation chains into missing-spec recovery and delivery. An
+  answered `no` is remembered and ends that and later cycles cleanly — the LLM
+  proposes, the human consents; scope is never invented silently. (A bypass
+  flag for unattended loops — `--auto-replenish` — was deliberately deferred.)
 - **Missing-spec recovery (one bounded sub-run).** A persisting
   `plan-iteration` decision already names the next roadmap work item, so an
   `analyst`-hat sub-run authors `docs/changes/<id>/plan.md` (the instruction

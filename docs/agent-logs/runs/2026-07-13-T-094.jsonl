@@ -1,1 +1,2 @@
 {"run_id": "20260713-T-094-start", "event": "session_begin", "task_id": "T-094", "goal": "T-094 \u2014 consent-gated LLM replenishment when the loop is stuck", "branch": "feature/T-094-consent-replenishment", "phase": "construction", "ts": "2026-07-13T15:55:22Z"}
+{"run_id": "5556f464da72408081a8f9d6816105db", "event": "commit", "task_id": "T-094", "branch": "feature/T-094-consent-replenishment", "sha": "b7159ccbd6ef9cbbc71c36a728bac57ec47b98e8", "model": null, "session_id": "feature/T-094-consent-replenishment", "ts": "2026-07-13T16:01:11Z"}
