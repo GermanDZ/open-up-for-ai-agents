@@ -200,7 +200,7 @@ is input the human was going to have to produce anyway, just pre-shaped.
 - [x] Register `next-cycle` in `scripts/process-manifest.txt` and verify a
       fresh `install_process_clis` lands it executable with the shebang
       (Req 6)
-- [ ] (analyst) Update `getting-started-reference-driver.md` (one-command
+- [x] (analyst) Update `getting-started-reference-driver.md` (one-command
       path first), `reference-driver.md`, `script-cli-reference.md`
 - [ ] (tester) Run the wrapper suite + full driver/cycle suites +
       `openup-spec-scenarios.py check` + `check-docs.py` + `openup-fence.py

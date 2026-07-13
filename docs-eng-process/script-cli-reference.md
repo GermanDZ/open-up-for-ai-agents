@@ -276,6 +276,18 @@ learnings     …   # append a dated iteration-learnings entry
 - Run `--help` on each subcommand for its fields. The scribe only ever writes
   fully-specified content; it never authors timestamps or decisions.
 
+## next-cycle — guided single entry point (T-095)
+
+```
+./scripts/next-cycle [--dir .]     # env -> brief -> Inception -> one cycle;
+                                   #   guidance on stderr, sentinel passthrough,
+                                   #   exit code = the driver's
+```
+- Composes `openup-agent.py` only (no engine logic): loads `.openup/agent.env`,
+  guides missing config, writes the template stakeholder brief on a fresh
+  project, runs create-vision when the brief is filled, else one `cycle`
+  (`--interactive` auto-added on a TTY). Scriptable exactly like `cycle`.
+
 ## openup-agent.py — reference driver (T-072 `run` · T-089 `cycle`)
 
 ```
