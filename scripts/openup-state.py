@@ -55,6 +55,10 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_ROOT = SCRIPT_DIR.parent
 SCHEMA_PATH = SCRIPT_DIR / "openup-state.schema.json"
 
+# Current on-disk state schema version. A file written at an older version is
+# upgraded in-memory by migrate_state() on read (and persisted opportunistically).
+CURRENT_SCHEMA = 2
+
 # Default gates required for a standard completion. plan_persisted and
 # retro_due are deliberately excluded: they are track-dependent.
 DEFAULT_REQUIRED_GATES = ["team_deployed", "log_written", "roadmap_synced"]
@@ -150,12 +154,55 @@ def validate_state(state: dict) -> list:
 # --------------------------------------------------------------------------
 # Load / save
 # --------------------------------------------------------------------------
+def migrate_state(state: dict):
+    """Upgrade an older-schema state dict to CURRENT_SCHEMA in-memory.
+
+    Additive only — never drops fields. Returns (state, changed). A schema-1
+    file predates iteration_id/cycle (T-078); backfill them with safe defaults
+    (iteration_id null, cycle 1). cycle is authoritatively (re)derived from
+    openup-lifecycle.py at init / plan-iteration time; migration must stay
+    cheap and side-effect-free (read_state runs in every hook), so it does not
+    shell out here.
+    """
+    if not isinstance(state, dict):
+        return state, False
+    changed = False
+    if state.get("schema", 1) < CURRENT_SCHEMA:
+        if "iteration_id" not in state:
+            state["iteration_id"] = None
+        if "cycle" not in state:
+            state["cycle"] = 1
+        state["schema"] = CURRENT_SCHEMA
+        changed = True
+    return state, changed
+
+
 def read_state(args):
     p = state_path(args)
     if not p.exists():
         return None
     with p.open("r", encoding="utf-8") as fh:
-        return json.load(fh)
+        state = json.load(fh)
+    state, changed = migrate_state(state)
+    if changed:
+        # Persist the upgrade in place (best-effort). The migrated dict is a
+        # valid CURRENT_SCHEMA document; if the write fails (read-only fixture,
+        # perms) the caller still gets the upgraded state in memory.
+        try:
+            _write_state_raw(args, state)
+        except OSError:  # pragma: no cover - env issue
+            pass
+    return state
+
+
+def _write_state_raw(args, state: dict):
+    """Write the state file without validating (caller guarantees validity)."""
+    d = state_dir(args)
+    d.mkdir(parents=True, exist_ok=True)
+    p = d / "state.json"
+    with p.open("w", encoding="utf-8") as fh:
+        json.dump(state, fh, indent=2)
+        fh.write("\n")
 
 
 def write_state(args, state: dict):
@@ -166,12 +213,7 @@ def write_state(args, state: dict):
         for err in errors:
             sys.stderr.write(f"  - {err}\n")
         sys.exit(EXIT_INVALID)
-    d = state_dir(args)
-    d.mkdir(parents=True, exist_ok=True)
-    p = d / "state.json"
-    with p.open("w", encoding="utf-8") as fh:
-        json.dump(state, fh, indent=2)
-        fh.write("\n")
+    _write_state_raw(args, state)
 
 
 def require_state(args):
@@ -286,9 +328,11 @@ def cmd_init(args):
 
     plan_gate = args.plan if args.plan else False
     state = {
-        "schema": 1,
+        "schema": CURRENT_SCHEMA,
         "task_id": args.task_id,
         "iteration": args.iteration,
+        "iteration_id": getattr(args, "iteration_id", None),
+        "cycle": getattr(args, "cycle", None) or 1,
         "phase": args.phase,
         "track": args.track,
         "branch": args.branch,
@@ -560,6 +604,17 @@ def build_parser():
     p_init.add_argument("--branch", required=True)
     p_init.add_argument("--worktree", required=True, help="Absolute path")
     p_init.add_argument("--session-id", default=None)
+    p_init.add_argument(
+        "--iteration-id",
+        default=None,
+        help="Iteration-plan instance id (e.g. \"C3\"); null for a single-lane start.",
+    )
+    p_init.add_argument(
+        "--cycle",
+        type=int,
+        default=1,
+        help="Project lifecycle cycle counter (default 1; T-075).",
+    )
     p_init.add_argument(
         "--plan",
         default=None,

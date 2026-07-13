@@ -24,7 +24,8 @@ Subcommands:
   top       Regenerate, then print the single top pickable lane (or exit 3).
   top-n     Print up to N collision-free READY lanes (or exit 3).
   resolve   Read-only: the §0–§1 /openup-next decision as one JSON object
-            (path ∈ resume|pick|promote|noop). Writes nothing (T-065).
+            (path ∈ resume|pick|assess-iteration|milestone-review|plan-iteration|noop).
+            Writes nothing (T-065).
   status    Read-only superset diagnostic (active iteration + leases +
             pickable lanes + promotable next) (T-065).
 
@@ -537,18 +538,116 @@ def iteration_prefix(task_id):
     return m.group(1) if m else None
 
 
-def _current_phase(root: Path):
-    """Derived current phase via openup-lifecycle.py (read-only, fail-open).
-
-    Returns the phase string (``construction`` …) or None if lifecycle status
-    cannot be computed — the resolver stays functional without it (T-078 wires
-    the phase into autonomous consumption; here it is advisory metadata)."""
+def _lifecycle_status(root: Path):
+    """The full derived lifecycle status via openup-lifecycle.py (read-only,
+    fail-open): ``{phase, cycle, criteria:[{id,desc,state}], …}`` or None if it
+    cannot be computed — the resolver stays functional without it."""
     try:
         life = _load_sibling("openup_lifecycle", "openup-lifecycle.py")
-        status = life.compute_status(root, life.state_dir(root, None))
-        return status.get("phase")
+        return life.compute_status(root, life.state_dir(root, None))
     except Exception:
         return None
+
+
+def _current_phase(root: Path):
+    """Derived current phase (or None). Thin front over _lifecycle_status."""
+    status = _lifecycle_status(root)
+    return status.get("phase") if status else None
+
+
+def _milestone_exists(root: Path, phase, cycle) -> bool:
+    """True if a milestone decision record already exists for ``phase``+``cycle``
+    (any decision). Reuses lifecycle's record reader; fail-open to False."""
+    if not phase:
+        return False
+    try:
+        life = _load_sibling("openup_lifecycle", "openup-lifecycle.py")
+        for rec in life.read_milestone_records(root):
+            if rec.get("phase") == phase and rec.get("cycle") == cycle:
+                return True
+    except Exception:
+        return False
+    return False
+
+
+def _phase_exit_ready(status) -> bool:
+    """The phase is ready for a milestone go/no-go when no machine-checkable
+    criterion is ``unmet`` (the ``human-judgment`` criteria are exactly what the
+    milestone review resolves, so they do not block reaching it). A phase with
+    no criteria (e.g. ``released``) is never 'ready' — nothing left to gate."""
+    crits = (status or {}).get("criteria") or []
+    if not crits:
+        return False
+    return all(c.get("state") != "unmet" for c in crits)
+
+
+# --- Iteration-plan instance = the loop contract (T-077/T-078) ---------------
+def _iteration_plan_instances(root: Path):
+    """Every ``type: iteration-plan`` work-product instance under the two
+    authoring locations (``docs/iteration-plans/`` and ``docs/phases/``).
+    Returns ``(path, frontmatter)`` pairs. Read-only."""
+    out = []
+    for d in (root / "docs" / "iteration-plans", root / "docs" / "phases"):
+        if not d.exists():
+            continue
+        for p in sorted(d.rglob("*.md")):
+            fm = claims.parse_frontmatter(p)
+            if str(fm.get("type", "")).strip().lower() == "iteration-plan":
+                out.append((p, fm))
+    return out
+
+
+def _work_item_done(root: Path, wid: str) -> bool:
+    """A committed work item is delivered iff its change folder is archived, or
+    its active plan carries a done/verified status. Unknown → not done."""
+    if (root / "docs" / "changes" / "archive" / wid).is_dir():
+        return True
+    plan = root / "docs" / "changes" / wid / "plan.md"
+    if plan.exists():
+        fm = claims.parse_frontmatter(plan)
+        return str(fm.get("status", "")).strip().lower() in DONE_STATUSES
+    return False
+
+
+def _has_assessment(plan_path: Path) -> bool:
+    """True if the iteration-plan body carries an ``## Assessment`` section
+    (written by /openup-assess-iteration) — the assessed marker."""
+    try:
+        for line in plan_path.read_text(encoding="utf-8").splitlines():
+            if line.strip().lower() == "## assessment":
+                return True
+    except OSError:
+        return False
+    return False
+
+
+def _active_iteration_plan(root: Path):
+    """The minted phase-aware iteration currently in flight, if any.
+
+    Identified by an iteration-plan instance whose committed work items
+    (``traces-from``) include at least one **iteration-prefixed** lane id
+    (``C3-001``) — legacy per-task plans trace to ``T-NNN`` / requirement ids and
+    never match, so they cannot false-trigger. A ``verified``/``obsolete``
+    instance is a closed iteration and is skipped. Returns
+    ``{iteration, committed, all_done, assessed, plan}`` or None."""
+    for p, fm in _iteration_plan_instances(root):
+        if str(fm.get("status", "")).strip().lower() in {"verified", "obsolete"}:
+            continue
+        traces = fm.get("traces-from") or []
+        if isinstance(traces, str):
+            traces = [traces]
+        committed = [str(t).strip() for t in traces
+                     if _ITER_PREFIX_RE.match(str(t).strip())]
+        if not committed:
+            continue
+        return {
+            "iteration": iteration_prefix(committed[0]),
+            "committed": committed,
+            "all_done": all(_work_item_done(root, w) for w in committed),
+            "assessed": _has_assessment(p),
+            "plan": p.relative_to(root).as_posix(),
+        }
+    return None
 
 
 def _active_iteration_prefix(cdir: Path):
@@ -564,13 +663,14 @@ def _active_iteration_prefix(cdir: Path):
 
 
 def _decision(path, reason, lane=None, resumable_input=None,
-              active_iteration=None, phase=None, legacy_path=None):
+              active_iteration=None, phase=None, cycle=None, legacy_path=None):
     return {
         "path": path,
         "lane": lane,
         "resumable_input": resumable_input,
         "active_iteration": active_iteration,
         "phase": phase,
+        "cycle": cycle,
         # Back-compat alias during the T-077→T-078 transition: consumers still
         # keying on the old ``promote`` name find it here until openup-next is
         # rewired (T-078). None on every other path.
@@ -586,19 +686,21 @@ def resolve_decision(root: Path, cdir: Path):
     while an iteration is active, §1b picks only lanes belonging to it, and the
     former §1c ``promote`` path is emitted as ``plan-iteration`` (carrying the
     phase) — Plan Iteration supersedes one-row-at-a-time promotion."""
-    phase = _current_phase(root)
+    status = _lifecycle_status(root)
+    phase = status.get("phase") if status else None
+    cycle = status.get("cycle") if status else None
     # §0 — an answered input-request resumes its lane before any new claim.
     ri = _resumable_input(root)
     if ri:
         return _decision(
             "resume", f"answered input for {ri['task']} — resume it first.",
-            lane={"task": ri["task"]}, resumable_input=ri, phase=phase)
+            lane={"task": ri["task"]}, resumable_input=ri, phase=phase, cycle=cycle)
     # §1a — an already-active iteration continues from its next unchecked box.
     ai = _active_iteration(root)
     if ai:
         return _decision(
             "resume", f"active iteration {ai['task']} — continue it.",
-            lane={"task": ai["task"]}, active_iteration=ai, phase=phase)
+            lane={"task": ai["task"]}, active_iteration=ai, phase=phase, cycle=cycle)
     # §1b — the top pickable change-folder lane, iteration-scoped: while an
     # iteration is active, only its own lanes are pickable (a ready lane from a
     # different iteration waits its turn). Unscoped when no iteration is active.
@@ -610,10 +712,39 @@ def resolve_decision(root: Path, cdir: Path):
         if active_iter and iteration_prefix(lane["task"]) != active_iter:
             continue
         return _decision(
-            "pick", f"top pickable lane {lane['task']}.", lane=lane, phase=phase)
-    # §1c — no active iteration: plan the next iteration for the current phase
-    # (the former single-row promote is its degenerate, single-work-item case).
+            "pick", f"top pickable lane {lane['task']}.", lane=lane,
+            phase=phase, cycle=cycle)
+    # §1c-assess (T-078) — a minted iteration whose committed work items are all
+    # done but whose iteration plan has no assessment yet → run Assess Results.
+    # Only fires for real phase-aware iterations (iteration-prefixed lanes); a
+    # single-lane/promote flow has no such instance, so behavior is unchanged.
+    iplan = _active_iteration_plan(root)
+    if iplan and iplan["all_done"] and not iplan["assessed"]:
+        return _decision(
+            "assess-iteration",
+            f"iteration {iplan['iteration']} exhausted — run Assess Results.",
+            lane={"task": iplan["iteration"], "plan": iplan["plan"],
+                  "next_action": "assess iteration"},
+            phase=phase, cycle=cycle)
+    # The next promotable roadmap task (needed by both §1c-milestone and §1d).
     entry, promote_reason = _promote_next(root, cdir)
+    # §1c-milestone (T-078) — the roadmap is drained (nothing promotable), the
+    # phase's exit criteria are met (no unmet machine criteria), and no milestone
+    # record exists yet for this phase+cycle → pause for the human go/no-go.
+    # Gating on "nothing promotable" (the same check §1d uses) keeps the loop
+    # from reviewing a milestone while deliverable work still remains, and avoids
+    # any disagreement between lifecycle's roadmap-clear and roadmap.py's next.
+    # Records nothing itself — the loop delegates to /openup-phase-review.
+    if (entry is None and _phase_exit_ready(status)
+            and not _milestone_exists(root, phase, cycle)):
+        return _decision(
+            "milestone-review",
+            f"{phase} phase exit criteria met (cycle {cycle}) — human go/no-go "
+            f"needed before advancing; run /openup-phase-review.",
+            lane={"task": phase, "next_action": "milestone review"},
+            phase=phase, cycle=cycle)
+    # §1d — no active iteration: plan the next iteration for the current phase
+    # (the former single-row promote is its degenerate, single-work-item case).
     if entry:
         return _decision(
             "plan-iteration",
@@ -621,11 +752,11 @@ def resolve_decision(root: Path, cdir: Path):
             f"(next work item {entry['id']}).",
             lane={"task": entry["id"], "title": entry.get("title"),
                   "track": None, "next_action": "plan iteration + start"},
-            phase=phase, legacy_path="promote")
+            phase=phase, cycle=cycle, legacy_path="promote")
     # §-noop — nothing pickable and nothing to plan.
     return _decision(
         "noop", f"{none_pickable_reason(board)} {promote_reason}".strip(),
-        phase=phase)
+        phase=phase, cycle=cycle)
 
 
 def cmd_resolve(args):
@@ -707,7 +838,8 @@ def build_parser():
     p_resolve = sub.add_parser(
         "resolve",
         help="Print the §0–§1 /openup-next decision as one read-only JSON object "
-             "(path ∈ resume|pick|promote|noop). Writes nothing.",
+             "(path ∈ resume|pick|assess-iteration|milestone-review|plan-iteration|"
+             "noop). Writes nothing.",
     )
     add_common(p_resolve)
     p_resolve.set_defaults(func=cmd_resolve)

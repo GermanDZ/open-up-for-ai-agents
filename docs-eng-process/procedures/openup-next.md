@@ -23,10 +23,14 @@ and ask "want me to create the spec?" while pending work remains:
    from its next unchecked Operations box.
 2. **Pick** — no active iteration, but a change folder is a READY lane → claim
    and work it.
-3. **Promote + start** — no lanes exist yet but the roadmap has a pending task →
-   turn that next task into a workable lane (author its spec) and start it.
-4. **No-op** — only when nothing is left: every lane is done/blocked/suspended
-   and the roadmap has no pickable pending task.
+3. **Assess** — the active minted iteration's work items are all done but
+   unassessed → run Assess Results (`/openup-assess-iteration`).
+4. **Milestone review** — the roadmap is drained and the phase's exit criteria
+   are met → pause for the human go/no-go (`/openup-phase-review`), never advance
+   the phase in code.
+5. **Plan + start** — no active iteration → plan the next phase-appropriate
+   iteration (its degenerate single-work-item case is the old promote).
+6. **No-op** — only when nothing is left and no phase gate applies.
 
 The board queue is derived deterministically by `scripts/openup-board.py` (never
 authored by the model — "if a step is deterministic, the harness does it"). The
@@ -72,18 +76,9 @@ roadmap into context — `resolve` folds all four in:
 python3 scripts/openup-board.py resolve   # one JSON decision; always exit 0
 ```
 
-It returns `{path, lane, resumable_input, active_iteration, phase, legacy_path,
-reason}` where `path ∈ {resume, pick, plan-iteration, noop}`. Branch on `.path`:
-
-> **T-077 transition note.** The former `promote` path is now emitted as
-> **`plan-iteration`** (with `legacy_path: "promote"` for back-compat and the
-> derived `phase` carried alongside). Until the full Plan-Iteration wiring lands
-> (**T-078** — multi-lane generation, assess-iteration, milestone pause), treat
-> `plan-iteration` **exactly like the old `promote`**: its `lane` still names the
-> single next work item, so follow the `promote` handling below unchanged. The
-> new name signals the eventual behavior (plan a whole phase-appropriate
-> iteration, not one row); its degenerate single-work-item case *is* today's
-> promote.
+It returns `{path, lane, resumable_input, active_iteration, phase, cycle,
+legacy_path, reason}` where `path ∈ {resume, pick, assess-iteration,
+milestone-review, plan-iteration, noop}`. Branch on `.path`:
 
 - **`resume`** — the lane is already claimed and must continue *before* any new
   claim. Two sub-cases, distinguished by which field is set:
@@ -103,7 +98,34 @@ reason}` where `path ∈ {resume, pick, plan-iteration, noop}`. Branch on `.path
   track, hat, next_action, plan, …}`). A lane `resolve` calls pickable is one
   `openup-claims.py preflight` will also clear, so step 2's claim won't surprise
   you. Continue to step 2.
-- **`plan-iteration`** (formerly `promote`) — `lane.task` is the deterministically-selected next roadmap task
+- **`assess-iteration`** (T-078) — the active minted iteration's committed work
+  items are all done but its iteration plan has no assessment yet. Run
+  `/openup-assess-iteration iteration_id: <lane.task>` — it grades the evaluation
+  criteria, demos only completed acceptance-tested work, feeds discovered work
+  back, and writes the `## Assessment` section (the marker that stops this path
+  re-firing). This is **not** a change-folder lane: skip steps 2–3, run the
+  assess procedure, then exit `ADVANCED` (the assessment landed) — unless the
+  assessment's phase-end trigger created a milestone pause, in which case exit
+  `DONE` (milestone-review pending human input).
+- **`milestone-review`** (T-078) — the roadmap is drained, the phase's exit
+  criteria are met, and no milestone record exists for `phase`+`cycle`. Run
+  `/openup-phase-review` (it derives phase/cycle, prepares the go/no-go evidence,
+  and pauses via `/openup-request-input`). Two outcomes: it **created / is waiting
+  on** the milestone request → exit `DONE` (`milestone-review pending human
+  input`); it **processed an answered** request and wrote the milestone record →
+  exit `ADVANCED`. **Never advance the phase yourself** — only the recorded
+  decision does (a **product-manager / stakeholder** call the loop surfaces).
+- **`plan-iteration`** (formerly `promote`) — plan the next iteration for the
+  current phase. Consult the **Development Case** (`docs/project-config.yaml`
+  `process:` — T-076) for the phase's archetype:
+  - **Multi-iteration phase** (`mvp` / `product`, iteration budget > 1) → run
+    **real Plan Iteration**: `/openup-start-iteration` with **no `task_id`** so
+    its §0b derives the phase, mints the iteration id, chooses 1–5 objectives, and
+    generates the phase-appropriate work-item lanes from the process map. Then work
+    its first lane. (`lane.task` here is only the degenerate single next task; the
+    planner supersedes it.)
+  - **Quick / single-work-item degeneration** (`quick` archetype, or a phase that
+    is one work item) → today's promote: `lane.task` is the deterministically-selected next roadmap task
   (identical to `openup-roadmap.py next`: first `pending`/`planned` entry in
   document order with satisfied deps, no active/archived change folder, no live
   lease, and **no branch encoding its id on `origin`** — the T-066
@@ -123,13 +145,14 @@ reason}` where `path ∈ {resume, pick, plan-iteration, noop}`. Branch on `.path
     then `/openup-create-vision` / `/openup-create-use-case` (or
     `/openup-plan-feature` at the idea stage). Drive human questions through
     `/openup-request-input` so the lane suspends cleanly.
-- **`noop`** — nothing pickable and nothing promotable. **Stop cleanly** and
-  print `reason`. Make it actionable: if the `reason` names a
+- **`noop`** — nothing pickable, nothing promotable, and no phase gate applies
+  (the phase's exit criteria are not met, or its milestone is already recorded /
+  awaiting a human — those surface as `milestone-review`, not `noop`). **Stop
+  cleanly** and print `reason`. Make it actionable: if the `reason` names a
   **delivered-but-unmerged** task (an `origin` branch / open PR exists), the move
-  is to **merge that PR** — the work is done, not pending. If every roadmap row is
-  `completed` and the phase's exit criteria look met, name the next move — run
-  `/openup-phase-review` to advance the phase (a **product-manager decision** the
-  loop surfaces, never performs). If the roadmap is simply empty, say so.
+  is to **merge that PR** — the work is done, not pending. If the roadmap is
+  simply empty and the phase is mid-flight (criteria unmet), say so — more
+  delivery work is needed before the phase can be reviewed.
 
 If `task_id` was passed, skip the precedence and select that lane directly from
 `python3 scripts/openup-board.py top` / `refresh` `lanes[]`; refuse only if it is
@@ -205,9 +228,11 @@ session after the exit; the outer loop repeats from step 1.
 ## Output
 
 A compact summary (≤6 bullets): which path ran (**resumed** / **picked** /
-**promoted+started**, or the **clean no-op** reason), the lane and hat, what
-landed, which boxes are now ticked, and which legal exit was taken. If you
-promoted a roadmap task, name the spec/lane you created.
+**assessed** / **milestone-review** / **planned+started**, or the **clean no-op**
+reason), the lane and hat, what landed, which boxes are now ticked, and which
+legal exit was taken. If you planned/promoted a roadmap task, name the spec/lane
+you created; if you paused at a milestone, name the input-request awaiting the
+human.
 
 ### Sentinel line (machine-readable, always last)
 
@@ -219,13 +244,23 @@ OPENUP-NEXT: ADVANCED — <task-id>
 OPENUP-NEXT: DONE — <reason>
 ```
 
-`ADVANCED` means a lane was worked this cycle (resumed, picked, or promoted+started).
-`DONE` means a clean no-op: either every lane is blocked/suspended/elsewhere, or the
-roadmap has no pickable pending task. The `<reason>` on DONE names the specific
-condition (e.g. "board empty — all lanes done", "roadmap exhausted — phase review
-needed", "all lanes blocked or suspended"). An outer loop MUST stop on `DONE` and
-continue on `ADVANCED`. Any exit that is neither is a crash; treat it as `DONE`
-(fail-safe stop).
+`ADVANCED` means the cycle moved the work forward: a lane was resumed / picked /
+planned+started, an iteration was **assessed**, or a milestone decision was
+**recorded** (an answered milestone-review). `DONE` means the loop should stop —
+and its meaning is now a **phase-gate** signal, not only a drained queue (T-078):
+
+- `milestone-review pending human input` — the loop paused at a phase boundary; a
+  human must answer the milestone go/no-go before it advances (the highest-value
+  DONE — the convergence the loop exists to reach, not a failure).
+- `board empty — all lanes done` / `roadmap exhausted, phase mid-flight` — nothing
+  to deliver and no phase gate applies.
+- `all lanes blocked or suspended` / a **delivered-but-unmerged** task (merge its
+  PR) — nothing actionable this cycle.
+
+An outer loop MUST stop on `DONE` and continue on `ADVANCED`; on a
+`milestone-review pending` DONE it should surface the input-request to the human
+rather than treat it as "work finished." Any exit that is neither sentinel is a
+crash; treat it as `DONE` (fail-safe stop).
 
 ## See Also
 
