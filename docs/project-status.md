@@ -1,15 +1,17 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 55
+**Iteration**: 56
 **Iteration Goal**: T-080 — Reference-driver acceptance/benchmark harness
 **Status**: completed
-**Current Task**: T-085
+**Current Task**: T-086
 **Iteration Started**: 2026-06-18
 **Last Updated**: 2026-07-13
 **Updated By**: sync-status.py
 
 ## Notes
+
+**Iteration 56** (2026-07-13, quick): T-086 — recorded the T-072 reference-driver **live-model acceptance** (its long-open owner criterion) and moved T-072 `done → verified`. Evidence: T-080 benchmark batch `.openup/bench/20260713-160244` — `qwen/qwen3.6-35b-a3b` (non-Anthropic, local, LM Studio) drove `openup-create-vision` on the T-085 clean bootstrapped fixture, **3/3 fence+validator-clean**, producing genuine ShareShed vision docs with valid typed frontmatter. Recorded in T-072's `design.md` (§Live-model acceptance) + `handoff.md` (AC-program resolved) + `plan.md` (status verified) + the roadmap program block (pending → verified). **Honest scope:** proven on the create-vision authoring cycle; the `next` continue-loop is heavier/inconsistent on a weak local model — a model+ceremony finding tracked via the benchmark harness (T-080…T-085), not a driver defect (the driver is procedure-agnostic and drove a real procedure to a clean, high-quality result). No code. Fence (`--base harness-optional`) green. Solo, quick, worktree, on harness-optional.
 
 **Iteration 55** (2026-07-13): T-085 — fixed a benchmark bug the first live vision run exposed: `build_fixture` snapshotted the WHOLE repo under test (`git archive HEAD`), dragging our developed `docs/` (project-status, roadmap, T-0xx history, product docs) into every fixture — so an "inception / new-project" run had the model reading OUR iteration-54 status instead of starting blank. Now the fixture is a genuinely **bootstrapped project**: only the framework trees (`docs-eng-process/`, `scripts/`, `.gitignore`, `.gitattributes`) are copied (`git archive <tree-ish> <FRAMEWORK_PATHS>`), plus a **fresh empty `docs/`**, then the scenario overlay — exactly what `bootstrap-project.sh` produces. The repo's own `docs/` is never copied in. `--include-working-tree` still applies to the framework trees. +2 tests (fixture has framework but NOT repo's docs/roadmap.md/project-status.md; vision fixture's docs/ holds only the brief). Both scenarios still green (quick-doc resolves to pick; vision writes docs/vision.md). 10 bench tests green; fence (`--base harness-optional`) green. Solo, standard, worktree, on harness-optional.
 
