@@ -1,10 +1,10 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 46
-**Iteration Goal**: T-076 — Development Case config (`process:` section + archetypes)
-**Status**: completed
-**Current Task**: T-076
+**Iteration**: 47
+**Iteration Goal**: T-077 — process-map.yaml + phase-aware plan-iteration
+**Status**: in-progress
+**Current Task**: T-077
 **Iteration Started**: 2026-06-18
 **Last Updated**: 2026-07-13
 **Updated By**: sync-status.py
