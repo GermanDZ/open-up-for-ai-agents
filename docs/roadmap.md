@@ -712,3 +712,64 @@ authored when promoted.
 **Dependencies**: T-072, T-087
 
 **See**: `docs/changes/archive/T-088/plan.md`
+
+---
+
+<!-- plan-hook: 2026-07-13 -->
+### Planned: Deterministic cycle engine — stop paying the LLM to orchestrate
+
+- **Status**: `planned` (awaiting implementation)
+- **Exploration**: [explorations/2026-07-13-deterministic-cycle-engine.md](explorations/2026-07-13-deterministic-cycle-engine.md)
+- **Created**: 2026-07-13
+- **Goal**: Invert the reference driver's control: a new `openup-agent.py cycle`
+  runs one delivery cycle as a **deterministic state machine** over the existing
+  scripts (resolve → session → Operations-step executor → gates → completion;
+  plan-iteration / assess / milestone paths), dropping to the LLM only at genuine
+  judgment points — each as a **fresh, bounded, step-scoped sub-run**. Ceremony
+  becomes code; the LLM only authors.
+- **Why (measured)**: T-080 benchmark — same local model: `next` (LLM-orchestrated)
+  = 37–50 iters / 1–2M tokens / inconsistent; a single authoring procedure = ~8
+  iters / ~59k tokens / 3/3 clean. The ~20–30× gap is LLM-interpreted ceremony.
+- **Ordered deliverables**: T-089 (cycle core: pick/resume + step executor) →
+  T-090 (plan-iteration path) → T-091 (assess + milestone paths + pack
+  ceremony/judgment split). Full iteration plan authored per task on promote.
+- **Program acceptance (falsifiable)**: on the same local model/scenario, a
+  `cycle`-driven ShareShed Inception delivery reaches **≥80% clean-pass at ≤1/10th
+  the tokens** of the `next` baseline (T-080 benchmark); gates green; the Claude
+  Code path untouched.
+
+---
+
+## T-089: Cycle engine core — deterministic pick/resume + Operations-step executor
+**Status**: pending
+**Priority**: high
+**Value**: The heart of the inversion — a weak local model only ever authors one step at a time while code does the ceremony, collapsing token cost ~an order of magnitude and making the loop crash-safe (all inter-step state is already in the repo).
+**Description**: New `openup-agent.py cycle --dir <project>`: `board.resolve()` → `openup-session.py begin` → for each unchecked `## Operations` box, dispatch script-steps as code and judgment-steps as bounded fresh `loop.run()` sub-runs (`--instruction` built from the box + role hat + Ring 1 + change folder), tick the box, run gates → deterministic completion (status flip, sync, archive, release). Bench scenario `cycle-quick-doc` proving ≥5× token reduction vs `next` on the same model.
+
+**Dependencies**: T-072, T-080
+
+**See**: `docs/explorations/2026-07-13-deterministic-cycle-engine.md` §3, §6 — full iteration plan authored on promote
+
+---
+
+## T-090: Cycle engine — plan-iteration path
+**Status**: pending
+**Priority**: high
+**Value**: Inception/planning stops being the loop's most expensive, least reliable phase on local models — objectives and per-lane specs become small authoring sub-runs while minting, clustering (T-079), lane generation, and the iteration-plan skeleton are code.
+**Description**: `cycle` handles `plan-iteration`: derive phase (lifecycle) + mint id + `activities-for` (code); one small LLM sub-run to choose 1–5 objectives; per generated lane, an authoring sub-run for its spec (create-task-spec content); partition + roadmap rows + iteration-plan instance deterministically. The ShareShed Inception flow runs end-to-end through `cycle` on a bootstrapped project.
+
+**Dependencies**: T-089
+
+**See**: `docs/explorations/2026-07-13-deterministic-cycle-engine.md` §3, §6 — full iteration plan authored on promote
+
+---
+
+## T-091: Cycle engine — assess + milestone paths; pack ceremony/judgment split
+**Status**: pending
+**Priority**: medium
+**Value**: Cycle reaches full `/openup-next` parity (same sentinels, same human gates) and the prose–code drift risk is closed: ceremony authority moves to the engine, procedures slim to judgment content (what a good artifact looks like), Claude Code path unchanged.
+**Description**: `cycle` handles `assess-iteration` (done-ness derived in code; a grading sub-run for non-derivable criteria; feed-back + `## Assessment` appended deterministically) and `milestone-review` (evidence + input-request pause, zero LLM); DONE-sentinel parity; slim the affected procedures' ceremony sections to describe the engine. Program acceptance measured here via the T-080 benchmark.
+
+**Dependencies**: T-089, T-090
+
+**See**: `docs/explorations/2026-07-13-deterministic-cycle-engine.md` §3, §5, §6 — full iteration plan authored on promote
