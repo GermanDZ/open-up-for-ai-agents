@@ -11,7 +11,8 @@ All scripts are stdlib-only, deterministic, and never invoke a model.
 ```
 init         --task-id --iteration --phase {inception|elaboration|construction|transition}
              --track {quick|standard|full} --branch --worktree
-             [--session-id] [--plan PATH] [--iterations-since-retro N] [--force]
+             [--session-id] [--iteration-id C3] [--cycle N] [--plan PATH]
+             [--iterations-since-retro N] [--force]
 get          [KEY]                       # dotted path, e.g. gates.plan_persisted; whole state if omitted
 set          KEY VALUE                   # typed coercion (true/false/int/null/string)
 set-gate     NAME VALUE                  # gates.<name>
@@ -36,6 +37,14 @@ runs         build [--log-dir]            # derive agent-runs.jsonl from shards 
 - Exit codes: `0` ok · `2` usage · `3` no state · `4` state exists (init) ·
   `5` key missing (get) · `6` gates unmet · `7` invalid.
 - All subcommands accept `--state-dir DIR` to override `<repo>/.openup`.
+- **Schema 2 (T-078).** State carries `iteration_id` (pointer to the iteration-plan
+  instance, e.g. `C3`; `null` for a single-lane/promote-degenerate start) and
+  `cycle` (project lifecycle cycle, default 1). `phase` is a **derived cache**
+  stamped from `openup-lifecycle.py status` (source of truth = the milestone
+  records), not hand-set. A schema-1 file is **auto-migrated on read** (additive:
+  backfills `iteration_id: null`, `cycle: 1`, bumps `schema`) and persisted in
+  place — no manual re-init. Set them post-init with `set iteration_id C3` /
+  `set cycle N`.
 
 ## openup-claims.py — live leases for parallel work
 
@@ -233,9 +242,11 @@ openup-process-map.py [--repo-root DIR] validate
   the iteration-id prefix letter (e.g. `construction` → `C`, for `C3-001` minting).
 - **`mint-iteration-id <phase>`** — the stable iteration id `<letter><ordinal>`
   (`C3`) for the phase; the ordinal is repo-monotonic per letter (max existing
-  `C<n>-*` id + 1) so it stays globally unique across cycles without a state
-  field (schema 1). Plan Iteration records it in the iteration-plan instance and
-  reserves lanes under it via `openup-claims.py reserve-id --prefix "C3-"`.
+  `C<n>-*` id + 1) so it stays globally unique across cycles — the ordinal is
+  derived from existing ids, never from state. Plan Iteration records it in the
+  iteration-plan instance and reserves lanes under it via `openup-claims.py
+  reserve-id --prefix "C3-"`; schema 2 (T-078) also caches it into
+  `.openup/state.json` `iteration_id` for the active lane.
 - **`validate`** — every activity named in `phases:` has an `activities:` entry,
   each role is known, each phase has a prefix letter. Exit 2 (naming the problem)
   on any structural fault; the map is the single source the thin phase skills front.

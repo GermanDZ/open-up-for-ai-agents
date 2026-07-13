@@ -1,14 +1,16 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://openup-for-ai-agents/openup-state.schema.json",
-  "title": "OpenUP iteration state (v1)",
-  "description": "Machine-readable state for a single OpenUP iteration. Written by skills via scripts/openup-state.py, read by hooks. Never hand-edit.",
+  "title": "OpenUP iteration state (v2)",
+  "description": "Machine-readable state for a single OpenUP iteration. Written by skills via scripts/openup-state.py, read by hooks. Never hand-edit. Schema 2 (T-078) names the iteration (`iteration_id`) and project cycle (`cycle`); `phase` is a derived cache. A schema-1 file is auto-migrated on read.",
   "type": "object",
   "additionalProperties": false,
   "required": [
     "schema",
     "task_id",
     "iteration",
+    "iteration_id",
+    "cycle",
     "phase",
     "track",
     "branch",
@@ -21,7 +23,7 @@
   "properties": {
     "schema": {
       "type": "integer",
-      "const": 1,
+      "const": 2,
       "description": "State file schema version."
     },
     "task_id": {
@@ -30,12 +32,20 @@
     },
     "iteration": {
       "type": "integer",
-      "description": "Iteration number."
+      "description": "Iteration number (repo-monotonic counter, legacy)."
+    },
+    "iteration_id": {
+      "type": ["string", "null"],
+      "description": "Pointer to the iteration-plan instance that committed this lane (e.g. \"C3\"); null for a single-lane / promote-degenerate start with no multi-lane iteration plan (T-077/T-078)."
+    },
+    "cycle": {
+      "type": "integer",
+      "description": "Project lifecycle cycle counter (supports return-to-Construction; T-075). Derived from openup-lifecycle.py; defaults to 1."
     },
     "phase": {
       "type": "string",
       "enum": ["inception", "elaboration", "construction", "transition"],
-      "description": "OpenUP lifecycle phase."
+      "description": "OpenUP lifecycle phase. DERIVED CACHE stamped from openup-lifecycle.py status (T-075) — not hand-set; the source of truth is the milestone decision records in docs/product/milestones/."
     },
     "track": {
       "type": "string",
