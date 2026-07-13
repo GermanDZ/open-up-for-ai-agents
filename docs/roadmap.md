@@ -437,7 +437,7 @@ endpoint surfaces. Full iteration plan authored when promoted.
 ---
 
 ## T-074: Human-in-the-loop input handling in the reference driver
-**Status**: pending
+**Status**: completed (2026-07-12)
 **Priority**: high
 **Value**: The reference driver (T-072) can only drive procedures that never need
 a human — it auto-proceeds and has no way to ask a question. But many OpenUP

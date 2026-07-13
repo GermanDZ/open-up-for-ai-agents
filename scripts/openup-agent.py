@@ -19,6 +19,7 @@ Exit codes:
     2  configuration error (env/procedure/tier)
     3  endpoint/transport error
     4  max iterations reached with no clean sentinel
+    5  suspended awaiting a human answer (ask_user, non-interactive) — sentinel on stdout
 """
 
 import argparse
@@ -45,6 +46,9 @@ def main(argv=None):
                       help="Procedure name, e.g. 'next' (resolves openup-next.md).")
     runp.add_argument("--max-iterations", type=int, default=loop.DEFAULT_MAX_ITERATIONS,
                       help="Turn cap before the loop gives up (default %(default)s).")
+    runp.add_argument("--interactive", action="store_true",
+                      help="Answer the procedure's questions on the TTY; otherwise a "
+                           "human question suspends the run into an input-request (exit 5).")
 
     args = ap.parse_args(argv)
     if args.command != "run":
@@ -60,6 +64,7 @@ def main(argv=None):
         dir=str(root),
         procedure=args.procedure,
         max_iterations=args.max_iterations,
+        interactive=args.interactive,
     )
 
 

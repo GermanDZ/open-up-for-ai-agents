@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "task_id": "T-074",
+  "iteration": 44,
+  "phase": "construction",
+  "track": "standard",
+  "branch": "feat/T-074-human-in-the-loop-input",
+  "worktree": "/Users/germandz/personal-code/ai-dev-framework/open-up-for-ai-agents",
+  "session_id": null,
+  "started_at": "2026-07-12T20:02:55Z",
+  "gates": {
+    "team_deployed": false,
+    "plan_persisted": "docs/changes/T-074/plan.md",
+    "log_written": true,
+    "roadmap_synced": true,
+    "retro_due": false
+  },
+  "iterations_since_retro": 2
+}

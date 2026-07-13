@@ -139,6 +139,109 @@ def cmd_list(args):
     return EXIT_OK
 
 
+def _slugify(title: str) -> str:
+    keep = [c.lower() if c.isalnum() else "-" for c in title.strip()]
+    slug = "".join(keep)
+    while "--" in slug:
+        slug = slug.replace("--", "-")
+    return slug.strip("-")[:48] or "input-request"
+
+
+def _today() -> str:
+    from datetime import date
+    return date.today().isoformat()
+
+
+def _now_iso() -> str:
+    from datetime import datetime, timezone
+    return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def insert_awaiting_input(plan_path: Path, request_rel: str) -> bool:
+    """Add (or replace) an ``awaiting-input: <request_rel>`` line inside a plan's
+    frontmatter block. Returns True if the file was modified.
+
+    Coordination-frontmatter edit (like the lease) — NOT a spec behavior change,
+    so it does not require a create-task-spec re-run. Same contract the
+    /openup-request-input skill applies by hand.
+    """
+    text = plan_path.read_text(encoding="utf-8")
+    lines = text.splitlines(keepends=True)
+    if not lines or lines[0].strip() != "---":
+        return False
+    close = None
+    for i in range(1, len(lines)):
+        if lines[i].strip() == "---":
+            close = i
+            break
+    if close is None:
+        return False
+    new_line = "awaiting-input: %s\n" % request_rel
+    # Replace an existing awaiting-input line if present, else insert before close.
+    for i in range(1, close):
+        if lines[i].lstrip().startswith("awaiting-input:"):
+            lines[i] = new_line
+            plan_path.write_text("".join(lines), encoding="utf-8")
+            return True
+    lines.insert(close, new_line)
+    plan_path.write_text("".join(lines), encoding="utf-8")
+    return True
+
+
+def _render_request(title, created, run_id, related_task, question, options, qtype):
+    fm = [
+        "---",
+        'title: "%s"' % title.replace('"', "'"),
+        'created: "%s"' % created,
+        'created_by: "openup-agent"',
+        "status: pending",
+        'run_id: "%s"' % (run_id or "-"),
+    ]
+    if related_task:
+        fm.append('related_task: "%s"' % related_task)
+    fm.append("---")
+    body = ["", "# Input Request — %s" % title, "", "## Question", "",
+            "### Q1: %s" % title, "", "**Type**: %s" % qtype, ""]
+    if qtype == "multiple-choice" and options:
+        for opt in options:
+            body.append("- [ ] `%s`" % opt)
+        body.append("")
+    body += ["**Question**: %s" % question, "", "**Answer**: _(fill in, then set "
+             "`status: answered` and tell the agent to continue)_", ""]
+    return "\n".join(fm + body)
+
+
+def cmd_request(args):
+    """Create a well-formed input-request; optionally suspend a lane (T-074).
+
+    Deterministic creator so ANY harness (or the reference driver) can raise a
+    blocking question without the Claude /openup-request-input skill. The resume
+    side (``resumable``) is unchanged and treats these identically.
+    """
+    root = resolve_root(args)
+    rdir = requests_dir(root)
+    rdir.mkdir(parents=True, exist_ok=True)
+    date = args.date or _today()
+    qtype = "multiple-choice" if args.option else "text"
+    path = rdir / ("%s-%s.md" % (date, _slugify(args.title)))
+    path.write_text(_render_request(
+        args.title, args.created or _now_iso(), args.run_id, args.task_id,
+        args.question, args.option, qtype) + "\n", encoding="utf-8")
+
+    suspended = False
+    if args.task_id:
+        plan = root / "docs" / "changes" / args.task_id / "plan.md"
+        if plan.exists():
+            suspended = insert_awaiting_input(plan, _rel(path, root))
+    result = {"request": _rel(path, root), "task": args.task_id or None,
+              "suspended": suspended}
+    if args.json:
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+    else:
+        print(result["request"])
+    return EXIT_OK
+
+
 # --------------------------------------------------------------------------
 def build_parser():
     parser = argparse.ArgumentParser(
@@ -161,13 +264,27 @@ def build_parser():
     add_common(p_list)
     p_list.set_defaults(func=cmd_list)
 
+    p_req = sub.add_parser(
+        "request",
+        help="Create an input-request (+ suspend a lane via --task-id).")
+    add_common(p_req)
+    p_req.add_argument("--title", required=True, help="Short question title.")
+    p_req.add_argument("--question", required=True, help="The question text.")
+    p_req.add_argument("--option", action="append", default=[],
+                       help="A multiple-choice option (repeatable). Omit for a free-text question.")
+    p_req.add_argument("--task-id", help="Lane to suspend (adds awaiting-input to its plan.md).")
+    p_req.add_argument("--run-id", help="Originating run id (recorded in frontmatter).")
+    p_req.add_argument("--date", help="Override the YYYY-MM-DD filename date (tests).")
+    p_req.add_argument("--created", help="Override the created timestamp (tests).")
+    p_req.set_defaults(func=cmd_request)
+
     return parser
 
 
 def main(argv=None):
     raw = list(sys.argv[1:] if argv is None else argv)
     # Default subcommand is `resumable` when the first token isn't a known command.
-    if not raw or raw[0] not in {"resumable", "list"}:
+    if not raw or raw[0] not in {"resumable", "list", "request"}:
         raw = ["resumable"] + raw
     args = build_parser().parse_args(raw)
     return args.func(args)

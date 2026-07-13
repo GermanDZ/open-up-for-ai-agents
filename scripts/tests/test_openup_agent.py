@@ -180,6 +180,60 @@ class LoopTest(unittest.TestCase):
         self.assertEqual(rc, 2)
 
 
+class AskUserTest(unittest.TestCase):
+    """The 7th tool: interactive answer vs async suspend-into-input-request (T-074)."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp.name)
+        (self.root / "docs-eng-process" / "procedures").mkdir(parents=True)
+        (self.root / "docs-eng-process" / "tier-map.yaml").write_text(TIER_MAP)
+        (self.root / "docs-eng-process" / "procedures" / "openup-demo.md").write_text(_procedure())
+        (self.root / "docs" / "changes" / "T-9").mkdir(parents=True)
+        (self.root / "docs" / "changes" / "T-9" / "plan.md").write_text(
+            "---\nid: T-9\nstatus: ready\n---\n# T-9\n")
+        (self.root / ".openup").mkdir()
+        (self.root / ".openup" / "state.json").write_text(json.dumps({"task_id": "T-9"}))
+        # The async path shells out to scripts/openup-input.py relative to --dir.
+        (self.root / "scripts").symlink_to(Path(__file__).resolve().parents[1])
+        self.env = {"LLM_API_URL": "http://unused.local/v1", "LLM_API_KEY": "k"}
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def _ask_call(self):
+        return _asst(tool_calls=[_tool_call("c1", "ask_user",
+                     {"question": "pg or mysql?", "options": ["pg", "mysql"]})])
+
+    def test_async_suspends_and_sets_awaiting_input(self):
+        rc = loop.run(str(self.root), "demo", env=self.env, interactive=False,
+                      _completion=lambda m, ms, t: self._ask_call())
+        self.assertEqual(rc, loop.EXIT_SUSPEND)  # exit 5
+        plan = (self.root / "docs" / "changes" / "T-9" / "plan.md").read_text()
+        self.assertIn("awaiting-input:", plan)
+        # a real input-request doc was created
+        self.assertTrue(any((self.root / "docs" / "input-requests").glob("*.md")))
+
+    def test_interactive_returns_answer_and_continues(self):
+        seen = {}
+
+        def completion(model, messages, tools_):
+            if not seen:
+                seen["x"] = 1
+                return self._ask_call()
+            # the human's answer must be in the tool result history
+            tool_msgs = [m for m in messages if m.get("role") == "tool"]
+            seen["answer_seen"] = "mysql" in tool_msgs[-1]["content"]
+            return _asst("ok\nOPENUP-DEMO: DONE — answered")
+
+        rc = loop.run(str(self.root), "demo", env=self.env, interactive=True,
+                      _completion=completion, _ask=lambda q, o: "mysql")
+        self.assertEqual(rc, 0)
+        self.assertTrue(seen["answer_seen"])
+        # interactive mode must NOT create an input-request
+        self.assertFalse(any((self.root / "docs" / "input-requests").glob("*.md")))
+
+
 class TierResolutionTest(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
