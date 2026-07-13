@@ -1,20 +1,25 @@
 #!/usr/bin/env python3
-"""next-cycle — the one guided command from empty project to delivery loop (T-095).
+"""next-cycle — the one guided command from empty project to delivery loop.
 
-Run ``./scripts/next-cycle`` repeatedly; the tooling tells you what it needs
-and does everything else:
+Run ``./scripts/next-cycle`` repeatedly; the tooling tells you what it needs and
+does everything else:
 
     no endpoint config  -> prompts for it (TTY) or prints the setup block
-    fresh project       -> writes a template stakeholder brief for you to fill
-    filled brief        -> runs the Inception step (vision + initial roadmap)
-    otherwise           -> runs ONE delivery cycle (openup-agent.py cycle)
+    anything else        -> runs ONE driver cycle (openup-agent.py cycle)
 
-Guidance is stderr-only; the driver's stdout sentinel passes through verbatim
-and the exit code is the driver's — so an outer loop can consume this wrapper
-exactly like ``cycle`` (``while ./scripts/next-cycle; do :; done``).
+The wrapper knows **nothing** about the OpenUP process (T-096). Deciding what a
+project needs next — Inception authoring on a fresh repo, the next delivery lane,
+a missing human input — is the driver's job: its deterministic engine answers
+when it can, and its process navigator handles fresh/unclassifiable states. This
+wrapper only: loads the endpoint config, runs one ``cycle``, and translates the
+driver's typed exit code into a plain next step.
 
-Pure composition over scripts/openup-agent.py — no engine logic lives here.
-Stdlib-only.
+Guidance is stderr-only; the driver's stdout sentinel passes through verbatim and
+the exit code is the driver's — so an outer loop can consume this wrapper exactly
+like ``cycle`` (``while ./scripts/next-cycle; do :; done``).
+
+Pure composition over scripts/openup-agent.py — no engine or process logic lives
+here. Stdlib-only.
 """
 
 import argparse
@@ -24,44 +29,6 @@ import sys
 from pathlib import Path
 
 AGENT_ENV_REL = Path(".openup") / "agent.env"
-BRIEF_REL = Path("docs") / "inputs" / "stakeholder-brief.md"
-
-TEMPLATE_MARKER = "<!-- template: replace every section with your product's reality -->"
-
-BRIEF_TEMPLATE = """\
-%s
-
-# Stakeholder Brief — <project name>
-
-## The situation
-
-<Who has what problem today? What have they already tried? Why does it fail?>
-
-## Who cares (stakeholders)
-
-- **<role>** — <what they need from this>
-- **<role>** — <what they need from this>
-
-## What they want (desired outcomes)
-
-- <observable outcome, not a feature list>
-- <observable outcome>
-
-## Constraints & context
-
-- <scale, platform, non-negotiables>
-
-## Explicitly out of scope (for now)
-
-- <the things v1 will NOT do>
-""" % TEMPLATE_MARKER
-
-VISION_INSTRUCTION = (
-    "read docs/inputs/stakeholder-brief.md; produce docs/vision.md, and also "
-    "author an initial docs/roadmap.md with 5-8 pending entries (a table with "
-    "ID, Title, Status, Priority, Dependencies, Value columns) covering the "
-    "path from the first use cases to the core features"
-)
 
 ENV_SETUP_BLOCK = """\
 No LLM endpoint is configured. Point the driver at any OpenAI-compatible
@@ -125,21 +92,6 @@ def ensure_env(root, env, interactive, ask=None):
     return True
 
 
-def brief_state(root):
-    path = Path(root) / BRIEF_REL
-    if not path.exists():
-        return "missing"
-    if TEMPLATE_MARKER in path.read_text(encoding="utf-8"):
-        return "template"
-    return "filled"
-
-
-def write_template_brief(root):
-    path = Path(root) / BRIEF_REL
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(BRIEF_TEMPLATE, encoding="utf-8")
-
-
 def run_driver(root, args, env):
     """Run one openup-agent.py invocation. stderr streams through live;
     stdout (the sentinel) is captured, re-emitted verbatim, and returned so
@@ -153,12 +105,10 @@ def run_driver(root, args, env):
     return proc.returncode, proc.stdout or ""
 
 
-def guidance(rc, stdout, stage):
+def guidance(rc, stdout):
     if rc == 0:
         if "ADVANCED" in stdout:
             return "progress! run ./scripts/next-cycle again to continue."
-        if stage == "inception":
-            return "vision + roadmap authored — run ./scripts/next-cycle again to start delivering."
         return "nothing to do right now — the sentinel line above says why."
     return {
         2: "configuration problem — check the exports / .openup/agent.env "
@@ -183,8 +133,9 @@ def guidance(rc, stdout, stage):
 def main(argv=None):
     ap = argparse.ArgumentParser(
         prog="next-cycle",
-        description="Guided single entry point: env -> brief -> Inception -> "
-                    "one delivery cycle, with plain next-step guidance.")
+        description="Guided single entry point: env config -> one driver cycle, "
+                    "with plain next-step guidance. The driver decides what the "
+                    "project needs next; this wrapper knows no process.")
     ap.add_argument("--dir", default=".", help="OpenUP project root (default: .)")
     args = ap.parse_args(argv)
 
@@ -200,40 +151,11 @@ def main(argv=None):
     if not ensure_env(root, env, interactive):
         return 2
 
-    fresh = not ((root / "docs" / "vision.md").exists()
-                 or (root / "docs" / "roadmap.md").exists())
-    if fresh:
-        state = brief_state(root)
-        if state == "missing":
-            write_template_brief(root)
-            _say("this is a fresh project, and only you know what the product "
-                 "is.\nI wrote a template brief to %s —\nfill in every section "
-                 "with your product's reality, then re-run ./scripts/next-cycle"
-                 % BRIEF_REL)
-            return 0
-        if state == "template":
-            _say("the stakeholder brief at %s still contains the template "
-                 "marker —\nreplace every section with your product's reality "
-                 "(and delete the marker line), then re-run ./scripts/next-cycle"
-                 % BRIEF_REL)
-            return 0
-        _say("brief found — running Inception: the LLM authors docs/vision.md "
-             "+ an initial docs/roadmap.md from it (a few minutes on a local "
-             "model) …")
-        driver_args = ["run", "--dir", str(root),
-                       "--procedure", "openup-create-vision",
-                       "--instruction", VISION_INSTRUCTION]
-        if interactive:
-            driver_args.append("--interactive")
-        rc, out = run_driver(root, driver_args, env)
-        _say(guidance(rc, out, "inception"))
-        return rc
-
     driver_args = ["cycle", "--dir", str(root)]
     if interactive:
         driver_args.append("--interactive")
     rc, out = run_driver(root, driver_args, env)
-    _say(guidance(rc, out, "cycle"))
+    _say(guidance(rc, out))
     return rc
 
 

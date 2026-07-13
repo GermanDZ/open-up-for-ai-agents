@@ -11,9 +11,11 @@ touches:
   - scripts/next-cycle
   - scripts/openup_agent/navigator.py
   - scripts/openup_agent/cycle.py
+  - scripts/openup-agent.py
   - scripts/process-manifest.txt
   - scripts/tests/test_next_cycle.py
   - scripts/tests/test_openup_agent_navigator.py
+  - scripts/tests/test_openup_agent_cycle.py
   - docs-eng-process/reference-driver.md
   - docs-eng-process/getting-started-reference-driver.md
   - docs-eng-process/script-cli-reference.md
@@ -229,9 +231,14 @@ consent gate (T-094) rather than adding new control machinery.
 - `scripts/openup_agent/cycle.py` — invoke the navigator on the `noop` path
   (behind a `navigate`/`--no-navigate` gate mirroring `recover`); consume its
   decision (run procedure | suspend). Replace the hardcoded no-roadmap hint.
+- `scripts/openup-agent.py` — add the `--no-navigate` flag to the `cycle`
+  subparser and thread it to `run_cycle(navigate=...)`.
 - `scripts/process-manifest.txt` — ship `openup_agent/navigator.py`.
 - `scripts/tests/test_next_cycle.py` — supersede stage tests with the thin-wrapper
   contract (Req 7).
+- `scripts/tests/test_openup_agent_cycle.py` — add `NavigatorDispatchTest` (noop
+  hooks the navigator; a deterministic path does not) and switch the pre-existing
+  noop-hint tests to `navigate=False` (the gated fallback they still assert).
 - `docs/changes/archive/T-095/plan.md` — supersession note (Req 7, fix-spec-first).
 - `docs-eng-process/reference-driver.md`, `getting-started-reference-driver.md`,
   `script-cli-reference.md` — document navigation replacing the wrapper stage
@@ -247,30 +254,30 @@ consent gate (T-094) rather than adding new control machinery.
 
 ## Operations
 
-- [ ] Add `scripts/openup_agent/navigator.py`: `build_navigator_input(root)`
+- [x] Add `scripts/openup_agent/navigator.py`: `build_navigator_input(root)`
   (deterministic — process-map phase/activities, `lifecycle status --json`,
   Ring-1 artifact survey, procedures index) and the decision-file schema +
   `read_navigator_decision(root)`.
-- [ ] Wire the navigator into `cycle.py`'s `noop` path behind a `navigate` gate
+- [x] Wire the navigator into `cycle.py`'s `noop` path behind a `navigate` gate
   (default on; `--no-navigate` restores T-089/T-095 behavior): dispatch one
   bounded sub-run (reusing the `_subrun`/`_completion` seam), read its decision
   file, then run the named procedure **or** raise a T-074 input-request (suspend)
   for `missing_inputs`, routing scope-proposing procedures through the T-094
   consent gate.
-- [ ] Strip all process knowledge from `scripts/next-cycle` — remove the brief
+- [x] Strip all process knowledge from `scripts/next-cycle` — remove the brief
   template, `VISION_INSTRUCTION`, `brief_state`, `write_template_brief`, and the
   `fresh` branch; leave env guidance + one invocation + exit translation.
-- [ ] Add `openup_agent/navigator.py` to `scripts/process-manifest.txt`.
-- [ ] (tester) Supersede `scripts/tests/test_next_cycle.py` stage tests with the
+- [x] Add `openup_agent/navigator.py` to `scripts/process-manifest.txt`.
+- [x] (tester) Supersede `scripts/tests/test_next_cycle.py` stage tests with the
   thin-wrapper contract, and add `scripts/tests/test_openup_agent_navigator.py`
   (fresh-repo-with-brief → procedure decision; fresh-repo-no-input →
   `missing_inputs` → suspend; deterministic-path → navigator NOT invoked).
-- [ ] Record the supersession note on `docs/changes/archive/T-095/plan.md`
+- [x] Record the supersession note on `docs/changes/archive/T-095/plan.md`
   (fix-spec-first, Req 7).
-- [ ] Update `reference-driver.md`, `getting-started-reference-driver.md`, and
+- [x] Update `reference-driver.md`, `getting-started-reference-driver.md`, and
   `script-cli-reference.md` to describe navigation replacing the wrapper stage
   machine.
-- [ ] (tester) Run the full driver+cycle+navigator suite green; run
+- [x] (tester) Run the full driver+cycle+navigator suite green; run
   `openup-spec-scenarios.py check`, `check-docs.py`, and
   `openup-fence.py check --base harness-optional`.
 

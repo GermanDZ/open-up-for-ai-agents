@@ -276,17 +276,18 @@ learnings     …   # append a dated iteration-learnings entry
 - Run `--help` on each subcommand for its fields. The scribe only ever writes
   fully-specified content; it never authors timestamps or decisions.
 
-## next-cycle — guided single entry point (T-095)
+## next-cycle — guided single entry point (T-095, thinned in T-096)
 
 ```
-./scripts/next-cycle [--dir .]     # env -> brief -> Inception -> one cycle;
+./scripts/next-cycle [--dir .]     # env config -> one driver cycle;
                                    #   guidance on stderr, sentinel passthrough,
                                    #   exit code = the driver's
 ```
-- Composes `openup-agent.py` only (no engine logic): loads `.openup/agent.env`,
-  guides missing config, writes the template stakeholder brief on a fresh
-  project, runs create-vision when the brief is filled, else one `cycle`
-  (`--interactive` auto-added on a TTY). Scriptable exactly like `cycle`.
+- Composes `openup-agent.py` only and knows **no process** (T-096): loads
+  `.openup/agent.env`, guides missing endpoint config, then runs ONE `cycle`
+  (`--interactive` auto-added on a TTY). What a fresh/unclassifiable project
+  needs next is decided by the driver's process navigator, not the wrapper.
+  Scriptable exactly like `cycle`.
 
 ## openup-agent.py — reference driver (T-072 `run` · T-089 `cycle`)
 
@@ -294,7 +295,7 @@ learnings     …   # append a dated iteration-learnings entry
 run    --dir PATH --procedure NAME [--max-iterations 50] [--instruction TEXT]
        [--interactive]                  # LLM drives the whole procedure; exits 0/2/3/4/5
 cycle  --dir PATH [--step-max-iterations 10] [--step-tier authoring]
-       [--interactive] [--no-recover]                  # deterministic engine: resolve → begin →
+       [--interactive] [--no-recover] [--no-navigate]  # deterministic engine: resolve → begin →
                                         #   per-Operations-box executor (scripts as code,
                                         #   judgment as bounded sub-runs) → gates →
                                         #   completion; exits 0/2/3/4/5/6/7/8
@@ -309,7 +310,12 @@ cycle  --dir PATH [--step-max-iterations 10] [--step-tier authoring]
   `--interactive`, else input-request + suspend exit 5) before ONE
   product-manager replenishment pass proposes new pending roadmap entries
   (T-094 — accepted only if `openup-roadmap.py next` then succeeds; an
-  answered `no` is durable). Exit 6 =
+  answered `no` is durable). Navigation (T-096, default on; `--no-navigate` opts
+  out): on a `noop`/unclassifiable state (e.g. a fresh project with no roadmap)
+  one bounded **process-navigator** sub-run picks the next procedure from the
+  process map + lifecycle status + a Ring-1 artifact survey and runs it, or
+  raises a missing human input as an input-request (exit 5); product scope stays
+  behind the T-094 consent gate. Exit 6 =
   gate failed after a step (box left unticked, re-run retries), 7 = decision
   path not supported (assess/milestone → T-091; plan-iteration only under
   `--no-recover` or when recovery cannot advance), 8 = a script-step /

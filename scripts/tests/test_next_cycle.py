@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Hermetic tests for scripts/next-cycle (T-095).
+"""Hermetic tests for scripts/next-cycle (T-095, thinned in T-096).
 
 Run with either:
     python3 -m unittest scripts.tests.test_next_cycle
@@ -7,12 +7,18 @@ Run with either:
 
 Each test builds a tmp project whose scripts/openup-agent.py is a FAKE that
 records its argv + selected env into a log and replays a canned exit code +
-stdout from scripts/_agent_behavior.json — so the wrapper's stage detection,
-invocation shapes, env plumbing, sentinel passthrough, and exit translation
-are all exercised end-to-end through the real executable with zero LLM and
-zero engine dependence. The wrapper is run as a subprocess (which also proves
-the shebang + non-TTY paths); the interactive env prompt is unit-tested via
-importlib against the module's ask seam.
+stdout from scripts/_agent_behavior.json — so the wrapper's invocation shape,
+env plumbing, sentinel passthrough, and exit translation are all exercised
+end-to-end through the real executable with zero LLM and zero engine
+dependence. The wrapper is run as a subprocess (which also proves the shebang +
+non-TTY paths); the interactive env prompt is unit-tested via importlib against
+the module's ask seam.
+
+T-096 stripped all process knowledge from the wrapper: it no longer detects a
+project stage or writes a template brief — it always runs ONE ``cycle`` and the
+driver navigates fresh/unclassifiable states itself. The old stage-machine tests
+(FreshProjectTest) are superseded here; the navigated fresh-project path is
+covered by scripts/tests/test_openup_agent_navigator.py.
 """
 
 import importlib.util
@@ -123,40 +129,33 @@ class EnvTest(NextCycleFixture):
         self.assertIn("LLM_API_URL=http://tty/v1", saved)
 
 
-class FreshProjectTest(NextCycleFixture):
-    def test_writes_template_brief_and_stops(self):
-        proc = self._run()
-        self.assertEqual(proc.returncode, 0, proc.stderr)
-        brief = self.root / "docs" / "inputs" / "stakeholder-brief.md"
-        self.assertTrue(brief.exists())
-        self.assertIn(next_cycle.TEMPLATE_MARKER, brief.read_text())
-        self.assertIn("fill in every section", proc.stderr)
-        self.assertEqual(self._calls(), [])
+class ThinWrapperContractTest(NextCycleFixture):
+    """T-096: the wrapper knows no process — it runs ONE ``cycle`` regardless of
+    project stage and writes nothing (no brief, no stage machine)."""
 
-    def test_template_brief_not_overwritten(self):
-        brief = self.root / "docs" / "inputs" / "stakeholder-brief.md"
-        brief.parent.mkdir(parents=True)
-        brief.write_text(next_cycle.TEMPLATE_MARKER + "\n# my notes so far\n")
-        proc = self._run()
-        self.assertEqual(proc.returncode, 0)
-        self.assertIn("my notes so far", brief.read_text())  # untouched
-        self.assertIn("template marker", proc.stderr)
-        self.assertEqual(self._calls(), [])
-
-    def test_filled_brief_runs_inception(self):
-        brief = self.root / "docs" / "inputs" / "stakeholder-brief.md"
-        brief.parent.mkdir(parents=True)
-        brief.write_text("# Brief — RealProduct\nreal content, no marker\n")
+    def test_fresh_project_runs_one_cycle_writes_no_brief(self):
+        # A fresh repo (no roadmap, no brief). The old wrapper would write a
+        # template brief and NOT call the driver; the thin wrapper runs cycle.
         proc = self._run()
         self.assertEqual(proc.returncode, 0, proc.stderr)
         calls = self._calls()
         self.assertEqual(len(calls), 1)
-        argv = calls[0]["argv"]
-        self.assertEqual(argv[0], "run")
-        self.assertIn("openup-create-vision", argv)
-        instruction = argv[argv.index("--instruction") + 1]
-        for needle in ("stakeholder-brief.md", "docs/vision.md", "docs/roadmap.md"):
-            self.assertIn(needle, instruction)
+        self.assertEqual(calls[0]["argv"][0], "cycle")
+        self.assertFalse((self.root / "docs" / "inputs" /
+                          "stakeholder-brief.md").exists())
+
+    def test_wrapper_carries_no_process_knowledge(self):
+        # The source holds no brief template / vision instruction / stage strings.
+        src = _WRAPPER.read_text()
+        for needle in ("BRIEF_TEMPLATE", "VISION_INSTRUCTION",
+                       "stakeholder-brief", "brief_state", "TEMPLATE_MARKER"):
+            self.assertNotIn(needle, src)
+
+    def test_never_invokes_run_procedure_directly(self):
+        # Every stage funnels to `cycle`; the wrapper never runs `run` itself.
+        proc = self._run()
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertTrue(all(c["argv"][0] == "cycle" for c in self._calls()))
 
 
 class CycleStageTest(NextCycleFixture):
