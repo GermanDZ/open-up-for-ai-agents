@@ -790,6 +790,18 @@ authored when promoted.
 
 ---
 
+## T-098: Deterministic Inception-bootstrap fast-path + LLM transcript debug log
+**Status**: completed (2026-07-13)
+**Priority**: high
+**Value**: Fixes a second live non-converging loop — a weak local model sometimes finished the navigator sub-run without writing the decision file (exit 8). The unambiguous fresh-Inception bootstrap now runs in code (scaffold brief -> author vision), no navigator LLM. Adds OPENUP_AGENT_DEBUG_LOG to record full LLM transcripts for diagnosis.
+**Description**: navigator `_bootstrap_step` handles inception+no-vision deterministically (scaffold brief, or run create-vision on a filled brief) before any navigator LLM call; only a vision-present state uses the LLM navigator. New OPENUP_AGENT_DEBUG_LOG appends one JSONL per LLM call with request messages + response (content/tool_calls/finish_reason).
+
+**Dependencies**: T-096, T-097
+
+**See**: found live on my-product (2026-07-13)
+
+---
+
 ## T-097: Navigator scaffolds a fillable artifact instead of an unanswerable input-request
 **Status**: completed (2026-07-13)
 **Priority**: high

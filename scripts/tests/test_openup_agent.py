@@ -87,6 +87,31 @@ class LoopTest(unittest.TestCase):
         # model resolved from the driver column (reasoning -> local-main)
         self.assertEqual(calls[0], "local-main")
 
+    # -- debug transcript log (T-098) -------------------------------------
+    def test_debug_log_records_full_interaction(self):
+        def completion(model, messages, tools_):
+            return _asst("done\nOPENUP-DEMO: DONE — ok")
+        dbg = self.root / "llm-debug.jsonl"
+        env = dict(self.env)
+        env["OPENUP_AGENT_DEBUG_LOG"] = str(dbg)
+        rc = loop.run(str(self.root), "demo", env=env, _completion=completion)
+        self.assertEqual(rc, 0)
+        lines = [json.loads(l) for l in dbg.read_text().splitlines() if l.strip()]
+        self.assertEqual(len(lines), 1)
+        rec = lines[0]
+        self.assertEqual(rec["iteration"], 1)
+        self.assertEqual(rec["model"], "local-main")
+        self.assertTrue(any(m["role"] == "system" for m in rec["request"]))
+        self.assertIn("OPENUP-DEMO: DONE", rec["response"]["content"])
+        self.assertIn("tool_calls", rec["response"])
+
+    def test_no_debug_log_when_unset(self):
+        def completion(model, messages, tools_):
+            return _asst("done\nOPENUP-DEMO: DONE — ok")
+        rc = loop.run(str(self.root), "demo", env=self.env, _completion=completion)
+        self.assertEqual(rc, 0)
+        self.assertFalse((self.root / "llm-debug.jsonl").exists())
+
     def test_tool_call_then_sentinel(self):
         (self.root / "target.txt").write_text("payload-42\n")
         seen = {}

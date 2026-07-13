@@ -110,6 +110,10 @@ class RunNavigatorTest(unittest.TestCase):
         self.root = Path(self.tmp.name)
         (self.root / ".openup").mkdir()
         (self.root / "docs-eng-process" / "procedures").mkdir(parents=True)
+        # A vision already exists → the deterministic bootstrap fast-path (T-098)
+        # is off, so these tests exercise the LLM navigator decision path.
+        (self.root / "docs").mkdir()
+        (self.root / "docs" / "vision.md").write_text("# Vision\n")
         self.logs = []
         self.printed = []
 
@@ -144,22 +148,6 @@ class RunNavigatorTest(unittest.TestCase):
         self.assertEqual(rc, 0)
         self.assertEqual(ran["procedure"], "openup-create-vision")
         self.assertEqual(ran["instruction"], "author vision")
-
-    def test_missing_artifact_scaffolds_template_not_request(self):
-        # T-097: a missing brief scaffolds a fillable template + suspends; NO
-        # input-request (which could never produce the document).
-        rc = self._run(
-            self._writes_decision({"procedure": None, "instruction": "",
-                                   "missing_inputs": ["a stakeholder brief"],
-                                   "rationale": "no product input"}),
-            lambda *a: self.fail("must not run a procedure"))
-        self.assertEqual(rc, navigator.NAV_SUSPEND)
-        brief = self.root / navigator.DEFAULT_INPUT_PATH
-        self.assertTrue(brief.exists())
-        self.assertIn(navigator.TEMPLATE_MARKER, brief.read_text())
-        self.assertFalse((self.root / "docs" / "input-requests").exists())
-        self.assertTrue(self.printed[-1].startswith("OPENUP-AGENT: SUSPENDED"))
-        self.assertIn(navigator.DEFAULT_INPUT_PATH, self.printed[-1])
 
     def test_explicit_input_path_is_honored(self):
         rc = self._run(
@@ -253,6 +241,99 @@ class RunNavigatorTest(unittest.TestCase):
         rc = self._run(lambda i, s: navigator.NAV_SUSPEND,
                        lambda *a: self.fail("no procedure"))
         self.assertEqual(rc, navigator.NAV_SUSPEND)
+
+
+class BootstrapFastPathTest(unittest.TestCase):
+    """T-098: the unambiguous fresh-Inception bootstrap runs deterministically —
+    the navigator LLM (dispatch) is NOT called."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp.name)
+        (self.root / ".openup").mkdir()
+        pdir = self.root / "docs-eng-process" / "procedures"
+        pdir.mkdir(parents=True)
+        (pdir / "openup-create-vision.md").write_text("x")  # in the index
+        self.printed = []
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def _run(self, dispatch, run_procedure, runner=None):
+        return navigator.run_navigator(
+            self.root, dispatch=dispatch, run_procedure=run_procedure,
+            runner=runner or _fact_runner(),  # phase=inception
+            log=lambda m: None, print_=self.printed.append)
+
+    def test_no_vision_no_brief_scaffolds_without_llm(self):
+        rc = self._run(lambda i, s: self.fail("navigator LLM must not run"),
+                       lambda *a: self.fail("no procedure"))
+        self.assertEqual(rc, navigator.NAV_SUSPEND)
+        brief = self.root / navigator.DEFAULT_INPUT_PATH
+        self.assertTrue(brief.exists())
+        self.assertIn(navigator.TEMPLATE_MARKER, brief.read_text())
+        self.assertFalse((self.root / "docs" / "input-requests").exists())
+
+    def test_filled_brief_no_vision_runs_create_vision_without_llm(self):
+        brief = self.root / navigator.DEFAULT_INPUT_PATH
+        brief.parent.mkdir(parents=True)
+        brief.write_text("# Brief\nreal product\n")  # filled, no marker
+        ran = {}
+
+        def run_procedure(proc, instruction):
+            ran["proc"] = proc
+            ran["instruction"] = instruction
+            return 0
+        rc = self._run(lambda i, s: self.fail("navigator LLM must not run"),
+                       run_procedure)
+        self.assertEqual(rc, 0)
+        self.assertEqual(ran["proc"], "openup-create-vision")
+        self.assertIn("stakeholder-brief.md", ran["instruction"])
+
+    def test_vision_present_uses_llm_navigator(self):
+        (self.root / "docs").mkdir(exist_ok=True)
+        (self.root / "docs" / "vision.md").write_text("# Vision\n")
+        called = {}
+
+        def dispatch(instruction, system_prompt):
+            called["d"] = True
+            (self.root / navigator.DECISION_REL).write_text(
+                json.dumps({"procedure": None, "missing_inputs": [],
+                            "rationale": "done"}))
+            return 0
+        rc = self._run(dispatch, lambda *a: 0)
+        self.assertTrue(called.get("d"))  # LLM navigator WAS used
+        self.assertEqual(rc, navigator.NAV_OK)
+
+    def test_non_inception_defers_to_llm(self):
+        called = {}
+
+        def dispatch(instruction, system_prompt):
+            called["d"] = True
+            (self.root / navigator.DECISION_REL).write_text(
+                json.dumps({"procedure": None, "missing_inputs": [],
+                            "rationale": "x"}))
+            return 0
+        rc = self._run(dispatch, lambda *a: 0,
+                       runner=_fact_runner(status={"phase": "construction"}))
+        self.assertTrue(called.get("d"))
+
+    def test_create_vision_absent_defers_to_llm(self):
+        # filled brief, no vision, but create-vision NOT in the index → LLM path.
+        (self.root / navigator.DEFAULT_INPUT_PATH).parent.mkdir(parents=True)
+        (self.root / navigator.DEFAULT_INPUT_PATH).write_text("# filled\n")
+        (self.root / "docs-eng-process" / "procedures" /
+         "openup-create-vision.md").unlink()  # remove from index
+        called = {}
+
+        def dispatch(instruction, system_prompt):
+            called["d"] = True
+            (self.root / navigator.DECISION_REL).write_text(
+                json.dumps({"procedure": None, "missing_inputs": [],
+                            "rationale": "x"}))
+            return 0
+        self._run(dispatch, lambda *a: 0)
+        self.assertTrue(called.get("d"))
 
 
 class MarkerSurveyTest(unittest.TestCase):

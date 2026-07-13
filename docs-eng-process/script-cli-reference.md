@@ -354,6 +354,10 @@ cycle  --dir PATH [--step-max-iterations 10] [--step-tier authoring]
   `OPENUP_MODEL_MAIN`, …). Reads token/latency via the driver's opt-in
   `OPENUP_AGENT_USAGE_LOG`. Full runbook + metric definitions:
   [reference-driver-benchmark.md](reference-driver-benchmark.md).
+- **`OPENUP_AGENT_DEBUG_LOG`** (T-098): set to a path to append the **full LLM
+  transcript** (one JSON line per call: `request` messages + `response`
+  content/tool_calls/finish_reason) — the way to see *why* a weak local model
+  misbehaved (skipped `write_file`, early sentinel). Opt-in; unset ⇒ unchanged.
 
 ## See also
 
