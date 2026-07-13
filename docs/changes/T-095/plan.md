@@ -191,13 +191,13 @@ is input the human was going to have to produce anyway, just pre-shaped.
 
 ## Operations
 
-- [ ] Implement `scripts/next-cycle`: agent.env loader, env guidance
+- [x] Implement `scripts/next-cycle`: agent.env loader, env guidance
       (TTY prompt + persist / off-TTY setup block), stage detection, template
       brief writer with marker, Inception invocation, single TTY-aware cycle
       invocation, exit translation with stdout passthrough (Req 1-5)
-- [ ] Add `scripts/tests/test_next_cycle.py` — fake-driver fixture recording
+- [x] Add `scripts/tests/test_next_cycle.py` — fake-driver fixture recording
       argv + canned exits/sentinels; cover all six requirements' scenarios
-- [ ] Register `next-cycle` in `scripts/process-manifest.txt` and verify a
+- [x] Register `next-cycle` in `scripts/process-manifest.txt` and verify a
       fresh `install_process_clis` lands it executable with the shebang
       (Req 6)
 - [ ] (analyst) Update `getting-started-reference-driver.md` (one-command
