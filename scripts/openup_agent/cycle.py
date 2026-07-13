@@ -445,8 +445,13 @@ def complete(root, task, env, counts):
           "--event", "task_completed", "--task-id", task], root)
     _run(["python3", "scripts/openup-state.py", "set-gate",
           "log_written", "true"], root, check=True)
-    # 4. regenerate the derived shared views (never hand-edited).
-    _run(["python3", "scripts/sync-status.py"], root, check=True)
+    # 4. regenerate the derived shared views (never hand-edited). Fail-open: a
+    #    freshly bootstrapped project may not carry the views yet (the driver's
+    #    absent-gate spirit); the hard gates below stay blocking.
+    sync = _run(["python3", "scripts/sync-status.py"], root)
+    if sync.returncode != 0:
+        _log("sync-status.py failed (exit %d) — views not regenerated:\n%s"
+             % (sync.returncode, (sync.stdout + sync.stderr).strip()[:800]))
     # 5. final deterministic gates before anything irreversible.
     ok, report = loop.run_gates(root)
     if not ok:

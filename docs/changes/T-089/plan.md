@@ -253,10 +253,10 @@ procedure-direct mode; `cycle` is additive and explicitly invoked.
       `sync-status.py` → archive → commit → `session end` → `OPENUP-NEXT:
       ADVANCED` sentinel on stdout, exit 0; hermetic end-to-end fixture test
       (Req 5)
-- [ ] Wire the `cycle` subparser into `scripts/openup-agent.py`, add
+- [x] Wire the `cycle` subparser into `scripts/openup-agent.py`, add
       `openup_agent/cycle.py` to `scripts/process-manifest.txt`, and verify a
       fresh `install_process_clis` lands + imports it (Req 9)
-- [ ] Add `scripts/bench-scenarios/cycle-quick-doc/` and bench support for
+- [x] Add `scripts/bench-scenarios/cycle-quick-doc/` and bench support for
       scenario-declared `cycle` command; hermetic mock-endpoint bench test
       records a scored run (Req 8)
 - [ ] (analyst) Document `cycle` in `reference-driver.md` +

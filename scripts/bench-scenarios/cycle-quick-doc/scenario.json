@@ -1,0 +1,8 @@
+{
+  "name": "cycle-quick-doc",
+  "description": "The quick-doc micro-task driven by the T-089 deterministic cycle engine (`openup-agent.py cycle`) instead of the LLM-orchestrated `next` procedure. Same lane, same deliverable — so a batch of this scenario vs a `quick-doc` batch on the same model measures the engine's token/reliability delta (the program's >=5x claim).",
+  "command": "cycle",
+  "expect_pick": "BENCH-001",
+  "deliverable_file": "docs/bench-scratch/note.md",
+  "deliverable_marker": "bench ok"
+}

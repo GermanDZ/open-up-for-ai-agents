@@ -39,13 +39,17 @@ from pathlib import Path
 EXIT_OK = 0
 EXIT_USAGE = 2
 
-# Driver exit code → outcome label (mirrors scripts/openup_agent/loop.py).
+# Driver exit code → outcome label (mirrors scripts/openup_agent/loop.py; the
+# 6/7/8 codes are the cycle engine's — scripts/openup_agent/cycle.py, T-089).
 OUTCOME_BY_EXIT = {
     0: "pass",
     2: "config-error",
     3: "endpoint-error",
     4: "max-iterations",
     5: "suspended",
+    6: "gate-failure",
+    7: "unsupported-path",
+    8: "step-failure",
 }
 
 HERE = Path(__file__).resolve().parent
@@ -172,17 +176,30 @@ def resolves_to(fixture: Path, expect_pick: str):
 # Run the driver as a subprocess (exactly what a user runs)
 # --------------------------------------------------------------------------
 def run_driver(repo: Path, fixture: Path, procedure: str, max_iterations: int,
-               timeout: int, usage_log: Path, env: dict, instruction=None):
-    """Invoke `openup-agent.py run --dir <fixture>`; return a dict of raw results."""
+               timeout: int, usage_log: Path, env: dict, instruction=None,
+               command="run"):
+    """Invoke `openup-agent.py <command> --dir <fixture>`; return raw results.
+
+    `command` is `run` (procedure-driven, the default) or `cycle` (the T-089
+    deterministic engine; `procedure`/`instruction` don't apply — the engine
+    reads everything from the fixture's board + lane spec, and `max_iterations`
+    becomes the per-judgment-step cap)."""
     run_env = dict(env)
     run_env["OPENUP_AGENT_USAGE_LOG"] = str(usage_log)
-    argv = [
-        sys.executable, str(repo / "scripts" / "openup-agent.py"),
-        "run", "--dir", str(fixture), "--procedure", procedure,
-        "--max-iterations", str(max_iterations),
-    ]
-    if instruction:
-        argv += ["--instruction", instruction]
+    if command == "cycle":
+        argv = [
+            sys.executable, str(repo / "scripts" / "openup-agent.py"),
+            "cycle", "--dir", str(fixture),
+            "--step-max-iterations", str(max_iterations),
+        ]
+    else:
+        argv = [
+            sys.executable, str(repo / "scripts" / "openup-agent.py"),
+            "run", "--dir", str(fixture), "--procedure", procedure,
+            "--max-iterations", str(max_iterations),
+        ]
+        if instruction:
+            argv += ["--instruction", instruction]
     t0 = _dt.datetime.now()
     timed_out = False
     try:
@@ -437,11 +454,14 @@ def run_batch(args, env):
     scenario_meta = json.loads((scenario_dir / "scenario.json").read_text(encoding="utf-8"))
     procedure = args.procedure or scenario_meta.get("procedure") or "next"
     instruction = scenario_meta.get("instruction")
+    # Driver command: `run` (procedure-driven) or `cycle` (the T-089 engine).
+    # A scenario declares it; an explicit --command on the CLI overrides.
+    command = args.command or scenario_meta.get("command") or "run"
 
     model = env.get("OPENUP_MODEL_MAIN", "(tier-map default)")
     endpoint = env.get("LLM_API_URL", "(unset — driver will fail fast)")
-    _log("batch: %d run(s), scenario=%s, procedure=%s, out=%s"
-         % (args.runs, scenario_dir.name, procedure, out_dir))
+    _log("batch: %d run(s), scenario=%s, command=%s, procedure=%s, out=%s"
+         % (args.runs, scenario_dir.name, command, procedure, out_dir))
 
     records = []
     results_path = out_dir / "results.jsonl"
@@ -466,7 +486,8 @@ def run_batch(args, env):
 
             usage_log = fixture / ".openup-usage.jsonl"
             raw = run_driver(repo, fixture, procedure, args.max_iterations,
-                             args.timeout, usage_log, env, instruction=instruction)
+                             args.timeout, usage_log, env, instruction=instruction,
+                             command=command)
             record = measure_run(fixture, seed_sha, scenario, raw, usage_log)
             record["run"] = n
             record["seed_resolves_pick"] = ok
@@ -483,9 +504,13 @@ def run_batch(args, env):
                 record["deliverable_archived"] = dest.name
             # Always persist the full driver stdout/stderr — the definitive
             # per-run debug log — so a failure never needs a manual side-run.
+            header = ("$ openup-agent.py cycle --dir %s" % fixture
+                      if command == "cycle" else
+                      "$ openup-agent.py run --dir %s --procedure %s"
+                      % (fixture, procedure))
             (out_dir / ("run-%02d.driver.log" % n)).write_text(
-                "$ openup-agent.py run --dir %s --procedure %s\n\n=== STDOUT ===\n%s\n"
-                "=== STDERR ===\n%s\n" % (fixture, procedure,
+                "%s\n\n=== STDOUT ===\n%s\n"
+                "=== STDERR ===\n%s\n" % (header,
                 raw.get("stdout", ""), raw.get("stderr", "")), encoding="utf-8")
             records.append(record)
             rf.write(json.dumps(record, ensure_ascii=False) + "\n")
@@ -506,7 +531,8 @@ def run_batch(args, env):
 
     meta = {
         "stamp": stamp, "repo": str(repo), "scenario": scenario_dir.name,
-        "procedure": procedure, "model": model, "endpoint": endpoint,
+        "command": command, "procedure": procedure, "model": model,
+        "endpoint": endpoint,
         "runs": args.runs, "max_iterations": args.max_iterations,
         "include_working_tree": args.include_working_tree,
     }
@@ -534,6 +560,11 @@ def build_parser():
     p.add_argument("--procedure", default=None,
                    help="Procedure to drive. Overrides the scenario's `procedure`; "
                         "falls back to the scenario's, then `next`.")
+    p.add_argument("--command", default=None, choices=("run", "cycle"),
+                   help="Driver command. Overrides the scenario's `command`; "
+                        "falls back to the scenario's, then `run`. `cycle` runs "
+                        "the T-089 deterministic engine (procedure/instruction "
+                        "don't apply; --max-iterations caps each judgment step).")
     p.add_argument("--scenario", default=None,
                    help="Scenario dir (default: bench-scenarios/quick-doc).")
     p.add_argument("--out", default=None,
