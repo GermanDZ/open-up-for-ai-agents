@@ -1,7 +1,7 @@
 ---
 id: T-089
 title: Cycle engine core — deterministic pick/resume + Operations-step executor
-status: ready   # proposed → ready → in-progress → done → verified
+status: done
 priority: high   # critical | high | medium | low
 estimate: 1-2 sessions
 plan: docs/explorations/2026-07-13-deterministic-cycle-engine.md

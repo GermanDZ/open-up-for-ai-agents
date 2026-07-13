@@ -741,7 +741,7 @@ authored when promoted.
 ---
 
 ## T-089: Cycle engine core — deterministic pick/resume + Operations-step executor
-**Status**: pending
+**Status**: completed (2026-07-13)
 **Priority**: high
 **Value**: The heart of the inversion — a weak local model only ever authors one step at a time while code does the ceremony, collapsing token cost ~an order of magnitude and making the loop crash-safe (all inter-step state is already in the repo).
 **Description**: New `openup-agent.py cycle --dir <project>`: `board.resolve()` → `openup-session.py begin` → for each unchecked `## Operations` box, dispatch script-steps as code and judgment-steps as bounded fresh `loop.run()` sub-runs (`--instruction` built from the box + role hat + Ring 1 + change folder), tick the box, run gates → deterministic completion (status flip, sync, archive, release). Bench scenario `cycle-quick-doc` proving ≥5× token reduction vs `next` on the same model.
