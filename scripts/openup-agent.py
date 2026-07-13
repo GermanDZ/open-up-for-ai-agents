@@ -20,6 +20,12 @@ Exit codes:
     3  endpoint/transport error
     4  max iterations reached with no clean sentinel
     5  suspended awaiting a human answer (ask_user, non-interactive) — sentinel on stdout
+
+The `cycle` subcommand (T-089) runs one delivery cycle deterministically —
+ceremony as code, LLM only at judgment steps — adding exit codes 6 (gate
+failed after a step), 7 (decision path unsupported until T-090/T-091), and
+8 (script-step/ceremony command failed). See openup_agent/cycle.py and
+docs-eng-process/reference-driver.md.
 """
 
 import argparse

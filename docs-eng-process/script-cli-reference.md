@@ -276,14 +276,35 @@ learnings     …   # append a dated iteration-learnings entry
 - Run `--help` on each subcommand for its fields. The scribe only ever writes
   fully-specified content; it never authors timestamps or decisions.
 
+## openup-agent.py — reference driver (T-072 `run` · T-089 `cycle`)
+
+```
+run    --dir PATH --procedure NAME [--max-iterations 50] [--instruction TEXT]
+       [--interactive]                  # LLM drives the whole procedure; exits 0/2/3/4/5
+cycle  --dir PATH [--step-max-iterations 10] [--step-tier authoring]
+       [--interactive]                  # deterministic engine: resolve → begin →
+                                        #   per-Operations-box executor (scripts as code,
+                                        #   judgment as bounded sub-runs) → gates →
+                                        #   completion; exits 0/2/3/4/5/6/7/8
+```
+- `cycle` (T-089) runs ONE delivery cycle with ceremony as code and the LLM only
+  at judgment boxes — sentinel parity with `/openup-next` (`OPENUP-NEXT:
+  ADVANCED/DONE`). Exit 6 = gate failed after a step (box left unticked, re-run
+  retries), 7 = decision path not yet supported (plan-iteration/assess/milestone
+  → T-090/T-091), 8 = a script-step / session command failed. Full model + step
+  classification: [reference-driver.md](reference-driver.md).
+
 ## openup-agent-bench.py — reference-driver benchmark harness (T-080)
 
 ```
-[--repo .] [--runs N] [--procedure next] [--scenario DIR] [--out DIR]
-[--workdir DIR] [--max-iterations 50] [--timeout 1800]
+[--repo .] [--runs N] [--procedure next] [--command run|cycle] [--scenario DIR]
+[--out DIR] [--workdir DIR] [--max-iterations 50] [--timeout 1800]
 [--include-working-tree] [--keep]
 ```
-- Runs the T-072 reference driver (`openup-agent.py run --procedure next`) N times
+- Runs the T-072 reference driver (`openup-agent.py run --procedure next`, or
+  `openup-agent.py cycle` when the scenario / `--command` says so — T-089's
+  `cycle-quick-doc` scenario benchmarks the engine against the `quick-doc`
+  baseline on the same lane) N times
   against an **isolated fresh-`git init` fixture** (built with `git archive HEAD`
   outside the repo, seeded with a deterministic micro-task so `resolve` picks it),
   recording **outcome + gate re-check + tokens + latency + iterations + work-delta**

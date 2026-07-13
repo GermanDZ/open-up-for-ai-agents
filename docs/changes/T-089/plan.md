@@ -259,7 +259,7 @@ procedure-direct mode; `cycle` is additive and explicitly invoked.
 - [x] Add `scripts/bench-scenarios/cycle-quick-doc/` and bench support for
       scenario-declared `cycle` command; hermetic mock-endpoint bench test
       records a scored run (Req 8)
-- [ ] (analyst) Document `cycle` in `reference-driver.md` +
+- [x] (analyst) Document `cycle` in `reference-driver.md` +
       `script-cli-reference.md` (signature, exit codes, sub-run contract,
       loop.sh non-change)
 - [ ] (tester) Run the full driver+bench suites plus `openup-spec-scenarios.py
