@@ -1,15 +1,17 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 54
+**Iteration**: 55
 **Iteration Goal**: T-080 — Reference-driver acceptance/benchmark harness
 **Status**: completed
-**Current Task**: T-084
+**Current Task**: T-085
 **Iteration Started**: 2026-06-18
 **Last Updated**: 2026-07-13
 **Updated By**: sync-status.py
 
 ## Notes
+
+**Iteration 55** (2026-07-13): T-085 — fixed a benchmark bug the first live vision run exposed: `build_fixture` snapshotted the WHOLE repo under test (`git archive HEAD`), dragging our developed `docs/` (project-status, roadmap, T-0xx history, product docs) into every fixture — so an "inception / new-project" run had the model reading OUR iteration-54 status instead of starting blank. Now the fixture is a genuinely **bootstrapped project**: only the framework trees (`docs-eng-process/`, `scripts/`, `.gitignore`, `.gitattributes`) are copied (`git archive <tree-ish> <FRAMEWORK_PATHS>`), plus a **fresh empty `docs/`**, then the scenario overlay — exactly what `bootstrap-project.sh` produces. The repo's own `docs/` is never copied in. `--include-working-tree` still applies to the framework trees. +2 tests (fixture has framework but NOT repo's docs/roadmap.md/project-status.md; vision fixture's docs/ holds only the brief). Both scenarios still green (quick-doc resolves to pick; vision writes docs/vision.md). 10 bench tests green; fence (`--base harness-optional`) green. Solo, standard, worktree, on harness-optional.
 
 **Iteration 54** (2026-07-13, quick): T-084 — the benchmark now archives each run's deliverable into the results dir as `<out>/run-NN.<basename>` (e.g. `run-01.vision.md`), copied from the fixture before teardown, with the path recorded in `deliverable_archived`. Closes the gap the first vision batch exposed: it scored 5/5 clean but the actual `docs/vision.md` files died with the torn-down fixtures, so quality was unreadable without `--keep`. Now every batch keeps the artifacts it scored, for reading + cross-model diffing. Additive; no change to scoring. +test (archived vision exists + contains ShareShed). 8 bench tests green; fence (`--base harness-optional`) green. Solo, quick, worktree, on harness-optional.
 
