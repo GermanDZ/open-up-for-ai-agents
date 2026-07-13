@@ -119,16 +119,24 @@ safeguard (precedence is additive only).
 > value; **and** a config with **no** `process:` section exits 0 (backward-
 > compatible).
 
-4. **`openup-doctor` surfaces `process:` drift as a read-only warning.**
-`openup-doctor.py` reports a **warning** (exit 0) when `docs/project-config.yaml`
-has a `process:` section that is structurally invalid or references an archetype/
-phase key the schema doesn't know — pointing the maintainer at
-`check-docs.py`. Read-only; never edits the config.
+4. **`openup-doctor` surfaces `process:` status as a read-only, process-specific signal.**
+`openup-doctor.py` gains a read-only `process-config` check reporting the
+Development Case status: `INFO` when the section is absent (framework defaults
+apply) or valid (`archetype=<x>`), and a `WARNING` naming the offending key and
+pointing at `scripts/check-docs.py` when the `process:` section is structurally
+invalid. This check **never writes** and **never raises `ERROR` itself** — it
+adds a targeted, actionable message (mirroring the existing
+`check_section_status_drift` warning). Doctor's overall exit code is governed by
+its normal `ERROR` rule; a malformed config still fails the run because the
+existing aggregate already runs `check-docs.py` (R3), which is the escalation
+path — the dedicated check is the human-readable pointer, not a second gate.
 
 > **Given** a `docs/project-config.yaml` with a malformed `process:` section,
-> **When** `python3 scripts/openup-doctor.py` runs,
-> **Then** it prints a `warning`-severity line about the invalid `process:`
-> section (referencing `check-docs.py`) and still exits 0.
+> **When** the `process-config` check runs (`check_process_config(repo)`),
+> **Then** it returns a `WARNING`-severity finding naming the offending key and
+> referencing `check-docs.py` (never `ERROR`); **and** for a valid or absent
+> section it returns only an `INFO` finding (`archetype=<x>` or "no Development
+> Case configured").
 
 5. **Development Case mapping + precedence documented; `/openup-init` emits a starter.**
 `docs-eng-process/project-config.md` documents the `process:` section as OpenUP's
@@ -165,7 +173,8 @@ the existing commented-starter convention for `environments:`).
 - [ ] `quick` archetype default table degenerates to today's quick-task ceremony (R2).
 - [ ] `check-docs.py` structural validator: malformed blocks, absent passes,
       no-waiving-safeguards enforced (R3).
-- [ ] `openup-doctor.py` read-only `process:`-drift warning (exit 0) (R4).
+- [ ] `openup-doctor.py` read-only `process-config` check: WARNING on invalid,
+      INFO on valid/absent; never writes, never raises ERROR itself (R4).
 - [ ] Development Case mapping + precedence in `project-config.md`;
       `/openup-init` commented starter (R5).
 - [ ] Hermetic tests cover: archetype default resolution + override, quick
@@ -176,9 +185,9 @@ the existing commented-starter convention for `environments:`).
 
 ## Operations
 
-- [ ] (developer) Define the `process:` schema + three archetype default sets (R1, R2)
-- [ ] (developer) Add the `check-docs.py` structural validator for `process:` (R3)
-- [ ] (developer) Add the `openup-doctor.py` `process:`-drift warning (R4)
-- [ ] (developer) Document Development Case mapping + precedence in `project-config.md`; add commented starter to the example + `/openup-init` (R5)
-- [ ] (tester) Hermetic tests for R1–R4
-- [ ] (developer) Run check-docs + fence (`--base harness-optional`); sync `.claude/` if the openup-init procedure changed
+- [x] (developer) Define the `process:` schema + three archetype default sets (R1, R2)
+- [x] (developer) Add the `check-docs.py` structural validator for `process:` (R3)
+- [x] (developer) Add the `openup-doctor.py` `process:`-drift warning (R4)
+- [x] (developer) Document Development Case mapping + precedence in `project-config.md`; add commented starter to the example + `/openup-init` (R5)
+- [x] (tester) Hermetic tests for R1–R4
+- [x] (developer) Run check-docs + fence (`--base harness-optional`); sync `.claude/` if the openup-init procedure changed
