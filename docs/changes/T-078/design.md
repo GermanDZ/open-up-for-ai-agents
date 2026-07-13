@@ -89,6 +89,39 @@ procedures; the pack is glob-discovered by `render-skills-mirror.py` and
 session start). All four guards (render/model-tiers/skills-guide/claude-sync)
 exit 0.
 
+## DD4 — /openup-phase-review loop-driven milestone pause (Operations step 4, delivered)
+
+Rewrote `openup-phase-review.md` around a **two-cycle async interaction** gated by
+a milestone input-request (no new machinery — composes T-074 `/openup-request-input`):
+- **First reach** (no request): derive phase/cycle/criteria from
+  `openup-lifecycle.py`, prepare go/no-go evidence (criteria + the iteration's
+  `## Assessment`), create the milestone request, and stop → loop exits `DONE —
+  milestone-review pending human input`.
+- **Pending**: stop, no record.
+- **Answered**: write `docs/product/milestones/<phase>-<cycle>.md` (frontmatter
+  exactly as lifecycle reads it — phase/cycle/milestone/decision/date/decided-by),
+  archive the request.
+
+**Key modelling choice: no `related_task`.** A milestone is a phase-level
+decision, not a lane, so the request suspends no change folder. It is therefore
+NOT a `_resumable_input` (which maps answered requests to lanes) — so it never
+hijacks resolve's §0; instead resolve keeps returning `milestone-review` (record
+absent) until the record is written, and each cycle re-runs phase-review, which
+processes the answer when it arrives. The loop's DONE sentinel is what pauses it.
+
+**Never advances the phase.** Only the record advances it (lifecycle derives
+phase from records). GO → next phase; NO-GO → record + re-queue Construction in
+`cycle`+1 (phase stays); CONDITIONAL → record + enqueue conditions. Matches the
+"humans own the go/no-go" design principle.
+
+## DD5 — pending: openup-next path handling (Operations step 5)
+
+Steps 2–4 built the pieces; step 5 wires `openup-next` to *consume* the
+`assess-iteration` / `milestone-review` decisions (run the respective procedures)
+and updates the DONE-sentinel semantics. Until then the loop still treats
+`plan-iteration` as promote (the T-077 transition note) and does not yet branch on
+the two new paths — resolve emits them but only a step-5 openup-next acts on them.
+
 **Note (framework flaw surfaced at start).** Committing the spec fired the
 auto-log hook → `log_written=true`; with `roadmap_synced=true` both standard-track
 gates were true and `sync-status.py` derived **completed** for a just-started
