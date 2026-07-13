@@ -140,6 +140,32 @@ Rewired `openup-next.md`:
 
 Mirror + skills-guide regenerated; all guards (render/guide/claude-sync) green.
 
+## DD6 — spec verification + final gates (Operations steps 6–7, delivered)
+
+`script-cli-reference.md` updated (board `resolve` path enum + `cycle`). Final
+gates all green from the worktree: full python suite **85 passed** (64 baseline +
+7 schema-2 + 14 assess/milestone), `check-docs.py` 0, `check-docs.py --coverage`
+0, `openup-fence.py check --base harness-optional` 0 (19 files, all in-lane),
+`openup-spec-scenarios.py check` 0.
+
+**Requirement grade (against the diff):**
+- R1 resolve emits `assess-iteration` + `milestone-review` — ✅ (board tests, both
+  fires + negatives).
+- R2 `/openup-assess-iteration` Assess Results — ✅ (procedure DD3).
+- R3 `/openup-phase-review` pauses via input-request, writes the milestone record,
+  never sets phase — ✅ (procedure DD4).
+- R4 `openup-next` handles both paths + real plan-iteration delegation — ✅ (DD5).
+- R5 schema 2 + schema-1→2 auto-migration — ✅ (state tests DD1).
+- R6 DONE sentinel = phase-gate signal — ✅ (DD5).
+- R7 hermetic tests for every new/changed path — ✅ (21 new tests, suite green).
+
+**Scope honesty:** the new resolve paths + procedures are *wired and tested*, but
+no multi-lane phase-aware iteration has actually *run* in this repo yet (all
+program tasks were single-lane). The behavior is proven by fixtures; the first
+live multi-lane run is the T-079 / next-live-run concern (the Success Measure's
+read-back). Single-lane/promote flows are provably unchanged (live board still
+resolves `resume T-078`; full suite green).
+
 **Note (framework flaw surfaced at start).** Committing the spec fired the
 auto-log hook → `log_written=true`; with `roadmap_synced=true` both standard-track
 gates were true and `sync-status.py` derived **completed** for a just-started

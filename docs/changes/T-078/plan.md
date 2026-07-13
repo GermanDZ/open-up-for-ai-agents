@@ -1,7 +1,7 @@
 ---
 id: T-078
 title: assess-iteration + milestone-review wiring
-status: ready   # proposed → ready → in-progress → done → verified
+status: done   # proposed → ready → in-progress → done → verified
 priority: high   # critical | high | medium | low
 estimate: 2-3 sessions
 plan: docs/explorations/2026-07-13-phase-aware-loop-redesign.md
@@ -287,8 +287,8 @@ a milestone record.
 - [x] Author `docs-eng-process/procedures/openup-assess-iteration.md` (Assess Results: evaluation-criteria check, demo-only-completed, feed-back, write `## Assessment` via the iteration-plan skill, phase-end trigger); register it in `process-manifest.txt`. *(Manifest is for runtime scripts only — procedures are glob-discovered by render-skills-mirror + skills-guide; no manifest edit.)*
 - [x] Wire the loop-driven pause into `docs-eng-process/procedures/openup-phase-review.md` — raise the go/no-go via `/openup-request-input`, and on an answered GO write `docs/product/milestones/<phase>-<cycle>.md`; on NO-GO record + re-queue in `cycle`+1.
 - [x] Update `docs-eng-process/procedures/openup-next.md` — branch on the two new paths, replace the T-077 "treat plan-iteration like promote" transition note with real Plan-Iteration delegation, and update the DONE sentinel reason semantics.
-- [ ] Regenerate the skills mirror (`render-skills-mirror.py --write`) + `sync-templates-to-claude.sh`; update `script-cli-reference.md`.
-- [ ] (tester) Run the full suite + `check-docs.py`(+`--coverage`) + `openup-fence.py check --base harness-optional`; confirm green and that a schema-1 fixture migrates cleanly.
+- [x] Regenerate the skills mirror (`render-skills-mirror.py --write`) + `sync-templates-to-claude.sh`; update `script-cli-reference.md`.
+- [x] (tester) Run the full suite + `check-docs.py`(+`--coverage`) + `openup-fence.py check --base harness-optional`; confirm green and that a schema-1 fixture migrates cleanly.
 
 ## Norms
 

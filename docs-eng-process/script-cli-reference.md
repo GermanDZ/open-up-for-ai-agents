@@ -106,10 +106,14 @@ refresh  [--root] [--claims-dir] [--out] [--reap-stale-after S] [--no-reap]
 - The board is **derived** from `docs/changes/*/plan.md` — never authored by the
   model. Exit 3 from `top` is a clean no-op, not a failure (see `/openup-next`).
 - `resolve` (T-065) folds the whole §0–§1 precedence into one **read-only** call:
-  returns `{path, lane, resumable_input, active_iteration, reason}` with
-  `path ∈ {resume, pick, promote, noop}` (resumable-input → active-iteration →
-  top-pickable → roadmap-`next` → noop). `/openup-next` §0–§1 is a single
-  `resolve` call. Its promote pick is **identical** to `openup-roadmap.py next`.
+  returns `{path, lane, resumable_input, active_iteration, phase, cycle,
+  legacy_path, reason}` with `path ∈ {resume, pick, assess-iteration,
+  milestone-review, plan-iteration, noop}` (resumable-input → active-iteration →
+  top-pickable → **iteration-exhausted (assess)** → **phase-exit + drained
+  (milestone)** → plan-iteration → noop; T-077 relabelled promote→plan-iteration
+  with `legacy_path: "promote"`; T-078 added the two lifecycle paths + `cycle`).
+  `/openup-next` §0–§1 is a single `resolve` call. Its plan-iteration/promote pick
+  is **identical** to `openup-roadmap.py next`.
   `status` is the human diagnostic superset. Neither writes anything (only
   `refresh` writes `board.json` / runs the reap) — safe in doctor-style contexts.
 - `refresh` **reaps heartbeat-stale leases before deriving** (T-063): a crashed
