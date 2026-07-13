@@ -48,8 +48,17 @@ then continues the SAME cycle —
     ``analyst``-hat sub-run authors its ``plan.md`` (spec contract in the
     instruction), the spec is gated (``check-docs`` + ``openup-spec-scenarios``
     when present) and committed, and the re-resolved ``pick`` runs in the same
-    invocation. One recovery round; a decision that does not advance exits 7
-    exactly as before.
+    invocation;
+  * **consent-gated replenishment** (T-094): when nothing is promotable at all
+    (roadmap present but exhausted/blocked mid-phase), the engine ASKS first —
+    a TTY prompt under ``--interactive``, else an input-request + suspend
+    (exit 5). An answered ``yes`` runs ONE ``product-manager``-hat sub-run
+    that appends 1-5 pending roadmap entries (accepted only if
+    ``openup-roadmap.py next`` then finds one promotable), committed
+    ``[openup-skip]``, and the same invocation continues; ``no`` is remembered
+    and ends the cycle cleanly. The LLM proposes, the human consents — scope
+    is never invented silently.
+    One round per case; a decision that does not advance exits 7 as before.
 
 Stdlib-only.
 """
@@ -384,11 +393,15 @@ def build_step_instruction(task, hat, body, resumable_input=None):
 
 
 def run_judgment_step(root, task, box, env, step_tier, max_iterations,
-                      interactive=False, resumable_input=None, _completion=None):
-    """One fresh, bounded sub-run for one judgment box. Returns loop exit code."""
+                      interactive=False, resumable_input=None, _completion=None,
+                      instruction=None):
+    """One fresh, bounded sub-run for one judgment box. Returns loop exit code.
+
+    ``instruction`` (T-094) overrides the default change-folder briefing — used
+    by steps that belong to no lane (the replenishment pass)."""
     model = tiers.resolve_tier_model(root, step_tier, target="driver", env=env)
-    instruction = build_step_instruction(task, box["hat"], box["body"],
-                                         resumable_input=resumable_input)
+    instruction = instruction or build_step_instruction(
+        task, box["hat"], box["body"], resumable_input=resumable_input)
     _log("judgment step (%s, tier=%s, model=%s, cap=%d): %s"
          % (box["hat"], step_tier, model, max_iterations, box["body"][:80]))
     buf = io.StringIO()
@@ -415,17 +428,18 @@ def run_judgment_step(root, task, box, env, step_tier, max_iterations,
 
 
 def _dispatch_judgment(root, task, box, env, step_tier, cap, interactive,
-                       resumable_input, _completion, _subrun):
+                       resumable_input, _completion, _subrun, instruction=None):
     """One judgment step through the seam or the live sub-run (shared by the
-    executor and recovery). Returns the loop exit code; raises TierError."""
+    executor and recovery). Returns the loop exit code; raises TierError.
+    ``instruction`` overrides the default change-folder briefing (T-094)."""
     if _subrun is not None:
-        instruction = build_step_instruction(task, box["hat"], box["body"],
-                                             resumable_input=resumable_input)
+        instruction = instruction or build_step_instruction(
+            task, box["hat"], box["body"], resumable_input=resumable_input)
         return _subrun(task, box, instruction)
     return run_judgment_step(root, task, box, env, step_tier, cap,
                              interactive=interactive,
                              resumable_input=resumable_input,
-                             _completion=_completion)
+                             _completion=_completion, instruction=instruction)
 
 
 # --------------------------------------------------------------------------
@@ -582,6 +596,183 @@ def recover_missing_spec(root, decision, env, step_tier, cap, interactive,
 
 
 # --------------------------------------------------------------------------
+# Consent-gated replenishment (T-094): ask the human, then let the PM propose
+# --------------------------------------------------------------------------
+REPLENISH_QUESTION = (
+    "The cycle loop is stuck: docs/roadmap.md has no promotable entry and the "
+    "phase is not complete. Approve ONE bounded LLM product-manager pass to "
+    "propose the next 1-5 roadmap entries (pending, human-editable)?")
+
+REPLENISH_CONTRACT = """\
+The delivery loop is stuck: docs/roadmap.md has no promotable entry, but the \
+phase is not complete. A human has APPROVED one product-manager planning pass.
+Act as the product manager. Read docs/vision.md, docs/roadmap.md, \
+docs/project-status.md, and the risk list (docs/risk-list.md or \
+docs/product/risk-list.md) if present.
+Append 1-5 NEW pending entries to docs/roadmap.md — the next most valuable \
+work toward the vision:
+- match the file's existing entry shape (table rows or `## T-NNN:` sections)
+- reserve each new id first: exec `python3 scripts/openup-claims.py \
+reserve-id --session-id replenish` and use the printed id
+- every entry carries status pending, a priority, its dependencies, and a \
+one-line **Value** rationale
+- do NOT modify, reorder, or restate existing entries or their Status cells
+Only edit docs/roadmap.md. Do not create change folders and do not start the \
+work itself."""
+
+
+def _ask_tty(question):
+    sys.stderr.write("\n[openup-cycle] %s\n" % question)
+    sys.stderr.flush()
+    try:
+        return input("approve? (yes/no)> ").strip()
+    except EOFError:
+        return ""
+
+
+def _update_replenish_meta(root, **fields):
+    meta = read_cycle_meta(root)
+    rep = dict(meta.get("replenish") or {})
+    rep.update(fields)
+    meta["replenish"] = rep
+    _write_cycle_meta(root, meta)
+
+
+def _request_answer(root, rel_path):
+    """(state, answer) for a recorded request: state ∈ {missing, pending,
+    answered}; answer is the normalized yes/no text when answered (or None
+    while unparseable — treated as still pending by the caller)."""
+    path = Path(root) / rel_path
+    if not path.exists():
+        return "missing", None
+    fm = read_frontmatter(path)
+    if (fm.get("status") or "").strip().lower() != "answered":
+        return "pending", None
+    text = path.read_text(encoding="utf-8")
+    m = re.search(r"^- \[x\] `([^`]+)`", text, re.M)          # ticked option
+    if not m:
+        m = re.search(r"\*\*Answer\*\*:\s*(?!_)`?([A-Za-z]+)`?", text)
+    if not m:
+        return "answered", None
+    ans = m.group(1).strip().lower()
+    if ans.startswith("y"):
+        return "answered", "yes"
+    if ans.startswith("n"):
+        return "answered", "no"
+    return "answered", None
+
+
+def _create_replenish_request(root):
+    proc = _run(["python3", "scripts/openup-input.py", "request",
+                 "--title", "Approve LLM roadmap replenishment",
+                 "--question", REPLENISH_QUESTION,
+                 "--option", "yes", "--option", "no", "--json"], root)
+    if proc.returncode != 0:
+        raise CycleError("could not create the replenishment input-request:\n%s"
+                         % (proc.stdout + proc.stderr).strip()[:800])
+    try:
+        return json.loads(proc.stdout)["request"]
+    except (json.JSONDecodeError, KeyError):
+        return proc.stdout.strip().splitlines()[-1]
+
+
+def _run_replenishment(root, env, step_tier, cap, interactive,
+                       _completion, _subrun):
+    """The approved PM pass + deterministic acceptance. EXIT_OK on success."""
+    box = {"hat": "product-manager", "marker": None, "body": REPLENISH_CONTRACT}
+    _log("recovery: running the approved product-manager replenishment pass")
+    try:
+        rc = _dispatch_judgment(root, "replenish", box, env, step_tier, cap,
+                                interactive, None, _completion, _subrun,
+                                instruction=REPLENISH_CONTRACT)
+    except tiers.TierError as e:
+        _log("FATAL: %s" % e)
+        return EXIT_CONFIG
+    if rc == EXIT_SUSPEND:
+        return EXIT_SUSPEND
+    if rc != 0:
+        _log("recovery: replenishment sub-run failed (exit %d)" % rc)
+        return rc if rc in (EXIT_CONFIG, EXIT_ENDPOINT,
+                            EXIT_MAX_ITERATIONS) else EXIT_STEP
+    # Deterministic acceptance: the roadmap must now be promotable.
+    nxt = _run(["python3", "scripts/openup-roadmap.py", "next",
+                "--no-remote-check"], root)
+    if nxt.returncode != 0:
+        _log("recovery: replenishment did not produce a promotable roadmap "
+             "entry (openup-roadmap.py next exit %d) — nothing committed:\n%s"
+             % (nxt.returncode, (nxt.stdout + nxt.stderr).strip()[:400]))
+        return EXIT_STEP
+    if (root / "scripts" / "check-docs.py").exists():
+        docs = _run(["python3", "scripts/check-docs.py"], root)
+        if docs.returncode != 0:
+            _log("recovery: replenished roadmap fails check-docs — nothing "
+                 "committed:\n%s" % (docs.stdout + docs.stderr).strip()[:400])
+            return EXIT_STEP
+    _git(["add", "docs/roadmap.md", "docs/input-requests"], root, check=True)
+    _git(["commit", "-m",
+          "docs(roadmap): replenish backlog via cycle recovery "
+          "(human-approved) [openup-skip]"], root, check=True)
+    _log("recovery: roadmap replenished and committed")
+    return EXIT_OK
+
+
+def replenish_flow(root, env, step_tier, cap, interactive,
+                   _completion, _subrun, _ask):
+    """The consent state machine. Returns None to proceed (approved and
+    replenished — caller re-resolves), or a terminal exit code (sentinel
+    already printed where one applies)."""
+    root = Path(root)
+    rep = read_cycle_meta(root).get("replenish") or {}
+
+    if rep.get("consumed") and rep.get("answer") == "no":
+        print("OPENUP-NEXT: DONE — replenishment declined by human (%s); "
+              "nothing promotable" % rep.get("request", "earlier answer"))
+        return EXIT_OK
+
+    if rep.get("request") and not rep.get("consumed"):
+        state, answer = _request_answer(root, rep["request"])
+        if state == "pending" or (state == "answered" and answer is None):
+            if state == "answered":
+                _log("recovery: request answered but the answer is not a "
+                     "clear yes/no — treating as still pending")
+            print("%s — %s" % (loop.SUSPEND_SENTINEL, rep["request"]))
+            return EXIT_SUSPEND
+        if state == "answered" and answer == "no":
+            _update_replenish_meta(root, consumed=True, answer="no")
+            print("OPENUP-NEXT: DONE — replenishment declined by human (%s); "
+                  "nothing promotable" % rep["request"])
+            return EXIT_OK
+        if state == "answered" and answer == "yes":
+            _update_replenish_meta(root, consumed=True, answer="yes")
+            rc = _run_replenishment(root, env, step_tier, cap, interactive,
+                                    _completion, _subrun)
+            return None if rc == EXIT_OK else rc
+        # missing: the human removed the request — fall through and ask anew.
+        _log("recovery: recorded request %s is gone — asking again"
+             % rep["request"])
+
+    if interactive:
+        answer = (_ask or _ask_tty)(REPLENISH_QUESTION)
+        if (answer or "").strip().lower().startswith("y"):
+            rc = _run_replenishment(root, env, step_tier, cap, interactive,
+                                    _completion, _subrun)
+            return None if rc == EXIT_OK else rc
+        print("OPENUP-NEXT: DONE — replenishment declined by human (tty); "
+              "nothing promotable")
+        return EXIT_OK
+
+    try:
+        request = _create_replenish_request(root)
+    except CycleError as e:
+        _log("FATAL: %s" % e)
+        return EXIT_STEP
+    _update_replenish_meta(root, request=request, consumed=False, answer=None)
+    _log("recovery: loop stuck — awaiting human consent in %s" % request)
+    print("%s — %s" % (loop.SUSPEND_SENTINEL, request))
+    return EXIT_SUSPEND
+
+
+# --------------------------------------------------------------------------
 # Deterministic completion (mirrors /openup-complete-task's per-track ceremony)
 # --------------------------------------------------------------------------
 def _flip_plan_status(plan_path, new_status):
@@ -679,16 +870,18 @@ def complete(root, task, env, counts):
 # --------------------------------------------------------------------------
 def run_cycle(dir, env=None, step_max_iterations=DEFAULT_STEP_MAX_ITERATIONS,
               step_tier=DEFAULT_STEP_TIER, interactive=False, recover=True,
-              _completion=None, _subrun=None):
+              _completion=None, _subrun=None, _ask=None):
     """Run ONE delivery cycle under ``dir``. Returns an int exit code.
 
-    ``recover`` (default True, T-092) lets the engine rebuild blocking repo
-    state — close done-but-unclosed lanes, author a plan-iteration decision's
-    missing spec — before dispatching; ``recover=False`` is byte-equivalent to
-    the T-089 behavior. ``_completion`` is loop.run's scripted-LLM test seam,
-    passed through to every judgment sub-run; ``_subrun`` replaces the whole
-    judgment-step call (signature: fn(task, box, instruction) -> int) for
-    engine-level tests.
+    ``recover`` (default True, T-092/T-094) lets the engine rebuild blocking
+    repo state — close done-but-unclosed lanes, author a plan-iteration
+    decision's missing spec, and (with the human's explicit consent) run one
+    product-manager replenishment pass when nothing is promotable — before
+    dispatching; ``recover=False`` is byte-equivalent to the T-089 behavior.
+    ``_completion`` is loop.run's scripted-LLM test seam, passed through to
+    every judgment sub-run; ``_subrun`` replaces the whole judgment-step call
+    (signature: fn(task, box, instruction) -> int); ``_ask`` replaces the
+    interactive consent prompt (fn(question) -> str) for tests.
     """
     import os
     env = os.environ if env is None else env
@@ -704,7 +897,8 @@ def run_cycle(dir, env=None, step_max_iterations=DEFAULT_STEP_MAX_ITERATIONS,
     reason = decision.get("reason") or ""
     _log("decision: path=%s — %s" % (path, reason))
 
-    # Recovery (T-092) — one bounded round per case, then re-resolve.
+    # Recovery (T-092/T-094) — bounded: Case B once, then up to two rounds of
+    # (Case A | consent-gated replenishment), each followed by one re-resolve.
     if recover and path in ("plan-iteration", "noop"):
         try:
             closed = reconcile_unclosed_lanes(root)
@@ -716,20 +910,41 @@ def run_cycle(dir, env=None, step_max_iterations=DEFAULT_STEP_MAX_ITERATIONS,
             path = decision.get("path")
             _log("decision after lane closure: path=%s — %s"
                  % (path, decision.get("reason") or ""))
-    if recover and path == "plan-iteration":
-        rc = recover_missing_spec(root, decision, env, step_tier,
-                                  step_max_iterations, interactive,
-                                  _completion, _subrun)
-        if rc != EXIT_OK:
-            return rc
-        decision = resolve_decision(root)
-        path = decision.get("path")
-        _log("decision after spec recovery: path=%s — %s"
-             % (path, decision.get("reason") or ""))
-        if path not in ("pick", "resume"):
+    replenished = False
+    while recover:
+        if path == "plan-iteration":
+            rc = recover_missing_spec(root, decision, env, step_tier,
+                                      step_max_iterations, interactive,
+                                      _completion, _subrun)
+            if rc == EXIT_OK:
+                decision = resolve_decision(root)
+                path = decision.get("path")
+                _log("decision after spec recovery: path=%s — %s"
+                     % (path, decision.get("reason") or ""))
+                if path in ("pick", "resume"):
+                    break
+                # authored but not advanced — fall through to the stuck check
+            elif rc != EXIT_UNSUPPORTED:
+                return rc
+            # rc == EXIT_UNSUPPORTED: blocked lane — a stuck state too (T2)
+        # Stuck (T-094): nothing deterministic left, roadmap present, one shot.
+        if (path in ("noop", "plan-iteration") and not replenished
+                and (root / "docs" / "roadmap.md").exists()):
+            out = replenish_flow(root, env, step_tier, step_max_iterations,
+                                 interactive, _completion, _subrun, _ask)
+            if out is not None:
+                return out
+            replenished = True
+            decision = resolve_decision(root)
+            path = decision.get("path")
+            _log("decision after replenishment: path=%s — %s"
+                 % (path, decision.get("reason") or ""))
+            continue  # one more round: the new decision may need Case A
+        if path == "plan-iteration":
             _log("recovery did not advance the decision (path=%s) — stopping"
                  % path)
             return EXIT_UNSUPPORTED
+        break
 
     if path == "noop":
         msg = decision.get("reason") or "nothing to do"

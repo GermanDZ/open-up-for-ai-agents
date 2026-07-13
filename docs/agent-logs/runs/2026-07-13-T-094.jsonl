@@ -1,0 +1,1 @@
+{"run_id": "20260713-T-094-start", "event": "session_begin", "task_id": "T-094", "goal": "T-094 \u2014 consent-gated LLM replenishment when the loop is stuck", "branch": "feature/T-094-consent-replenishment", "phase": "construction", "ts": "2026-07-13T15:55:22Z"}

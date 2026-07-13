@@ -92,6 +92,34 @@ import os, sys
 sys.exit(1 if os.path.exists(".docs_block") else 0)
 """
 
+# T-094 fakes: a request creator writing the real frontmatter shape, and a
+# roadmap `next` that is promotable iff the roadmap carries the marker row.
+FAKE_INPUT = """\
+import argparse, json, pathlib, sys
+ap = argparse.ArgumentParser()
+sub = ap.add_subparsers(dest="cmd")
+req = sub.add_parser("request")
+req.add_argument("--title"); req.add_argument("--question")
+req.add_argument("--option", action="append"); req.add_argument("--json", action="store_true")
+req.add_argument("--task-id", default=None); req.add_argument("--root", default=".")
+a = ap.parse_args()
+d = pathlib.Path("docs/input-requests"); d.mkdir(parents=True, exist_ok=True)
+path = d / ("req-%d.md" % (len(list(d.glob("*.md"))) + 1))
+opts = "".join("- [ ] `%s`\\n" % o for o in (a.option or []))
+path.write_text("---\\ntitle: %s\\nstatus: pending\\n---\\n\\n%s\\n**Question**: %s\\n\\n**Answer**: _(fill in)_\\n" % (a.title, opts, a.question))
+print(json.dumps({"request": str(path)}))
+"""
+
+FAKE_ROADMAP = """\
+import pathlib, sys
+rm = pathlib.Path("docs/roadmap.md")
+if rm.exists() and "PROMOTABLE" in rm.read_text():
+    print('{"id": "T-902"}')
+    sys.exit(0)
+sys.stderr.write("roadmap exhausted\\n")
+sys.exit(3)
+"""
+
 
 def _decision(path, task=None, reason="r", **extra):
     d = {"path": path, "lane": {"task": task} if task else None,
@@ -144,6 +172,8 @@ class CycleFixture(unittest.TestCase):
             ("sync-status.py", FAKE_SYNC),
             ("openup-fence.py", FAKE_FENCE),
             ("check-docs.py", FAKE_CHECK_DOCS),
+            ("openup-input.py", FAKE_INPUT),
+            ("openup-roadmap.py", FAKE_ROADMAP),
         ]:
             (self.root / "scripts" / name).write_text(body)
         (self.root / ".gitignore").write_text(".openup/\nscripts/_calls.log\n")
@@ -232,7 +262,9 @@ class DecisionDispatchTest(CycleFixture):
         import io, contextlib
         buf = io.StringIO()
         with contextlib.redirect_stdout(buf):
-            rc = cycle.run_cycle(str(self.root), env=self.env)
+            # recover=False: noop-with-roadmap now ASKS by default (T-094);
+            # this test asserts only the hint's absence — the old baseline.
+            rc = cycle.run_cycle(str(self.root), env=self.env, recover=False)
         self.assertEqual(rc, 0)
         self.assertNotIn("no docs/roadmap.md", buf.getvalue())
 
@@ -609,6 +641,155 @@ class RecoveryCaseATest(CycleFixture):
                              _subrun=lambda *a: self.fail("no sub-run under --no-recover"))
         self.assertEqual(rc, cycle.EXIT_UNSUPPORTED)
         self.assertFalse((self.root / "docs" / "changes" / self.NEW).exists())
+
+
+
+# --------------------------------------------------------------------------
+# Consent-gated replenishment (T-094)
+# --------------------------------------------------------------------------
+class ReplenishmentTest(CycleFixture):
+    """Stuck loop (roadmap present, nothing promotable) → ask → PM sub-run."""
+
+    def _stuck(self, roadmap="# Roadmap\n\n(nothing pending)\n"):
+        (self.root / "docs").mkdir(exist_ok=True)
+        (self.root / "docs" / "roadmap.md").write_text(roadmap)
+        self._set_decision(_decision("noop", reason="roadmap exhausted"))
+        self._git("add", "-A"); self._git("commit", "-m", "stuck", "-q")
+
+    def _requests(self):
+        d = self.root / "docs" / "input-requests"
+        return sorted(d.glob("*.md")) if d.is_dir() else []
+
+    def _answer(self, path, answer):
+        text = path.read_text().replace("status: pending", "status: answered")
+        text = text.replace("**Answer**: _(fill in)_", "**Answer**: %s" % answer)
+        path.write_text(text)
+
+    def _run(self, **kw):
+        import io, contextlib
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            rc = cycle.run_cycle(str(self.root), env=self.env, **kw)
+        return rc, buf.getvalue()
+
+    # -- Req 1 -------------------------------------------------------------
+    def test_stuck_creates_request_and_suspends(self):
+        self._stuck()
+        rc, out = self._run(_subrun=lambda *a: self.fail("no sub-run before consent"))
+        self.assertEqual(rc, cycle.EXIT_SUSPEND)
+        self.assertTrue(out.strip().splitlines()[-1].startswith(
+            "OPENUP-AGENT: SUSPENDED"))
+        self.assertEqual(len(self._requests()), 1)
+        self.assertIn("- [ ] `yes`", self._requests()[0].read_text())
+        self.assertEqual(
+            cycle.read_cycle_meta(self.root)["replenish"]["request"],
+            str(self._requests()[0].relative_to(self.root)))
+
+    def test_no_roadmap_hints_instead_of_asking(self):
+        self._set_decision(_decision("noop", reason="roadmap exhausted"))
+        self._git("add", "-A"); self._git("commit", "-m", "d", "-q")
+        rc, out = self._run(_subrun=lambda *a: self.fail("no sub-run"))
+        self.assertEqual(rc, 0)
+        self.assertIn("no docs/roadmap.md yet", out)
+        self.assertEqual(self._requests(), [])
+
+    def test_no_recover_never_asks(self):
+        self._stuck()
+        rc, out = self._run(recover=False,
+                            _subrun=lambda *a: self.fail("no sub-run"))
+        self.assertEqual(rc, 0)
+        self.assertIn("OPENUP-NEXT: DONE", out)
+        self.assertEqual(self._requests(), [])
+
+    # -- Req 3 -------------------------------------------------------------
+    def test_pending_request_never_duplicates(self):
+        self._stuck()
+        self._run()
+        rc, out = self._run()
+        self.assertEqual(rc, cycle.EXIT_SUSPEND)
+        self.assertEqual(len(self._requests()), 1)
+        self.assertIn(str(self._requests()[0].relative_to(self.root)), out)
+
+    # -- Req 2 -------------------------------------------------------------
+    def test_interactive_yes_runs_pm_subrun_without_request(self):
+        self._stuck()
+        seen = []
+
+        def subrun(task, box, instruction):
+            seen.append((task, box["hat"]))
+            return 0  # changes nothing → acceptance gate fails afterwards
+
+        rc, _ = self._run(interactive=True, _ask=lambda q: "yes", _subrun=subrun)
+        self.assertEqual(seen, [("replenish", "product-manager")])
+        self.assertEqual(self._requests(), [])   # TTY consent, no request file
+        self.assertEqual(rc, cycle.EXIT_STEP)    # unproductive pass fails typed
+
+    def test_interactive_no_declines_cleanly(self):
+        self._stuck()
+        rc, out = self._run(interactive=True, _ask=lambda q: "no",
+                            _subrun=lambda *a: self.fail("declined"))
+        self.assertEqual(rc, 0)
+        self.assertIn("replenishment declined by human", out)
+        self.assertEqual(self._requests(), [])
+
+    # -- Req 5 -------------------------------------------------------------
+    def test_answered_no_is_durable(self):
+        self._stuck()
+        self._run()
+        self._answer(self._requests()[0], "no")
+        for _ in range(2):
+            rc, out = self._run(_subrun=lambda *a: self.fail("declined"))
+            self.assertEqual(rc, 0)
+            self.assertIn("replenishment declined by human", out)
+        self.assertEqual(len(self._requests()), 1)
+
+    # -- Req 4 -------------------------------------------------------------
+    def test_answered_yes_replenishes_then_delivers_same_cycle(self):
+        self._stuck()
+        self._run()
+        self._answer(self._requests()[0], "yes")
+        hats = []
+
+        def subrun(task, box, instruction):
+            hats.append(box["hat"])
+            if box["hat"] == "product-manager":
+                rm = self.root / "docs" / "roadmap.md"
+                rm.write_text(rm.read_text() +
+                              "\n| T-902 | New work | PROMOTABLE pending |\n")
+                self._set_decision(_decision(
+                    "plan-iteration", task="T-902",
+                    reason="plan next (T-902)"))
+            else:  # analyst: author the spec so the lane becomes pickable
+                lane = self.root / "docs" / "changes" / "T-902"
+                lane.mkdir(parents=True, exist_ok=True)
+                (lane / "plan.md").write_text(_plan(
+                    "T-902", [(False, "Run `git log --oneline -1`")]))
+            return 0
+
+        rc, out = self._run(_subrun=subrun)
+        self.assertEqual(rc, 0)
+        self.assertEqual(out.strip().splitlines()[-1],
+                         "OPENUP-NEXT: ADVANCED — T-902")
+        self.assertEqual(hats, ["product-manager", "analyst"])
+        log = subprocess.run(["git", "log", "--oneline"], cwd=str(self.root),
+                             capture_output=True, text=True).stdout
+        lines = log.splitlines()
+        replenish = next(i for i, l in enumerate(lines)
+                         if "replenish backlog via cycle recovery" in l)
+        spec = next(i for i, l in enumerate(lines)
+                    if "author spec via cycle recovery" in l)
+        self.assertGreater(replenish, spec)  # replenish commit is OLDER
+
+    # -- Req 6 -------------------------------------------------------------
+    def test_unproductive_yes_exits_8_uncommitted(self):
+        self._stuck()
+        self._run()
+        self._answer(self._requests()[0], "yes")
+        rc, _ = self._run(_subrun=lambda *a: 0)  # changes nothing
+        self.assertEqual(rc, cycle.EXIT_STEP)
+        log = subprocess.run(["git", "log", "--oneline"], cwd=str(self.root),
+                             capture_output=True, text=True).stdout
+        self.assertNotIn("replenish backlog", log)
 
 
 if __name__ == "__main__":

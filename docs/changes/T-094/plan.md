@@ -134,9 +134,14 @@ INVEST — ✅ Independent (extends T-092's recovery; composes T-074 input-reque
 
 7. **Non-stuck behavior unchanged.** `pick`/`resume`, Case A/B recovery on
    advancing decisions, assess/milestone exits, and `--no-recover` semantics
-   are untouched; the pre-existing suites pass unmodified.
-   - **Given** the pre-existing T-089/T-092 test suites **When** they run
-     unmodified **Then** they pass.
+   are untouched; the pre-existing suites pass with exactly one sanctioned
+   edit — the T-092 test that asserted the *old* noop-with-roadmap default
+   (`test_noop_with_roadmap_has_no_hint`) now passes `recover=False`, because
+   that default is what this task changes (the ask; `--no-recover` keeps the
+   old behavior reachable — the T-092 DD7 precedent).
+   - **Given** the pre-existing T-089/T-092 test suites with only that one
+     assertion switched to `recover=False` **When** they run **Then** they
+     pass, and no other pre-existing test needed changes.
 
 ## Behavior Delta
 
@@ -199,18 +204,18 @@ consent memory.
 
 ## Operations
 
-- [ ] Implement the consent state machine in `cycle.py` (stuck triggers T1/T2
+- [x] Implement the consent state machine in `cycle.py` (stuck triggers T1/T2
       post-recovery, cycle.json memory: none→ask / pending→re-suspend /
       no→consumed-DONE / yes→proceed; TTY path behind `--interactive` with an
       `_ask` test seam; async path via `openup-input.py request` + SUSPEND
       sentinel + exit 5) with hermetic tests for Req 1, 2, 3, 5
-- [ ] Implement the replenishment sub-run + acceptance (product-manager box
+- [x] Implement the replenishment sub-run + acceptance (product-manager box
       through `_dispatch_judgment` with `REPLENISH_CONTRACT`, deterministic
       gate `openup-roadmap.py next` + `check-docs`, `[openup-skip]` roadmap
       commit, single re-resolve chaining into T-092 recovery) with hermetic
       tests for Req 4, 6 incl. the full stuck→consent→replenish→spec→deliver
       chain
-- [ ] Prove invariance: full driver+bench+cycle+roadmap suites pass unmodified
+- [x] Prove invariance: full driver+bench+cycle+roadmap suites pass unmodified
       (Req 7)
 - [ ] (analyst) Document replenishment (triggers, ask flow, answer semantics,
       acceptance gate, deferred `--auto-replenish`) in `reference-driver.md` +
