@@ -17,6 +17,17 @@ touches:
 last-synced: ""
 ---
 
+> **Superseded in part by [T-096](../../T-096/plan.md) (2026-07-13).** T-096
+> removed this task's hardcoded pre-Inception state machine — the brief template,
+> `VISION_INSTRUCTION`, `brief_state`/`write_template_brief`, and the
+> stage-detection branch — from `scripts/next-cycle`. The wrapper is now a thin
+> passthrough (env config + one `cycle` invocation + exit translation); deciding
+> what a fresh/unclassifiable project needs next moved to the driver's process
+> **navigator** (`scripts/openup_agent/navigator.py`). The stage-machine tests in
+> `scripts/tests/test_next_cycle.py` (former `FreshProjectTest`) were retired and
+> replaced by the thin-wrapper contract + `scripts/tests/test_openup_agent_navigator.py`.
+> The env-config and exit-translation contract below is unchanged.
+
 # T-095 — `next-cycle`: the tooling guides the human
 
 ## Story

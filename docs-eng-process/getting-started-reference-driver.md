@@ -32,15 +32,17 @@ This guide is task-oriented and covers two common starting points:
 ```
 
 Run it repeatedly; the tooling guides you through every stage instead of you
-remembering the steps below: no endpoint configured → it prompts (TTY) or
-prints the setup block, and loads `.openup/agent.env` on every run; fresh
-project → it writes a template stakeholder brief for you to fill (the one
-genuinely human step); filled brief → it runs the Inception authoring (vision
-+ initial roadmap); anything after that → one delivery cycle per run, with
-every exit translated into plain next-step guidance (an exit 5 means: answer
-the named file under `docs/input-requests/`, re-run). The sections below
-describe what it does under the hood — read them when you want the manual
-controls.
+remembering the steps below. The wrapper itself knows **no process** (T-096) —
+it loads `.openup/agent.env` and prompts for a missing endpoint (TTY) or prints
+the setup block, then runs ONE driver cycle. The driver decides what the project
+needs next: its deterministic engine picks the next lane when there is one, and
+on a fresh/unclassifiable project its **process navigator** figures out the next
+step against the OpenUP process — running Inception authoring (vision + initial
+roadmap) directly, or, when it needs something only you can provide (e.g. a
+stakeholder brief), raising an input-request and stopping. Every exit is
+translated into plain next-step guidance (an exit 5 means: answer the named file
+under `docs/input-requests/`, re-run). The sections below describe what happens
+under the hood — read them when you want the manual controls.
 
 ## Prerequisites (both scenarios)
 

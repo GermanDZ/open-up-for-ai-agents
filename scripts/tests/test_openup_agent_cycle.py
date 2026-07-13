@@ -223,7 +223,9 @@ class DecisionDispatchTest(CycleFixture):
         import io, contextlib
         buf = io.StringIO()
         with contextlib.redirect_stdout(buf):
-            rc = cycle.run_cycle(str(self.root), env=self.env)
+            # navigate=False (T-096): assert the bare-DONE baseline; navigation
+            # of a noop is covered by NavigatorDispatchTest.
+            rc = cycle.run_cycle(str(self.root), env=self.env, navigate=False)
         self.assertEqual(rc, 0)
         self.assertIn("OPENUP-NEXT: DONE — board empty", buf.getvalue())
 
@@ -249,7 +251,10 @@ class DecisionDispatchTest(CycleFixture):
         import io, contextlib
         buf = io.StringIO()
         with contextlib.redirect_stdout(buf):
-            rc = cycle.run_cycle(str(self.root), env=self.env)
+            # navigate=False (T-096): the hardcoded Inception hint is now the
+            # navigation-disabled fallback; the navigated path is covered by
+            # NavigatorDispatchTest.
+            rc = cycle.run_cycle(str(self.root), env=self.env, navigate=False)
         self.assertEqual(rc, 0)
         self.assertIn("no docs/roadmap.md yet", buf.getvalue())
         self.assertIn("openup-create-vision", buf.getvalue())
@@ -263,8 +268,10 @@ class DecisionDispatchTest(CycleFixture):
         buf = io.StringIO()
         with contextlib.redirect_stdout(buf):
             # recover=False: noop-with-roadmap now ASKS by default (T-094);
-            # this test asserts only the hint's absence — the old baseline.
-            rc = cycle.run_cycle(str(self.root), env=self.env, recover=False)
+            # navigate=False (T-096): and would otherwise navigate. This test
+            # asserts only the hint's absence — the old baseline.
+            rc = cycle.run_cycle(str(self.root), env=self.env, recover=False,
+                                 navigate=False)
         self.assertEqual(rc, 0)
         self.assertNotIn("no docs/roadmap.md", buf.getvalue())
 
@@ -510,7 +517,7 @@ class RecoveryCaseBTest(CycleFixture):
 
     def test_unclosed_lane_closed_zero_llm(self):
         self._seed_done_lane()
-        rc = cycle.run_cycle(str(self.root), env=self.env,
+        rc = cycle.run_cycle(str(self.root), env=self.env, navigate=False,
                              _subrun=self._fail_subrun)
         self.assertEqual(rc, 0)
         self.assertTrue((self.root / "docs" / "changes" / "archive" /
@@ -522,7 +529,7 @@ class RecoveryCaseBTest(CycleFixture):
     def test_side_branch_merged_to_trunk(self):
         self._git("checkout", "-b", "feature/old-delivery", "-q")
         self._seed_done_lane()
-        rc = cycle.run_cycle(str(self.root), env=self.env,
+        rc = cycle.run_cycle(str(self.root), env=self.env, navigate=False,
                              _subrun=self._fail_subrun)
         self.assertEqual(rc, 0)
         head = subprocess.run(["git", "rev-parse", "--abbrev-ref", "HEAD"],
@@ -535,7 +542,7 @@ class RecoveryCaseBTest(CycleFixture):
     def test_dirty_tree_skips_closure(self):
         self._seed_done_lane()
         (self.root / ".gitignore").write_text(".openup/\n# dirty\n")
-        rc = cycle.run_cycle(str(self.root), env=self.env,
+        rc = cycle.run_cycle(str(self.root), env=self.env, navigate=False,
                              _subrun=self._fail_subrun)
         self.assertEqual(rc, 0)  # noop still prints DONE
         self.assertTrue((self.root / "docs" / "changes" / self.TASK /
@@ -544,14 +551,14 @@ class RecoveryCaseBTest(CycleFixture):
     def test_no_recover_leaves_lane_untouched(self):
         self._seed_done_lane()
         rc = cycle.run_cycle(str(self.root), env=self.env, recover=False,
-                             _subrun=self._fail_subrun)
+                             navigate=False, _subrun=self._fail_subrun)
         self.assertEqual(rc, 0)
         self.assertTrue((self.root / "docs" / "changes" / self.TASK /
                          "plan.md").exists())
 
     def test_assess_iteration_untouched_by_recovery(self):
         self._seed_done_lane(decision_path="assess-iteration")
-        rc = cycle.run_cycle(str(self.root), env=self.env,
+        rc = cycle.run_cycle(str(self.root), env=self.env, navigate=False,
                              _subrun=self._fail_subrun)
         self.assertEqual(rc, cycle.EXIT_UNSUPPORTED)
         self.assertTrue((self.root / "docs" / "changes" / self.TASK /
@@ -688,14 +695,16 @@ class ReplenishmentTest(CycleFixture):
     def test_no_roadmap_hints_instead_of_asking(self):
         self._set_decision(_decision("noop", reason="roadmap exhausted"))
         self._git("add", "-A"); self._git("commit", "-m", "d", "-q")
-        rc, out = self._run(_subrun=lambda *a: self.fail("no sub-run"))
+        # navigate=False (T-096): asserts the hardcoded-hint fallback.
+        rc, out = self._run(navigate=False,
+                            _subrun=lambda *a: self.fail("no sub-run"))
         self.assertEqual(rc, 0)
         self.assertIn("no docs/roadmap.md yet", out)
         self.assertEqual(self._requests(), [])
 
     def test_no_recover_never_asks(self):
         self._stuck()
-        rc, out = self._run(recover=False,
+        rc, out = self._run(recover=False, navigate=False,
                             _subrun=lambda *a: self.fail("no sub-run"))
         self.assertEqual(rc, 0)
         self.assertIn("OPENUP-NEXT: DONE", out)
@@ -790,6 +799,49 @@ class ReplenishmentTest(CycleFixture):
         log = subprocess.run(["git", "log", "--oneline"], cwd=str(self.root),
                              capture_output=True, text=True).stdout
         self.assertNotIn("replenish backlog", log)
+
+
+# --------------------------------------------------------------------------
+# Process navigator wiring (T-096)
+# --------------------------------------------------------------------------
+class NavigatorDispatchTest(CycleFixture):
+    """run_cycle hooks the navigator on a noop, and only on a noop."""
+
+    def test_noop_invokes_navigator_by_default(self):
+        self._set_decision(_decision("noop", reason="board empty"))
+        self._git("add", "-A"); self._git("commit", "-m", "d", "-q")
+        seen = {}
+
+        def fake_nav(root, env):
+            seen["root"] = Path(root).resolve()
+            return 0
+        rc = cycle.run_cycle(str(self.root), env=self.env, _navigator=fake_nav)
+        self.assertEqual(rc, 0)
+        self.assertEqual(seen.get("root"), self.root.resolve())
+
+    def test_navigate_false_skips_navigator(self):
+        self._set_decision(_decision("noop", reason="board empty"))
+        self._git("add", "-A"); self._git("commit", "-m", "d", "-q")
+        import io, contextlib
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            rc = cycle.run_cycle(str(self.root), env=self.env, navigate=False,
+                                 _navigator=lambda *a: self.fail("navigator ran"))
+        self.assertEqual(rc, 0)
+        self.assertIn("OPENUP-NEXT: DONE — board empty", buf.getvalue())
+
+    def test_deterministic_path_never_navigates(self):
+        # A pick decision is actionable — the navigator must not fire.
+        self._seed_lane([(False, "(developer) Write docs/scratch/out.md hi")])
+
+        def subrun(task, box, instruction):
+            out = self.root / "docs" / "scratch"
+            out.mkdir(parents=True, exist_ok=True)
+            (out / "out.md").write_text("hi\n")
+            return 0
+        rc = cycle.run_cycle(str(self.root), env=self.env, _subrun=subrun,
+                             _navigator=lambda *a: self.fail("navigator ran on pick"))
+        self.assertEqual(rc, 0)
 
 
 if __name__ == "__main__":

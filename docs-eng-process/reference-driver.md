@@ -196,21 +196,45 @@ the sentinel is honored only once the gates are clean. Enforcement never depends
 the model remembering to check. A gate whose script is absent under `--dir` is
 skipped, so the driver stays usable on partial trees.
 
-## The guided entry point — `scripts/next-cycle` (T-095)
+## The guided entry point — `scripts/next-cycle` (T-095, thinned in T-096)
 
 ```
 ./scripts/next-cycle [--dir PATH]
 ```
 
 The one command a practitioner needs to remember. A thin, stdlib-only wrapper
-that composes the driver: it loads `.openup/agent.env`, guides missing
-endpoint config (TTY prompt with optional persist, or a copy-paste block +
-exit 2), writes a template stakeholder brief on a fresh project (never
-overwriting a human's file), runs the Inception authoring once the brief is
-filled, and otherwise runs ONE `cycle` (adding `--interactive` on a TTY) —
-translating every typed exit into next-step guidance on stderr while the
-driver's stdout sentinel passes through byte-exact. Outer loops can consume it
-exactly like `cycle`: `while ./scripts/next-cycle; do :; done`.
+that composes the driver and **knows nothing about the OpenUP process** (T-096):
+it loads `.openup/agent.env`, guides missing endpoint config (TTY prompt with
+optional persist, or a copy-paste block + exit 2), and otherwise runs ONE
+`cycle` (adding `--interactive` on a TTY) — translating every typed exit into
+next-step guidance on stderr while the driver's stdout sentinel passes through
+byte-exact. Outer loops can consume it exactly like `cycle`:
+`while ./scripts/next-cycle; do :; done`.
+
+Deciding *what a project needs next* — Inception authoring on a fresh repo, the
+next delivery lane, or a missing human input — is the driver's job, not the
+wrapper's. The deterministic engine answers when it can; when it yields a
+`noop`/unclassifiable state, the **process navigator** takes over (see below).
+The wrapper no longer writes a template stakeholder brief or hardcodes the
+vision step — that process knowledge moved behind the driver so it evolves with
+the process, not with the wrapper.
+
+### The process navigator (T-096)
+
+When the deterministic layers find nothing to execute (a `noop` — most often a
+fresh project with no `docs/roadmap.md`), `cycle` runs ONE bounded
+**process-navigator** sub-run instead of printing a hardcoded hint. The
+navigator is handed *facts* computed in code — the process map
+(`process-map.yaml`), `openup-lifecycle.py status`, a Ring-1 artifact survey
+(which of vision/roadmap/use-cases/architecture exist), and the procedures
+index — and returns, as a structured file (`.openup/navigator-decision.json`,
+the T-072 pattern): the next procedure to run + its `--instruction`, or the
+**missing human input**. The driver then runs that procedure directly (for
+process-artifact authoring — vision, use-cases, architecture, iteration plan) or
+raises the missing input as an input-request and suspends (exit 5). Product
+scope is never invented here: anything that would append roadmap entries stays
+behind the T-094 consent gate. Disable navigation with `cycle --no-navigate`
+(restores the pre-T-096 hardcoded Inception hint).
 
 ## The cycle engine — `openup-agent.py cycle` (T-089)
 

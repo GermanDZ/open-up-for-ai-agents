@@ -81,6 +81,10 @@ def main(argv=None):
                         help="Disable recovery mode (T-092): keep the bare typed "
                              "exit 7 on plan-iteration and skip the "
                              "done-but-unclosed lane reconcile.")
+    cyclep.add_argument("--no-navigate", action="store_true",
+                        help="Disable the process navigator (T-096): on a "
+                             "noop/unclassifiable state, print the hardcoded "
+                             "Inception hint instead of navigating the process.")
 
     args = ap.parse_args(argv)
     if args.command not in ("run", "cycle"):
@@ -99,6 +103,7 @@ def main(argv=None):
             step_tier=args.step_tier,
             interactive=args.interactive,
             recover=not args.no_recover,
+            navigate=not args.no_navigate,
         )
 
     return loop.run(
