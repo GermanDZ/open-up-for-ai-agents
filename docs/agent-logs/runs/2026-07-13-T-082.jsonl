@@ -1,0 +1,1 @@
+{"event": "session_begin", "task_id": "T-082", "goal": "Driver LLM client handles slow-response timeout (clean error, 600s configurable) instead of crashing", "branch": "feat/T-082-driver-timeout", "phase": "construction", "ts": "2026-07-13T13:19:05Z"}

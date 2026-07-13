@@ -308,5 +308,62 @@ class HttpClientTest(unittest.TestCase):
         self.assertEqual(_CannedHandler.received["auth"], "Bearer sekret")
 
 
+class TimeoutHandlingTest(unittest.TestCase):
+    """T-082 — a slow/failed transport is a clean LLMError, not an uncaught crash;
+    the per-call timeout is configurable via OPENUP_AGENT_TIMEOUT."""
+
+    def test_socket_timeout_becomes_llm_error(self):
+        def raiser(_req):
+            raise TimeoutError("timed out")  # what a socket read timeout raises
+        with self.assertRaises(llm.LLMError):
+            llm.chat_completion("http://x/v1", "k", "m",
+                                [{"role": "user", "content": "hi"}], _opener=raiser)
+
+    def test_oserror_becomes_llm_error(self):
+        def raiser(_req):
+            raise OSError("connection reset by peer")
+        with self.assertRaises(llm.LLMError):
+            llm.chat_completion("http://x/v1", "k", "m",
+                                [{"role": "user", "content": "hi"}], _opener=raiser)
+
+    def test_timeout_loop_exits_endpoint_error(self):
+        """An LLM call that times out makes the loop return 3 (endpoint-error),
+        never an uncaught exception."""
+        tmp = tempfile.TemporaryDirectory()
+        root = Path(tmp.name)
+        (root / "docs-eng-process" / "procedures").mkdir(parents=True)
+        (root / "docs-eng-process" / "tier-map.yaml").write_text(TIER_MAP)
+        (root / "docs-eng-process" / "procedures" / "openup-demo.md").write_text(_procedure())
+
+        def completion(model, messages, tools_):
+            raise llm.LLMError("transport failure after 600s … timed out")
+        rc = loop.run(str(root), "demo",
+                      env={"LLM_API_URL": "http://x/v1", "LLM_API_KEY": "k"},
+                      _completion=completion)
+        self.assertEqual(rc, 3)
+        tmp.cleanup()
+
+    def test_timeout_env_plumbs_through(self):
+        """OPENUP_AGENT_TIMEOUT is parsed and passed to chat_completion."""
+        from unittest.mock import patch
+        tmp = tempfile.TemporaryDirectory()
+        root = Path(tmp.name)
+        (root / "docs-eng-process" / "procedures").mkdir(parents=True)
+        (root / "docs-eng-process" / "tier-map.yaml").write_text(TIER_MAP)
+        (root / "docs-eng-process" / "procedures" / "openup-demo.md").write_text(_procedure())
+        captured = {}
+
+        def fake_cc(api_url, api_key, model, msgs, tools=None, timeout=None):
+            captured["timeout"] = timeout
+            return _asst("OPENUP-DEMO: DONE — x")
+        env = {"LLM_API_URL": "http://x/v1", "LLM_API_KEY": "k",
+               "OPENUP_AGENT_TIMEOUT": "42"}
+        with patch.object(loop.llm, "chat_completion", fake_cc):
+            rc = loop.run(str(root), "demo", env=env)
+        self.assertEqual(rc, 0)
+        self.assertEqual(captured["timeout"], 42)
+        tmp.cleanup()
+
+
 if __name__ == "__main__":
     unittest.main()

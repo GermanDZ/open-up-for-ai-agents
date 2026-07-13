@@ -240,11 +240,16 @@ def run(dir, procedure, max_iterations=DEFAULT_MAX_ITERATIONS, env=None,
     ]
 
     usage_log = env.get("OPENUP_AGENT_USAGE_LOG")
+    try:
+        req_timeout = int(env.get("OPENUP_AGENT_TIMEOUT", "600"))
+    except ValueError:
+        req_timeout = 600
 
     def complete(msgs):
         if _completion is not None:
             return _completion(model, msgs, tools.TOOL_DEFS)
-        return llm.chat_completion(api_url, api_key, model, msgs, tools=tools.TOOL_DEFS)
+        return llm.chat_completion(api_url, api_key, model, msgs,
+                                   tools=tools.TOOL_DEFS, timeout=req_timeout)
 
     for i in range(1, max_iterations + 1):
         try:
