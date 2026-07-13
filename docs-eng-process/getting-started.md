@@ -2,6 +2,12 @@
 
 This guide explains how to initialize a new project from this template or add OpenUP to an existing repository.
 
+> **No Claude Code — driving OpenUP with your own LLM?** See
+> [getting-started-reference-driver.md](getting-started-reference-driver.md): run a
+> new *or* existing project with the reference driver (`openup-agent`) against any
+> OpenAI-compatible endpoint (local or hosted), including backfilling missing docs
+> from existing code.
+
 ## Adding OpenUP to an Existing Repository
 
 If your app already exists and you want to install OpenUP for the first time, start here.

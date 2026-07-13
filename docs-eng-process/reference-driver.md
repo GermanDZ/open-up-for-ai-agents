@@ -21,6 +21,11 @@ still holds because the deterministic steps are code, not prompt instructions.
 > **No install.** The driver is stdlib-only — you do **not** need `requirements.txt`.
 > You need `python3` (3.8+) and `git`, which the process already requires.
 
+> **New here?** For a task-oriented walkthrough — bootstrap a new project, or adopt
+> OpenUP into an existing codebase (and backfill its missing docs) — start with
+> [getting-started-reference-driver.md](getting-started-reference-driver.md). This
+> page is the complete reference.
+
 ---
 
 ## Quick start
