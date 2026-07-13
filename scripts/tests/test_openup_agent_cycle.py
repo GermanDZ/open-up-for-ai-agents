@@ -32,8 +32,22 @@ driver:
 """
 
 # -- fake composed scripts ---------------------------------------------------
+# Dynamic: a READY change-folder lane wins (so a recovery round's re-resolve
+# sees the repo change); otherwise the canned scripts/_decision.json decision.
 FAKE_BOARD = """\
 import json, pathlib, sys
+changes = pathlib.Path("docs/changes")
+if changes.is_dir():
+    for plan in sorted(changes.glob("*/plan.md")):
+        txt = plan.read_text()
+        if "status: ready" in txt:
+            tid = plan.parent.name
+            print(json.dumps({"path": "pick",
+                              "lane": {"task": tid, "track": "quick"},
+                              "resumable_input": None, "active_iteration": None,
+                              "phase": "construction", "cycle": 1,
+                              "legacy_path": None, "reason": "ready lane " + tid}))
+            sys.exit(0)
 print(pathlib.Path("scripts/_decision.json").read_text())
 """
 
@@ -187,7 +201,10 @@ class DecisionDispatchTest(CycleFixture):
         for path in ("plan-iteration", "assess-iteration", "milestone-review"):
             with self.subTest(path=path):
                 self._set_decision(_decision(path, task="C3"))
-                rc = cycle.run_cycle(str(self.root), env=self.env)
+                # recover=False: this asserts the T-089 baseline that T-092
+                # deliberately changes for plan-iteration's default (Req 5/6);
+                # default-recover behavior is covered by the Recovery* classes.
+                rc = cycle.run_cycle(str(self.root), env=self.env, recover=False)
                 self.assertEqual(rc, cycle.EXIT_UNSUPPORTED)
                 # no session begin ran, no state was created
                 self.assertFalse(any(l.startswith("session:begin")
@@ -412,6 +429,161 @@ class CompletionTest(CycleFixture):
         # the sub-run's own sentinel stayed OFF the engine's stdout
         self.assertNotIn("OPENUP-STEP", buf.getvalue())
         self.assertIn("OPENUP-NEXT: ADVANCED", buf.getvalue())
+
+
+
+# --------------------------------------------------------------------------
+# Recovery mode (T-092)
+# --------------------------------------------------------------------------
+class RecoveryCaseBTest(CycleFixture):
+    """Unclosed-lane reconcile: done-status active folders are closed (zero
+    LLM) before the loop plans new work."""
+
+    def _seed_done_lane(self, decision_path="noop"):
+        lane_dir = self.root / "docs" / "changes" / self.TASK
+        lane_dir.mkdir(parents=True, exist_ok=True)
+        (lane_dir / "plan.md").write_text(
+            _plan(self.TASK, [(True, "did the thing")], status="done"))
+        self._set_decision(_decision(decision_path, reason="nothing pickable"))
+        self._git("add", "-A")
+        self._git("commit", "-m", "done lane", "-q")
+
+    def _fail_subrun(self, *a):
+        self.fail("Case B must never reach the LLM")
+
+    def test_unclosed_lane_closed_zero_llm(self):
+        self._seed_done_lane()
+        rc = cycle.run_cycle(str(self.root), env=self.env,
+                             _subrun=self._fail_subrun)
+        self.assertEqual(rc, 0)
+        self.assertTrue((self.root / "docs" / "changes" / "archive" /
+                         self.TASK / "plan.md").exists())
+        log = subprocess.run(["git", "log", "--oneline", "-2"],
+                             cwd=str(self.root), capture_output=True, text=True)
+        self.assertIn("recovery — close done-but-unclosed lane", log.stdout)
+
+    def test_side_branch_merged_to_trunk(self):
+        self._git("checkout", "-b", "feature/old-delivery", "-q")
+        self._seed_done_lane()
+        rc = cycle.run_cycle(str(self.root), env=self.env,
+                             _subrun=self._fail_subrun)
+        self.assertEqual(rc, 0)
+        head = subprocess.run(["git", "rev-parse", "--abbrev-ref", "HEAD"],
+                              cwd=str(self.root), capture_output=True, text=True)
+        self.assertEqual(head.stdout.strip(), "main")
+        # the closed lane is visible from the trunk
+        self.assertTrue((self.root / "docs" / "changes" / "archive" /
+                         self.TASK / "plan.md").exists())
+
+    def test_dirty_tree_skips_closure(self):
+        self._seed_done_lane()
+        (self.root / ".gitignore").write_text(".openup/\n# dirty\n")
+        rc = cycle.run_cycle(str(self.root), env=self.env,
+                             _subrun=self._fail_subrun)
+        self.assertEqual(rc, 0)  # noop still prints DONE
+        self.assertTrue((self.root / "docs" / "changes" / self.TASK /
+                         "plan.md").exists())  # untouched
+
+    def test_no_recover_leaves_lane_untouched(self):
+        self._seed_done_lane()
+        rc = cycle.run_cycle(str(self.root), env=self.env, recover=False,
+                             _subrun=self._fail_subrun)
+        self.assertEqual(rc, 0)
+        self.assertTrue((self.root / "docs" / "changes" / self.TASK /
+                         "plan.md").exists())
+
+    def test_assess_iteration_untouched_by_recovery(self):
+        self._seed_done_lane(decision_path="assess-iteration")
+        rc = cycle.run_cycle(str(self.root), env=self.env,
+                             _subrun=self._fail_subrun)
+        self.assertEqual(rc, cycle.EXIT_UNSUPPORTED)
+        self.assertTrue((self.root / "docs" / "changes" / self.TASK /
+                         "plan.md").exists())  # no closure side effects
+
+
+class RecoveryCaseATest(CycleFixture):
+    """Missing-spec recovery: one bounded analyst sub-run authors the
+    plan-iteration decision's named work item, then the same cycle picks it."""
+
+    NEW = "T-901"
+
+    def _plan_iteration_decision(self, title="Use case outline"):
+        d = _decision("plan-iteration", task=self.NEW,
+                      reason="plan a construction-phase iteration")
+        d["lane"]["title"] = title
+        self._set_decision(d)
+        self._git("add", "-A")
+        self._git("commit", "-m", "decision", "-q")
+
+    def _spec_writing_subrun(self, status="ready", record=None):
+        def subrun(task, box, instruction):
+            if record is not None:
+                record.append({
+                    "task": task, "hat": box["hat"], "instruction": instruction,
+                    "begun": any(l.startswith("session:begin")
+                                 for l in self._calls()),
+                })
+            lane = self.root / "docs" / "changes" / self.NEW
+            lane.mkdir(parents=True, exist_ok=True)
+            (lane / "plan.md").write_text(_plan(
+                self.NEW, [(False, "Run `git log --oneline -1`")], status=status))
+            return 0
+        return subrun
+
+    def test_spec_authored_then_same_cycle_delivers(self):
+        self._plan_iteration_decision()
+        record = []
+        import io, contextlib
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            rc = cycle.run_cycle(str(self.root), env=self.env,
+                                 _subrun=self._spec_writing_subrun(record=record))
+        self.assertEqual(rc, 0)
+        self.assertEqual(buf.getvalue().strip().splitlines()[-1],
+                         "OPENUP-NEXT: ADVANCED — %s" % self.NEW)
+        # exactly ONE sub-run (the spec authoring; the lane's box is a script)
+        self.assertEqual(len(record), 1)
+        self.assertEqual(record[0]["hat"], "analyst")
+        self.assertIn(self.NEW, record[0]["instruction"])
+        self.assertIn("frontmatter", record[0]["instruction"])
+        self.assertIn("Given", record[0]["instruction"])
+        self.assertFalse(record[0]["begun"])  # no session before the spec
+        # the spec commit landed before the lane was claimed
+        log = subprocess.run(["git", "log", "--oneline"],
+                             cwd=str(self.root), capture_output=True, text=True)
+        self.assertIn("author spec via cycle recovery", log.stdout)
+        # and the lane was executed + archived in the same invocation
+        self.assertTrue((self.root / "docs" / "changes" / "archive" /
+                         self.NEW / "plan.md").exists())
+
+    def test_no_spec_produced_exits_8(self):
+        self._plan_iteration_decision()
+        rc = cycle.run_cycle(str(self.root), env=self.env,
+                             _subrun=lambda *a: 0)  # "succeeds", writes nothing
+        self.assertEqual(rc, cycle.EXIT_STEP)
+        self.assertFalse(any(l.startswith("session:begin") for l in self._calls()))
+
+    def test_non_advancing_spec_exits_7(self):
+        self._plan_iteration_decision()
+        rc = cycle.run_cycle(str(self.root), env=self.env,
+                             _subrun=self._spec_writing_subrun(status="proposed"))
+        self.assertEqual(rc, cycle.EXIT_UNSUPPORTED)
+        self.assertFalse(any(l.startswith("session:begin") for l in self._calls()))
+
+    def test_spec_scenarios_gate_blocks(self):
+        (self.root / "scripts" / "openup-spec-scenarios.py").write_text(
+            "import sys; sys.exit(1)\n")
+        self._plan_iteration_decision()
+        rc = cycle.run_cycle(str(self.root), env=self.env,
+                             _subrun=self._spec_writing_subrun())
+        self.assertEqual(rc, cycle.EXIT_STEP)
+
+    def test_no_recover_keeps_typed_exit_7(self):
+        self._plan_iteration_decision()
+        rc = cycle.run_cycle(str(self.root), env=self.env, recover=False,
+                             _subrun=lambda *a: self.fail("no sub-run under --no-recover"))
+        self.assertEqual(rc, cycle.EXIT_UNSUPPORTED)
+        self.assertFalse((self.root / "docs" / "changes" / self.NEW).exists())
 
 
 if __name__ == "__main__":

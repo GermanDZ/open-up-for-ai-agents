@@ -34,6 +34,23 @@ Exit codes (superset of loop.run's, so an outer harness can type them):
     7  decision path not supported by this engine slice (T-090/T-091)
     8  a script-step / session-ceremony command failed
 
+Recovery mode (T-092, default on; ``--no-recover`` opts out): when the engine
+cannot proceed deterministically it rebuilds the repo state that blocks it,
+then continues the SAME cycle —
+  * **unclosed-lane reconcile** (zero LLM): on a ``plan-iteration``/``noop``
+    decision, an *active* ``docs/changes/<id>/`` whose plan status is already
+    satisfied (``done``/``verified``) is closed first — archived, committed,
+    views resynced (fail-open), and merged to the trunk when the work sits on
+    a side branch — so the loop never plans new work atop an unfinished
+    delivery;
+  * **missing-spec recovery** (one bounded sub-run): a persisting
+    ``plan-iteration`` decision already names the next work item, so an
+    ``analyst``-hat sub-run authors its ``plan.md`` (spec contract in the
+    instruction), the spec is gated (``check-docs`` + ``openup-spec-scenarios``
+    when present) and committed, and the re-resolved ``pick`` runs in the same
+    invocation. One recovery round; a decision that does not advance exits 7
+    exactly as before.
+
 Stdlib-only.
 """
 
@@ -397,6 +414,173 @@ def run_judgment_step(root, task, box, env, step_tier, max_iterations,
     return rc
 
 
+def _dispatch_judgment(root, task, box, env, step_tier, cap, interactive,
+                       resumable_input, _completion, _subrun):
+    """One judgment step through the seam or the live sub-run (shared by the
+    executor and recovery). Returns the loop exit code; raises TierError."""
+    if _subrun is not None:
+        instruction = build_step_instruction(task, box["hat"], box["body"],
+                                             resumable_input=resumable_input)
+        return _subrun(task, box, instruction)
+    return run_judgment_step(root, task, box, env, step_tier, cap,
+                             interactive=interactive,
+                             resumable_input=resumable_input,
+                             _completion=_completion)
+
+
+# --------------------------------------------------------------------------
+# Recovery (T-092): rebuild the repo state that blocks the loop, then continue
+# --------------------------------------------------------------------------
+SATISFIED_STATUSES = {"done", "verified"}
+
+SPEC_CONTRACT = """\
+Author the task spec at docs/changes/%(task)s/plan.md for the roadmap work \
+item %(task)s%(title)s. Read its docs/roadmap.md entry and the Ring-1 product \
+docs (docs/vision.md, docs/product/) first. The spec file MUST carry:
+- YAML frontmatter: id: %(task)s, title, status: ready, priority, \
+track (quick|standard), touches (the file paths the task will change), \
+depends-on
+- ## Requirements — numbered assertions, each with at least one acceptance \
+scenario using the bold markers **Given** / **When** / **Then**
+- ## Operations — 1-8 unchecked checkbox steps (`- [ ] ...`), ordered. A step \
+that is a command must be command-only (e.g. `- [ ] python3 scripts/x.py ...`); \
+prose steps are judgment work; tag a step `(role)` only when it changes hats.
+Author ONLY the spec file — do not begin the work itself."""
+
+
+def _detect_trunk(root):
+    p = _git(["symbolic-ref", "refs/remotes/origin/HEAD"], root)
+    if p.returncode == 0 and p.stdout.strip():
+        return p.stdout.strip().rsplit("/", 1)[-1]
+    for cand in ("main", "master"):
+        if _git(["rev-parse", "--verify", "--quiet", cand], root).returncode == 0:
+            return cand
+    return None
+
+
+def unclosed_lanes(root):
+    """Active docs/changes/<id>/ folders whose plan status is already
+    satisfied — delivered work whose closure ceremony never ran."""
+    changes = Path(root) / "docs" / "changes"
+    out = []
+    for plan in sorted(changes.glob("*/plan.md")):
+        if plan.parent.name == "archive":
+            continue
+        fm = read_frontmatter(plan)
+        if (fm.get("status") or "").lower() in SATISFIED_STATUSES:
+            out.append(plan.parent.name)
+    return out
+
+
+def reconcile_unclosed_lanes(root):
+    """Case B: close every done-but-unclosed lane deterministically (zero LLM).
+
+    Archive each folder, commit, resync views (fail-open), and merge the
+    current branch into the trunk when the delivered work sits on a side
+    branch. Returns True when anything was closed (caller re-resolves).
+    Raises CycleError on a failed ceremony command (incl. a merge conflict).
+    """
+    root = Path(root)
+    lanes = unclosed_lanes(root)
+    if not lanes:
+        return False
+    if _git(["status", "--porcelain"], root).stdout.strip():
+        _log("recovery: %d done-but-unclosed lane(s) found but the working "
+             "tree is dirty — skipping closure (commit or stash first)"
+             % len(lanes))
+        return False
+    _log("recovery: closing done-but-unclosed lane(s): %s" % ", ".join(lanes))
+    (root / "docs" / "changes" / "archive").mkdir(parents=True, exist_ok=True)
+    for task in lanes:
+        _git(["mv", "docs/changes/%s" % task, "docs/changes/archive/%s" % task],
+             root, check=True)
+    sync = _run(["python3", "scripts/sync-status.py"], root)
+    if sync.returncode != 0:
+        _log("sync-status.py failed (exit %d) — views not regenerated:\n%s"
+             % (sync.returncode, (sync.stdout + sync.stderr).strip()[:800]))
+    _git(["add", "-A"], root, check=True)
+    _git(["commit", "-m",
+          "chore(%s): recovery — close done-but-unclosed lane(s) %s [%s]"
+          % (lanes[0], ", ".join(lanes), lanes[0])], root, check=True)
+    trunk = _detect_trunk(root)
+    current = _git(["rev-parse", "--abbrev-ref", "HEAD"], root).stdout.strip()
+    if trunk and current != trunk:
+        _git(["checkout", trunk], root, check=True)
+        merge = _git(["merge", "--no-ff", current, "-m",
+                      "chore(%s): recovery — merge unfinished delivery from "
+                      "%s [%s]" % (lanes[0], current, lanes[0])], root)
+        if merge.returncode != 0:
+            raise CycleError(
+                "recovery merge of %s into %s failed — resolve it by hand "
+                "(branch left intact):\n%s"
+                % (current, trunk, (merge.stdout + merge.stderr).strip()[:1000]))
+    return True
+
+
+def recover_missing_spec(root, decision, env, step_tier, cap, interactive,
+                         _completion, _subrun):
+    """Case A: author the plan-iteration decision's named work item's spec via
+    ONE bounded analyst sub-run, gate it, commit it. Returns EXIT_OK when the
+    spec landed (caller re-resolves once); any other code aborts the cycle."""
+    root = Path(root)
+    lane = decision.get("lane") or {}
+    task = lane.get("task")
+    if not task:
+        _log("recovery: plan-iteration decision carries no work item — "
+             "nothing to author")
+        return EXIT_UNSUPPORTED
+    plan = root / "docs" / "changes" / task / "plan.md"
+    if plan.exists():
+        _log("recovery: %s already has a spec but is not pickable "
+             "(dependency/collision/suspension?) — not re-authoring" % task)
+        return EXIT_UNSUPPORTED
+    title = lane.get("title")
+    box = {"hat": "analyst", "marker": None,
+           "body": SPEC_CONTRACT % {"task": task,
+                                    "title": (" — %s" % title) if title else ""}}
+    _log("recovery: authoring missing spec for %s via one bounded sub-run" % task)
+    try:
+        rc = _dispatch_judgment(root, task, box, env, step_tier, cap,
+                                interactive, None, _completion, _subrun)
+    except tiers.TierError as e:
+        _log("FATAL: %s" % e)
+        return EXIT_CONFIG
+    if rc == EXIT_SUSPEND:
+        _log("recovery: spec authoring suspended awaiting human input")
+        return EXIT_SUSPEND
+    if rc != 0:
+        _log("recovery: spec-authoring sub-run failed (exit %d)" % rc)
+        return rc if rc in (EXIT_CONFIG, EXIT_ENDPOINT,
+                            EXIT_MAX_ITERATIONS) else EXIT_STEP
+    if not plan.exists():
+        _log("recovery: sub-run finished but produced no %s" % plan)
+        return EXIT_STEP
+    scenarios = root / "scripts" / "openup-spec-scenarios.py"
+    if scenarios.exists():
+        check = _run(["python3", "scripts/openup-spec-scenarios.py", "check",
+                      "docs/changes/%s/plan.md" % task], root)
+        if check.returncode != 0:
+            _log("recovery: authored spec fails scenario validation:\n%s"
+                 % (check.stdout + check.stderr).strip()[:800])
+            return EXIT_STEP
+    docs_gate = _run(["python3", "scripts/check-docs.py"], root) \
+        if (root / "scripts" / "check-docs.py").exists() else None
+    if docs_gate is not None and docs_gate.returncode != 0:
+        _log("recovery: authored spec fails check-docs:\n%s"
+             % (docs_gate.stdout + docs_gate.stderr).strip()[:800])
+        return EXIT_STEP
+    try:
+        _git(["add", "docs/changes/%s" % task], root, check=True)
+        _git(["commit", "-m",
+              "docs(%s): author spec via cycle recovery [%s]" % (task, task)],
+             root, check=True)
+    except CycleError as e:
+        _log("FATAL: %s" % e)
+        return EXIT_STEP
+    _log("recovery: spec for %s authored, gated, committed" % task)
+    return EXIT_OK
+
+
 # --------------------------------------------------------------------------
 # Deterministic completion (mirrors /openup-complete-task's per-track ceremony)
 # --------------------------------------------------------------------------
@@ -494,13 +678,17 @@ def complete(root, task, env, counts):
 # The cycle
 # --------------------------------------------------------------------------
 def run_cycle(dir, env=None, step_max_iterations=DEFAULT_STEP_MAX_ITERATIONS,
-              step_tier=DEFAULT_STEP_TIER, interactive=False,
+              step_tier=DEFAULT_STEP_TIER, interactive=False, recover=True,
               _completion=None, _subrun=None):
     """Run ONE delivery cycle under ``dir``. Returns an int exit code.
 
-    ``_completion`` is loop.run's scripted-LLM test seam, passed through to
-    every judgment sub-run; ``_subrun`` replaces the whole judgment-step call
-    (signature: fn(task, box, instruction) -> int) for engine-level tests.
+    ``recover`` (default True, T-092) lets the engine rebuild blocking repo
+    state — close done-but-unclosed lanes, author a plan-iteration decision's
+    missing spec — before dispatching; ``recover=False`` is byte-equivalent to
+    the T-089 behavior. ``_completion`` is loop.run's scripted-LLM test seam,
+    passed through to every judgment sub-run; ``_subrun`` replaces the whole
+    judgment-step call (signature: fn(task, box, instruction) -> int) for
+    engine-level tests.
     """
     import os
     env = os.environ if env is None else env
@@ -515,6 +703,33 @@ def run_cycle(dir, env=None, step_max_iterations=DEFAULT_STEP_MAX_ITERATIONS,
     path = decision.get("path")
     reason = decision.get("reason") or ""
     _log("decision: path=%s — %s" % (path, reason))
+
+    # Recovery (T-092) — one bounded round per case, then re-resolve.
+    if recover and path in ("plan-iteration", "noop"):
+        try:
+            closed = reconcile_unclosed_lanes(root)
+        except CycleError as e:
+            _log("FATAL: %s" % e)
+            return EXIT_STEP
+        if closed:
+            decision = resolve_decision(root)
+            path = decision.get("path")
+            _log("decision after lane closure: path=%s — %s"
+                 % (path, decision.get("reason") or ""))
+    if recover and path == "plan-iteration":
+        rc = recover_missing_spec(root, decision, env, step_tier,
+                                  step_max_iterations, interactive,
+                                  _completion, _subrun)
+        if rc != EXIT_OK:
+            return rc
+        decision = resolve_decision(root)
+        path = decision.get("path")
+        _log("decision after spec recovery: path=%s — %s"
+             % (path, decision.get("reason") or ""))
+        if path not in ("pick", "resume"):
+            _log("recovery did not advance the decision (path=%s) — stopping"
+                 % path)
+            return EXIT_UNSUPPORTED
 
     if path == "noop":
         print("OPENUP-NEXT: DONE — %s" % (reason or "nothing to do"))
@@ -587,19 +802,13 @@ def run_cycle(dir, env=None, step_max_iterations=DEFAULT_STEP_MAX_ITERATIONS,
                 return EXIT_STEP
         else:
             counts["judgment"] += 1
-            if _subrun is not None:
-                instruction = build_step_instruction(
-                    task, box["hat"], box["body"], resumable_input=resumable_input)
-                rc = _subrun(task, box, instruction)
-            else:
-                try:
-                    rc = run_judgment_step(
-                        root, task, box, env, step_tier, step_max_iterations,
-                        interactive=interactive, resumable_input=resumable_input,
-                        _completion=_completion)
-                except tiers.TierError as e:
-                    _log("FATAL: %s" % e)
-                    return EXIT_CONFIG
+            try:
+                rc = _dispatch_judgment(
+                    root, task, box, env, step_tier, step_max_iterations,
+                    interactive, resumable_input, _completion, _subrun)
+            except tiers.TierError as e:
+                _log("FATAL: %s" % e)
+                return EXIT_CONFIG
             if rc == EXIT_SUSPEND:
                 _log("cycle suspended awaiting human input (box left unticked)")
                 return EXIT_SUSPEND

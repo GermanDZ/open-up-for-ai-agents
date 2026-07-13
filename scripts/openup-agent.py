@@ -77,6 +77,10 @@ def main(argv=None):
     cyclep.add_argument("--interactive", action="store_true",
                         help="Answer a sub-run's questions on the TTY; otherwise "
                              "a human question suspends the cycle (exit 5).")
+    cyclep.add_argument("--no-recover", action="store_true",
+                        help="Disable recovery mode (T-092): keep the bare typed "
+                             "exit 7 on plan-iteration and skip the "
+                             "done-but-unclosed lane reconcile.")
 
     args = ap.parse_args(argv)
     if args.command not in ("run", "cycle"):
@@ -94,6 +98,7 @@ def main(argv=None):
             step_max_iterations=args.step_max_iterations,
             step_tier=args.step_tier,
             interactive=args.interactive,
+            recover=not args.no_recover,
         )
 
     return loop.run(
