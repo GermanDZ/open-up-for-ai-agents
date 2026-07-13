@@ -1,0 +1,8 @@
+{
+  "name": "inception-vision",
+  "description": "A brand-new project in Inception with a minimal stakeholder brief as input. The driver runs openup-create-vision directly and must produce a valid docs/vision.md derived from the brief. This is the realistic 'first-iteration value' benchmark: turn a stakeholder brief into a Vision document.",
+  "procedure": "openup-create-vision",
+  "instruction": "This is a brand-new project in the Inception phase. A minimal stakeholder brief has been placed at docs/inputs/stakeholder-brief.md. FIRST read that brief (use read_file), THEN produce the project Vision document at docs/vision.md by following the create-vision procedure: keep the project name 'ShareShed', and derive the problem statement, proposed solution, stakeholders, key features, and success criteria from the brief. Write real content — do not leave template placeholders. When the vision file is written, emit the procedure's completion sentinel (e.g. 'OPENUP-CREATE-VISION: DONE — vision authored').",
+  "deliverable_file": "docs/vision.md",
+  "required_markers": ["ShareShed", "Problem", "Stakeholder", "Success"]
+}

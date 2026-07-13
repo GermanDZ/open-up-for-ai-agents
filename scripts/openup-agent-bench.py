@@ -153,7 +153,7 @@ def resolves_to(fixture: Path, expect_pick: str):
 # Run the driver as a subprocess (exactly what a user runs)
 # --------------------------------------------------------------------------
 def run_driver(repo: Path, fixture: Path, procedure: str, max_iterations: int,
-               timeout: int, usage_log: Path, env: dict):
+               timeout: int, usage_log: Path, env: dict, instruction=None):
     """Invoke `openup-agent.py run --dir <fixture>`; return a dict of raw results."""
     run_env = dict(env)
     run_env["OPENUP_AGENT_USAGE_LOG"] = str(usage_log)
@@ -162,6 +162,8 @@ def run_driver(repo: Path, fixture: Path, procedure: str, max_iterations: int,
         "run", "--dir", str(fixture), "--procedure", procedure,
         "--max-iterations", str(max_iterations),
     ]
+    if instruction:
+        argv += ["--instruction", instruction]
     t0 = _dt.datetime.now()
     timed_out = False
     try:
@@ -222,7 +224,10 @@ def check_gates(fixture: Path, seed_sha: str):
         cwd=str(fixture), text=True, capture_output=True,
     )
     return {
-        "fence": fence.returncode == 0,
+        # exit 3 = "no lane to fence" (a non-lane procedure run like create-vision)
+        # — inapplicable, not a violation; treated as clean, mirroring the driver's
+        # run_gates (T-083).
+        "fence": fence.returncode in (0, 3),
         "fence_detail": (fence.stdout + fence.stderr).strip()[-400:],
         "check_docs": docs.returncode == 0,
         "check_docs_detail": (docs.stdout + docs.stderr).strip()[-400:],
@@ -238,14 +243,21 @@ def work_delta(fixture: Path, seed_sha: str, scenario: dict):
                    check=False).stdout.strip()
     files_changed = [f for f in changed.splitlines() if f]
     # The scenario's deliverable is the ground-truth "did the work happen" signal —
-    # checked against the fixture's tree, not the model's word.
-    marker = scenario.get("deliverable_marker")
+    # checked against the fixture's tree, not the model's word. Success is the
+    # deliverable file existing AND containing every required marker (a list —
+    # e.g. the vision's required sections); `deliverable_marker` (single string) is
+    # the back-compat form.
+    markers = scenario.get("required_markers")
+    if markers is None and scenario.get("deliverable_marker") is not None:
+        markers = [scenario["deliverable_marker"]]
     df = scenario.get("deliverable_file")
-    delivered = False
+    delivered, missing = False, []
     if df:
         p = fixture / df
-        delivered = p.exists() and (marker is None or marker in p.read_text(
-            encoding="utf-8", errors="replace"))
+        if p.exists():
+            text = p.read_text(encoding="utf-8", errors="replace")
+            missing = [m for m in (markers or []) if m not in text]
+            delivered = not missing
     task_id = scenario.get("expect_pick")
     archived = task_id and (fixture / "docs" / "changes" / "archive" / task_id).is_dir()
     return {
@@ -253,6 +265,7 @@ def work_delta(fixture: Path, seed_sha: str, scenario: dict):
         "files_changed": len(files_changed),
         "files": files_changed[:40],
         "deliverable_produced": delivered,
+        "missing_markers": missing,
         "task_archived": bool(archived),
     }
 
@@ -400,10 +413,16 @@ def run_batch(args, env):
         tempfile.mkdtemp(prefix="openup-bench-"))
     workroot.mkdir(parents=True, exist_ok=True)
 
+    # A scenario declares its own default procedure + instruction; an explicit
+    # --procedure on the CLI overrides. Read them once from scenario.json.
+    scenario_meta = json.loads((scenario_dir / "scenario.json").read_text(encoding="utf-8"))
+    procedure = args.procedure or scenario_meta.get("procedure") or "next"
+    instruction = scenario_meta.get("instruction")
+
     model = env.get("OPENUP_MODEL_MAIN", "(tier-map default)")
     endpoint = env.get("LLM_API_URL", "(unset — driver will fail fast)")
     _log("batch: %d run(s), scenario=%s, procedure=%s, out=%s"
-         % (args.runs, scenario_dir.name, args.procedure, out_dir))
+         % (args.runs, scenario_dir.name, procedure, out_dir))
 
     records = []
     results_path = out_dir / "results.jsonl"
@@ -416,15 +435,19 @@ def run_batch(args, env):
             seed_sha, scenario = build_fixture(
                 repo, fixture, scenario_dir, args.include_working_tree)
 
-            ok, decision = resolves_to(fixture, scenario.get("expect_pick"))
-            if not ok:
-                _log("run %d: WARNING board did not resolve to %s (got %s)"
-                     % (n, scenario.get("expect_pick"),
-                        json.dumps(decision).__getitem__(slice(0, 160))))
+            # The resolve==pick sanity check only applies to change-folder-lane
+            # scenarios (those declaring expect_pick). Vision-style scenarios drive
+            # a procedure directly and seed no lane, so skip it.
+            ok = True
+            if scenario.get("expect_pick"):
+                ok, decision = resolves_to(fixture, scenario.get("expect_pick"))
+                if not ok:
+                    _log("run %d: WARNING board did not resolve to %s (got %s)"
+                         % (n, scenario.get("expect_pick"), json.dumps(decision)[:160]))
 
             usage_log = fixture / ".openup-usage.jsonl"
-            raw = run_driver(repo, fixture, args.procedure, args.max_iterations,
-                             args.timeout, usage_log, env)
+            raw = run_driver(repo, fixture, procedure, args.max_iterations,
+                             args.timeout, usage_log, env, instruction=instruction)
             record = measure_run(fixture, seed_sha, scenario, raw, usage_log)
             record["run"] = n
             record["seed_resolves_pick"] = ok
@@ -434,7 +457,7 @@ def run_batch(args, env):
             # per-run debug log — so a failure never needs a manual side-run.
             (out_dir / ("run-%02d.driver.log" % n)).write_text(
                 "$ openup-agent.py run --dir %s --procedure %s\n\n=== STDOUT ===\n%s\n"
-                "=== STDERR ===\n%s\n" % (fixture, args.procedure,
+                "=== STDERR ===\n%s\n" % (fixture, procedure,
                 raw.get("stdout", ""), raw.get("stderr", "")), encoding="utf-8")
             records.append(record)
             rf.write(json.dumps(record, ensure_ascii=False) + "\n")
@@ -455,7 +478,7 @@ def run_batch(args, env):
 
     meta = {
         "stamp": stamp, "repo": str(repo), "scenario": scenario_dir.name,
-        "procedure": args.procedure, "model": model, "endpoint": endpoint,
+        "procedure": procedure, "model": model, "endpoint": endpoint,
         "runs": args.runs, "max_iterations": args.max_iterations,
         "include_working_tree": args.include_working_tree,
     }
@@ -480,7 +503,9 @@ def build_parser():
         description="Isolated, instrumented benchmark harness for the reference driver (T-080).")
     p.add_argument("--repo", default=".", help="Repo under test (default: cwd).")
     p.add_argument("--runs", type=int, default=1, help="Number of benchmark runs (default 1).")
-    p.add_argument("--procedure", default="next", help="Procedure to drive (default: next).")
+    p.add_argument("--procedure", default=None,
+                   help="Procedure to drive. Overrides the scenario's `procedure`; "
+                        "falls back to the scenario's, then `next`.")
     p.add_argument("--scenario", default=None,
                    help="Scenario dir (default: bench-scenarios/quick-doc).")
     p.add_argument("--out", default=None,

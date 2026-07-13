@@ -49,6 +49,10 @@ def main(argv=None):
     runp.add_argument("--interactive", action="store_true",
                       help="Answer the procedure's questions on the TTY; otherwise a "
                            "human question suspends the run into an input-request (exit 5).")
+    runp.add_argument("--instruction", default=None,
+                      help="Extra task context appended to the driver's initial user "
+                           "message (e.g. 'read the stakeholder brief at … and produce "
+                           "the vision'). Absent ⇒ unchanged behavior.")
 
     args = ap.parse_args(argv)
     if args.command != "run":
@@ -65,6 +69,7 @@ def main(argv=None):
         procedure=args.procedure,
         max_iterations=args.max_iterations,
         interactive=args.interactive,
+        instruction=args.instruction,
     )
 
 
