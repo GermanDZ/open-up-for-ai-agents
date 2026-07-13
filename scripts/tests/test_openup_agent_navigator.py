@@ -145,46 +145,82 @@ class RunNavigatorTest(unittest.TestCase):
         self.assertEqual(ran["procedure"], "openup-create-vision")
         self.assertEqual(ran["instruction"], "author vision")
 
-    def test_missing_input_raises_request_and_suspends(self):
-        # runner also fakes openup-input.py request -> writes a file.
-        def runner(root, argv):
-            if "openup-input.py" in argv[0]:
-                d = Path(root) / "docs" / "input-requests"
-                d.mkdir(parents=True, exist_ok=True)
-                p = d / "req-1.md"
-                p.write_text("status: pending\n")
-                return 0, json.dumps({"request": "docs/input-requests/req-1.md"})
-            return _fact_runner()(root, argv)
+    def test_missing_artifact_scaffolds_template_not_request(self):
+        # T-097: a missing brief scaffolds a fillable template + suspends; NO
+        # input-request (which could never produce the document).
         rc = self._run(
             self._writes_decision({"procedure": None, "instruction": "",
                                    "missing_inputs": ["a stakeholder brief"],
                                    "rationale": "no product input"}),
-            lambda *a: self.fail("must not run a procedure"),
-            runner=runner)
+            lambda *a: self.fail("must not run a procedure"))
         self.assertEqual(rc, navigator.NAV_SUSPEND)
+        brief = self.root / navigator.DEFAULT_INPUT_PATH
+        self.assertTrue(brief.exists())
+        self.assertIn(navigator.TEMPLATE_MARKER, brief.read_text())
+        self.assertFalse((self.root / "docs" / "input-requests").exists())
         self.assertTrue(self.printed[-1].startswith("OPENUP-AGENT: SUSPENDED"))
-        self.assertTrue((self.root / "docs" / "input-requests" / "req-1.md").exists())
+        self.assertIn(navigator.DEFAULT_INPUT_PATH, self.printed[-1])
 
-    def test_open_request_re_suspends_without_duplicating(self):
-        # Pre-seed an open request recorded in cycle meta.
-        d = self.root / "docs" / "input-requests"
-        d.mkdir(parents=True)
-        (d / "req-1.md").write_text("status: pending\n")
-        navigator._write_nav_meta(self.root, request="docs/input-requests/req-1.md")
+    def test_explicit_input_path_is_honored(self):
+        rc = self._run(
+            self._writes_decision({"procedure": None, "instruction": "",
+                                   "missing_inputs": ["a design brief"],
+                                   "input_path": "docs/inputs/design-brief.md",
+                                   "rationale": "x"}),
+            lambda *a: self.fail("no procedure"))
+        self.assertEqual(rc, navigator.NAV_SUSPEND)
+        self.assertTrue((self.root / "docs/inputs/design-brief.md").exists())
+
+    def test_scaffold_preserves_partial_edits(self):
+        # A scaffold still carrying the marker (partial human edits) is not
+        # overwritten on re-run.
+        brief = self.root / navigator.DEFAULT_INPUT_PATH
+        brief.parent.mkdir(parents=True)
+        brief.write_text(navigator.TEMPLATE_MARKER + "\n# my notes so far\n")
+        rc = self._run(
+            self._writes_decision({"procedure": None, "instruction": "",
+                                   "missing_inputs": ["a stakeholder brief"],
+                                   "input_path": navigator.DEFAULT_INPUT_PATH,
+                                   "rationale": "x"}),
+            lambda *a: self.fail("no procedure"))
+        self.assertEqual(rc, navigator.NAV_SUSPEND)
+        self.assertIn("my notes so far", brief.read_text())  # untouched
+
+    def test_scaffold_does_not_clobber_a_filled_file(self):
+        p = self.root / "docs" / "inputs" / "design-brief.md"
+        p.parent.mkdir(parents=True)
+        p.write_text("my actual product, filled\n")  # no marker
+        rc = self._run(
+            self._writes_decision({"procedure": None, "instruction": "",
+                                   "missing_inputs": ["a design brief"],
+                                   "input_path": "docs/inputs/design-brief.md",
+                                   "rationale": "x"}),
+            lambda *a: self.fail("no procedure"))
+        self.assertEqual(rc, navigator.NAV_SUSPEND)
+        self.assertIn("my actual product, filled", p.read_text())  # untouched
+
+    def test_genuine_question_with_no_artifact_uses_input_request(self):
+        # A vision already exists → no default artifact applies; a missing input
+        # with no input_path falls back to a T-074 input-request.
+        (self.root / "docs").mkdir(exist_ok=True)
+        (self.root / "docs" / "vision.md").write_text("# Vision\n")
         created = []
 
         def runner(root, argv):
             if "openup-input.py" in argv[0]:
                 created.append(argv)
-                return 0, json.dumps({"request": "docs/input-requests/req-2.md"})
+                d = Path(root) / "docs" / "input-requests"
+                d.mkdir(parents=True, exist_ok=True)
+                (d / "req-1.md").write_text("status: pending\n")
+                return 0, json.dumps({"request": "docs/input-requests/req-1.md"})
             return _fact_runner()(root, argv)
         rc = self._run(
             self._writes_decision({"procedure": None, "instruction": "",
-                                   "missing_inputs": ["still need a brief"],
+                                   "missing_inputs": ["which database?"],
                                    "rationale": "x"}),
             lambda *a: self.fail("no procedure"), runner=runner)
         self.assertEqual(rc, navigator.NAV_SUSPEND)
-        self.assertEqual(created, [])  # did NOT create a second request
+        self.assertEqual(len(created), 1)
 
     def test_null_procedure_no_missing_is_done(self):
         rc = self._run(
@@ -217,6 +253,37 @@ class RunNavigatorTest(unittest.TestCase):
         rc = self._run(lambda i, s: navigator.NAV_SUSPEND,
                        lambda *a: self.fail("no procedure"))
         self.assertEqual(rc, navigator.NAV_SUSPEND)
+
+
+class MarkerSurveyTest(unittest.TestCase):
+    """T-097: a still-templated scaffold reads as absent; a filled one as present
+    (so a filled brief — not the empty scaffold — advances the loop)."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp.name)
+        (self.root / "docs" / "inputs").mkdir(parents=True)
+        self.brief = self.root / navigator.DEFAULT_INPUT_PATH
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def test_template_brief_reads_as_absent(self):
+        self.brief.write_text(navigator.BRIEF_TEMPLATE)  # contains the marker
+        self.assertFalse(navigator._ring1_survey(self.root)["stakeholder_brief"])
+        self.assertEqual(navigator._default_input_path(self.root),
+                         navigator.DEFAULT_INPUT_PATH)  # still needs filling
+
+    def test_filled_brief_reads_as_present_and_no_default(self):
+        self.brief.write_text("# Brief\nmy real product, no marker\n")
+        self.assertTrue(navigator._ring1_survey(self.root)["stakeholder_brief"])
+        # a present brief means no scaffolding default applies → the LLM's
+        # create-vision decision is what runs next (convergence, Req 2).
+        self.assertEqual(navigator._default_input_path(self.root), "")
+
+    def test_vision_present_suppresses_brief_default(self):
+        (self.root / "docs" / "vision.md").write_text("# Vision\n")
+        self.assertEqual(navigator._default_input_path(self.root), "")
 
 
 if __name__ == "__main__":
