@@ -522,46 +522,110 @@ def _promote_next(root: Path, cdir: Path):
     return None, err.getvalue().strip() or "no promotable roadmap task."
 
 
-def _decision(path, reason, lane=None, resumable_input=None, active_iteration=None):
+# Iteration-prefixed lane ids (T-077): <PhaseLetter><ordinal>-<seq>, e.g. C3-001.
+# A legacy task id (T-077) has no digit between the letter and the dash, so it
+# does NOT match — its iteration prefix is None (unscoped, backward-compatible).
+_ITER_PREFIX_RE = re.compile(r"^([A-Z]\d+)-\d+$")
+
+
+def iteration_prefix(task_id):
+    """The iteration id a lane belongs to (``C3`` for ``C3-001``), or None for a
+    legacy/unprefixed task (``T-077``). Derived purely from the id — no state."""
+    if not task_id:
+        return None
+    m = _ITER_PREFIX_RE.match(task_id)
+    return m.group(1) if m else None
+
+
+def _current_phase(root: Path):
+    """Derived current phase via openup-lifecycle.py (read-only, fail-open).
+
+    Returns the phase string (``construction`` …) or None if lifecycle status
+    cannot be computed — the resolver stays functional without it (T-078 wires
+    the phase into autonomous consumption; here it is advisory metadata)."""
+    try:
+        life = _load_sibling("openup_lifecycle", "openup-lifecycle.py")
+        status = life.compute_status(root, life.state_dir(root, None))
+        return status.get("phase")
+    except Exception:
+        return None
+
+
+def _active_iteration_prefix(cdir: Path):
+    """The iteration whose lanes are currently being worked, derived from live
+    leases. If exactly one iteration prefix is live, picks are scoped to it; if
+    none (all legacy) or several (parallel iterations — T-079), no scoping."""
+    prefixes = {
+        iteration_prefix(c.get("task_id"))
+        for c in claims.live_claims(cdir)
+    }
+    prefixes.discard(None)
+    return next(iter(prefixes)) if len(prefixes) == 1 else None
+
+
+def _decision(path, reason, lane=None, resumable_input=None,
+              active_iteration=None, phase=None, legacy_path=None):
     return {
         "path": path,
         "lane": lane,
         "resumable_input": resumable_input,
         "active_iteration": active_iteration,
+        "phase": phase,
+        # Back-compat alias during the T-077→T-078 transition: consumers still
+        # keying on the old ``promote`` name find it here until openup-next is
+        # rewired (T-078). None on every other path.
+        "legacy_path": legacy_path,
         "reason": reason,
     }
 
 
 def resolve_decision(root: Path, cdir: Path):
-    """The §0–§1 precedence as one object (pure; no I/O side effects)."""
+    """The §0–§1 precedence as one object (pure; no I/O side effects).
+
+    Lifecycle-aware (carries the derived ``phase``) and iteration-scoped (T-077):
+    while an iteration is active, §1b picks only lanes belonging to it, and the
+    former §1c ``promote`` path is emitted as ``plan-iteration`` (carrying the
+    phase) — Plan Iteration supersedes one-row-at-a-time promotion."""
+    phase = _current_phase(root)
     # §0 — an answered input-request resumes its lane before any new claim.
     ri = _resumable_input(root)
     if ri:
         return _decision(
             "resume", f"answered input for {ri['task']} — resume it first.",
-            lane={"task": ri["task"]}, resumable_input=ri)
+            lane={"task": ri["task"]}, resumable_input=ri, phase=phase)
     # §1a — an already-active iteration continues from its next unchecked box.
     ai = _active_iteration(root)
     if ai:
         return _decision(
             "resume", f"active iteration {ai['task']} — continue it.",
-            lane={"task": ai["task"]}, active_iteration=ai)
-    # §1b — the top pickable change-folder lane.
+            lane={"task": ai["task"]}, active_iteration=ai, phase=phase)
+    # §1b — the top pickable change-folder lane, iteration-scoped: while an
+    # iteration is active, only its own lanes are pickable (a ready lane from a
+    # different iteration waits its turn). Unscoped when no iteration is active.
     board = build_board(root, cdir)  # read-only: no write_board, no reap
+    active_iter = _active_iteration_prefix(cdir)
     for lane in board["lanes"]:
-        if is_pickable(lane):
-            return _decision(
-                "pick", f"top pickable lane {lane['task']}.", lane=lane)
-    # §1c — promote the next pending roadmap task.
+        if not is_pickable(lane):
+            continue
+        if active_iter and iteration_prefix(lane["task"]) != active_iter:
+            continue
+        return _decision(
+            "pick", f"top pickable lane {lane['task']}.", lane=lane, phase=phase)
+    # §1c — no active iteration: plan the next iteration for the current phase
+    # (the former single-row promote is its degenerate, single-work-item case).
     entry, promote_reason = _promote_next(root, cdir)
     if entry:
         return _decision(
-            "promote", f"promote roadmap task {entry['id']}.",
+            "plan-iteration",
+            f"plan a {phase or 'new'}-phase iteration "
+            f"(next work item {entry['id']}).",
             lane={"task": entry["id"], "title": entry.get("title"),
-                  "track": None, "next_action": "author spec + start"})
-    # §-noop — nothing pickable and nothing to promote.
+                  "track": None, "next_action": "plan iteration + start"},
+            phase=phase, legacy_path="promote")
+    # §-noop — nothing pickable and nothing to plan.
     return _decision(
-        "noop", f"{none_pickable_reason(board)} {promote_reason}".strip())
+        "noop", f"{none_pickable_reason(board)} {promote_reason}".strip(),
+        phase=phase)
 
 
 def cmd_resolve(args):
