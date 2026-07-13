@@ -803,7 +803,7 @@ authored when promoted.
 ---
 
 ## T-090: Cycle engine — plan-iteration path
-**Status**: pending
+**Status**: completed (2026-07-13)
 **Priority**: high
 **Value**: Inception/planning stops being the loop's most expensive, least reliable phase on local models — objectives and per-lane specs become small authoring sub-runs while minting, clustering (T-079), lane generation, and the iteration-plan skeleton are code.
 **Description**: `cycle` handles `plan-iteration`: derive phase (lifecycle) + mint id + `activities-for` (code); one small LLM sub-run to choose 1–5 objectives; per generated lane, an authoring sub-run for its spec (create-task-spec content); partition + roadmap rows + iteration-plan instance deterministically. The ShareShed Inception flow runs end-to-end through `cycle` on a bootstrapped project.
