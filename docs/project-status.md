@@ -1,15 +1,17 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 58
-**Iteration Goal**: T-080 — Reference-driver acceptance/benchmark harness
+**Iteration**: 59
+**Iteration Goal**: T-089 — Cycle engine core — deterministic pick/resume + Operations-step executor
 **Status**: completed
-**Current Task**: T-088
+**Current Task**: T-089
 **Iteration Started**: 2026-06-18
 **Last Updated**: 2026-07-13
 **Updated By**: sync-status.py
 
 ## Notes
+
+**Iteration 59** (2026-07-13): T-089 — cycle engine core, the first slice of the deterministic-cycle-engine program (invert the reference driver's control: ceremony as code, LLM only at judgment points). New `openup-agent.py cycle --dir <project>` (module `scripts/openup_agent/cycle.py`, stdlib-only): **board resolve → session begin → per-Operations-box executor → gates → deterministic completion**, composing the existing scripts as subprocesses (board/session/state/sync/fence/check-docs — never reimplemented). Box classification: extractable `git`/`python3` command (backticked, or token-to-EOL; bare `scripts/x.py` span gets python3) ⇒ **script-step, zero LLM**; `(auto)`/`(judgment)` markers override; anything else ⇒ **judgment sub-run** — a fresh, bounded `loop.run()` (default cap 10, tier `authoring`→MID) with a step-scoped instruction (box text + role hat + change-folder briefing), enabled by additive `loop.run(system_prompt=, model=)` params (default path byte-unchanged). **Gates run before the tick**, so a failed gate (exit 6) leaves the box unchecked and a re-run retries; all inter-step state is the repo (boxes/state/lease) ⇒ crash-safe resume for free. Completion mirrors complete-task per-track: status→done, shard, log-event+gate, sync-status (fail-open on bootstrapped trees), gates, retro incr, atomic `session end`, archive, commit, merge-back — sentinel parity `OPENUP-NEXT: ADVANCED/DONE`. Typed exits 6/7/8 added (gate-failure / unsupported-path[T-090/T-091] / step-failure), consumed by the bench. New `cycle-quick-doc` scenario + bench `command` support (scenario or `--command`) make the ≥5× token claim measurable vs the `quick-doc` baseline (hermetic run: 2 LLM calls total vs 37–50 live-next iters; the live read-back is the owner's batch — this env has no endpoint). Shipped via process-manifest (30 CLIs; fresh install verified). +21 tests (76 driver+bench+cycle green; 55 pre-existing pass unmodified). check-docs, spec-scenarios, fence (--base harness-optional) green. Solo, standard, worktree, on harness-optional.
 
 **Iteration 58** (2026-07-13, quick): T-088 — fixed a real gap a user hit following the reference-driver getting-started: after `bootstrap-project.sh my-product`, `python3 scripts/openup-agent.py run --dir .` failed `No such file or directory` because the **driver was never in `process-manifest.txt`** — so no install path (bootstrap / install-openup / sync-from-framework) shipped it. Added `openup-agent.py` + the five `openup_agent/*.py` package files to the manifest (the single source of truth). The installer already handles nested paths (`mkdir -p "$(dirname dest)"`), so no installer change — verified by running `install_process_clis` into a temp dir: driver + package land and import cleanly (29 CLIs installed). Driver is stdlib-only, so zero new deps. openup-doctor: 0 missing shipped CLIs; fence (`--base harness-optional`) green. Solo, quick, worktree, on harness-optional.
 

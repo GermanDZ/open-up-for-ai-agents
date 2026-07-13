@@ -377,5 +377,91 @@ class CleanFixtureTest(unittest.TestCase):
         self.assertFalse((fixture / "docs" / "product").exists())
 
 
+# --------------------------------------------------------------------------
+# cycle-quick-doc — the T-089 deterministic engine through the whole harness
+# --------------------------------------------------------------------------
+class _CycleStepHandler(BaseHTTPRequestHandler):
+    """Scripted judgment sub-run: the engine only reaches the LLM for the ONE
+    authoring box, so the script is write-the-note → step sentinel."""
+
+    def do_POST(self):
+        length = int(self.headers.get("Content-Length", 0))
+        req = json.loads(self.rfile.read(length))
+        turn = sum(1 for m in req.get("messages", []) if m.get("role") == "assistant")
+        if turn == 0:
+            payload = _asst(tool_calls=[_tool_call(
+                "c1", "write_file",
+                {"path": "docs/bench-scratch/note.md", "content": "bench ok\n"})])
+        else:
+            payload = _asst(content="OPENUP-STEP: DONE — appended the line")
+        body = json.dumps(payload).encode()
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def log_message(self, *a):
+        pass
+
+
+class CycleScenarioTest(unittest.TestCase):
+    def setUp(self):
+        self.server = HTTPServer(("127.0.0.1", 0), _CycleStepHandler)
+        self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
+        self.thread.start()
+        self.url = "http://127.0.0.1:%d/v1" % self.server.server_address[1]
+        self.tmp = tempfile.TemporaryDirectory()
+
+    def tearDown(self):
+        self.server.shutdown()
+        self.server.server_close()
+        self.tmp.cleanup()
+
+    def test_cycle_scenario_scores_clean_run(self):
+        """One benchmark run of cycle-quick-doc: the engine picks BENCH-001,
+        runs its one judgment box as a bounded sub-run, completes the lane
+        deterministically, and the harness scores it from the typed exit code
+        + recomputed gates + work delta (spec Req 8)."""
+        out = Path(self.tmp.name) / "out"
+        work = Path(self.tmp.name) / "work"
+        env = dict(os.environ)
+        env.update({"LLM_API_URL": self.url, "LLM_API_KEY": "k",
+                    "OPENUP_MODEL_MAIN": "mock-model",
+                    "OPENUP_MODEL_MID": "mock-model"})
+        args = bench.build_parser().parse_args([
+            "--repo", str(_REPO), "--runs", "1",
+            "--scenario", str(_REPO / "scripts" / "bench-scenarios" / "cycle-quick-doc"),
+            "--out", str(out), "--workdir", str(work),
+            "--max-iterations", "8", "--timeout", "300",
+        ])
+        rc = bench.run_batch(args, env)
+        self.assertEqual(rc, 0)
+        records = [json.loads(l) for l in
+                   (out / "results.jsonl").read_text().splitlines() if l.strip()]
+        self.assertEqual(len(records), 1)
+        r = records[0]
+        self.assertEqual(r["outcome"], "pass")
+        self.assertEqual(r["sentinel"], "OPENUP-NEXT: ADVANCED — BENCH-001")
+        self.assertTrue(r["work"]["deliverable_produced"])
+        self.assertTrue(r["work"]["task_archived"])  # engine archived the lane
+        self.assertTrue(r["gates"]["fence"])
+        self.assertTrue(r["gates"]["check_docs"])
+        # only the judgment sub-run touched the LLM (2 calls: write + sentinel)
+        self.assertEqual(r["iterations"], 2)
+        agg = json.loads((out / "summary.json").read_text())
+        self.assertEqual(agg["meta"]["command"], "cycle")
+        self.assertEqual(agg["clean_passes"], 1)
+
+    def test_cli_command_override_beats_scenario(self):
+        """--command run on a cycle scenario falls back to the procedure path
+        (the override contract, mirroring --procedure)."""
+        args = bench.build_parser().parse_args([
+            "--repo", str(_REPO), "--command", "run",
+            "--scenario", str(_REPO / "scripts" / "bench-scenarios" / "cycle-quick-doc"),
+        ])
+        self.assertEqual(args.command, "run")
+
+
 if __name__ == "__main__":
     unittest.main()

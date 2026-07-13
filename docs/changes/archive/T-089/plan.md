@@ -1,7 +1,7 @@
 ---
 id: T-089
 title: Cycle engine core — deterministic pick/resume + Operations-step executor
-status: ready   # proposed → ready → in-progress → done → verified
+status: done
 priority: high   # critical | high | medium | low
 estimate: 1-2 sessions
 plan: docs/explorations/2026-07-13-deterministic-cycle-engine.md
@@ -240,29 +240,29 @@ procedure-direct mode; `cycle` is additive and explicitly invoked.
 
 ## Operations
 
-- [ ] Implement `cycle.py` decision + acquire wiring: `resolve` → typed
+- [x] Implement `cycle.py` decision + acquire wiring: `resolve` → typed
       dispatch (pick/resume proceed; noop → DONE sentinel; other paths → typed
       unsupported exit) → in-place branch + `openup-session.py begin`; hermetic
       tests for all five dispatch outcomes (Req 1, 7)
-- [ ] Implement the Operations-step executor: box parser + classifier
+- [x] Implement the Operations-step executor: box parser + classifier
       (pattern + marker override), script-step subprocess exec, judgment-step
       bounded `loop.run()` sub-run with instruction builder (box + hat + change
       folder), gates-then-tick ordering with typed gate-failure exit; hermetic
       tests incl. resume-at-second-box (Req 2, 3, 4, 6)
-- [ ] Implement deterministic completion: status flip → status-note shard →
+- [x] Implement deterministic completion: status flip → status-note shard →
       `sync-status.py` → archive → commit → `session end` → `OPENUP-NEXT:
       ADVANCED` sentinel on stdout, exit 0; hermetic end-to-end fixture test
       (Req 5)
-- [ ] Wire the `cycle` subparser into `scripts/openup-agent.py`, add
+- [x] Wire the `cycle` subparser into `scripts/openup-agent.py`, add
       `openup_agent/cycle.py` to `scripts/process-manifest.txt`, and verify a
       fresh `install_process_clis` lands + imports it (Req 9)
-- [ ] Add `scripts/bench-scenarios/cycle-quick-doc/` and bench support for
+- [x] Add `scripts/bench-scenarios/cycle-quick-doc/` and bench support for
       scenario-declared `cycle` command; hermetic mock-endpoint bench test
       records a scored run (Req 8)
-- [ ] (analyst) Document `cycle` in `reference-driver.md` +
+- [x] (analyst) Document `cycle` in `reference-driver.md` +
       `script-cli-reference.md` (signature, exit codes, sub-run contract,
       loop.sh non-change)
-- [ ] (tester) Run the full driver+bench suites plus `openup-spec-scenarios.py
+- [x] (tester) Run the full driver+bench suites plus `openup-spec-scenarios.py
       check`, `check-docs.py`, and `openup-fence.py check --base
       harness-optional`; record results + any deviations in
       `docs/changes/T-089/design.md`

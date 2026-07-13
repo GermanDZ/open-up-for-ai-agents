@@ -215,7 +215,8 @@ def _dispatch_tool_calls(tool_impl, tool_calls, interactive, root, task_id, ask)
 
 
 def run(dir, procedure, max_iterations=DEFAULT_MAX_ITERATIONS, env=None,
-        interactive=False, instruction=None, _completion=None, _ask=None):
+        interactive=False, instruction=None, _completion=None, _ask=None,
+        system_prompt=None, model=None):
     """Drive `procedure` under `dir`. Return an int exit code.
 
     `interactive` makes `ask_user` prompt on the TTY and wait; otherwise a human
@@ -223,6 +224,11 @@ def run(dir, procedure, max_iterations=DEFAULT_MAX_ITERATIONS, env=None,
     given, is extra task context appended to the initial user message (e.g. the
     stakeholder brief to read for a vision run). `_completion` and `_ask` are test
     seams replacing the live LLM call and the TTY prompt.
+
+    `system_prompt` + `model` (T-089, both additive): when `system_prompt` is
+    given, the procedure-file load and its tier resolution are skipped —
+    `procedure` serves only as a log label and `model` MUST be supplied. This
+    is the cycle engine's step-scoped sub-run hook; absent ⇒ unchanged behavior.
     """
     env = os.environ if env is None else env
     root = Path(dir).resolve()
@@ -231,11 +237,17 @@ def run(dir, procedure, max_iterations=DEFAULT_MAX_ITERATIONS, env=None,
 
     try:
         api_url, api_key = _env_config(env)
-        proc_path = tiers.procedure_path(root, procedure)
-        if not proc_path.exists():
-            raise ConfigError("procedure not found: %s" % proc_path)
-        procedure_text = proc_path.read_text(encoding="utf-8")
-        model = tiers.resolve_model(root, procedure, target="driver", env=env)
+        if system_prompt is None:
+            proc_path = tiers.procedure_path(root, procedure)
+            if not proc_path.exists():
+                raise ConfigError("procedure not found: %s" % proc_path)
+            procedure_text = proc_path.read_text(encoding="utf-8")
+            model = tiers.resolve_model(root, procedure, target="driver", env=env)
+            system_text = _system_prompt(root, procedure, procedure_text)
+        else:
+            if model is None:
+                raise ConfigError("system_prompt override requires an explicit model")
+            system_text = system_prompt
     except (ConfigError, tiers.TierError) as e:
         _log("FATAL: %s" % e)
         return 2
@@ -248,7 +260,7 @@ def run(dir, procedure, max_iterations=DEFAULT_MAX_ITERATIONS, env=None,
     if instruction:
         user_msg += "\n\nTask context:\n" + instruction
     messages = [
-        {"role": "system", "content": _system_prompt(root, procedure, procedure_text)},
+        {"role": "system", "content": system_text},
         {"role": "user", "content": user_msg},
     ]
 

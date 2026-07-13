@@ -196,6 +196,51 @@ the sentinel is honored only once the gates are clean. Enforcement never depends
 the model remembering to check. A gate whose script is absent under `--dir` is
 skipped, so the driver stays usable on partial trees.
 
+## The cycle engine — `openup-agent.py cycle` (T-089)
+
+```
+python3 scripts/openup-agent.py cycle --dir <path> [--step-max-iterations 10] [--step-tier authoring] [--interactive]
+```
+
+`run` hands a whole procedure to the model and lets it orchestrate; `cycle`
+**inverts that control**. One invocation runs ONE delivery cycle as a
+deterministic state machine over the existing scripts — `openup-board.py
+resolve` → `openup-session.py begin` (in-place `task/<id>-cycle` branch) → the
+**Operations-step executor** → gates → deterministic completion (spec status →
+`done`, status-note shard, `sync-status.py`, archive, commit, `session end`,
+merge back to the starting branch) — and prints the `/openup-next`-parity
+sentinel (`OPENUP-NEXT: ADVANCED — <task>` / `DONE — <reason>`). The measured
+motivation (T-080 benchmark, same local model): LLM-orchestrated `next` cost
+37–50 iterations / 1–2M tokens and finished inconsistently; single authoring
+runs cost ~8 iterations / ~59k tokens at 3/3 clean. `cycle` reshapes the loop
+into that second, cheap shape.
+
+Per **unchecked `## Operations` box** in the picked lane's `plan.md`:
+
+- a box carrying an extractable `git …` / `python3 …` command (backtick-quoted,
+  or from the first such token to end of line; a backticked `scripts/<x>.py`
+  span gets `python3` prepended) is executed **as code** — zero LLM;
+- an explicit marker overrides the pattern: `- [ ] (auto) …` forces script
+  execution, `- [ ] (judgment) …` forces a sub-run;
+- every other box is a **judgment sub-run**: a fresh, bounded `loop.run()` with
+  a step-scoped instruction (the box text, the `(role)` hat, the change-folder
+  briefing) and its own small turn cap (`--step-max-iterations`, default 10).
+  The sub-run's model resolves from the tier map's `driver` column via
+  `--step-tier` (default `authoring` → `OPENUP_MODEL_MID`).
+
+Keep script-step boxes **command-only** — trailing prose after an unquoted
+command becomes part of the command line.
+
+After each successful step the engine runs the deterministic gates, and **only
+then** ticks the box — so a gate failure (exit 6) leaves the box unchecked and
+a re-run retries the step. All inter-step state lives in the repo (boxes,
+`.openup/state.json`, the lease): a killed cycle resumes at the first unchecked
+box. `ask_user` inside a sub-run suspends the whole cycle (exit 5) exactly like
+`run`. Decision paths beyond pick/resume (`plan-iteration`,
+`assess-iteration`, `milestone-review`) exit 7 — they land with T-090/T-091;
+use `run --procedure next` (or the Claude Code skills) for them meanwhile.
+`scripts/openup-loop.sh` keeps driving the `next` procedure until that parity.
+
 ## Exit codes
 
 | Code | Meaning | Typical cause |
@@ -205,6 +250,9 @@ skipped, so the driver stays usable on partial trees.
 | 3 | endpoint / transport error | endpoint down, 401/404, non-JSON response |
 | 4 | max iterations reached, no clean sentinel | model never finished, or a gate never passed |
 | 5 | suspended, awaiting a human answer | `ask_user` in non-interactive mode ([above](#asking-the-human--ask_user)) |
+| 6 | `cycle`: gate failed after a step | fence / check-docs red; the box stays unticked |
+| 7 | `cycle`: decision path unsupported | plan-iteration / assess / milestone before T-090/T-091 |
+| 8 | `cycle`: script-step or ceremony command failed | a box's command exited non-zero; session begin refused |
 
 ## Troubleshooting
 

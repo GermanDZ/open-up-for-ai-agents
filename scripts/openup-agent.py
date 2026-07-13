@@ -20,6 +20,12 @@ Exit codes:
     3  endpoint/transport error
     4  max iterations reached with no clean sentinel
     5  suspended awaiting a human answer (ask_user, non-interactive) — sentinel on stdout
+
+The `cycle` subcommand (T-089) runs one delivery cycle deterministically —
+ceremony as code, LLM only at judgment steps — adding exit codes 6 (gate
+failed after a step), 7 (decision path unsupported until T-090/T-091), and
+8 (script-step/ceremony command failed). See openup_agent/cycle.py and
+docs-eng-process/reference-driver.md.
 """
 
 import argparse
@@ -29,7 +35,7 @@ from pathlib import Path
 # Make the sibling package importable when run as a script.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from openup_agent import loop  # noqa: E402
+from openup_agent import cycle, loop  # noqa: E402
 
 
 def main(argv=None):
@@ -54,8 +60,26 @@ def main(argv=None):
                            "message (e.g. 'read the stakeholder brief at … and produce "
                            "the vision'). Absent ⇒ unchanged behavior.")
 
+    cyclep = sub.add_parser(
+        "cycle",
+        help="Run ONE delivery cycle deterministically (T-089): board resolve → "
+             "session begin → Operations-step executor (scripts as code, judgment "
+             "as bounded LLM sub-runs) → gates → completion.")
+    cyclep.add_argument("--dir", required=True,
+                        help="Path to the OpenUP project (must contain scripts/ "
+                             "and docs/).")
+    cyclep.add_argument("--step-max-iterations", type=int,
+                        default=cycle.DEFAULT_STEP_MAX_ITERATIONS,
+                        help="Turn cap per judgment sub-run (default %(default)s).")
+    cyclep.add_argument("--step-tier", default=cycle.DEFAULT_STEP_TIER,
+                        help="Tier-map tier for judgment sub-runs "
+                             "(default %(default)s).")
+    cyclep.add_argument("--interactive", action="store_true",
+                        help="Answer a sub-run's questions on the TTY; otherwise "
+                             "a human question suspends the cycle (exit 5).")
+
     args = ap.parse_args(argv)
-    if args.command != "run":
+    if args.command not in ("run", "cycle"):
         ap.print_help(sys.stderr)
         return 2
 
@@ -63,6 +87,14 @@ def main(argv=None):
     if not root.is_dir():
         sys.stderr.write("error: --dir %s is not a directory\n" % args.dir)
         return 2
+
+    if args.command == "cycle":
+        return cycle.run_cycle(
+            dir=str(root),
+            step_max_iterations=args.step_max_iterations,
+            step_tier=args.step_tier,
+            interactive=args.interactive,
+        )
 
     return loop.run(
         dir=str(root),

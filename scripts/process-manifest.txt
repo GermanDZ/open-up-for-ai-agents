@@ -51,7 +51,7 @@ openup-lifecycle.py
 # docs-eng-process/process-map.yaml so Plan Iteration generates phase-appropriate
 # lanes from data. (The map itself ships as framework content under docs-eng-process/.)
 openup-process-map.py
-# T-072 / T-088 — the reference driver (harness-optional): a stdlib-only
+# T-072 / T-088 / T-089 — the reference driver (harness-optional): a stdlib-only
 # OpenAI-compatible agentic loop that drives a procedure to completion against
 # any endpoint. Shipped so a bootstrapped/installed project can run
 # `python3 scripts/openup-agent.py run --dir . --procedure …` out of the box
@@ -59,6 +59,7 @@ openup-process-map.py
 # creates the openup_agent/ package dir via `mkdir -p "$(dirname dest)"`.
 openup-agent.py
 openup_agent/__init__.py
+openup_agent/cycle.py
 openup_agent/llm.py
 openup_agent/loop.py
 openup_agent/tiers.py
