@@ -14,6 +14,14 @@ arguments:
 
 # Assess Iteration (Assess Results)
 
+> **Ceremony authority (T-091):** under the reference-driver `cycle` engine, the
+> *ceremony* of this path is code — the engine derives done-ness, runs one bounded
+> grading sub-run for the non-derivable criteria, appends the `## Assessment`
+> section deterministically, and gates/commits it (see
+> [reference-driver.md](../reference-driver.md) → assess). This procedure is the
+> **judgment content**: what a good assessment grades and demos. In the Claude
+> Code harness the model performs both, in-context, from the steps below.
+
 **The back half of the iteration lifecycle (KB §3: Plan → Manage → Assess).**
 This is what makes the loop *converge* instead of draining a queue: when a
 phase-aware iteration's committed work items are all delivered, verify what was

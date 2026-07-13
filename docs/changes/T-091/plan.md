@@ -17,6 +17,8 @@ touches:
   - docs-eng-process/script-cli-reference.md
   - docs-eng-process/procedures/openup-assess-iteration.md
   - docs-eng-process/procedures/openup-phase-review.md
+  - docs-eng-process/.claude-templates/skills/openup-assess-iteration/SKILL.md
+  - docs-eng-process/.claude-templates/skills/openup-phase-review/SKILL.md
 last-synced: ""
 ---
 
@@ -195,7 +197,9 @@ pack procedures get a short engine-authority note. Sentinels/exits match
 - `docs-eng-process/reference-driver.md`, `script-cli-reference.md` — assess /
   milestone paths + parity.
 - `docs-eng-process/procedures/openup-assess-iteration.md`,
-  `openup-phase-review.md` — engine-ceremony-authority note.
+  `openup-phase-review.md` — engine-ceremony-authority note (the pack is the
+  editable source; the `.claude-templates/skills/` mirror is regenerated from it
+  via `render-skills-mirror.py --write`, not hand-edited).
 
 **Do not touch:**
 - `openup-board.py` resolve / lifecycle readers — the engine consumes them; no
@@ -205,23 +209,23 @@ pack procedures get a short engine-authority note. Sentinels/exits match
 
 ## Operations
 
-- [ ] Add `scripts/openup_agent/assess.py`: `run_assess` (read instance →
+- [x] Add `scripts/openup_agent/assess.py`: `run_assess` (read instance →
   grading sub-run → `read_assessment` → `render_assessment_section` → append →
   gate → commit → ADVANCED) and `run_milestone` (evidence → input-request +
   SUSPEND, remembered, no dup) + the grading contract/system prompt.
-- [ ] Wire both into `cycle.py` `run_cycle` (with `_assess` / `_milestone`
+- [x] Wire both into `cycle.py` `run_cycle` (with `_assess` / `_milestone`
   seams) and remove `assess-iteration`/`milestone-review` from
   `UNSUPPORTED_PATHS`.
-- [ ] Add `openup_agent/assess.py` to `scripts/process-manifest.txt`.
-- [ ] (tester) Add `scripts/tests/test_openup_agent_assess.py` (unit: assessment
+- [x] Add `openup_agent/assess.py` to `scripts/process-manifest.txt`.
+- [x] (tester) Add `scripts/tests/test_openup_agent_assess.py` (unit: assessment
   render/parse; orchestration: assess happy path appends `## Assessment` + commits
   + ADVANCED; milestone creates request + suspends + no-dup) and update the cycle
   wiring/UNSUPPORTED_PATHS test.
-- [ ] Update `reference-driver.md` + `script-cli-reference.md` for the assess /
+- [x] Update `reference-driver.md` + `script-cli-reference.md` for the assess /
   milestone paths and full parity.
-- [ ] Add the engine-ceremony-authority note to
+- [x] Add the engine-ceremony-authority note to
   `openup-assess-iteration.md` + `openup-phase-review.md`.
-- [ ] (tester) Full driver suite green; `check-docs`, `openup-spec-scenarios`,
+- [x] (tester) Full driver suite green; `check-docs`, `openup-spec-scenarios`,
   `openup-fence.py check --base harness-optional` green.
 
 ## Norms
