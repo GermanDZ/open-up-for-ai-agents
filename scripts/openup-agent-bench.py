@@ -265,6 +265,16 @@ def sentinel_of(stdout: str):
     return None
 
 
+def _fatal_line(stderr: str):
+    """The driver's FATAL line, if any — the one-line reason a run failed
+    (endpoint error, config/tier error). Surfaced so a non-pass run explains
+    itself without a side-run."""
+    for line in reversed(stderr.splitlines()):
+        if "FATAL:" in line:
+            return line.strip()
+    return None
+
+
 def measure_run(fixture: Path, seed_sha: str, scenario: dict, raw: dict, usage_log: Path):
     """Fold a driver invocation into one run record."""
     if raw["timed_out"]:
@@ -286,6 +296,9 @@ def measure_run(fixture: Path, seed_sha: str, scenario: dict, raw: dict, usage_l
         "tokens": tokens,
         "gates": check_gates(fixture, seed_sha),
         "work": work_delta(fixture, seed_sha, scenario),
+        "fatal": _fatal_line(raw.get("stderr", "")),
+        "stderr_tail": (raw.get("stderr", "") or "").strip()[-1200:],
+        "stdout_tail": (raw.get("stdout", "") or "").strip()[-600:],
     }
 
 
@@ -356,6 +369,14 @@ def write_summary(out_dir: Path, agg, records):
             r["tokens"]["total"], "✓" if r["gates"]["fence"] else "✗",
             "✓" if r["gates"]["check_docs"] else "✗",
             "✓" if r["work"]["deliverable_produced"] else "✗"))
+    failed = [(i, r) for i, r in enumerate(records, 1) if r["outcome"] != "pass"]
+    if failed:
+        lines.append("\n## Failures — why each non-pass run failed\n")
+        for i, r in failed:
+            reason = r.get("fatal") or ((r.get("stderr_tail") or "").splitlines()[-1:]
+                                        or ["(no stderr)"])[0]
+            lines.append("- **run %d (%s):** %s  — full log: `run-%02d.driver.log`"
+                         % (i, r["outcome"], reason, i))
     (out_dir / "summary.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
@@ -409,6 +430,12 @@ def run_batch(args, env):
             record["seed_resolves_pick"] = ok
             if args.keep:
                 record["fixture"] = str(fixture)
+            # Always persist the full driver stdout/stderr — the definitive
+            # per-run debug log — so a failure never needs a manual side-run.
+            (out_dir / ("run-%02d.driver.log" % n)).write_text(
+                "$ openup-agent.py run --dir %s --procedure %s\n\n=== STDOUT ===\n%s\n"
+                "=== STDERR ===\n%s\n" % (fixture, args.procedure,
+                raw.get("stdout", ""), raw.get("stderr", "")), encoding="utf-8")
             records.append(record)
             rf.write(json.dumps(record, ensure_ascii=False) + "\n")
             rf.flush()
@@ -416,6 +443,13 @@ def run_batch(args, env):
                  % (n, record["outcome"], record["iterations"],
                     record["tokens"]["total"], record["gates"]["fence"],
                     record["work"]["deliverable_produced"]))
+            # On any non-clean outcome, surface WHY inline (the reason was hidden
+            # in the first live batch) — the FATAL line, else the last stderr line.
+            if record["outcome"] != "pass":
+                tail_lines = (record.get("stderr_tail") or "").splitlines()
+                reason = record.get("fatal") or (tail_lines[-1] if tail_lines else "(no stderr)")
+                _log("run %d: reason → %s  (full log: %s)"
+                     % (n, reason, out_dir / ("run-%02d.driver.log" % n)))
             if not args.keep:
                 shutil.rmtree(fixture, ignore_errors=True)
 
