@@ -562,9 +562,10 @@ authored when promoted.
 **Status**: pending
 **Priority**: high
 **Value**: The loop stops re-inventing a process each run — `/openup-start-iteration` becomes real Plan Iteration, generating phase-appropriate lanes (vision/use-case/risk in Inception; architecture/skeleton/test in Elaboration; dev/test in Construction) from a data-encoded process map, so a human no longer hand-writes each roadmap row and the four phase skills stop being parallel manual guidance. Biggest slice.
-**Description**: New framework-owned `docs-eng-process/process-map.yaml` encoding phase → activity → role → skill (KB §3/§4 as data). `/openup-start-iteration` becomes Plan Iteration proper: 1–5 objectives from risk list + PM value order + phase objectives, commits work items, and generates non-hand-written lanes from the map. `openup-board.py` / `openup-roadmap.py` resolve becomes lifecycle-aware and iteration-scoped; the one-row-at-a-time promote path dissolves into plan-iteration (quick archetype degenerates to ~today's single-work-item behavior). Phase skills become thin fronts over the map.
+**Description**: New framework-owned `docs-eng-process/process-map.yaml` encoding phase → activity → role → skill (KB §3/§4 as data). `/openup-start-iteration` becomes Plan Iteration proper: 1–5 objectives from risk list + PM value order + phase objectives, commits work items, and generates non-hand-written lanes from the map. Each planned iteration is minted with a stable id/name (e.g. `C3` = Construction iteration 3), and its committed work-item / lane ids are allocated **under that prefix** (`C3-NNN`) via the existing `openup-claims.py reserve-id --prefix` machinery — so every task is traceable to its iteration by id. `openup-board.py` / `openup-roadmap.py` resolve becomes lifecycle-aware and iteration-scoped; the one-row-at-a-time promote path dissolves into plan-iteration (quick archetype degenerates to ~today's single-work-item behavior). Phase skills become thin fronts over the map.
 - `docs-eng-process/process-map.yaml` (phase→activity→role→skill)
 - `/openup-start-iteration` = Plan Iteration (objective-driven; generates phase-appropriate lanes)
+- Iteration minted with a stable id/name; work-item / lane ids allocated under that prefix (`<iter-id>-NNN`, reusing `openup-claims.py --prefix`)
 - lifecycle-aware, iteration-scoped resolve in `openup-board.py` / `openup-roadmap.py`; promote → plan-iteration
 - Phase skills refactored to thin fronts over the map
 
@@ -593,8 +594,9 @@ authored when promoted.
 ## T-079: Parallel Construction iterations (non-colliding clusters)
 **Status**: pending
 **Priority**: medium
-**Value**: Low-dependency features deliver concurrently — the planner partitions committed work items into non-colliding iteration clusters (disjoint `touches` + use-case dependencies), lifting the existing lane-collision machinery one level to compress Construction wall-clock without a human wiring parallelism.
-**Description**: Allow N concurrent iterations whose committed work items have disjoint `touches` and use-case dependencies. `openup-board.py` already computes collisions; the planner partitions committed work items into non-colliding clusters. Depends on worktree-per-lane (live-run finding F5) for isolation.
+**Value**: Low-dependency features deliver concurrently — the planner partitions committed work items into non-colliding iteration clusters (disjoint `touches` + use-case dependencies), lifting the existing lane-collision machinery one level to compress Construction wall-clock without a human wiring parallelism; and because each big Construction iteration is named/numbered with its tasks prefixed by that iteration id, work from concurrent iterations stays easy to track and never id-collides.
+**Description**: Number/name each "big" Construction iteration and prefix its task ids with that iteration id (`<iter-id>-NNN`, built on T-077's minting), so tasks from different concurrent iterations are trivially attributable to their iteration and cannot collide on ids. Allow N concurrent iterations whose committed work items have disjoint `touches` and use-case dependencies; `openup-board.py` already computes collisions, and the planner partitions committed work items into non-colliding clusters. Depends on worktree-per-lane (live-run finding F5) for isolation.
+- Named/numbered Construction iterations; task ids carry the iteration prefix (`<iter-id>-NNN`) for cross-iteration tracking + collision-free ids
 - Planner partitions committed work items into non-colliding iteration clusters
 - N concurrent iterations over disjoint `touches` / use-case deps (reuses board collision machinery)
 - Worktree-per-lane isolation (live-run F5)
