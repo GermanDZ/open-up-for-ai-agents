@@ -304,8 +304,15 @@ cycle  --dir PATH [--step-max-iterations 10] [--step-tier authoring]
   at judgment boxes — sentinel parity with `/openup-next` (`OPENUP-NEXT:
   ADVANCED/DONE`). Recovery (T-092, default on; `--no-recover` opts out): a
   done-but-unclosed lane is archived/merged before planning (zero LLM), and a
-  `plan-iteration` decision's missing spec is authored by one bounded analyst
-  sub-run, gated + committed, then picked in the same invocation; when nothing
+  construction/transition `plan-iteration` decision's missing spec is authored by
+  one bounded analyst sub-run, gated + committed, then picked in the same
+  invocation. Plan Iteration (T-090): an **authoring-phase**
+  (`inception`/`elaboration`) `plan-iteration` decision instead plans a full
+  named iteration — mint id, one objectives sub-run, one lane per
+  `activities-for(phase)` (iteration-prefixed ids, partitioned via T-079), one
+  spec sub-run per lane (gated + committed), and a `type: iteration-plan` instance
+  under `docs/phases/<phase>/` tracing the lanes — then re-resolves to the first
+  lane (Inception through `cycle`). When nothing
   is promotable at all, the engine asks for consent (TTY under
   `--interactive`, else input-request + suspend exit 5) before ONE
   product-manager replenishment pass proposes new pending roadmap entries

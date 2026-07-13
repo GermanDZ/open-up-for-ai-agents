@@ -10,9 +10,11 @@ blocks: [T-091]
 touches:
   - scripts/openup_agent/plan_iteration.py
   - scripts/openup_agent/cycle.py
+  - scripts/check-docs.py
   - scripts/process-manifest.txt
   - scripts/tests/test_openup_agent_plan_iteration.py
   - scripts/tests/test_openup_agent_cycle.py
+  - scripts/tests/test_check_docs.py
   - docs-eng-process/reference-driver.md
   - docs-eng-process/script-cli-reference.md
 last-synced: ""
@@ -119,13 +121,17 @@ INVEST — ✅ Independent (composes existing scripts; single-row promote untouc
      picked.
 
 5. **An iteration-plan instance is written deterministically** so
-   `_active_iteration_plan` recognizes the iteration.
+   `_active_iteration_plan` recognizes the iteration and it passes `check-docs`.
    - **Given** lanes `I1-001…I1-00n` authored, **When** the iteration is recorded,
      **Then** `docs/phases/inception/iteration-<iter>-plan.md` exists with
      `type: iteration-plan`, `traces-from` listing every iteration-prefixed lane
      id, an evaluation-criteria section, and no `## Assessment` yet — and
      `openup-board.py resolve` then returns `resume`/`pick` for the first lane
      (not `plan-iteration`).
+   - **Given** the iteration-plan instance `traces-from` its change-folder lane
+     ids (whose `plan.md` is a task-spec, not a typed instance), **When**
+     `check-docs.py` runs, **Then** those refs resolve (change folders are
+     registered as implicit `work-item`s) and there is no `dangling-ref` failure.
 
 6. **The construction/transition single-row promote is unchanged.**
    - **Given** a `plan-iteration` decision with `phase: construction` naming a
@@ -196,9 +202,15 @@ crashed plan resumes.
 - `scripts/openup_agent/cycle.py` — in the `plan-iteration` branch of
   `run_cycle`, dispatch to `plan_iteration.run_plan_iteration` for authoring
   phases (no active iteration); keep `recover_missing_spec` for the rest.
+- `scripts/check-docs.py` — register each `docs/changes/<id>/` (and archived)
+  change folder as an implicit `work-item` in the id index, so an iteration-plan
+  tracing its change-folder lane ids resolves (change folders are the system's
+  work-item instances; the trace model already allows iteration-plan → work-item).
 - `scripts/process-manifest.txt` — ship `openup_agent/plan_iteration.py`.
 - `scripts/tests/test_openup_agent_cycle.py` — wiring test (authoring-phase
   plan-iteration invokes the handler; construction does not).
+- `scripts/tests/test_check_docs.py` — a change-folder ref resolves (no
+  dangling); a real typed instance with the same id still wins.
 - `docs-eng-process/reference-driver.md`, `script-cli-reference.md` — document
   the plan-iteration path.
 
@@ -210,25 +222,25 @@ crashed plan resumes.
 
 ## Operations
 
-- [ ] Add `scripts/openup_agent/plan_iteration.py`: deterministic steps
+- [x] Add `scripts/openup_agent/plan_iteration.py`: deterministic steps
   (mint-iteration-id, reserve-id `--prefix`, `activities-for`→candidate lanes,
   `partition`, `write_iteration_plan_instance`) + the two judgment contracts
   (`objectives_contract`, `lane_spec_contract`) + `read_objectives`.
-- [ ] Implement `run_plan_iteration(root, decision, …, dispatch, run_gates,
+- [x] Implement `run_plan_iteration(root, decision, …, dispatch, run_gates,
   git_commit)`: mint → objectives sub-run → generate+partition lanes → per-lane
   reserve-id + spec sub-run + gate + commit → write iteration-plan instance +
   commit → return so the re-resolve picks the first lane.
-- [ ] Wire into `cycle.py` `run_cycle`: on `plan-iteration` with an authoring
+- [x] Wire into `cycle.py` `run_cycle`: on `plan-iteration` with an authoring
   phase and no active iteration, call the handler; else keep `recover_missing_spec`.
-- [ ] Add `openup_agent/plan_iteration.py` to `scripts/process-manifest.txt`.
-- [ ] (tester) Add `scripts/tests/test_openup_agent_plan_iteration.py` (unit:
+- [x] Add `openup_agent/plan_iteration.py` to `scripts/process-manifest.txt`.
+- [x] (tester) Add `scripts/tests/test_openup_agent_plan_iteration.py` (unit:
   lane generation, partition, instance writing, objectives parse) + a cycle
   wiring test (authoring-phase plans; construction promotes) and a scripted
   end-to-end Inception plan (≥2 lanes, instance recognized, re-resolve ≠
   plan-iteration).
-- [ ] Update `reference-driver.md` + `script-cli-reference.md` for the
+- [x] Update `reference-driver.md` + `script-cli-reference.md` for the
   plan-iteration path.
-- [ ] (tester) Full driver+cycle+plan-iteration suite green; `check-docs`,
+- [x] (tester) Full driver+cycle+plan-iteration suite green; `check-docs`,
   `openup-spec-scenarios`, `openup-fence.py check --base harness-optional` green.
 
 ## Norms
