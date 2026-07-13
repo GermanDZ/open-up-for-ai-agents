@@ -1,12 +1,12 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 44
-**Iteration Goal**: T-074 — Human-in-the-loop input handling in the reference driver
+**Iteration**: 45
+**Iteration Goal**: T-075 — openup-lifecycle.py status + milestone decision records
 **Status**: completed
-**Current Task**: T-074
+**Current Task**: T-075
 **Iteration Started**: 2026-06-18
-**Last Updated**: 2026-07-12
+**Last Updated**: 2026-07-13
 **Updated By**: sync-status.py
 
 ## Notes

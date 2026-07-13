@@ -44,3 +44,6 @@ install-openup.sh
 # T-059 — shell-loop driver for /openup-next (sentinel-based stop, cycle cap,
 # stall detection; fresh claude -p process per cycle for cold context).
 openup-loop.sh
+# T-075 — derived, read-only project-lifecycle status (phase + per-milestone
+# criteria from milestone decision records + typed work-product instances).
+openup-lifecycle.py
