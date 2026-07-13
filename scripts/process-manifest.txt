@@ -47,3 +47,7 @@ openup-loop.sh
 # T-075 — derived, read-only project-lifecycle status (phase + per-milestone
 # criteria from milestone decision records + typed work-product instances).
 openup-lifecycle.py
+# T-077 — process map loader (phase→activity→role→skill). Reads the vendored
+# docs-eng-process/process-map.yaml so Plan Iteration generates phase-appropriate
+# lanes from data. (The map itself ships as framework content under docs-eng-process/.)
+openup-process-map.py

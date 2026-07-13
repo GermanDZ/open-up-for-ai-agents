@@ -48,6 +48,89 @@ After this skill completes, ALL of these must be true:
 
 ## Process
 
+### 0a. Two modes — single-lane start vs Plan Iteration (T-077)
+
+This skill has **two entry modes**, chosen by whether a concrete `task_id` was
+handed in:
+
+- **Single-lane start** (a `task_id` is given — a human names a task, or
+  `/openup-next` resolved one lane). This is the classic flow: steps 0–9 below
+  create a branch/worktree for that one task and begin it. **Unchanged.**
+- **Plan Iteration** (no `task_id` — the board's `plan-iteration` decision, or a
+  human running `/openup-start-iteration` with no argument). Instead of starting
+  one hand-named task, **plan a phase-appropriate iteration**: derive the phase,
+  mint an iteration id, choose 1–5 objectives, and generate the iteration's
+  work-item lanes *from the process map* — then start its first lane through the
+  single-lane flow. Run **§0b**, then rejoin at step 3.
+
+The guard is exactly step 0's guard (*was I handed a `task_id`?*), extended: no
+`task_id` **and** no pre-resolved lane ⇒ Plan Iteration (§0b).
+
+### 0b. Plan Iteration — generate phase-appropriate lanes from the map (T-077)
+
+Real **Plan Iteration** (KB §3): commit a set of work items to a named iteration
+instead of promoting one roadmap row. Everything deterministic is a script call;
+the only generative step is choosing objectives (the PM/analyst judgment the KB
+assigns to a human role).
+
+1. **Derive the phase** (never guess it):
+   ```bash
+   PHASE=$(python3 scripts/openup-lifecycle.py status --json | python3 -c 'import sys,json;print(json.load(sys.stdin)["phase"])')
+   ```
+
+2. **Read the Development Case** (T-076 tailoring) from `docs/project-config.yaml`
+   `process:` — the archetype sets iteration budget + ceremony. **If the archetype
+   resolves to `quick`, or this phase is `skipped`/single-iteration: degenerate to
+   one work item** — take the board's `lane.task` (the `plan-iteration` decision's
+   single next roadmap task) and go straight to the single-lane flow (step 3).
+   This is the efficiency guardrail: `quick` costs exactly today's promote path.
+
+3. **Mint the iteration id** and record it:
+   ```bash
+   ITER=$(python3 scripts/openup-process-map.py mint-iteration-id "$PHASE")   # e.g. C3
+   ```
+
+4. **Choose 1–5 objectives** (the generative step) from, in order: the **risk
+   list** (highest-exposure items first), the **PM value order** (roadmap pending
+   order — consume as given, never re-rank), and the **phase's objectives**. Keep
+   it to what one iteration can deliver.
+
+5. **Read the phase's activity composition** from the process map:
+   ```bash
+   python3 scripts/openup-process-map.py activities-for "$PHASE" --json
+   ```
+   Each entry is `{name, role, skills}` — the ordered activities OpenUP runs in
+   this phase (Inception → vision/use-case/risk with `analyst`; Elaboration →
+   architecture/increment/test; Construction → dev/test; per KB §4).
+
+6. **Generate one work-item lane per activity** needed to meet the objectives.
+   For each, in the base checkout (so the board sees it, like the promote path):
+   - reserve an id **under the iteration prefix**:
+     `python3 scripts/openup-claims.py reserve-id --prefix "${ITER}-" --pad 3 --session-id "$ITER"` → `C3-001`, `C3-002`, …
+   - author its change-folder spec through the activity's own skill
+     (`/openup-create-task-spec` for change tasks; the activity `skills:` — e.g.
+     `/openup-create-use-case`, `/openup-create-architecture-notebook` — for
+     requirements/architecture work), with the activity `role` recorded as the
+     lane's **hat** in `## Operations`.
+   - add its roadmap row (on the base, committed with the spec folder — same
+     rule as step 6c: spec folder only, never the derived views).
+
+7. **Author the iteration-plan instance** — `/openup-create-iteration-plan` —
+   recording the **minted iteration id**, the objectives, the committed
+   work-item ids (`C3-001…`), and the iteration's **evaluation criteria**. This
+   instance is the loop contract (§3.5); the iteration id lives here, not in
+   `.openup/state.json` (state stays schema 1 — schema 2 is T-078).
+
+8. **Start the first generated lane** through the single-lane flow: set
+   `task_id` to the first committed work item and continue at **step 3** (track
+   select) → §5 (branch/worktree) → §6 (begin). The remaining lanes are READY
+   change folders the board's **iteration-scoped `pick`** works next (only lanes
+   sharing this iteration's prefix are pickable while it is active).
+
+> **Autonomous loop wiring is T-078.** Here Plan Iteration runs when a human
+> invokes it directly. `/openup-next` consuming the board's `plan-iteration`
+> path automatically — plus assess-iteration and the milestone pause — is T-078.
+
 ### 0. Pre-resolved lane? Skip the re-read (T-065)
 
 When `/openup-next` calls this skill it has **already** resolved the lane in one

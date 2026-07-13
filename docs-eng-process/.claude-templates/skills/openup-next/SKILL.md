@@ -71,8 +71,18 @@ roadmap into context — `resolve` folds all four in:
 python3 scripts/openup-board.py resolve   # one JSON decision; always exit 0
 ```
 
-It returns `{path, lane, resumable_input, active_iteration, reason}` where
-`path ∈ {resume, pick, promote, noop}`. Branch on `.path`:
+It returns `{path, lane, resumable_input, active_iteration, phase, legacy_path,
+reason}` where `path ∈ {resume, pick, plan-iteration, noop}`. Branch on `.path`:
+
+> **T-077 transition note.** The former `promote` path is now emitted as
+> **`plan-iteration`** (with `legacy_path: "promote"` for back-compat and the
+> derived `phase` carried alongside). Until the full Plan-Iteration wiring lands
+> (**T-078** — multi-lane generation, assess-iteration, milestone pause), treat
+> `plan-iteration` **exactly like the old `promote`**: its `lane` still names the
+> single next work item, so follow the `promote` handling below unchanged. The
+> new name signals the eventual behavior (plan a whole phase-appropriate
+> iteration, not one row); its degenerate single-work-item case *is* today's
+> promote.
 
 - **`resume`** — the lane is already claimed and must continue *before* any new
   claim. Two sub-cases, distinguished by which field is set:
@@ -92,7 +102,7 @@ It returns `{path, lane, resumable_input, active_iteration, reason}` where
   track, hat, next_action, plan, …}`). A lane `resolve` calls pickable is one
   `openup-claims.py preflight` will also clear, so step 2's claim won't surprise
   you. Continue to step 2.
-- **`promote`** — `lane.task` is the deterministically-selected next roadmap task
+- **`plan-iteration`** (formerly `promote`) — `lane.task` is the deterministically-selected next roadmap task
   (identical to `openup-roadmap.py next`: first `pending`/`planned` entry in
   document order with satisfied deps, no active/archived change folder, no live
   lease, and **no branch encoding its id on `origin`** — the T-066

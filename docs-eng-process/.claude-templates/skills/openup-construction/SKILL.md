@@ -12,6 +12,14 @@ arguments:
 
 This skill guides you through the Construction phase of OpenUP - building the system incrementally.
 
+> **Thin front over the process map (T-077).** This phase's **activity
+> composition is data**, not prose: run
+> `python3 scripts/openup-process-map.py activities-for construction` for the
+> authoritative ordered activities (each resolved to its role + skills), and let
+> **`/openup-start-iteration` Plan Iteration** generate this phase's work-item
+> lanes from that map. The guidance below is human-facing reference — the map +
+> Plan Iteration are the source of truth for *what* a Construction iteration runs.
+
 ## When to Use
 
 Use this skill when:

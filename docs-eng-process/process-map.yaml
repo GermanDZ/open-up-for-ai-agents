@@ -1,0 +1,43 @@
+# OpenUP process map — the process as data (T-077)
+#
+# Framework-owned, vendored like the KB distillation. Encodes KB §4
+# (phase → activity → role → skill) from
+# docs/explorations/2026-07-13-openup-kb-process-model.md so that Plan Iteration
+# (/openup-start-iteration) can generate phase-appropriate work-item lanes
+# without a human hand-writing each roadmap row.
+#
+# Read only by scripts/openup-process-map.py (stdlib, no pyyaml). Keep the shape
+# simple: `phases:` maps each phase to an ordered flow-list of activity names;
+# `activities:` maps each activity name to a flow-map `{ role, skills }`;
+# `phase_letters:` gives the iteration-id prefix letter (Assumption B).
+#
+# `validate` (openup-process-map.py) enforces: every activity named in `phases:`
+# has an `activities:` entry, every phase has a `phase_letters:` letter, and each
+# skill named is a known /openup-* skill by convention. This file is the single
+# source; the four phase skills are thin fronts over it (R5).
+
+# ── Phase → ordered activity composition (KB §4) ────────────────────────────
+phases:
+  inception:    [initiate-project, agree-technical-approach, identify-refine-requirements, plan-manage-iteration]
+  elaboration:  [identify-refine-requirements, develop-architecture, develop-solution-increment, test-solution, plan-manage-iteration]
+  construction: [identify-refine-requirements, develop-solution-increment, test-solution, plan-manage-iteration]
+  transition:   [ongoing-tasks, develop-solution-increment, test-solution, plan-manage-iteration]
+
+# ── Activity → role + skills (KB §4 activity meanings + atomic role tasks) ───
+activities:
+  initiate-project:             { role: analyst,         skills: [openup-create-vision] }
+  agree-technical-approach:     { role: architect,       skills: [openup-shared-vision, openup-create-architecture-notebook] }
+  identify-refine-requirements: { role: analyst,         skills: [openup-create-use-case, openup-detail-use-case] }
+  develop-architecture:         { role: architect,       skills: [openup-create-architecture-notebook] }
+  develop-solution-increment:   { role: developer,       skills: [openup-tdd-workflow] }
+  test-solution:                { role: tester,          skills: [openup-create-test-plan] }
+  plan-manage-iteration:        { role: project-manager, skills: [openup-create-iteration-plan, openup-create-risk-list] }
+  ongoing-tasks:                { role: developer,       skills: [] }
+
+# ── Iteration-id prefix letters (Assumption B: <letter><cycle-ordinal>) ──────
+# e.g. C3 = 3rd Construction iteration in the current cycle; lanes minted C3-001…
+phase_letters:
+  inception:    I
+  elaboration:  E
+  construction: C
+  transition:   T

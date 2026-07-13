@@ -13,6 +13,14 @@ arguments:
 
 This skill guides you through the Inception phase of OpenUP - defining scope, vision, and feasibility.
 
+> **Thin front over the process map (T-077).** This phase's **activity
+> composition is data**, not prose: run
+> `python3 scripts/openup-process-map.py activities-for inception` for the
+> authoritative ordered activities (each resolved to its role + skills), and let
+> **`/openup-start-iteration` Plan Iteration** generate this phase's work-item
+> lanes from that map. The guidance below is human-facing reference — the map +
+> Plan Iteration are the source of truth for *what* an Inception iteration runs.
+
 ## When to Use
 
 Use this skill when:
