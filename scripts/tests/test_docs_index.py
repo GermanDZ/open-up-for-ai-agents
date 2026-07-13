@@ -124,7 +124,10 @@ class BasicGenerationTests(_FixtureBase):
         self.assertTrue(index.is_file())
         text = index.read_text(encoding="utf-8")
         self.assertIn("VIS-001 — Vision", text)
-        self.assertIn(f"wrote {index}", proc.stdout)
+        # Assert the script reports writing the index, without pinning the
+        # absolute path prefix — the OS may report the tmp dir through a
+        # resolved symlink (/var -> /private/var on macOS).
+        self.assertRegex(proc.stdout, r"wrote\b.*INDEX\.md")
 
     def test_idempotent_regeneration(self):
         """Re-running on unchanged inputs produces a byte-identical file."""
