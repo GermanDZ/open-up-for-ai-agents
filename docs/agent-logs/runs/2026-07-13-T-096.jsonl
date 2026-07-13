@@ -1,3 +1,4 @@
 {"run_id": "T-096-cc07b5e", "event": "session_begin", "task_id": "T-096", "goal": "T-096 \u2014 process-agnostic next-cycle: LLM process navigator behind the driver", "branch": "feat/T-096-process-navigator", "phase": "construction", "ts": "2026-07-13T16:32:15Z"}
 {"run_id": "41b367b39c1f401ebb88fe3397692d08", "event": "commit", "task_id": "T-096", "branch": "feat/T-096-process-navigator", "sha": "8a3de14ad8e2bf3834457572ab1f7da83ec1c9e8", "model": null, "session_id": "feat/T-096-process-navigator", "ts": "2026-07-13T16:32:34Z"}
 {"run_id": "2cf5b243d04944ae969dbd83ac5563d0", "event": "commit", "task_id": "T-096", "branch": "feat/T-096-process-navigator", "sha": "91f29fc3c3cfb8b891b74fe19d36abe4b44288ea", "model": null, "session_id": "feat/T-096-process-navigator", "ts": "2026-07-13T16:51:03Z"}
+{"event": "session_end", "task_id": "T-096", "ts": "2026-07-13T16:58:07Z"}
