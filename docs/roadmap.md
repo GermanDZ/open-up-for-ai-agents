@@ -688,3 +688,15 @@ authored when promoted.
 **Dependencies**: T-080, T-083
 
 **See**: `docs/changes/archive/T-085/plan.md`
+
+---
+
+## T-087: Getting-started doc — run your own project with the reference driver + your LLM
+**Status**: completed (2026-07-13)
+**Priority**: high
+**Value**: A practitioner with only a local/OpenAI-compatible LLM (no Claude Code) had no task-oriented guide for running a real project with the reference driver. This provides one for the two common entry points.
+**Description**: New `docs-eng-process/getting-started-reference-driver.md` — prerequisites (endpoint + env) + two end-to-end scenarios with copy-paste commands: (A) new project (bootstrap → stakeholder brief → drive create-vision → continue) and (B) existing project adopting OpenUP (install framework, then backfill missing docs from existing code via create-* procedures + `--instruction`). Flags the absence of an automated missing-docs detector and the `next`-loop weight on small local models. Cross-linked from getting-started.md + reference-driver.md.
+
+**Dependencies**: T-072, T-083
+
+**See**: `docs/changes/archive/T-087/plan.md`

@@ -1,15 +1,17 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 56
+**Iteration**: 57
 **Iteration Goal**: T-080 — Reference-driver acceptance/benchmark harness
 **Status**: completed
-**Current Task**: T-086
+**Current Task**: T-087
 **Iteration Started**: 2026-06-18
 **Last Updated**: 2026-07-13
 **Updated By**: sync-status.py
 
 ## Notes
+
+**Iteration 57** (2026-07-13): T-087 — new task-oriented guide `docs-eng-process/getting-started-reference-driver.md`: how to run OpenUP with your own harness (the `openup-agent` reference driver) + your own OpenAI-compatible LLM, no Claude Code. Covers prerequisites (env: LLM_API_URL/KEY, OPENUP_MODEL_MAIN/MID/SMALL — flagging that authoring procedures use the MID/authoring tier — and OPENUP_AGENT_TIMEOUT) and two scenarios end-to-end with copy-paste commands: **(A) new project** — bootstrap-project.sh → write a stakeholder brief → drive `openup-create-vision --instruction` → continue Inception/Elaboration authoring → deliver with `next`; **(B) existing project adopting OpenUP** — install the framework, then **backfill missing docs from the existing code** by pointing the same create-* procedures at the codebase via `--instruction` (reverse-engineer vision/architecture/use-cases), with a manual required-docs checklist. Honestly flags: no automated missing-product-docs detector today (openup-doctor checks CLIs, not product docs) — candidate future "adopt/backfill" helper; and the `next` continue-loop's weight on small local models (lean on single-procedure authoring). Cross-linked from `getting-started.md` + `reference-driver.md`. Doc-only. check-docs + fence (`--base harness-optional`) green. Solo, standard, worktree, on harness-optional.
 
 **Iteration 56** (2026-07-13, quick): T-086 — recorded the T-072 reference-driver **live-model acceptance** (its long-open owner criterion) and moved T-072 `done → verified`. Evidence: T-080 benchmark batch `.openup/bench/20260713-160244` — `qwen/qwen3.6-35b-a3b` (non-Anthropic, local, LM Studio) drove `openup-create-vision` on the T-085 clean bootstrapped fixture, **3/3 fence+validator-clean**, producing genuine ShareShed vision docs with valid typed frontmatter. Recorded in T-072's `design.md` (§Live-model acceptance) + `handoff.md` (AC-program resolved) + `plan.md` (status verified) + the roadmap program block (pending → verified). **Honest scope:** proven on the create-vision authoring cycle; the `next` continue-loop is heavier/inconsistent on a weak local model — a model+ceremony finding tracked via the benchmark harness (T-080…T-085), not a driver defect (the driver is procedure-agnostic and drove a real procedure to a clean, high-quality result). No code. Fence (`--base harness-optional`) green. Solo, quick, worktree, on harness-optional.
 
