@@ -1,7 +1,7 @@
 ---
 id: T-092
 title: Cycle recovery mode — degenerate plan-iteration bridge + unclosed-lane reconcile
-status: ready   # proposed → ready → in-progress → done → verified
+status: done
 priority: high   # critical | high | medium | low
 estimate: 1 session
 plan: docs/explorations/2026-07-13-deterministic-cycle-engine.md
