@@ -241,6 +241,31 @@ box. `ask_user` inside a sub-run suspends the whole cycle (exit 5) exactly like
 use `run --procedure next` (or the Claude Code skills) for them meanwhile.
 `scripts/openup-loop.sh` keeps driving the `next` procedure until that parity.
 
+### Recovery mode (T-092, default on)
+
+When the engine cannot proceed deterministically it **rebuilds the repo state
+that blocks it**, then continues the same cycle. `--no-recover` opts out and
+restores the bare typed exits below.
+
+- **Unclosed-lane reconcile (zero LLM).** On a `plan-iteration`/`noop`
+  decision, any *active* `docs/changes/<id>/` whose plan `status:` is already
+  satisfied (`done`/`verified`) is closed first: archived, committed, views
+  resynced (fail-open), and — when the delivered work sits on a side branch —
+  merged `--no-ff` into the trunk (`origin/HEAD` → `main` → `master`). A dirty
+  working tree skips closure (commit or stash first); a merge conflict exits 8
+  with the branch left intact. This stops the loop from planning new work atop
+  an unfinished delivery (the live my-product T-001 case).
+- **Missing-spec recovery (one bounded sub-run).** A persisting
+  `plan-iteration` decision already names the next roadmap work item, so an
+  `analyst`-hat sub-run authors `docs/changes/<id>/plan.md` (the instruction
+  carries the spec contract: frontmatter with `touches`, Given/When/Then
+  scenarios, engine-convention Operations boxes). The spec is gated
+  (`check-docs.py`, plus `openup-spec-scenarios.py` when present), committed,
+  and the re-resolved `pick` runs **in the same invocation**. One recovery
+  round only — a decision that does not advance to `pick`/`resume` exits 7 as
+  before. Multi-item Plan Iteration (minting, objectives, clusters) remains
+  T-090; `assess-iteration`/`milestone-review` remain T-091.
+
 ## Exit codes
 
 | Code | Meaning | Typical cause |
@@ -251,7 +276,7 @@ use `run --procedure next` (or the Claude Code skills) for them meanwhile.
 | 4 | max iterations reached, no clean sentinel | model never finished, or a gate never passed |
 | 5 | suspended, awaiting a human answer | `ask_user` in non-interactive mode ([above](#asking-the-human--ask_user)) |
 | 6 | `cycle`: gate failed after a step | fence / check-docs red; the box stays unticked |
-| 7 | `cycle`: decision path unsupported | plan-iteration / assess / milestone before T-090/T-091 |
+| 7 | `cycle`: decision path unsupported | assess / milestone before T-091; plan-iteration only under `--no-recover` or when recovery cannot advance |
 | 8 | `cycle`: script-step or ceremony command failed | a box's command exited non-zero; session begin refused |
 
 ## Troubleshooting

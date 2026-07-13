@@ -282,16 +282,21 @@ learnings     …   # append a dated iteration-learnings entry
 run    --dir PATH --procedure NAME [--max-iterations 50] [--instruction TEXT]
        [--interactive]                  # LLM drives the whole procedure; exits 0/2/3/4/5
 cycle  --dir PATH [--step-max-iterations 10] [--step-tier authoring]
-       [--interactive]                  # deterministic engine: resolve → begin →
+       [--interactive] [--no-recover]                  # deterministic engine: resolve → begin →
                                         #   per-Operations-box executor (scripts as code,
                                         #   judgment as bounded sub-runs) → gates →
                                         #   completion; exits 0/2/3/4/5/6/7/8
 ```
 - `cycle` (T-089) runs ONE delivery cycle with ceremony as code and the LLM only
   at judgment boxes — sentinel parity with `/openup-next` (`OPENUP-NEXT:
-  ADVANCED/DONE`). Exit 6 = gate failed after a step (box left unticked, re-run
-  retries), 7 = decision path not yet supported (plan-iteration/assess/milestone
-  → T-090/T-091), 8 = a script-step / session command failed. Full model + step
+  ADVANCED/DONE`). Recovery (T-092, default on; `--no-recover` opts out): a
+  done-but-unclosed lane is archived/merged before planning (zero LLM), and a
+  `plan-iteration` decision's missing spec is authored by one bounded analyst
+  sub-run, gated + committed, then picked in the same invocation. Exit 6 =
+  gate failed after a step (box left unticked, re-run retries), 7 = decision
+  path not supported (assess/milestone → T-091; plan-iteration only under
+  `--no-recover` or when recovery cannot advance), 8 = a script-step /
+  session / recovery command failed. Full model + step
   classification: [reference-driver.md](reference-driver.md).
 
 ## openup-agent-bench.py — reference-driver benchmark harness (T-080)
