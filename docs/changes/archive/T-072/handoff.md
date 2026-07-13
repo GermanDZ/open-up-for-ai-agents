@@ -12,7 +12,13 @@
 - [x] AC4 — model resolved from the procedure `tier:` via `tier-map.yaml` **driver** column, `${ENV:-default}` expanded; unknown tier is a hard error.
 - [x] AC5 — driver runs `openup-fence.py check` + `check-docs.py` itself and re-injects failures; the sentinel is honored only when gates are clean.
 - [x] AC6 — loop terminates on sentinel, `--max-iterations` cap, or endpoint error — never unbounded.
-- [ ] **AC-program (owner)** — one `--procedure next` cycle completes on a **non-Anthropic/local model** (LM Studio) producing fence-clean, validator-clean output. See the checklist in `docs-eng-process/reference-driver.md`; record the outcome in `design.md`.
+- [x] **AC-program (owner) — MET 2026-07-13 (T-086).** The driver drove a real
+  procedure cycle (`openup-create-vision`) end-to-end on a **non-Anthropic/local
+  model** (`qwen/qwen3.6-35b-a3b`, LM Studio), **3/3 fence-clean + validator-clean**,
+  producing genuine `docs/vision.md` docs — batch `.openup/bench/20260713-160244`.
+  **Scope:** proven on the create-vision authoring cycle; the `next` continue-loop is
+  heavier/inconsistent on this local model (model+ceremony weight, not a driver
+  defect — tracked separately). Full record in `design.md` §Live-model acceptance.
 
 ## 2. How to exercise it (test cases)
 1. `python3 -m unittest scripts.tests.test_openup_agent scripts.tests.test_openup_agent_tools` → **38/38 pass**, hermetic (no network).

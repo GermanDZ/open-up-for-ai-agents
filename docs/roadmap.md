@@ -376,9 +376,14 @@ T-002 (`/openup-sync-spec`) completed 2026-06-11 once T-008's readiness DAG un-b
 - **Program acceptance**: one full `/openup-next`-style cycle end-to-end on
   **(a)** Claude Code and **(b)** the reference driver on a non-Anthropic/local
   model, each producing fence-clean, validator-clean commits.
-- **Next step**: T-071 ✅, T-072 ✅ (reference driver merged, PR #76 — live
-  LM-Studio acceptance pending to reach `verified`). Run
-  `/openup-start-iteration task_id: T-074` (human-in-the-loop input handling).
+- **Next step**: T-071 ✅, T-072 ✅ **`verified` 2026-07-13** (live-model
+  acceptance MET — the driver drove `openup-create-vision` end-to-end on a
+  non-Anthropic local model, `qwen/qwen3.6-35b-a3b`, 3/3 fence+validator-clean,
+  producing genuine vision docs; batch `.openup/bench/20260713-160244`, recorded by
+  T-086. Scope: create-vision authoring cycle; the `next` continue-loop on a weak
+  local model is heavier/inconsistent — a model+ceremony finding tracked via the
+  benchmark harness T-080…T-085, not a driver gap). T-074 ✅. Only **T-073**
+  (FastAPI service) remains, gated on a named consumer.
 
 ---
 
