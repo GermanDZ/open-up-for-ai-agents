@@ -72,29 +72,48 @@ def _now_stamp():
 # --------------------------------------------------------------------------
 # Fixture construction — a fresh git-init project outside the repo under test
 # --------------------------------------------------------------------------
+# The framework trees copied into a fixture — everything a bootstrapped OpenUP
+# project needs to run (procedures, tier/process maps, templates, the CLIs, git
+# attrs), and NOTHING from the repo's own docs/ (its project-status, roadmap,
+# change history, product docs). A new-project scenario must start blank.
+FRAMEWORK_PATHS = ["docs-eng-process", "scripts", ".gitignore", ".gitattributes"]
+
+
 def build_fixture(repo: Path, dest: Path, scenario_dir: Path, include_working_tree: bool):
     """Materialize a fresh, seeded, git-init'd OpenUP project at `dest`.
 
-    Returns (seed_sha, scenario) where scenario is the parsed scenario.json.
-    The source `repo` is only read (archive + optional stash-create diff).
+    The fixture is a **freshly bootstrapped project** — the framework
+    (`docs-eng-process/` + `scripts/`) + an EMPTY `docs/` + the scenario overlay —
+    exactly what `bootstrap-project.sh` produces, NOT a copy of the repo under
+    test's own `docs/`. Otherwise a "new project" fixture would carry our developed
+    repo's project-status/roadmap/history and the model would read *that* instead
+    of starting fresh. Returns (seed_sha, scenario). The source `repo` is read-only.
     """
     dest.mkdir(parents=True, exist_ok=True)
 
-    # 1. Snapshot the repo under test — committed HEAD by default, or the working
-    #    tree (staged + unstaged tracked changes) with --include-working-tree —
-    #    into the fixture as plain files (no .git, no ignored cruft).
+    # 1. Copy only the FRAMEWORK trees from the repo under test — committed HEAD by
+    #    default, or the working tree (staged + unstaged) with --include-working-tree
+    #    (to benchmark in-progress skill/procedure/tool edits). The repo's own docs/
+    #    is deliberately excluded.
     tree_ish = "HEAD"
     if include_working_tree:
         created = _git(["stash", "create"], repo, check=False)
         sha = (created.stdout or "").strip()
         if sha:
             tree_ish = sha  # a commit capturing the current working tree
+    present = [p for p in FRAMEWORK_PATHS if (repo / p).exists()]
     tar_path = dest.parent / (dest.name + ".src.tar")
     with open(tar_path, "wb") as fh:
-        subprocess.run(["git", "archive", "--format=tar", tree_ish],
+        subprocess.run(["git", "archive", "--format=tar", tree_ish, *present],
                        cwd=str(repo), check=True, stdout=fh)
     subprocess.run(["tar", "-xf", str(tar_path), "-C", str(dest)], check=True)
     tar_path.unlink(missing_ok=True)
+
+    # 1b. A fresh, empty docs/ — a bootstrapped project starts with no product
+    #     docs, no roadmap, no change history. The scenario overlay adds whatever
+    #     this run needs (a stakeholder brief, a seeded lane).
+    (dest / "docs").mkdir(exist_ok=True)
+    (dest / "docs" / ".gitkeep").write_text("", encoding="utf-8")
 
     # 2. Overlay the scenario (its overlay/ tree is copied onto the fixture).
     scenario = json.loads((scenario_dir / "scenario.json").read_text(encoding="utf-8"))

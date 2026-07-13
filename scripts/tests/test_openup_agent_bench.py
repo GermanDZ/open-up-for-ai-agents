@@ -343,5 +343,39 @@ class VisionScenarioTest(unittest.TestCase):
         self.assertIn("Success", work["missing_markers"])
 
 
+class CleanFixtureTest(unittest.TestCase):
+    """T-085 — the fixture is a bootstrapped project (framework + empty docs +
+    scenario), NOT a copy of the repo under test's own docs/."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def test_framework_present_repo_docs_absent(self):
+        fixture = Path(self.tmp.name) / "fx"
+        bench.build_fixture(_REPO, fixture, bench.DEFAULT_SCENARIO_DIR,
+                            include_working_tree=False)
+        # Framework copied…
+        self.assertTrue((fixture / "docs-eng-process" / "procedures").is_dir())
+        self.assertTrue((fixture / "scripts" / "openup-board.py").exists())
+        # …but the repo's own developed docs are NOT (this repo has both).
+        self.assertTrue((_REPO / "docs" / "roadmap.md").exists(),
+                        "precondition: the repo under test has docs/roadmap.md")
+        self.assertFalse((fixture / "docs" / "roadmap.md").exists())
+        self.assertFalse((fixture / "docs" / "project-status.md").exists())
+        self.assertFalse((fixture / "docs" / "changes" / "archive").exists())
+
+    def test_vision_fixture_docs_holds_only_the_brief(self):
+        fixture = Path(self.tmp.name) / "fxv"
+        scenario_dir = _REPO / "scripts" / "bench-scenarios" / "inception-vision"
+        bench.build_fixture(_REPO, fixture, scenario_dir, include_working_tree=False)
+        self.assertTrue((fixture / "docs" / "inputs" / "stakeholder-brief.md").exists())
+        # No pre-existing project state leaked in.
+        self.assertFalse((fixture / "docs" / "project-status.md").exists())
+        self.assertFalse((fixture / "docs" / "product").exists())
+
+
 if __name__ == "__main__":
     unittest.main()
