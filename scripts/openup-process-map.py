@@ -18,6 +18,8 @@ Subcommands
                                     to its {role, skills}.
   activity <name> [--json]          One activity's {role, skills}.
   phase-letter <phase>              Iteration-id prefix letter (e.g. construction -> C).
+  mint-iteration-id <phase>         Stable iteration id <letter><ordinal> (e.g. C3),
+                                    repo-monotonic per phase letter.
   validate                          Structural check of the shipped map.
 
 Exit codes
@@ -28,6 +30,7 @@ Exit codes
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -175,6 +178,36 @@ def phase_letter(mp: dict, phase: str) -> str:
     return letter
 
 
+def existing_ordinals(root: Path, letter: str) -> set:
+    """All iteration ordinals already used for a phase letter, scanned from repo
+    facts (roadmap text + active/archived change-folder names) — e.g. ``C3-001``
+    contributes ordinal 3. Legacy ids (``T-077`` — no digit before the dash)
+    never match, so they don't inflate the count."""
+    ords = set()
+    pat = re.compile(rf"\b{re.escape(letter)}(\d+)-\d+\b")
+    texts = []
+    rm = root / "docs" / "roadmap.md"
+    if rm.exists():
+        texts.append(rm.read_text(encoding="utf-8", errors="ignore"))
+    for base in (root / "docs" / "changes", root / "docs" / "changes" / "archive"):
+        if base.is_dir():
+            texts.extend(d.name for d in base.iterdir() if d.is_dir())
+    for text in texts:
+        for m in pat.finditer(text):
+            ords.add(int(m.group(1)))
+    return ords
+
+
+def mint_iteration_id(root: Path, mp: dict, phase: str) -> str:
+    """A stable iteration id ``<PhaseLetter><ordinal>`` (e.g. ``C3``) for the
+    current phase. The ordinal is repo-monotonic per phase letter (max existing
+    + 1, or 1) so ids stay globally unique across cycles — no state field needed
+    (schema 1; the id is recorded in the iteration-plan instance by R2)."""
+    letter = phase_letter(mp, phase)
+    ords = existing_ordinals(root, letter)
+    return f"{letter}{(max(ords) + 1) if ords else 1}"
+
+
 def validate(mp: dict) -> list:
     """Return a list of structural problems (empty == valid)."""
     problems = []
@@ -216,6 +249,10 @@ def main(argv=None) -> int:
     pl = sub.add_parser("phase-letter", help="Iteration-id prefix letter for a phase.")
     pl.add_argument("phase")
 
+    pm = sub.add_parser("mint-iteration-id",
+                        help="Stable iteration id <letter><ordinal> for a phase (e.g. C3).")
+    pm.add_argument("phase")
+
     sub.add_parser("validate", help="Structural check of the shipped map.")
 
     args = parser.parse_args(argv)
@@ -243,6 +280,9 @@ def main(argv=None) -> int:
             return 0
         if args.command == "phase-letter":
             print(phase_letter(mp, args.phase))
+            return 0
+        if args.command == "mint-iteration-id":
+            print(mint_iteration_id(root, mp, args.phase))
             return 0
         if args.command == "validate":
             problems = validate(mp)

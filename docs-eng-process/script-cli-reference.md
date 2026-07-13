@@ -218,6 +218,7 @@ openup-lifecycle.py [--repo-root DIR] [--state-dir DIR] stamp-phase
 openup-process-map.py [--repo-root DIR] activities-for <phase> [--json]
 openup-process-map.py [--repo-root DIR] activity <name> [--json]
 openup-process-map.py [--repo-root DIR] phase-letter <phase>
+openup-process-map.py [--repo-root DIR] mint-iteration-id <phase>
 openup-process-map.py [--repo-root DIR] validate
 ```
 - **Read-only.** Loads the vendored `docs-eng-process/process-map.yaml` (KB §4:
@@ -230,6 +231,11 @@ openup-process-map.py [--repo-root DIR] validate
   (`/openup-start-iteration`) reads to generate phase-appropriate lanes.
 - **`activity <name>`** / **`phase-letter <phase>`** — one activity's role+skills;
   the iteration-id prefix letter (e.g. `construction` → `C`, for `C3-001` minting).
+- **`mint-iteration-id <phase>`** — the stable iteration id `<letter><ordinal>`
+  (`C3`) for the phase; the ordinal is repo-monotonic per letter (max existing
+  `C<n>-*` id + 1) so it stays globally unique across cycles without a state
+  field (schema 1). Plan Iteration records it in the iteration-plan instance and
+  reserves lanes under it via `openup-claims.py reserve-id --prefix "C3-"`.
 - **`validate`** — every activity named in `phases:` has an `activities:` entry,
   each role is known, each phase has a prefix letter. Exit 2 (naming the problem)
   on any structural fault; the map is the single source the thin phase skills front.
