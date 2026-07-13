@@ -220,7 +220,7 @@ consent memory.
 - [x] (analyst) Document replenishment (triggers, ask flow, answer semantics,
       acceptance gate, deferred `--auto-replenish`) in `reference-driver.md` +
       `script-cli-reference.md`
-- [ ] (tester) Run suites + `openup-spec-scenarios.py check` on this spec +
+- [x] (tester) Run suites + `openup-spec-scenarios.py check` on this spec +
       `check-docs.py` + `openup-fence.py check --base harness-optional`;
       record results in `docs/changes/T-094/design.md`
 
