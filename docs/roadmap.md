@@ -647,3 +647,15 @@ authored when promoted.
 **Dependencies**: T-072 (found via T-080)
 
 **See**: `docs/changes/archive/T-082/plan.md`
+
+---
+
+## T-083: Benchmark harness — realistic "stakeholder brief → Vision doc" scenario
+**Status**: completed (2026-07-13)
+**Priority**: high
+**Value**: Makes the benchmark measure the framework's real first-iteration value — turning a stakeholder brief into a Vision document — instead of the `quick-doc` toy edit.
+**Description**: New `inception-vision` scenario seeds a fresh project + an invented stakeholder brief and drives `openup-create-vision` directly, scoring on a valid `docs/vision.md`. Enablers: driver `--instruction` (hand a procedure its input); self-describing scenarios (`procedure`/`instruction`/`required_markers`, optional `expect_pick`); and a fix so a non-lane procedure run treats the write-fence's "no task" (exit 3) as inapplicable/skip, not a failure. +5 tests.
+
+**Dependencies**: T-080, T-072
+
+**See**: `docs/changes/archive/T-083/plan.md` + `docs-eng-process/reference-driver-benchmark.md`

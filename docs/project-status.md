@@ -1,15 +1,17 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 52
+**Iteration**: 53
 **Iteration Goal**: T-080 — Reference-driver acceptance/benchmark harness
 **Status**: completed
-**Current Task**: T-082
+**Current Task**: T-083
 **Iteration Started**: 2026-06-18
 **Last Updated**: 2026-07-13
 **Updated By**: sync-status.py
 
 ## Notes
+
+**Iteration 53** (2026-07-13): T-083 — the benchmark can now test the framework's real first-iteration value: **stakeholder brief → Vision document**, not just the `quick-doc` toy. New `inception-vision` scenario seeds a fresh project + an invented `docs/inputs/stakeholder-brief.md` (ShareShed, a neighborhood tool-lending app) and drives `openup-create-vision` directly (owner decision — tightest/cheapest measure), scoring on a valid `docs/vision.md` with the required sections. Enablers: (1) driver gains `--instruction TEXT` (appended to the initial user message) so a procedure that takes arguments can be handed its input — the create-vision procedure's project-name/problem-statement; (2) scenarios are self-describing — `scenario.json` gains `procedure` / `instruction` / `required_markers` (list; `missing_markers` diagnoses partial results) and makes `expect_pick` optional (skip the resolve==pick check for procedure-direct scenarios that seed no lane); (3) `--procedure` CLI now overrides the scenario's, else falls back to the scenario's then `next`. Also fixed a real driver gap the vision run exposed: a non-lane procedure run has nothing for the write-fence to check, so `openup-fence.py check` exits 3 ("no task") — the driver's `run_gates` and the harness's post-run re-check now treat fence-exit-3 as **inapplicable (skip)**, not a failure (check-docs still validates the output; a real started lane is still fully fenced). +5 hermetic tests (scripted vision run scores a clean pass; `--instruction` relayed; required_markers enforced); 28 driver+bench tests green. check-docs, spec-scenarios, fence (`--base harness-optional`) green. Solo, standard, worktree, on harness-optional.
 
 **Iteration 52** (2026-07-13, quick): T-082 — driver LLM client no longer crashes on a slow response. Found by the T-080 benchmark (batch 20260713-150411 run 3: uncaught `TimeoutError: timed out` during `getresponse()` → exit 1 `error`). `llm.chat_completion` only caught `HTTPError`/`URLError`, but a socket-read timeout raises a bare `TimeoutError` (an `OSError`, not a `URLError`), so it escaped `LLMError` and killed the run. Fix: catch `(TimeoutError, OSError)` after the specific handlers → `LLMError` (loop returns a clean `endpoint-error` exit 3, retryable, surfaced in the bench `## Failures`), raise the default per-call timeout **120→600s**, and make it configurable via **`OPENUP_AGENT_TIMEOUT`** (read in `loop.run`, passed through; documented in `reference-driver.md`). +4 tests (socket-timeout & OSError → LLMError; loop exits 3 on timeout; env plumb-through). 26 driver+bench tests green; fence (`--base harness-optional`) green. Solo, quick, worktree, on harness-optional.
 
