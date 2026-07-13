@@ -1,7 +1,7 @@
 ---
 id: T-075
 title: openup-lifecycle.py status + milestone decision records (derived phase view)
-status: in-progress
+status: done
 priority: high   # critical | high | medium | low
 estimate: 1 session
 plan: docs/explorations/2026-07-13-phase-aware-loop-redesign.md
