@@ -114,13 +114,31 @@ phase from records). GO → next phase; NO-GO → record + re-queue Construction
 `cycle`+1 (phase stays); CONDITIONAL → record + enqueue conditions. Matches the
 "humans own the go/no-go" design principle.
 
-## DD5 — pending: openup-next path handling (Operations step 5)
+## DD5 — openup-next path handling + DONE semantics (Operations step 5, delivered)
 
-Steps 2–4 built the pieces; step 5 wires `openup-next` to *consume* the
-`assess-iteration` / `milestone-review` decisions (run the respective procedures)
-and updates the DONE-sentinel semantics. Until then the loop still treats
-`plan-iteration` as promote (the T-077 transition note) and does not yet branch on
-the two new paths — resolve emits them but only a step-5 openup-next acts on them.
+Rewired `openup-next.md`:
+- **Intro precedence** now 6 steps: resume → pick → assess → milestone-review →
+  plan+start → noop.
+- **Removed** the T-077 "treat plan-iteration like promote" transition note.
+- **Two new branches**: `assess-iteration` → run `/openup-assess-iteration`,
+  exit ADVANCED (or DONE if it spawned a milestone pause); `milestone-review` →
+  run `/openup-phase-review`, exit DONE (`milestone-review pending human input`)
+  when it created/awaits the request, ADVANCED when it recorded an answered
+  decision. Both are non-lane paths (skip claim/worktree).
+- **plan-iteration** now branches on the Development Case archetype (T-076):
+  `mvp`/`product` (budget > 1) → real Plan Iteration (`/openup-start-iteration`
+  with **no task_id** → §0b generates lanes); `quick`/single → today's promote
+  (the degenerate `lane.task`). The full promote-by-shape guidance is retained
+  under the degenerate case.
+- **noop** narrowed: it no longer tells the human to run `/openup-phase-review`
+  (that is now the automated `milestone-review` path); noop means no delivery + no
+  phase gate applies.
+- **DONE sentinel** reframed as a **phase-gate** signal: the headline DONE reason
+  is `milestone-review pending human input` (the convergence the loop exists to
+  reach), alongside the drained-queue / blocked / delivered-but-unmerged reasons.
+  ADVANCED now also covers "iteration assessed" and "milestone recorded".
+
+Mirror + skills-guide regenerated; all guards (render/guide/claude-sync) green.
 
 **Note (framework flaw surfaced at start).** Committing the spec fired the
 auto-log hook → `log_written=true`; with `roadmap_synced=true` both standard-track
