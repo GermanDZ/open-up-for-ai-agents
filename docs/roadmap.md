@@ -527,7 +527,7 @@ authored when promoted.
 ---
 
 ## T-075: openup-lifecycle.py status + milestone decision records
-**Status**: pending
+**Status**: completed (2026-07-13)
 **Priority**: high
 **Value**: Everyone driving the loop gets an honest, derived answer to "what phase are we in and what does this milestone still need" — read from repo facts, not a stale hand-set label — which is the foundation every later slice reads from, and the smallest safe first step (advisory only, no loop behavior change).
 **Description**: New read-only `scripts/openup-lifecycle.py status` computing the current phase + per-milestone criteria state from work-product instances and their `status:` frontmatter (T-038 typed traceability), roadmap rows, archived change folders, and milestone decision records. Add `docs/product/milestones/<phase>-<cycle>.md` records (human go/no-go, written only via `/openup-phase-review`) as the source of truth for "phase advanced"; `phase` in `.openup/state.json` becomes a cache stamped from this status. Same never-hand-edit rule as the board. No loop behavior change yet.
