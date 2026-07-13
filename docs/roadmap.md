@@ -671,3 +671,15 @@ authored when promoted.
 **Dependencies**: T-080, T-083
 
 **See**: `docs/changes/archive/T-084/plan.md`
+
+---
+
+## T-085: Benchmark fixture is a clean bootstrapped project, not a repo copy
+**Status**: completed (2026-07-13)
+**Priority**: high
+**Value**: The first live vision run exposed it: `build_fixture` copied the whole repo, so a "new-project" fixture carried our developed `docs/` (project-status, roadmap, history) — the model read *our* iteration status instead of starting fresh.
+**Description**: The fixture is now a genuinely bootstrapped project — only the framework trees (`docs-eng-process/`, `scripts/`, git config) + a fresh empty `docs/` + the scenario overlay, like `bootstrap-project.sh`. The repo's own `docs/` is never copied in. +2 tests.
+
+**Dependencies**: T-080, T-083
+
+**See**: `docs/changes/archive/T-085/plan.md`

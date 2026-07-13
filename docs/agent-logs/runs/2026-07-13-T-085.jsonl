@@ -1,0 +1,3 @@
+{"event": "session_begin", "task_id": "T-085", "goal": "Benchmark fixture is a clean bootstrapped project (framework + empty docs) not a full repo copy", "branch": "feat/T-085-clean-fixture", "phase": "construction", "ts": "2026-07-13T13:58:28Z"}
+{"run_id": "61330511d18d4322a5bbc47c175d5f3c", "event": "commit", "task_id": "T-085", "branch": "feat/T-085-clean-fixture", "sha": "f24c0276be33df030c13dec8c3ebb653582dd0ce", "model": null, "session_id": "feat/T-085-clean-fixture", "ts": "2026-07-13T14:00:37Z"}
+{"event": "session_end", "task_id": "T-085", "ts": "2026-07-13T14:01:11Z"}

@@ -51,10 +51,16 @@ The last stdout line is a JSON one-liner (`{"out":…, "pass_rate":…,
 
 ## How it works (per run)
 
-1. **Isolate.** The repo under test is snapshotted with `git archive HEAD` (or the
-   working tree with `--include-working-tree`) into a **fresh temp directory
-   outside the project**, and `git init`'d — a brand-new project with no source
-   history or remotes. The source repo is only read.
+1. **Bootstrap a clean project.** Only the **framework** trees (`docs-eng-process/`
+   + `scripts/` + git config files) are copied from the repo under test — via
+   `git archive HEAD` (or the working tree with `--include-working-tree`) — into a
+   **fresh temp directory outside the project**, alongside an **empty `docs/`**,
+   then `git init`'d. This is exactly what `bootstrap-project.sh` produces: a
+   brand-new project with the framework but **no** product docs, roadmap, or change
+   history. The repo's own `docs/` is deliberately excluded — otherwise a
+   "new-project" fixture would carry the developed repo's `project-status.md` /
+   `roadmap.md` and the model would read *that* instead of starting fresh. The
+   source repo is only read.
 2. **Seed.** A scenario overlay adds one deterministic **micro-task** (default
    `quick-doc`: a single READY change-folder lane). The seed is committed, and the
    fence's default base (`origin/main`) is pointed at that seed commit — so the
