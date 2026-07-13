@@ -1,7 +1,7 @@
 ---
 id: T-098
 title: Deterministic Inception-bootstrap fast-path + LLM transcript debug log
-status: ready   # proposed → ready → in-progress → done → verified
+status: done
 priority: high   # critical | high | medium | low
 estimate: 1 session
 plan: docs/changes/archive/T-096/plan.md
