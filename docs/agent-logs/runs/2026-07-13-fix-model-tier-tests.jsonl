@@ -1,0 +1,1 @@
+{"run_id": "49150b1677b94150a3f84a4981fe909a", "event": "commit", "task_id": "fix-model-tier-tests", "branch": "bugfix/model-tier-test-drift", "sha": "399459481c0d8778383ee6b9a06445677a388bc4", "model": null, "session_id": null, "ts": "2026-07-13T07:57:29Z"}
