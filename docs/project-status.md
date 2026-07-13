@@ -1,15 +1,17 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 53
+**Iteration**: 54
 **Iteration Goal**: T-080 — Reference-driver acceptance/benchmark harness
 **Status**: completed
-**Current Task**: T-083
+**Current Task**: T-084
 **Iteration Started**: 2026-06-18
 **Last Updated**: 2026-07-13
 **Updated By**: sync-status.py
 
 ## Notes
+
+**Iteration 54** (2026-07-13, quick): T-084 — the benchmark now archives each run's deliverable into the results dir as `<out>/run-NN.<basename>` (e.g. `run-01.vision.md`), copied from the fixture before teardown, with the path recorded in `deliverable_archived`. Closes the gap the first vision batch exposed: it scored 5/5 clean but the actual `docs/vision.md` files died with the torn-down fixtures, so quality was unreadable without `--keep`. Now every batch keeps the artifacts it scored, for reading + cross-model diffing. Additive; no change to scoring. +test (archived vision exists + contains ShareShed). 8 bench tests green; fence (`--base harness-optional`) green. Solo, quick, worktree, on harness-optional.
 
 **Iteration 53** (2026-07-13): T-083 — the benchmark can now test the framework's real first-iteration value: **stakeholder brief → Vision document**, not just the `quick-doc` toy. New `inception-vision` scenario seeds a fresh project + an invented `docs/inputs/stakeholder-brief.md` (ShareShed, a neighborhood tool-lending app) and drives `openup-create-vision` directly (owner decision — tightest/cheapest measure), scoring on a valid `docs/vision.md` with the required sections. Enablers: (1) driver gains `--instruction TEXT` (appended to the initial user message) so a procedure that takes arguments can be handed its input — the create-vision procedure's project-name/problem-statement; (2) scenarios are self-describing — `scenario.json` gains `procedure` / `instruction` / `required_markers` (list; `missing_markers` diagnoses partial results) and makes `expect_pick` optional (skip the resolve==pick check for procedure-direct scenarios that seed no lane); (3) `--procedure` CLI now overrides the scenario's, else falls back to the scenario's then `next`. Also fixed a real driver gap the vision run exposed: a non-lane procedure run has nothing for the write-fence to check, so `openup-fence.py check` exits 3 ("no task") — the driver's `run_gates` and the harness's post-run re-check now treat fence-exit-3 as **inapplicable (skip)**, not a failure (check-docs still validates the output; a real started lane is still fully fenced). +5 hermetic tests (scripted vision run scores a clean pass; `--instruction` relayed; required_markers enforced); 28 driver+bench tests green. check-docs, spec-scenarios, fence (`--base harness-optional`) green. Solo, standard, worktree, on harness-optional.
 

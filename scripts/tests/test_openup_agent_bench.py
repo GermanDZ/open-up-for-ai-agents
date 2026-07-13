@@ -318,6 +318,12 @@ class VisionScenarioTest(unittest.TestCase):
         # No lane to fence on a fresh create-vision run → fence is inapplicable
         # (treated clean), so this counts as a clean pass.
         self.assertTrue(rec["gates"]["fence"])
+        # T-084 — the produced vision is archived into the results dir for
+        # inspection, surviving fixture teardown.
+        self.assertEqual(rec["deliverable_archived"], "run-01.vision.md")
+        archived = out / "run-01.vision.md"
+        self.assertTrue(archived.exists())
+        self.assertIn("ShareShed", archived.read_text())
         agg = json.loads((out / "summary.json").read_text())
         self.assertEqual(agg["meta"]["procedure"], "openup-create-vision")
         self.assertEqual(agg["clean_passes"], 1)
