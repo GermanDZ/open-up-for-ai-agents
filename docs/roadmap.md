@@ -700,3 +700,15 @@ authored when promoted.
 **Dependencies**: T-072, T-083
 
 **See**: `docs/changes/archive/T-087/plan.md`
+
+---
+
+## T-088: Ship the reference driver in the process-CLI manifest
+**Status**: completed (2026-07-13)
+**Priority**: high
+**Value**: A user following the reference-driver getting-started hit `scripts/openup-agent.py: No such file or directory` after bootstrapping — the driver was never shipped to projects. Now every install path includes it.
+**Description**: Added `openup-agent.py` + the `openup_agent/*.py` package to `process-manifest.txt` (the single source of truth every install path copies). The installer already handles nested paths, so no installer change; verified the driver + package install and import cleanly into a fresh scripts/. Stdlib-only → no new deps.
+
+**Dependencies**: T-072, T-087
+
+**See**: `docs/changes/archive/T-088/plan.md`

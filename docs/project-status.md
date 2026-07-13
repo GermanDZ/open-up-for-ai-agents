@@ -1,15 +1,17 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 57
+**Iteration**: 58
 **Iteration Goal**: T-080 — Reference-driver acceptance/benchmark harness
 **Status**: completed
-**Current Task**: T-087
+**Current Task**: T-088
 **Iteration Started**: 2026-06-18
 **Last Updated**: 2026-07-13
 **Updated By**: sync-status.py
 
 ## Notes
+
+**Iteration 58** (2026-07-13, quick): T-088 — fixed a real gap a user hit following the reference-driver getting-started: after `bootstrap-project.sh my-product`, `python3 scripts/openup-agent.py run --dir .` failed `No such file or directory` because the **driver was never in `process-manifest.txt`** — so no install path (bootstrap / install-openup / sync-from-framework) shipped it. Added `openup-agent.py` + the five `openup_agent/*.py` package files to the manifest (the single source of truth). The installer already handles nested paths (`mkdir -p "$(dirname dest)"`), so no installer change — verified by running `install_process_clis` into a temp dir: driver + package land and import cleanly (29 CLIs installed). Driver is stdlib-only, so zero new deps. openup-doctor: 0 missing shipped CLIs; fence (`--base harness-optional`) green. Solo, quick, worktree, on harness-optional.
 
 **Iteration 57** (2026-07-13): T-087 — new task-oriented guide `docs-eng-process/getting-started-reference-driver.md`: how to run OpenUP with your own harness (the `openup-agent` reference driver) + your own OpenAI-compatible LLM, no Claude Code. Covers prerequisites (env: LLM_API_URL/KEY, OPENUP_MODEL_MAIN/MID/SMALL — flagging that authoring procedures use the MID/authoring tier — and OPENUP_AGENT_TIMEOUT) and two scenarios end-to-end with copy-paste commands: **(A) new project** — bootstrap-project.sh → write a stakeholder brief → drive `openup-create-vision --instruction` → continue Inception/Elaboration authoring → deliver with `next`; **(B) existing project adopting OpenUP** — install the framework, then **backfill missing docs from the existing code** by pointing the same create-* procedures at the codebase via `--instruction` (reverse-engineer vision/architecture/use-cases), with a manual required-docs checklist. Honestly flags: no automated missing-product-docs detector today (openup-doctor checks CLIs, not product docs) — candidate future "adopt/backfill" helper; and the `next` continue-loop's weight on small local models (lean on single-procedure authoring). Cross-linked from `getting-started.md` + `reference-driver.md`. Doc-only. check-docs + fence (`--base harness-optional`) green. Solo, standard, worktree, on harness-optional.
 
