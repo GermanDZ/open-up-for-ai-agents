@@ -212,6 +212,28 @@ openup-lifecycle.py [--repo-root DIR] [--state-dir DIR] stamp-phase
   (idempotent; `phase` is a derived cache, no longer hand-set via
   `project-status.md`). Exit 3 when there is no state file.
 
+## openup-process-map.py — process map loader (phase→activity→role→skill)
+
+```
+openup-process-map.py [--repo-root DIR] activities-for <phase> [--json]
+openup-process-map.py [--repo-root DIR] activity <name> [--json]
+openup-process-map.py [--repo-root DIR] phase-letter <phase>
+openup-process-map.py [--repo-root DIR] validate
+```
+- **Read-only.** Loads the vendored `docs-eng-process/process-map.yaml` (KB §4:
+  phase → ordered activities, activity → `{role, skills}`, phase → iteration-id
+  prefix letter) with a stdlib-only parser (no pyyaml). Preferred path is
+  `docs-eng-process/process-map.yaml`; falls back to `scripts/process-map.yaml`
+  (shipped-into-a-project layout). Exit 3 if the map file is absent.
+- **`activities-for <phase>`** — the ordered activity list for a phase, each
+  resolved to its `{name, role, skills}`. This is what Plan Iteration
+  (`/openup-start-iteration`) reads to generate phase-appropriate lanes.
+- **`activity <name>`** / **`phase-letter <phase>`** — one activity's role+skills;
+  the iteration-id prefix letter (e.g. `construction` → `C`, for `C3-001` minting).
+- **`validate`** — every activity named in `phases:` has an `activities:` entry,
+  each role is known, each phase has a prefix letter. Exit 2 (naming the problem)
+  on any structural fault; the map is the single source the thin phase skills front.
+
 ## openup-scribe.py — deterministic scribe writes
 
 ```

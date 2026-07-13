@@ -237,7 +237,7 @@ re-synced from the templates so `check-claude-sync.sh` stays green.
 
 ## Operations
 
-- [ ] (developer) R1 — author `process-map.yaml` from KB §4 + `openup-process-map.py` loader; register in manifest + CLI reference
+- [x] (developer) R1 — author `process-map.yaml` from KB §4 + `openup-process-map.py` loader; register in manifest + CLI reference
 - [ ] (developer) R4 — make `openup-board.py` / `openup-roadmap.py` resolve lifecycle-aware + iteration-scoped; relabel `promote` → `plan-iteration`
 - [ ] (developer) R3 — iteration minting: stable prefixed id from lifecycle.py, lanes via `reserve-id --prefix`, id into the iteration-plan instance
 - [ ] (developer) R2 — Plan-Iteration path in `/openup-start-iteration` (objectives + phase-appropriate lane generation from the map); preserve explicit-`task_id` path
