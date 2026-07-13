@@ -283,7 +283,7 @@ a milestone record.
 ## Operations
 
 - [x] Bump `.openup/state.json` to **schema 2** in `openup-state.schema.json` (`iteration_id`, `cycle`, `phase`-as-cache note) and implement validate + schema-1→2 auto-migration + `iteration_id`/`cycle` set/get in `openup-state.py`, with tests.
-- [ ] Add the `assess-iteration` and `milestone-review` decision paths to `openup-board.py resolve` (iteration-exhausted + phase-exit detection from the iteration-plan instance and `openup-lifecycle.py status`/Development Case), with fixture tests for both paths and the still-pending negative case.
+- [x] Add the `assess-iteration` and `milestone-review` decision paths to `openup-board.py resolve` (iteration-exhausted + phase-exit detection from the iteration-plan instance and `openup-lifecycle.py status`/Development Case), with fixture tests for both paths and the still-pending negative case.
 - [ ] Author `docs-eng-process/procedures/openup-assess-iteration.md` (Assess Results: evaluation-criteria check, demo-only-completed, feed-back, write `## Assessment` via the iteration-plan skill, phase-end trigger); register it in `process-manifest.txt`.
 - [ ] Wire the loop-driven pause into `docs-eng-process/procedures/openup-phase-review.md` — raise the go/no-go via `/openup-request-input`, and on an answered GO write `docs/product/milestones/<phase>-<cycle>.md`; on NO-GO record + re-queue in `cycle`+1.
 - [ ] Update `docs-eng-process/procedures/openup-next.md` — branch on the two new paths, replace the T-077 "treat plan-iteration like promote" transition note with real Plan-Iteration delegation, and update the DONE sentinel reason semantics.
