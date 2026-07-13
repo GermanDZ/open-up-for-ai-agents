@@ -1,0 +1,1 @@
+{"event": "session_begin", "task_id": "T-080", "goal": "Repeatable isolated benchmark harness for the T-072 reference driver (AC-program + model benchmarking + process-change regression)", "branch": "feat/T-080-reference-driver-benchmark", "phase": "construction", "ts": "2026-07-13T11:32:21Z"}
