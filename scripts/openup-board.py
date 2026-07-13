@@ -455,6 +455,127 @@ def cmd_top_n(args):
 
 
 # --------------------------------------------------------------------------
+# partition — cluster work items into non-colliding iteration groups (T-079)
+#
+# Lifts the lane-collision machinery one level: given a set of committed work
+# items, group them into the coarsest clusters such that any two items that
+# `touches`-overlap OR stand in a `depends-on` relation land in the SAME cluster.
+# The clusters are the connected components of that undirected graph — so distinct
+# clusters are, by construction, mutually disjoint in `touches` AND dependency-free
+# across clusters. That is exactly the property that makes them safe to run as
+# CONCURRENT iterations (Plan Iteration mints one iteration per cluster; the board
+# already un-scopes `pick` when several iteration prefixes are live — see
+# _active_iteration_prefix). A single cluster is the common case and degenerates
+# to today's one-iteration behavior — parallelism is discovered from the structure
+# of the work, never forced. Pure + read-only (no write_board, no reap).
+# --------------------------------------------------------------------------
+def _natural_key(s):
+    """Deterministic natural-ish sort key: split embedded digit runs so ``C3``
+    sorts before ``C10`` and ``C3-002`` before ``C3-010``. Order-independent."""
+    return [(1, int(t)) if t.isdigit() else (0, t)
+            for t in re.split(r"(\d+)", str(s)) if t != ""]
+
+
+def _read_workitem(root: Path, wid: str):
+    """``(touches, depends-on)`` for a work item from its change-folder plan
+    (``docs/changes/<id>/plan.md``). Missing folder → empty lists (an item with
+    no declared surface collides with nothing and depends on nothing)."""
+    plan = root / "docs" / "changes" / wid / "plan.md"
+    if not plan.exists():
+        return [], []
+    fm = claims.parse_frontmatter(plan)
+    touches = [claims._norm(t) for t in fm.get("touches", [])]
+    deps = [str(d).strip() for d in fm.get("depends-on", [])]
+    return touches, deps
+
+
+def partition_items(items):
+    """Connected-component clustering of work items over the
+    ``touches``-overlap ∪ ``depends-on`` graph.
+
+    ``items`` is an ordered list of ``{"id", "touches", "depends-on"}`` dicts.
+    Two items share a cluster iff their ``touches`` prefix-overlap
+    (``claims.touches_overlap`` — the SAME rule the write-fence enforces) or
+    either lists the other in ``depends-on``. Returns a list of clusters, each a
+    list of ids; members are sorted naturally and clusters are ordered by their
+    lowest member — so the output is deterministic and independent of input
+    ordering (Requirement 2)."""
+    ids = []
+    info = {}
+    for it in items:
+        wid = str(it.get("id", "")).strip()
+        if not wid or wid in info:
+            continue
+        ids.append(wid)
+        info[wid] = (
+            [claims._norm(t) for t in (it.get("touches") or [])],
+            [str(d).strip() for d in (it.get("depends-on") or [])],
+        )
+
+    # Union-find; keep the naturally-smallest id as each set's root so the
+    # partition is stable regardless of the order items are presented in.
+    parent = {wid: wid for wid in ids}
+
+    def find(x):
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    def union(a, b):
+        ra, rb = find(a), find(b)
+        if ra == rb:
+            return
+        keep, drop = sorted((ra, rb), key=_natural_key)
+        parent[drop] = keep
+
+    for i, a in enumerate(ids):
+        ta, da = info[a]
+        for b in ids[i + 1:]:
+            tb, db = info[b]
+            if claims.touches_overlap(ta, tb) or b in da or a in db:
+                union(a, b)
+
+    clusters = {}
+    for wid in ids:
+        clusters.setdefault(find(wid), []).append(wid)
+    out = [sorted(members, key=_natural_key) for members in clusters.values()]
+    out.sort(key=lambda c: _natural_key(c[0]))
+    return out
+
+
+def cmd_partition(args):
+    """Cluster work items into non-colliding iteration groups (read-only).
+
+    Two input modes:
+      * positional ids  → read ``touches``/``depends-on`` from each
+        ``docs/changes/<id>/plan.md`` (cluster existing change folders).
+      * ``--stdin``     → read a JSON array of ``{id, touches, depends-on}``
+        (Plan Iteration partitions *planned* work items before assigning
+        cluster-prefixed ids, so no change folder needs renaming).
+    Prints a JSON array of clusters (each a list of ids) and exits 0.
+    """
+    if args.stdin:
+        try:
+            items = json.load(sys.stdin)
+        except (json.JSONDecodeError, ValueError) as exc:
+            sys.stderr.write(f"partition: invalid JSON on stdin: {exc}\n")
+            return EXIT_USAGE
+        if not isinstance(items, list):
+            sys.stderr.write("partition: --stdin expects a JSON array of items.\n")
+            return EXIT_USAGE
+    else:
+        root = resolve_root(args)
+        items = [
+            {"id": wid, "touches": t, "depends-on": d}
+            for wid in args.ids
+            for (t, d) in [_read_workitem(root, wid)]
+        ]
+    print(json.dumps(partition_items(items), indent=2, ensure_ascii=False))
+    return EXIT_OK
+
+
+# --------------------------------------------------------------------------
 # resolve / status — the §0–§1 precedence, computed once as read-only data (T-065)
 #
 # `resolve` folds the four inputs the model chains by hand every /openup-next
@@ -835,6 +956,24 @@ def build_parser():
     add_common(p_top_n)
     p_top_n.set_defaults(func=cmd_top_n)
 
+    p_partition = sub.add_parser(
+        "partition",
+        help="Cluster work items into non-colliding iteration groups (T-079): "
+             "connected components over touches-overlap ∪ depends-on. Read-only; "
+             "prints a JSON array of clusters (each a list of ids).",
+    )
+    p_partition.add_argument(
+        "ids", nargs="*", metavar="ID",
+        help="Work-item ids; touches/depends-on read from docs/changes/<id>/plan.md.",
+    )
+    p_partition.add_argument(
+        "--stdin", action="store_true",
+        help="Read a JSON array of {id, touches, depends-on} from stdin instead "
+             "(partition planned items before assigning cluster-prefixed ids).",
+    )
+    add_common(p_partition)
+    p_partition.set_defaults(func=cmd_partition)
+
     p_resolve = sub.add_parser(
         "resolve",
         help="Print the §0–§1 /openup-next decision as one read-only JSON object "
@@ -868,7 +1007,7 @@ def main(argv=None):
 
     raw = list(sys.argv[1:] if argv is None else argv)
     # Default subcommand is `refresh` when the first token isn't a known command.
-    if not raw or raw[0] not in {"refresh", "top", "top-n", "resolve", "status"}:
+    if not raw or raw[0] not in {"refresh", "top", "top-n", "partition", "resolve", "status"}:
         raw = ["refresh"] + raw
     args = build_parser().parse_args(raw)
     return args.func(args)
