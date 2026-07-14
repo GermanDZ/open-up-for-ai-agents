@@ -790,9 +790,9 @@ authored when promoted.
 
 ---
 
-### Planned: Deterministic process-map navigation (P1)
+### Completed: Deterministic process-map navigation (P1)
 
-- **Status**: `planned` (2026-07-14)
+- **Status**: `completed` (2026-07-14 — T-100..T-103; P2 compile step deferred)
 - **Plan**: [iteration-plans/2026-07-14-deterministic-process-map-navigation.md](iteration-plans/2026-07-14-deterministic-process-map-navigation.md)
 - **Exploration**: [explorations/2026-07-14-process-map-as-compiled-navigator.md](explorations/2026-07-14-process-map-as-compiled-navigator.md)
 - **Created**: 2026-07-14
@@ -807,7 +807,7 @@ authored when promoted.
 | T-100 | Process-map schema: per-activity `requires_input` + `execution` mode (+ `validate` gate) | completed (2026-07-14) | high | — |
 | T-101 | Fire T-090 Plan Iteration on a fresh project from `activities-for(phase)` (no roadmap needed) | completed (2026-07-14) | high | T-100 |
 | T-102 | Map-driven input scaffold (generalize T-097) + `execution: direct` (kills redundant `initiate-project` lane) | completed (2026-07-14, within T-101) | high | T-100 |
-| T-103 | Delete the hardcoded bootstrap (T-098) + retire the per-cycle LLM navigator (T-096); rewire the noop path | pending | high | T-101, T-102 |
+| T-103 | Delete the hardcoded bootstrap (T-098) + retire the per-cycle LLM navigator (T-096); rewire the noop path | completed (2026-07-14) | high | T-101, T-102 |
 
 ---
 

@@ -73,7 +73,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-from . import assess, loop, navigator, plan_iteration, tiers
+from . import assess, loop, plan_iteration, tiers
 
 EXIT_OK = 0
 EXIT_CONFIG = 2
@@ -869,52 +869,6 @@ def complete(root, task, env, counts):
 # --------------------------------------------------------------------------
 # The cycle
 # --------------------------------------------------------------------------
-def _run_navigator(root, env, step_tier, cap, interactive, _completion, _subrun):
-    """Wire the real driver callables into navigator.run_navigator (T-096): a
-    bounded sub-run that writes the decision file, and a full-procedure runner
-    for the chosen process-artifact procedure. Kept thin — the navigation logic
-    lives in navigator.py; this only injects loop.run."""
-    try:
-        model = tiers.resolve_tier_model(root, step_tier, target="driver", env=env)
-    except tiers.TierError as e:
-        _log("FATAL: %s" % e)
-        return EXIT_CONFIG
-
-    def dispatch(instruction, system_prompt):
-        _log("navigator sub-run (tier=%s, model=%s, cap=%d)"
-             % (step_tier, model, cap))
-        buf = io.StringIO()
-        with contextlib.redirect_stdout(buf):
-            rc = loop.run(dir=str(root), procedure="navigator",
-                          max_iterations=cap, env=env, interactive=interactive,
-                          instruction=instruction, system_prompt=system_prompt,
-                          model=model, _completion=_completion)
-        out = buf.getvalue().strip()
-        if rc == EXIT_SUSPEND and out:
-            print(out.splitlines()[-1])  # relay suspend sentinel on engine stdout
-        return rc
-
-    def run_procedure(procedure, instruction):
-        # Capture the sub-procedure's stdout (its own OPENUP-NEXT: DONE sentinel)
-        # so it does not leak — a navigator authoring run is a cycle-level ADVANCE,
-        # and run_navigator emits that single sentinel (T-099). On failure the
-        # captured output is surfaced for diagnosis; stderr progress is untouched.
-        buf = io.StringIO()
-        with contextlib.redirect_stdout(buf):
-            rc = loop.run(dir=str(root), procedure=procedure,
-                          max_iterations=loop.DEFAULT_MAX_ITERATIONS, env=env,
-                          interactive=interactive, instruction=instruction,
-                          _completion=_completion)
-        out = buf.getvalue()
-        if rc != 0 and out.strip():
-            sys.stdout.write(out)
-            sys.stdout.flush()
-        return rc
-
-    return navigator.run_navigator(
-        root, dispatch=dispatch, run_procedure=run_procedure,
-        log=_log, suspend_sentinel=loop.SUSPEND_SENTINEL)
-
 
 def _run_plan_iteration(root, phase, env, step_tier, cap, interactive,
                         _completion, _subrun):
@@ -1075,9 +1029,8 @@ def _run_assess(root, decision, env, step_tier, cap, interactive, _completion,
 
 def run_cycle(dir, env=None, step_max_iterations=DEFAULT_STEP_MAX_ITERATIONS,
               step_tier=DEFAULT_STEP_TIER, interactive=False, recover=True,
-              navigate=True, _completion=None, _subrun=None, _ask=None,
-              _navigator=None, _plan_iteration=None, _assess=None,
-              _milestone=None):
+              _completion=None, _subrun=None, _ask=None,
+              _plan_iteration=None, _assess=None, _milestone=None):
     """Run ONE delivery cycle under ``dir``. Returns an int exit code.
 
     ``recover`` (default True, T-092/T-094) lets the engine rebuild blocking
@@ -1086,17 +1039,14 @@ def run_cycle(dir, env=None, step_max_iterations=DEFAULT_STEP_MAX_ITERATIONS,
     product-manager replenishment pass when nothing is promotable — before
     dispatching; ``recover=False`` is byte-equivalent to the T-089 behavior.
 
-    ``navigate`` (default True, T-096): when the deterministic layers still yield
-    a ``noop`` (a fresh/unclassifiable project — e.g. no ``docs/roadmap.md``), run
-    ONE bounded process-navigator sub-run to pick the next procedure, or raise the
-    missing human input as an input-request, instead of printing a hardcoded hint.
-    ``navigate=False`` restores the T-089/T-092 ``noop`` behavior exactly.
+    Navigation is deterministic (T-101): a fresh authoring phase resolves to
+    ``plan-iteration`` from the process map, so a ``noop`` is a drained/complete
+    state → ``DONE``. (The per-cycle LLM navigator was retired in T-103.)
 
     ``_completion`` is loop.run's scripted-LLM test seam, passed through to
     every judgment sub-run; ``_subrun`` replaces the whole judgment-step call
     (signature: fn(task, box, instruction) -> int); ``_ask`` replaces the
-    interactive consent prompt (fn(question) -> str) for tests; ``_navigator``
-    replaces navigator.run_navigator entirely (fn(root, env) -> int) for tests.
+    interactive consent prompt (fn(question) -> str) for tests.
     """
     import os
     env = os.environ if env is None else env
@@ -1187,27 +1137,12 @@ def run_cycle(dir, env=None, step_max_iterations=DEFAULT_STEP_MAX_ITERATIONS,
         break
 
     if path == "noop":
-        # T-096: the deterministic layers found nothing to execute. Instead of a
-        # hardcoded pre-Inception hint, navigate the process against the project's
-        # actual state (unless navigation is disabled, which restores the T-092
-        # hint verbatim).
-        if navigate:
-            if _navigator is not None:
-                return _navigator(root, env)
-            return _run_navigator(root, env, step_tier, step_max_iterations,
-                                  interactive, _completion, _subrun)
-        msg = decision.get("reason") or "nothing to do"
-        if not (root / "docs" / "roadmap.md").exists():
-            # A fresh bootstrapped project: nothing is promotable because
-            # Inception never ran. Say what rebuilds the state (T-092) —
-            # recovery cannot invent the product, only the human can.
-            msg += (" | no docs/roadmap.md yet — a fresh project needs "
-                    "Inception first: author the vision + initial roadmap "
-                    "(e.g. `openup-agent.py run --procedure "
-                    "openup-create-vision --instruction ...`; see "
-                    "docs-eng-process/getting-started-reference-driver.md), "
-                    "then re-run cycle")
-        print("OPENUP-NEXT: DONE — %s" % msg)
+        # Nothing pickable and nothing to plan. Navigation is deterministic
+        # (T-101): a fresh authoring phase resolves to plan-iteration, not noop,
+        # so a genuine noop here is a drained/complete state — report DONE. (The
+        # per-cycle LLM navigator was retired in T-103.)
+        print("OPENUP-NEXT: DONE — %s"
+              % (decision.get("reason") or "nothing to do"))
         return EXIT_OK
     if path == "assess-iteration":
         # T-091: grade the exhausted iteration and record ## Assessment.

@@ -213,51 +213,17 @@ byte-exact. Outer loops can consume it exactly like `cycle`:
 `while ./scripts/next-cycle; do :; done`.
 
 Deciding *what a project needs next* — Inception authoring on a fresh repo, the
-next delivery lane, or a missing human input — is the driver's job, not the
-wrapper's. The deterministic engine answers when it can; when it yields a
-`noop`/unclassifiable state, the **process navigator** takes over (see below).
-The wrapper no longer writes a template stakeholder brief or hardcodes the
-vision step — that process knowledge moved behind the driver so it evolves with
-the process, not with the wrapper.
+next delivery lane, a missing human input — is the driver's job, not the
+wrapper's, and it is **deterministic** (T-101/T-103): navigation is a walk of the
+process map, never a per-cycle LLM call. A fresh authoring phase resolves to
+`plan-iteration` from `activities-for(phase)` (no roadmap needed); each activity's
+declared `requires_input` (process-map data, T-100) is scaffolded as a
+marker-guarded template and the cycle suspends until the human fills it; an
+`execution: direct` activity runs its `create-*` procedure directly. The per-cycle
+LLM **navigator** and the hardcoded Inception bootstrap were **retired** (T-103) —
+the LLM is used only to *author* artifacts, never to decide the next step. See
+the `cycle` engine's Plan Iteration below.
 
-### The process navigator (T-096)
-
-When the deterministic layers find nothing to execute (a `noop` — most often a
-fresh project with no `docs/roadmap.md`), the navigator first handles the
-**unambiguous Inception bootstrap in code** (T-098), *without* an LLM call — so a
-fresh project converges even when a weak model fails to emit a decision file: at
-`phase: inception` with no `docs/vision.md`, if there is no filled stakeholder
-brief it scaffolds the brief template (below); if a filled brief exists it runs
-`openup-create-vision` directly (the model only *authors*, which it does
-reliably). Its `--instruction` pins the **exact roadmap format the deterministic
-parser requires** — `T-NNN` ids (the `openup-roadmap.py` `T-\d+` contract),
-`pending` status, `high|medium|low` priority — so Inception hands off a
-**promotable** roadmap instead of one the model invented an unparseable id scheme
-for. Only a genuinely ambiguous state (a vision already exists but the loop
-is stuck) falls through to ONE bounded **process-navigator** sub-run instead of a
-hardcoded hint. A successful navigator authoring run reports the cycle-level
-`OPENUP-NEXT: ADVANCED` sentinel (progress — re-run to continue), not the
-sub-procedure's own `DONE` (which only means "I finished authoring"). The
-navigator is handed *facts* computed in code — the process map
-(`process-map.yaml`), `openup-lifecycle.py status`, a Ring-1 artifact survey
-(which of vision/roadmap/use-cases/architecture exist), and the procedures
-index — and returns, as a structured file (`.openup/navigator-decision.json`,
-the T-072 pattern): the next procedure to run + its `--instruction`, or the
-**missing human input**. The driver then runs that procedure directly (for
-process-artifact authoring — vision, use-cases, architecture, iteration plan).
-
-When the missing input is a **document the human authors** (a stakeholder brief),
-the driver **scaffolds a fillable template** at its path (the decision's
-`input_path`, or the fresh-project brief default `docs/inputs/stakeholder-brief.md`)
-and suspends (exit 5), guiding the human to fill it and re-run — an input-request
-cannot produce a document, so raising one would never converge (T-097). The
-template is marker-guarded: a still-templated scaffold reads as *absent* in the
-Ring-1 survey (so a filled brief, not the empty scaffold, is what advances the
-loop), and a filled or partially-filled file is never overwritten. A genuine
-short-answer **question** (no artifact path) still raises a T-074 input-request.
-Product scope is never invented here: anything that would append roadmap entries
-stays behind the T-094 consent gate. Disable navigation with `cycle --no-navigate`
-(restores the pre-T-096 hardcoded Inception hint).
 
 ## The cycle engine — `openup-agent.py cycle` (T-089)
 
