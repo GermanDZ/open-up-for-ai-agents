@@ -1,7 +1,7 @@
 ---
 id: T-101
 title: Fresh-project deterministic navigation — resolve trigger + map-driven inputs + execution direct (delivers T-101 + T-102)
-status: ready   # proposed → ready → in-progress → done → verified
+status: done
 priority: high   # critical | high | medium | low
 estimate: 1–2 sessions
 plan: docs/iteration-plans/2026-07-14-deterministic-process-map-navigation.md
