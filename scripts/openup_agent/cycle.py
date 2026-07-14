@@ -895,10 +895,21 @@ def _run_navigator(root, env, step_tier, cap, interactive, _completion, _subrun)
         return rc
 
     def run_procedure(procedure, instruction):
-        return loop.run(dir=str(root), procedure=procedure,
-                        max_iterations=loop.DEFAULT_MAX_ITERATIONS, env=env,
-                        interactive=interactive, instruction=instruction,
-                        _completion=_completion)
+        # Capture the sub-procedure's stdout (its own OPENUP-NEXT: DONE sentinel)
+        # so it does not leak — a navigator authoring run is a cycle-level ADVANCE,
+        # and run_navigator emits that single sentinel (T-099). On failure the
+        # captured output is surfaced for diagnosis; stderr progress is untouched.
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            rc = loop.run(dir=str(root), procedure=procedure,
+                          max_iterations=loop.DEFAULT_MAX_ITERATIONS, env=env,
+                          interactive=interactive, instruction=instruction,
+                          _completion=_completion)
+        out = buf.getvalue()
+        if rc != 0 and out.strip():
+            sys.stdout.write(out)
+            sys.stdout.flush()
+        return rc
 
     return navigator.run_navigator(
         root, dispatch=dispatch, run_procedure=run_procedure,

@@ -790,6 +790,18 @@ authored when promoted.
 
 ---
 
+## T-099: Harden the Inception bootstrap handoff — ADVANCED sentinel + parseable-roadmap create-vision instruction
+**Status**: completed (2026-07-14)
+**Priority**: medium
+**Value**: Two live fresh-project handoff bugs: (1) a successful create-vision authoring run reported the sub-procedure's DONE, so next-cycle said 'nothing to do' after real progress; (2) the create-vision instruction let the model invent RDM-NNN roadmap ids the openup-roadmap.py T-\d+ parser skipped, leaving the roadmap 'exhausted' right after Inception.
+**Description**: navigator emits cycle-level OPENUP-NEXT: ADVANCED on a successful procedure run (cycle run_procedure captures the sub-procedure DONE; failure re-emits + propagates); VISION_INSTRUCTION pins the parseable roadmap format (T-NNN ids, pending, high|medium|low).
+
+**Dependencies**: T-096, T-098
+
+**See**: found live on my-product (2026-07-14)
+
+---
+
 ## T-098: Deterministic Inception-bootstrap fast-path + LLM transcript debug log
 **Status**: completed (2026-07-13)
 **Priority**: high

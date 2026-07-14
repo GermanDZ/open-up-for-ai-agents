@@ -148,6 +148,8 @@ class RunNavigatorTest(unittest.TestCase):
         self.assertEqual(rc, 0)
         self.assertEqual(ran["procedure"], "openup-create-vision")
         self.assertEqual(ran["instruction"], "author vision")
+        # T-099: reports ADVANCED, not the procedure's DONE.
+        self.assertTrue(self.printed[-1].startswith("OPENUP-NEXT: ADVANCED"))
 
     def test_explicit_input_path_is_honored(self):
         rc = self._run(
@@ -289,6 +291,20 @@ class BootstrapFastPathTest(unittest.TestCase):
         self.assertEqual(rc, 0)
         self.assertEqual(ran["proc"], "openup-create-vision")
         self.assertIn("stakeholder-brief.md", ran["instruction"])
+        # T-099: a successful authoring run reports ADVANCED (progress), not the
+        # procedure's own DONE.
+        self.assertTrue(self.printed[-1].startswith(
+            "OPENUP-NEXT: ADVANCED — authored via openup-create-vision"))
+        self.assertFalse(any("DONE" in m for m in self.printed))
+
+    def test_failed_bootstrap_procedure_propagates_without_advanced(self):
+        brief = self.root / navigator.DEFAULT_INPUT_PATH
+        brief.parent.mkdir(parents=True)
+        brief.write_text("# Brief\nreal product\n")
+        rc = self._run(lambda i, s: self.fail("navigator LLM must not run"),
+                       lambda proc, instr: navigator.NAV_STEP)
+        self.assertEqual(rc, navigator.NAV_STEP)
+        self.assertFalse(any("ADVANCED" in m for m in self.printed))
 
     def test_vision_present_uses_llm_navigator(self):
         (self.root / "docs").mkdir(exist_ok=True)
@@ -334,6 +350,20 @@ class BootstrapFastPathTest(unittest.TestCase):
             return 0
         self._run(dispatch, lambda *a: 0)
         self.assertTrue(called.get("d"))
+
+
+class VisionInstructionTest(unittest.TestCase):
+    """T-099: the bootstrap create-vision instruction must pin the roadmap format
+    the openup-roadmap.py parser requires, or the model invents an unparseable id
+    scheme (RDM-001) and Inception hands off an unpromotable roadmap."""
+
+    def test_instruction_requires_parseable_roadmap(self):
+        ins = navigator.VISION_INSTRUCTION
+        self.assertIn("T-001", ins)                 # the T-NNN id form
+        self.assertIn("pending", ins)               # required status
+        for prio in ("high", "medium", "low"):
+            self.assertIn(prio, ins)                # priority vocabulary
+        self.assertIn("docs/roadmap.md", ins)
 
 
 class MarkerSurveyTest(unittest.TestCase):

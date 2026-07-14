@@ -229,9 +229,15 @@ fresh project converges even when a weak model fails to emit a decision file: at
 `phase: inception` with no `docs/vision.md`, if there is no filled stakeholder
 brief it scaffolds the brief template (below); if a filled brief exists it runs
 `openup-create-vision` directly (the model only *authors*, which it does
-reliably). Only a genuinely ambiguous state (a vision already exists but the loop
+reliably). Its `--instruction` pins the **exact roadmap format the deterministic
+parser requires** — `T-NNN` ids (the `openup-roadmap.py` `T-\d+` contract),
+`pending` status, `high|medium|low` priority — so Inception hands off a
+**promotable** roadmap instead of one the model invented an unparseable id scheme
+for. Only a genuinely ambiguous state (a vision already exists but the loop
 is stuck) falls through to ONE bounded **process-navigator** sub-run instead of a
-hardcoded hint. The
+hardcoded hint. A successful navigator authoring run reports the cycle-level
+`OPENUP-NEXT: ADVANCED` sentinel (progress — re-run to continue), not the
+sub-procedure's own `DONE` (which only means "I finished authoring"). The
 navigator is handed *facts* computed in code — the process map
 (`process-map.yaml`), `openup-lifecycle.py status`, a Ring-1 artifact survey
 (which of vision/roadmap/use-cases/architecture exist), and the procedures

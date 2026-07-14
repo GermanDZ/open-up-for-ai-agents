@@ -81,9 +81,19 @@ SCAFFOLDABLE = frozenset({DEFAULT_INPUT_PATH})
 # navigation does not depend on it emitting a decision file.
 VISION_INSTRUCTION = (
     "read docs/inputs/stakeholder-brief.md; produce docs/vision.md, and also "
-    "author an initial docs/roadmap.md with 5-8 pending entries (a table with "
-    "ID, Title, Status, Priority, Dependencies, Value columns) covering the path "
-    "from the first use cases to the core features")
+    "author an initial docs/roadmap.md that the deterministic tooling can parse. "
+    "docs/roadmap.md MUST contain a markdown table with EXACTLY this header row "
+    "`| ID | Title | Status | Priority | Dependencies | Value |` followed by 5-8 "
+    "entry rows. STRICT format for each row (the tooling matches these literally): "
+    "(1) ID MUST be of the form T-001, T-002, T-003, … — the literal prefix 'T-' "
+    "then a sequential zero-padded number; do NOT invent other id schemes; "
+    "(2) Status MUST be exactly `pending`; (3) Priority MUST be one of `high`, "
+    "`medium`, or `low`; (4) Dependencies lists the T-NNN ids this entry depends "
+    "on, comma-separated, or `none`; (5) Value is a one-line rationale. Order the "
+    "rows by delivery priority (the first row should be a foundational entry with "
+    "no dependencies). Do NOT add YAML frontmatter to docs/roadmap.md (it is a "
+    "plain view, not a typed work product). Cover the path from the first use "
+    "cases to the core features.")
 
 BRIEF_TEMPLATE = """\
 %s
@@ -395,6 +405,23 @@ def _scaffold_input(root, rel_path, missing, log, print_, suspend_sentinel):
     return NAV_SUSPEND
 
 
+def _run_procedure_reporting(run_procedure, procedure, instruction, log, print_):
+    """Run a procedure via the injected callable and report the CYCLE-level
+    outcome (T-099): a successful authoring run is an **ADVANCE** (progress; the
+    caller should re-run to continue), not the procedure's own ``DONE`` (which
+    means only 'I finished authoring'). The cycle's ``run_procedure`` captures the
+    sub-procedure's stdout so it does not leak; here we emit the single correct
+    sentinel on success. On failure the wrapper has already surfaced the
+    sub-procedure's output — we just propagate the code."""
+    rc = run_procedure(procedure, instruction)
+    if rc == 0:
+        print_("OPENUP-NEXT: ADVANCED — authored via %s; re-run to continue"
+               % procedure)
+    else:
+        log("navigator: procedure %s failed (exit %d)" % (procedure, rc))
+    return rc
+
+
 def _raise_missing_input(root, missing, runner, log, print_, suspend_sentinel):
     """Ensure a single input-request captures the missing human input and
     suspend (exit 5). Re-suspends an already-open request without duplicating.
@@ -454,7 +481,7 @@ def run_navigator(root, *, dispatch, run_procedure, runner=_subprocess_runner,
         # ("procedure", name, instruction): filled brief, no vision → author it.
         log("navigator: filled brief, no vision — running %s deterministically "
             "(no navigator LLM; the model only authors)" % boot[1])
-        return run_procedure(boot[1], boot[2])
+        return _run_procedure_reporting(run_procedure, boot[1], boot[2], log, print_)
 
     _clear_decision(root)  # never read a stale decision
     instruction = render_navigator_instruction(facts)
@@ -505,4 +532,5 @@ def run_navigator(root, *, dispatch, run_procedure, runner=_subprocess_runner,
         return NAV_OK
 
     log("navigator: running process-artifact procedure %s directly" % procedure)
-    return run_procedure(procedure, decision["instruction"])
+    return _run_procedure_reporting(run_procedure, procedure,
+                                    decision["instruction"], log, print_)
