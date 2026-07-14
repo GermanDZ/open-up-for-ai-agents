@@ -1,0 +1,3 @@
+{"run_id": "T-111-iter77-2026-07-14", "event": "session_begin", "task_id": "T-111", "goal": "T-111 \u2014 next-cycle forwards unknown flags (e.g. --step-max-iterations) to openup-agent.py cycle", "branch": "fix/T-111-next-cycle-passthrough", "phase": "construction", "ts": "2026-07-14T11:57:11Z"}
+{"run_id": "1b378d1157804bc38fd768eaa6a537c0", "event": "commit", "task_id": "T-111", "branch": "fix/T-111-next-cycle-passthrough", "sha": "0a50514ff22b11d7d8da79b3e043b7093cc0793f", "model": null, "session_id": "fix/T-111-next-cycle-passthrough", "ts": "2026-07-14T11:59:15Z"}
+{"event": "session_end", "task_id": "T-111", "ts": "2026-07-14T11:59:27Z"}
