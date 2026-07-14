@@ -1,7 +1,7 @@
 ---
 id: T-116
 title: Hook-sweep parity — fold hook-appended docs/agent-logs/ shards into the same commit instead of a manual follow-up
-status: ready
+status: done
 priority: medium
 estimate: 1 session
 plan: docs/iteration-plans/2026-07-14-bootstrap-overhead-fixes.md

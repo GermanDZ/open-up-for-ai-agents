@@ -1,0 +1,6 @@
+{"run_id": "T-116-20260714", "event": "session_begin", "task_id": "T-116", "goal": "Hook-sweep parity \u2014 fold hook-appended docs/agent-logs/ shards into the same commit instead of a manual follow-up", "branch": "feat/T-116-hook-sweep-parity", "phase": "construction", "ts": "2026-07-14T14:39:02Z"}
+{"run_id": "fbdd0781c32d4f498727b8b3219d7d80", "event": "commit", "task_id": "T-116", "branch": "feat/T-116-hook-sweep-parity", "sha": "6fac181ff76f7b937a8ccf9689e4a065e4338ac0", "model": null, "session_id": "feat/T-116-hook-sweep-parity", "ts": "2026-07-14T14:39:02Z"}
+{"run_id": "d033008a0cfa431ca1229b41d60957af", "event": "commit", "task_id": "T-116", "branch": "feat/T-116-hook-sweep-parity", "sha": "10b855db71d3d6e76c8779b567928c38f86aafe6", "model": null, "session_id": "feat/T-116-hook-sweep-parity", "ts": "2026-07-14T14:41:25Z"}
+{"run_id": "acdfd1a7a3b74c61aa9779de68c86cdf", "event": "commit", "task_id": "T-116", "branch": "feat/T-116-hook-sweep-parity", "sha": "dacc081edf5228594a47f2cc8efd2aae9672033a", "model": null, "session_id": "feat/T-116-hook-sweep-parity", "ts": "2026-07-14T14:42:05Z"}
+{"event": "iteration_complete", "task_id": "T-116", "branch": "feat/T-116-hook-sweep-parity", "phase": "construction", "ts": "2026-07-14T14:43:14Z"}
+{"event": "session_end", "task_id": "T-116", "ts": "2026-07-14T14:44:13Z"}

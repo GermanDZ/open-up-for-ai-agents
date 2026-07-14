@@ -1,16 +1,18 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 78
-**Iteration Goal**: T-112 — New `/openup-cycle` skill — deterministic-first pick/resume entry point that classifies Operations boxes as script-vs-judgment (mirrors `cycle.py`'s `classify_box`), skipping self-brief ceremony on mechanical steps and gating before every tick; every other `resolve` path (plan-iteration/assess/milestone/replenish) routes to `/openup-next`, which stays byte-unchanged
+**Iteration**: 79
+**Iteration Goal**: T-116 — Hook-sweep parity with `cycle.py` — fold hook-appended `docs/agent-logs/` shards into the same commit `/openup-next`/`/openup-complete-task`/`/openup-cycle` already make, instead of a manual noticed-then-recommitted follow-up (found live: 6 round trips in one bootstrap lane)
 **Status**: completed
-**Current Task**: T-112
+**Current Task**: T-116
 **Iteration Started**: 2026-06-18
 **Last Updated**: 2026-07-14
 **Updated By**: sync-status.py
 **Retrospective**: [iteration-77-retrospective.md](iteration-retrospectives/iteration-77-retrospective.md) — covers iterations 21–77 (2026-06-16 → 2026-07-14); first written retro since iteration 20
 
 ## Notes
+
+- **Iteration 79** (2026-07-14): T-116 (standard) — **hook-sweep parity with `cycle.py`** — closes an avoidable-overhead gap the T-112/T-113 dry run surfaced live (6 redundant round trips in one bootstrap lane): `auto-log-commit.py` can only append its run-log line *after* a commit lands (`PostToolUse` can't run before `git commit` returns), so the Claude-Code-driven skills had no instruction to fold that delta into their next commit — an agent had to notice the dirty tree and improvise a follow-up commit, every time. Ports `cycle.py`'s proven `_sweep_run_logs` pattern (`scripts/openup_agent/cycle.py:1060-1084`) into prose: a new "Pre-Commit Housekeeping" section in `docs-eng-process/conventions.md` (the single source of truth every skill's Norms section inherits from) states the rule once; `openup-complete-task.md` step 2 and `openup-cycle.md`'s gate-before-tick step each carry an explicit pointer to it — the two highest-leverage commit points a lane always passes through. `openup-next.md` verified byte-unchanged. No script/hook code changed — the fix works with `auto-log-commit.py`'s post-commit-only timing, not around it. First of three tasks (T-116 → T-114 → T-115) promoted from `docs/explorations/2026-07-14-fresh-bootstrap-tool-call-overhead.md`. Solo, standard, worktree, on harness-optional.
 
 - **Iteration 78** (2026-07-14): T-112 (standard) — **new `/openup-cycle` skill** — a lower-ceremony sibling of `/openup-next` that handles only the `pick`/`resume` `resolve()` paths, classifying each Operations box script-vs-judgment the same way the headless `cycle.py` engine does (`extract_command`/`classify_box`) — a script-shaped box runs directly with zero self-brief; only a judgment box pays the role-file/Ring-1/Ring-2 read. Gates (fence + check-docs) run before every tick, not just at completion — the one behavior addition beyond `/openup-next`. Claim (`/openup-start-iteration`) and completion (`/openup-complete-task`/`/openup-create-handoff`) delegate unchanged; every other `resolve()` path (plan-iteration/assess/milestone/replenish) routes to `/openup-next` by name rather than being re-derived. A `resume` carrying an answered input-request folds the answer into the spec via `/openup-create-task-spec` first (fix-spec-first), diverging deliberately from `cycle.py`'s driver-only shortcut. Classification fidelity checked against `cycle.py`'s real logic on 33 boxes across 6 archived plans, zero divergence (`docs/changes/T-112/design.md`). `/openup-next` verified byte-unchanged. No script code shipped — a pure procedure-pack addition + generated mirrors (`render-skills-mirror.py`, `sync-templates-to-claude.sh`, `check-skills-guide.py`, `check-model-tiers.py`). Solo, standard, worktree, on harness-optional.
 
