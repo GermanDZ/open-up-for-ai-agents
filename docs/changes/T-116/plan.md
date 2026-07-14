@@ -172,12 +172,12 @@ habit, documented once and pointed to twice.
 
 ## Operations
 
-- [ ] (developer) Add the hook-sweep rule to `docs-eng-process/conventions.md`, naming `_sweep_run_logs` (`scripts/openup_agent/cycle.py:1060-1084`) as the pattern it mirrors.
-- [ ] (developer) Add the explicit `docs/agent-logs/` sweep pointer to `openup-complete-task.md` step 2 ("Commit Remaining Changes").
-- [ ] (developer) Add the same pointer to `openup-cycle.md`'s gate-before-tick step.
-- [ ] `python3 scripts/render-skills-mirror.py --write && scripts/sync-templates-to-claude.sh && python3 scripts/check-skills-guide.py --write && python3 scripts/check-model-tiers.py --write`
-- [ ] `git diff harness-optional -- docs-eng-process/procedures/openup-next.md`
-- [ ] `python3 scripts/render-skills-mirror.py --check && python3 scripts/check-skills-guide.py --check && python3 scripts/check-model-tiers.py --check && python3 scripts/check-docs.py`
+- [x] (developer) Add the hook-sweep rule to `docs-eng-process/conventions.md`, naming `_sweep_run_logs` (`scripts/openup_agent/cycle.py:1060-1084`) as the pattern it mirrors.
+- [x] (developer) Add the explicit `docs/agent-logs/` sweep pointer to `openup-complete-task.md` step 2 ("Commit Remaining Changes").
+- [x] (developer) Add the same pointer to `openup-cycle.md`'s gate-before-tick step.
+- [x] `python3 scripts/render-skills-mirror.py --write && scripts/sync-templates-to-claude.sh && python3 scripts/check-skills-guide.py --write && python3 scripts/check-model-tiers.py --write`
+- [x] `git diff harness-optional -- docs-eng-process/procedures/openup-next.md`
+- [x] `python3 scripts/render-skills-mirror.py --check && python3 scripts/check-skills-guide.py --check && python3 scripts/check-model-tiers.py --check && python3 scripts/check-docs.py`
 
 ## Norms
 
