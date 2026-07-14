@@ -1,15 +1,17 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 76
-**Iteration Goal**: T-110 — Bootstrapped projects carry their own updater — ship `sync-from-framework.sh` via `process-manifest.txt` (+ atomic-rename install so a running sync can replace itself)
+**Iteration**: 77
+**Iteration Goal**: T-111 — `next-cycle` forwards unknown flags to `openup-agent.py cycle` verbatim (`--step-max-iterations 15` works through the one-command entry point)
 **Status**: completed
-**Current Task**: T-110
+**Current Task**: T-111
 **Iteration Started**: 2026-06-18
 **Last Updated**: 2026-07-14
 **Updated By**: sync-status.py
 
 ## Notes
+
+**Iteration 77** (2026-07-14): T-111 (quick) — **`next-cycle` forwards unknown flags to the driver** (owner hit it live: `./scripts/next-cycle --step-max-iterations 15` → "unrecognized arguments"). The wrapper now uses `parse_known_args` and appends the unknowns to the `openup-agent.py cycle` argv verbatim — the one-command entry point never has to be abandoned to reach a driver knob (`OPENUP_AGENT_VERBOSE=1 ./scripts/next-cycle --step-max-iterations 15` now works). `--dir` stays wrapper-owned; `--interactive` still auto-added on a TTY; stdout/exit contract untouched. +2 tests (flags recorded verbatim in the fake driver's argv; no-flags argv unchanged); 15 next-cycle suite green. CLI reference updated. Quick track, solo, worktree, on harness-optional.
 
 **Iteration 76** (2026-07-14): T-110 (quick) — **bootstrapped projects carry their own updater** (owner report: `bootstrap-project.sh` ships no way to update from the framework; the live my-product sample had no `sync-from-framework.sh`). One-line durable fix: `sync-from-framework.sh` added to `scripts/process-manifest.txt`, so every install/update path (bootstrap, sync, update-from-template) ships the updater into the target's `scripts/` — and the updater becomes self-updating on every sync. Hazard closed alongside: the manifest now ships the very script that runs the sync, so `install-process-clis.sh` switches from in-place `cp` to **temp + atomic `mv`** (the running bash keeps its old inode; a plain cp would rewrite the executing script mid-run). Verified: manifest/install test green; smoke install into a temp dir ships 35 CLIs incl. executable `sync-from-framework.sh`. The my-product sample was updated live with the copied updater (framework @ 94407eb, self-committed in-project). Quick track, solo, worktree, on harness-optional.
 
