@@ -1,7 +1,7 @@
 ---
 id: T-100
 title: Process-map schema — per-activity requires_input + execution mode
-status: ready   # proposed → ready → in-progress → done → verified
+status: done
 priority: high   # critical | high | medium | low
 estimate: 1 session
 plan: docs/iteration-plans/2026-07-14-deterministic-process-map-navigation.md
