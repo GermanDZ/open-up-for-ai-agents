@@ -1,15 +1,17 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 75
-**Iteration Goal**: T-109 — Narrated console output — activity headers, per-tool targets, progress, cycle-end summary; stdout contract unchanged
+**Iteration**: 76
+**Iteration Goal**: T-110 — Bootstrapped projects carry their own updater — ship `sync-from-framework.sh` via `process-manifest.txt` (+ atomic-rename install so a running sync can replace itself)
 **Status**: completed
-**Current Task**: T-109
+**Current Task**: T-110
 **Iteration Started**: 2026-06-18
 **Last Updated**: 2026-07-14
 **Updated By**: sync-status.py
 
 ## Notes
+
+**Iteration 76** (2026-07-14): T-110 (quick) — **bootstrapped projects carry their own updater** (owner report: `bootstrap-project.sh` ships no way to update from the framework; the live my-product sample had no `sync-from-framework.sh`). One-line durable fix: `sync-from-framework.sh` added to `scripts/process-manifest.txt`, so every install/update path (bootstrap, sync, update-from-template) ships the updater into the target's `scripts/` — and the updater becomes self-updating on every sync. Hazard closed alongside: the manifest now ships the very script that runs the sync, so `install-process-clis.sh` switches from in-place `cp` to **temp + atomic `mv`** (the running bash keeps its old inode; a plain cp would rewrite the executing script mid-run). Verified: manifest/install test green; smoke install into a temp dir ships 35 CLIs incl. executable `sync-from-framework.sh`. The my-product sample was updated live with the copied updater (framework @ 94407eb, self-committed in-project). Quick track, solo, worktree, on harness-optional.
 
 **Iteration 75** (2026-07-14): T-109 — **narrated console output** (owner ask, pairs with T-108). The driver's one human surface now narrates on stderr: **tool lines name their target** (`read_file docs/vision.md`, `write_file docs/roadmap.md`, `exec: git status`, ~60-char truncation) instead of `tool read_file -> 5706 chars`; **`model turn k/N`** per LLM call (a slow local model reads as a turn in progress, not a hang); **step headers** say the role hat, model, turn budget, and the step's first line — the truncated 200-char instruction dump is gone; **every `run_cycle` exit closes with a summary** (via the T-108 wrapper): the commits the cycle made — which name the artifacts — plus the exit code's plain-words meaning (`exit 5: paused for a human — answer the named file, then re-run`); **`_log` guards blank lines** (narration never emits empties). **`OPENUP_AGENT_VERBOSE=1`** restores the old detail (char counts, full instructions); the JSONL telemetry logs are untouched. **The stdout sentinel contract is byte-identical** — narration is stderr-only, asserted by tests (summary absent from stdout; sentinel present verbatim). `reference-driver.md` gains §Console output. +9 tests (tool-target format, verbose switch, turn progress, no-blank-lines ×2, exec/glob/truncation formatter, summary exit-meaning + commit list + no-commits). Full suite green minus the known stale `test_openup_state` failure. spec-scenarios, check-docs, fence (`--base harness-optional`) green. Solo, standard, worktree, on harness-optional. Closes the T-108/T-109 owner batch: every artifact committed + a console you can follow.
 
