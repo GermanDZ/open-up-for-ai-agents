@@ -171,21 +171,21 @@ commit + trace. `cycle._run_plan_iteration` already has a procedure runner
 
 ## Operations
 
-- [ ] `resolve_decision`: add the fresh-authoring-phase `plan-iteration` branch
+- [x] `resolve_decision`: add the fresh-authoring-phase `plan-iteration` branch
   (unmet machine criteria + nothing promotable + activities present; authoring
   phases only), returning a phase-driven decision.
-- [ ] `plan_iteration.run_plan_iteration`: add the pre-mint `requires_input` gate
+- [x] `plan_iteration.run_plan_iteration`: add the pre-mint `requires_input` gate
   (scaffold marker-guarded template + suspend on the first missing input) using a
   new scaffold helper.
-- [ ] `plan_iteration.run_plan_iteration`: per-activity `execution` branch —
+- [x] `plan_iteration.run_plan_iteration`: per-activity `execution` branch —
   `direct` runs the procedure via an injected `run_procedure` (no spec sub-run, no
   lane); `spec-then-execute` keeps the T-090 flow; wire `run_procedure` from
   `cycle._run_plan_iteration`.
-- [ ] (tester) resolve tests (fresh-inception→plan-iteration; construction→noop)
+- [x] (tester) resolve tests (fresh-inception→plan-iteration; construction→noop)
   + plan_iteration tests (input scaffold+suspend; direct-runs-procedure;
   spec-then-execute unchanged; a fresh e2e reaching create-vision).
-- [ ] Update `docs-eng-process/reference-driver.md` (deterministic fresh path).
-- [ ] (tester) Full driver+board suite green; `check-docs`, `spec-scenarios`,
+- [x] Update `docs-eng-process/reference-driver.md` (deterministic fresh path).
+- [x] (tester) Full driver+board suite green; `check-docs`, `spec-scenarios`,
   `process-map validate`, fence (`--base harness-optional`) green.
 
 ## Norms

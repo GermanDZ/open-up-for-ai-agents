@@ -691,6 +691,24 @@ def _milestone_exists(root: Path, phase, cycle) -> bool:
     return False
 
 
+# Phases whose activities compose create-* authoring work (P1, T-101) — the ones
+# a fresh project can plan directly from the process map. Construction/transition
+# deliver features via the roadmap, so their drained-roadmap case stays noop→T-094.
+_AUTHORING_PHASES = frozenset({"inception", "elaboration"})
+
+
+def _phase_has_activities(root: Path, phase) -> bool:
+    """True if the process map defines a non-empty activity composition for the
+    phase (so Plan Iteration has something to run). Fail-open to False."""
+    if not phase:
+        return False
+    try:
+        pm = _load_sibling("openup_process_map", "openup-process-map.py")
+        return bool(pm.activities_for(pm.load_map(root), phase))
+    except Exception:
+        return False
+
+
 def _phase_exit_ready(status) -> bool:
     """The phase is ready for a milestone go/no-go when no machine-checkable
     criterion is ``unmet`` (the ``human-judgment`` criteria are exactly what the
@@ -864,6 +882,21 @@ def resolve_decision(root: Path, cdir: Path):
             f"needed before advancing; run /openup-phase-review.",
             lane={"task": phase, "next_action": "milestone review"},
             phase=phase, cycle=cycle)
+    # §1c-plan-fresh (T-101, P1) — a fresh AUTHORING phase (inception/elaboration)
+    # whose machine criteria are not yet met, with nothing promotable and no
+    # active iteration: plan the phase iteration from the process map
+    # (activities-for), no roadmap entry required. This is what lets a fresh
+    # project reach its work products deterministically — replacing the per-cycle
+    # navigator/bootstrap (deleted in T-103). Construction/transition are excluded,
+    # so their drained-roadmap case still falls through to noop→T-094 replenish.
+    if (entry is None and phase in _AUTHORING_PHASES
+            and not _phase_exit_ready(status)
+            and _phase_has_activities(root, phase)):
+        return _decision(
+            "plan-iteration",
+            f"plan a fresh {phase}-phase iteration from the process map "
+            f"(no roadmap yet; phase criteria unmet).",
+            phase=phase, cycle=cycle, legacy_path="plan-fresh")
     # §1d — no active iteration: plan the next iteration for the current phase
     # (the former single-row promote is its degenerate, single-work-item case).
     if entry:

@@ -364,6 +364,20 @@ restores the bare typed exits below.
   iteration is left picked). The re-resolve then picks the first lane, so
   Inception on a bootstrapped project (the ShareShed flow) runs end-to-end through
   `cycle`.
+  - **Fresh project, no roadmap (T-101, P1).** `resolve` now emits
+    `plan-iteration` for a fresh **authoring** phase (unmet machine criteria,
+    nothing promotable, no active iteration) directly from the process map — no
+    roadmap entry required — so a brand-new project reaches its work products
+    **deterministically, without the per-cycle LLM navigator**. Before minting,
+    Plan Iteration honours each activity's declared **`requires_input`** (T-100):
+    the first missing input is **scaffolded** as a marker-guarded template and the
+    cycle suspends (exit 5) until the human fills it — the data-driven,
+    process-agnostic replacement for the hardcoded brief bootstrap. An activity
+    marked **`execution: direct`** (e.g. `initiate-project` → `openup-create-vision`)
+    **runs its procedure directly** — no intermediate lane spec, killing the
+    redundant re-authoring — and is recorded in the iteration-plan instance body;
+    `spec-then-execute` activities keep the lane flow above. *(The per-cycle
+    navigator/bootstrap remain as now-unused code until T-103 deletes them.)*
 - **Assess (T-091, one grading sub-run).** When a T-090-planned iteration's
   committed lanes are all delivered and its instance has no `## Assessment`,
   `resolve` returns `assess-iteration`. Done-ness is already code (it fired the
