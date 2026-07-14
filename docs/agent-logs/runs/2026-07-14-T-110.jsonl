@@ -1,0 +1,3 @@
+{"run_id": "T-110-iter76-2026-07-14", "event": "session_begin", "task_id": "T-110", "goal": "T-110 \u2014 bootstrapped projects must carry their own updater: ship sync-from-framework.sh via process-manifest.txt", "branch": "fix/T-110-ship-updater", "phase": "construction", "ts": "2026-07-14T11:41:03Z"}
+{"run_id": "e7d01d85528b47e39f07d484eddd24da", "event": "commit", "task_id": "T-110", "branch": "fix/T-110-ship-updater", "sha": "5cc04c24127f173db8d6f0e68a1ce5ff08889007", "model": null, "session_id": "fix/T-110-ship-updater", "ts": "2026-07-14T11:43:06Z"}
+{"event": "session_end", "task_id": "T-110", "ts": "2026-07-14T11:43:16Z"}

@@ -1,0 +1,21 @@
+{
+  "schema": 2,
+  "task_id": "T-110",
+  "iteration": 76,
+  "iteration_id": null,
+  "cycle": 1,
+  "phase": "construction",
+  "track": "quick",
+  "branch": "fix/T-110-ship-updater",
+  "worktree": "/Users/germandz/personal-code/ai-dev-framework/open-up-for-ai-agents-T-110",
+  "session_id": "fix/T-110-ship-updater",
+  "started_at": "2026-07-14T11:41:03Z",
+  "gates": {
+    "team_deployed": false,
+    "plan_persisted": false,
+    "log_written": true,
+    "roadmap_synced": true,
+    "retro_due": false
+  },
+  "iterations_since_retro": 0
+}
