@@ -216,6 +216,48 @@ Net PM disposition: **accepted as re-shaped** — Option A sequenced S1→S2→S
 with C rejected on measurement, D named as the interim workaround, and the
 distillation discipline (schema + validator + review) as a hard requirement.
 
+## 2026-07-14 (append) — S3 named: the process compiler
+
+Owner follow-up: *"Should we create a 'process compiler' which reads the openup
+docs as sources and produces LLM prompts?"* — yes; this names and sharpens S3.
+
+**Framing: process-as-source, compiled.** The KB (+ later a project's customized
+process docs) is **source code** — verbose, human-authoritative, read-only. The
+compiler produces **object code**: the machine artifacts the runtime executes —
+`process-map.yaml`, the lean task-library defs (the LLM prompts), and the
+`requires_input` declarations. All object code is **committed and human-reviewed**;
+the runtime never reads the source.
+
+**Precedent already in production:** `build-trace-model.py` (T-035) IS a process
+compiler — it deterministically derives `trace-model.json` from the vendored KB,
+and `check-docs.py` executes it. `process-map.yaml` (T-077) is the same output
+shape, hand-compiled. The pattern is proven; S3 extends its scope (task prompts)
+and adds one LLM stage.
+
+**Two-stage compiler design:**
+1. **Deterministic extraction (no LLM).** The UMA task files are machine-generated
+   and regular — frontmatter (title/uma_name/roles), Inputs/Outputs sections,
+   workproduct links. Roles, input artifacts, output artifact parse with the same
+   stdlib approach `build-trace-model.py` uses → the task-def *skeleton*.
+2. **LLM distillation (compile-time only).** The "what good looks like" bullets
+   are distilled from the prose (Purpose/Steps/checklists) — once, schema-strict,
+   validator-gated, human-reviewed, committed (the T-099 discipline). A bad
+   compile is caught at review, never as per-cycle flakiness.
+
+**Sequencing guard (anti-trap):** the compiler is NOT built first. The S2
+hand-distilled defs — tuned until the qwen fixture hits the convergence measure —
+become the compiler's **golden outputs** (its reference test set). The compiler's
+economics start at scale: the remaining ~32 KB tasks, re-distillation when the KB
+updates, and above all **customized processes** (a team points the compiler at
+their process docs and gets a valid map + task library without forking the
+framework — P2's original promise, now with a concrete mechanism).
+
+Open-question additions: (7) compiler CLI shape — a sibling of
+`build-trace-model.py` (e.g. `build-task-library.py`) with `--check` comparing
+regenerated output against the committed library (drift detection, same as the
+trace model); (8) golden-set testing — the compiler must reproduce (or improve
+per review) the S2 hand-distilled defs before being trusted on the rest.
+
 ## Where this goes next
 
 → **iteration** — promote a program **"Lean authoring tasks"** on
