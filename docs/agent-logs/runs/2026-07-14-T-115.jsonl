@@ -1,0 +1,4 @@
+{"run_id": "T-115-20260714", "event": "session_begin", "task_id": "T-115", "goal": "Queryable Development Case archetype default + track/archetype disambiguation", "branch": "feat/T-115-archetype-default-accessor", "phase": "construction", "ts": "2026-07-14T14:58:50Z"}
+{"run_id": "dd1fdcc1974f4ec191db000bb526782d", "event": "commit", "task_id": "T-115", "branch": "feat/T-115-archetype-default-accessor", "sha": "c803bcc57586acd48d75acf124ddce07f54d95a5", "model": null, "session_id": "feat/T-115-archetype-default-accessor", "ts": "2026-07-14T15:02:23Z"}
+{"event": "iteration_complete", "task_id": "T-115", "branch": "feat/T-115-archetype-default-accessor", "phase": "construction", "ts": "2026-07-14T15:03:58Z"}
+{"event": "session_end", "task_id": "T-115", "ts": "2026-07-14T15:04:32Z"}

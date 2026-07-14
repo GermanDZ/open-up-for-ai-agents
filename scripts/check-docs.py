@@ -656,7 +656,26 @@ def main(argv=None) -> int:
                              "trace-model.json (T-037). Required-severity "
                              "gaps fail the run; advisory gaps are reported "
                              "but do not fail.")
+    parser.add_argument("--show-archetype-defaults", action="store_true",
+                        help="print the Development Case archetype defaults "
+                             "(quick/mvp/product) and what applies when "
+                             "docs/project-config.yaml's process: block is "
+                             "absent, then exit — no docs/ tree is loaded "
+                             "or validated (T-115)")
     args = parser.parse_args(argv)
+
+    if args.show_archetype_defaults:
+        print(json.dumps({
+            "default_when_absent": (
+                "No archetype tailoring applies — every phase runs the "
+                "framework's built-in generic ceremony. This is distinct "
+                "from the per-task ceremony track (quick/standard/full, see "
+                "docs-eng-process/tracks.md), which always applies "
+                "regardless of this setting."
+            ),
+            "archetypes": PROCESS_ARCHETYPE_DEFAULTS,
+        }, indent=2, sort_keys=True))
+        return EXIT_OK
 
     docs_dir = Path(args.docs) if args.docs else Path("docs")
     schema_path = Path(args.schema) if args.schema else SCHEMA_PATH
