@@ -1,7 +1,7 @@
 ---
 id: T-104
 title: Engine-owned authoring ceremony + restore the pinned roadmap contract
-status: ready
+status: done
 priority: high   # critical | high | medium | low
 estimate: 1 session
 plan: docs/iteration-plans/2026-07-14-lean-authoring-tasks.md
@@ -196,7 +196,7 @@ only — the reintroduced T-099 roadmap-format constant (interim until T-106).
   entry; hermetic transcript shows zero ceremony-file reads.
 - [x] Update `docs-eng-process/reference-driver.md` (direct-execution contract;
   self-critique-by-tier note).
-- [ ] (tester) Full driver suite green; `spec-scenarios`, `check-docs`,
+- [x] (tester) Full driver suite green; `spec-scenarios`, `check-docs`,
   `process-map validate`, fence (`--base harness-optional`) green.
 
 ## Norms
