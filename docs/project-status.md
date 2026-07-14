@@ -1,10 +1,10 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 72
-**Iteration Goal**: T-103 — Delete the hardcoded bootstrap (T-098) + retire the per-cycle LLM navigator (T-096); rewire the noop path
-**Status**: completed
-**Current Task**: T-103
+**Iteration**: 73
+**Iteration Goal**: T-104 — Engine-owned authoring ceremony (frontmatter stamping, config injection, ceremony-exclusion) + restore the pinned initial-roadmap contract (T-103 regression)
+**Status**: in-progress
+**Current Task**: T-104
 **Iteration Started**: 2026-06-18
 **Last Updated**: 2026-07-14
 **Updated By**: sync-status.py
