@@ -55,17 +55,39 @@ phase, cycle, legacy_path, reason}`.
 
 ### 2. Route
 
-- `path == "pick"` or `path == "resume"` → continue to step 3.
-- Anything else (`plan-iteration`, `assess-iteration`, `milestone-review`,
-  `noop`) → this decision needs planning or grading judgment this skill doesn't
-  carry. Print the `reason` and stop:
+`path == "pick"` or `path == "resume"` → continue to step 3.
 
-  > This cycle needs `/openup-next` — `resolve()` returned `<path>` (`<reason>`),
-  > which `/openup-cycle` doesn't implement. Run `/openup-next` to handle it.
+Anything else (`plan-iteration`, `assess-iteration`, `milestone-review`,
+`noop`) → this decision needs planning or grading judgment this skill doesn't
+carry. Do all three of the following, **in order, in the same turn, with
+nothing else in between**:
 
-  Emit `OPENUP-NEXT: DONE — routed to /openup-next (<path>)` and end the
-  session. Do not attempt to plan, assess, or replenish here — `/openup-next`
-  already has that logic at full parity; re-deriving it here would fork it.
+1. Print the handoff explanation, naming the `reason`:
+
+   > This cycle needs `/openup-next` — `resolve()` returned `<path>` (`<reason>`),
+   > which `/openup-cycle` doesn't implement. Run `/openup-next` to handle it.
+
+2. Print this **exact** line, verbatim, substituting `<path>`, as the literal
+   last line of output:
+
+   ```
+   OPENUP-NEXT: DONE — routed to /openup-next (<path>)
+   ```
+
+   This is not optional narration — it is the machine-readable stop signal
+   every other OpenUP skill's outer-loop contract depends on. Printing only
+   the prose explanation above and skipping this line is a spec violation,
+   not a harmless shortcut.
+
+3. **End the session now.** Do not invoke `/openup-next` yourself in this
+   turn, even though you now know it's the right next step — that is what the
+   sentinel is *for*: the outer loop (`/loop`, `openup-loop.sh`, cron, or the
+   human reading your output) re-invokes with `/openup-next` next. The one
+   exception: the user is present interactively and explicitly asks you to
+   continue into `/openup-next` right now — chaining only on an explicit,
+   in-the-moment request, never by default. Do not attempt to plan, assess, or
+   replenish here either way — `/openup-next` already has that logic at full
+   parity; re-deriving it here would fork it.
 
 ### 3. Claim
 
