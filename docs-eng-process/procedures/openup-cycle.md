@@ -151,6 +151,12 @@ leading `(role)`/`(auto)`/`(judgment)` tag). Repeat until every box is checked:
    skill adds beyond `/openup-next`, which only gates at completion/push —
    lifted directly from `cycle.py`'s "gates before the tick" ordering, so a
    failure is caught before it compounds across several boxes.)
+
+   If this box's execution included a `git commit` (a script-step box that is
+   itself a commit, or a judgment step whose work ended in one), fold any
+   `docs/agent-logs/` delta `auto-log-commit.py` appended after it into
+   whatever you stage next — see `conventions.md`'s Pre-Commit Housekeeping.
+   Don't let it accumulate silently until completion.
 5. Gates clean → tick the box (`- [ ]` → `- [x]`, the sanctioned direct
    `plan.md` edit) and go to step 1.
 
