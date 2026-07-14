@@ -5,6 +5,7 @@
 
 | ID | Title | Status | Priority | Depends on |
 |---|---|---|---|---|
+| [T-112](changes/T-112/plan.md) | New `/openup-cycle` skill — deterministic-first pick/resume entry point that classifies Operations boxes as script-vs-judgment (mirrors `cycle.py`'s `classify_box`), skipping self-brief ceremony on mechanical steps and gating before every tick; every other `resolve` path (plan-iteration/assess/milestone/replenish) routes to `/openup-next`, which stays byte-unchanged | ready | medium | — |
 | T-111 | `next-cycle` forwards unknown flags to `openup-agent.py cycle` verbatim (`--step-max-iterations 15` works through the one-command entry point) | completed (2026-07-14) | medium | — |
 | T-110 | Bootstrapped projects carry their own updater — ship `sync-from-framework.sh` via `process-manifest.txt` (+ atomic-rename install so a running sync can replace itself) | completed (2026-07-14) | high | — |
 | T-062 | Fix pre-existing `check-docs.py` failures (archived T-056 plan + t-059/t-060 iteration-plan frontmatter: status enum + duplicate id) so the complete-task 3a gate is green again | completed (2026-07-05) | medium | — |
