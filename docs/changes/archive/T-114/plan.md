@@ -1,7 +1,7 @@
 ---
 id: T-114
 title: "`/openup-init` template completeness — project-status/roadmap templates + input-request reference"
-status: ready
+status: done
 priority: medium
 estimate: 1 session
 plan: docs/iteration-plans/2026-07-14-bootstrap-overhead-fixes.md

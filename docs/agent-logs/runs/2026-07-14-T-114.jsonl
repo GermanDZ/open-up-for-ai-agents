@@ -1,2 +1,4 @@
 {"run_id": "T-114-20260714", "event": "session_begin", "task_id": "T-114", "goal": "openup-init template completeness \u2014 project-status/roadmap templates + input-request reference", "branch": "feat/T-114-openup-init-templates", "phase": "construction", "ts": "2026-07-14T14:48:53Z"}
 {"run_id": "b20ef74fa0594740b9ef741fbca9f49e", "event": "commit", "task_id": "T-114", "branch": "feat/T-114-openup-init-templates", "sha": "11a6b5b2a6256f2b9aec68b8dd5049e84f60f19a", "model": null, "session_id": "feat/T-114-openup-init-templates", "ts": "2026-07-14T14:51:10Z"}
+{"event": "iteration_complete", "task_id": "T-114", "branch": "feat/T-114-openup-init-templates", "phase": "construction", "ts": "2026-07-14T14:53:22Z"}
+{"event": "session_end", "task_id": "T-114", "ts": "2026-07-14T14:53:49Z"}
