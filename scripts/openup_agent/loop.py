@@ -52,8 +52,30 @@ class ConfigError(Exception):
 
 
 def _log(msg):
+    if not str(msg).strip():
+        return  # narration never emits blank lines (T-109)
     sys.stderr.write("[openup-agent] %s\n" % msg)
     sys.stderr.flush()
+
+
+def _verbose():
+    """OPENUP_AGENT_VERBOSE=1 restores the old detail level (result char
+    counts, full instruction dumps). Default output is the narrated form."""
+    import os
+    return os.environ.get("OPENUP_AGENT_VERBOSE") == "1"
+
+
+def _tool_target(name, args):
+    """The salient argument of a tool call, for narration: the path a file op
+    touches, a glob/grep pattern, an exec command. Truncated for the console."""
+    target = (args.get("path") or args.get("pattern")
+              or args.get("command") or "")
+    target = " ".join(str(target).split())
+    if len(target) > 60:
+        target = target[:57] + "..."
+    if name == "exec" and target:
+        return ": %s" % target
+    return " %s" % target if target else ""
 
 
 def _append_usage(path, iteration, model, latency_ms, response):
@@ -240,7 +262,8 @@ def _dispatch_tool_calls(tool_impl, tool_calls, interactive, root, task_id, ask)
             return results, request
 
         result = tool_impl.dispatch(name, args)
-        _log("tool %s -> %d chars" % (name, len(str(result))))
+        detail = " -> %d chars" % len(str(result)) if _verbose() else ""
+        _log("%s%s%s" % (name, _tool_target(name, args), detail))
         results.append(_tool_msg(call, result))
     return results, None
 
@@ -309,6 +332,7 @@ def run(dir, procedure, max_iterations=DEFAULT_MAX_ITERATIONS, env=None,
                                    tools=tools.TOOL_DEFS, timeout=req_timeout)
 
     for i in range(1, max_iterations + 1):
+        _log("model turn %d/%d" % (i, max_iterations))
         try:
             _t0 = time.monotonic()
             response = complete(messages)

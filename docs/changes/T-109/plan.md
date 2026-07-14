@@ -144,16 +144,16 @@ on stderr; stdout is only the sentinel, unchanged.
 
 ## Operations
 
-- [ ] `loop.py`: tool lines name operation + target (verbose keeps counts);
+- [x] `loop.py`: tool lines name operation + target (verbose keeps counts);
   add `iteration k/cap`; eliminate blank-line output.
-- [ ] `cycle.py`: step headers name lane/activity + role hat (drop the raw
+- [x] `cycle.py`: step headers name lane/activity + role hat (drop the raw
   instruction dump; verbose restores it); add the cycle-end stderr summary
   (artifacts, commits, gates, next step).
-- [ ] `plan_iteration.py`: align activity start/done narration wording.
-- [ ] (tester) Narration tests: tool-target lines, no blank lines, header
+- [x] `plan_iteration.py`: align activity start/done narration wording.
+- [x] (tester) Narration tests: tool-target lines, no blank lines, header
   format, summary present on advanced + failed exits, verbose switch; assert
   every existing stdout sentinel test still passes unchanged.
-- [ ] Update `reference-driver.md` §output + `next-cycle` wording.
+- [x] Update `reference-driver.md` §output + `next-cycle` wording.
 - [ ] (tester) Full driver suite green; spec-scenarios, check-docs, fence
   (`--base harness-optional`) green.
 

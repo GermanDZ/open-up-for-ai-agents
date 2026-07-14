@@ -402,6 +402,27 @@ restores the bare typed exits below.
   human go/no-go + `openup-lifecycle.py` own that, exactly like
   `/openup-phase-review`.
 
+## Console output (T-109)
+
+The driver narrates on **stderr**; **stdout carries only the sentinel** (the
+outer-loop contract — byte-exact through `next-cycle`). Default output is the
+narrated form:
+
+- **Sub-run step header** — one line naming the role hat, model, turn budget,
+  and what the step does (the instruction's first line).
+- **Tool lines name their target** — `read_file docs/vision.md`,
+  `write_file docs/roadmap.md`, `exec: git status` (truncated ~60 chars).
+- **Progress** — `model turn k/N` per LLM call, so a long wait is visibly a
+  turn, not a hang.
+- **Cycle-end summary** — every `run_cycle` exit closes with the commits the
+  cycle made (which name the artifacts) and what the exit code means in plain
+  words.
+- **No blank lines** — narration never emits empty lines.
+
+`OPENUP_AGENT_VERBOSE=1` restores the full detail (tool-result char counts,
+complete step instructions). The JSONL telemetry (`OPENUP_AGENT_USAGE_LOG`,
+`OPENUP_AGENT_DEBUG_LOG`) is unchanged and remains the deep-diagnosis surface.
+
 ## Exit codes
 
 | Code | Meaning | Typical cause |

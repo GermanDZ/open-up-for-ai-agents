@@ -991,5 +991,54 @@ class SweepRunLogsTest(CycleFixture):
             cycle._sweep_run_logs(Path(tmp))  # must not raise
 
 
+# --------------------------------------------------------------------------
+# Cycle-end summary (T-109)
+# --------------------------------------------------------------------------
+class CycleSummaryTest(CycleFixture):
+    """Every run_cycle closes with a stderr summary: commits made + what the
+    exit means. The stdout sentinel stays byte-identical."""
+
+    def _run_noop(self):
+        self._set_decision(_decision("noop", reason="board empty"))
+        self._git("add", "-A"); self._git("commit", "-m", "d", "-q")
+        import io, contextlib
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = cycle.run_cycle(str(self.root), env=self.env)
+        return rc, out.getvalue(), err.getvalue()
+
+    def test_summary_names_exit_meaning(self):
+        rc, out, err = self._run_noop()
+        self.assertEqual(rc, 0)
+        self.assertIn("cycle summary — exit 0", err)
+        self.assertIn("finished cleanly", err)
+        # the stdout sentinel contract is untouched
+        self.assertIn("OPENUP-NEXT: DONE — board empty", out)
+        self.assertNotIn("cycle summary", out)
+
+    def test_summary_lists_commits_made_this_cycle(self):
+        self._set_decision(_decision("noop", reason="board empty"))
+        self._git("add", "-A"); self._git("commit", "-m", "d", "-q")
+        # the shard appears DURING the cycle (after the setup commit)
+        shard = self.root / "docs" / "agent-logs" / "runs" / "x.jsonl"
+        shard.parent.mkdir(parents=True)
+        shard.write_text('{"event": "session_begin"}\n')
+        import io, contextlib
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = cycle.run_cycle(str(self.root), env=self.env)
+        self.assertEqual(rc, 0)
+        self.assertIn("commit(s) this cycle", err.getvalue())
+        self.assertIn("sweep run-log shards", err.getvalue())
+
+    def test_summary_reports_no_commits(self):
+        rc, out, err = self._run_noop()
+        self.assertIn("no commits this cycle", err)
+
+    def test_no_blank_lines_on_stderr(self):
+        rc, out, err = self._run_noop()
+        self.assertNotIn("\n\n", err)
+
+
 if __name__ == "__main__":
     unittest.main()

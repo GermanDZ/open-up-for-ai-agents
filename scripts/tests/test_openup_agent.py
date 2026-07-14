@@ -205,6 +205,81 @@ class LoopTest(unittest.TestCase):
         self.assertEqual(rc, 2)
 
 
+class NarrationTest(unittest.TestCase):
+    """T-109: the console narrates targets and progress, with no blank lines;
+    OPENUP_AGENT_VERBOSE=1 restores the old detail."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp.name)
+        (self.root / "docs-eng-process" / "procedures").mkdir(parents=True)
+        (self.root / "docs-eng-process" / "tier-map.yaml").write_text(TIER_MAP)
+        (self.root / "docs-eng-process" / "procedures" / "openup-demo.md").write_text(_procedure())
+        (self.root / "scripts").mkdir()
+        self.env = {"LLM_API_URL": "http://unused.local/v1", "LLM_API_KEY": "k"}
+        self.addCleanup(self.tmp.cleanup)
+
+    def _run_captured(self, completion):
+        import contextlib, io
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err), \
+                contextlib.redirect_stdout(io.StringIO()):
+            rc = loop.run(str(self.root), "demo", env=self.env,
+                          _completion=completion)
+        return rc, err.getvalue()
+
+    def _read_then_done(self):
+        (self.root / "target.txt").write_text("x\n")
+        seen = {}
+
+        def completion(model, messages, tools_):
+            if not seen:
+                seen["called"] = True
+                return _asst(tool_calls=[
+                    _tool_call("c1", "read_file", {"path": "target.txt"})])
+            return _asst("OPENUP-DEMO: DONE — ok")
+        return completion
+
+    def test_tool_line_names_target_not_char_count(self):
+        rc, err = self._run_captured(self._read_then_done())
+        self.assertEqual(rc, 0)
+        self.assertIn("read_file target.txt", err)
+        self.assertNotIn("chars", err)
+
+    def test_verbose_restores_char_counts(self):
+        import os
+        from unittest import mock
+        with mock.patch.dict(os.environ, {"OPENUP_AGENT_VERBOSE": "1"}):
+            rc, err = self._run_captured(self._read_then_done())
+        self.assertEqual(rc, 0)
+        self.assertIn("read_file target.txt -> ", err)
+        self.assertIn("chars", err)
+
+    def test_model_turn_progress_logged(self):
+        rc, err = self._run_captured(self._read_then_done())
+        self.assertEqual(rc, 0)
+        self.assertIn("model turn 1/", err)
+        self.assertIn("model turn 2/", err)
+
+    def test_no_blank_lines_emitted(self):
+        rc, err = self._run_captured(self._read_then_done())
+        self.assertEqual(rc, 0)
+        self.assertTrue(err.strip())
+        self.assertNotIn("\n\n", err)
+        loop._log("")   # the guard: a blank message emits nothing
+        loop._log("  ")
+
+    def test_exec_target_format(self):
+        # the salient-arg formatter, directly
+        self.assertEqual(loop._tool_target("exec", {"command": "git status"}),
+                         ": git status")
+        self.assertEqual(loop._tool_target("glob", {"pattern": "docs/*.md"}),
+                         " docs/*.md")
+        long = "x" * 80
+        self.assertTrue(loop._tool_target("read_file", {"path": long})
+                        .endswith("..."))
+
+
 class AskUserTest(unittest.TestCase):
     """The 7th tool: interactive answer vs async suspend-into-input-request (T-074)."""
 

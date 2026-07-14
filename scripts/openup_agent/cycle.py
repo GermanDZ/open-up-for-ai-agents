@@ -403,8 +403,14 @@ def run_judgment_step(root, task, box, env, step_tier, max_iterations,
     model = tiers.resolve_tier_model(root, step_tier, target="driver", env=env)
     instruction = instruction or build_step_instruction(
         task, box["hat"], box["body"], resumable_input=resumable_input)
-    _log("judgment step (%s, tier=%s, model=%s, cap=%d): %s"
-         % (box["hat"], step_tier, model, max_iterations, box["body"][:80]))
+    # T-109: narrate the step in one line — the box's first line says what it
+    # does; the full instruction is verbose-only detail.
+    summary = " ".join((box["body"].strip().splitlines() or [""])[0].split())
+    _log("judgment step — %s hat, model %s, up to %d turns: %s"
+         % (box["hat"], model, max_iterations,
+            summary[:100] + ("..." if len(summary) > 100 else "")))
+    if loop._verbose():
+        _log("full instruction:\n%s" % instruction)
     buf = io.StringIO()
     with contextlib.redirect_stdout(buf):
         rc = loop.run(
@@ -1084,18 +1090,61 @@ def run_cycle(dir, env=None, step_max_iterations=DEFAULT_STEP_MAX_ITERATIONS,
               _plan_iteration=None, _assess=None, _milestone=None):
     """Run ONE delivery cycle under ``dir``. Returns an int exit code. Thin
     wrapper: on every exit path (advanced, done, suspend, typed failure) the
-    run-log shards this cycle wrote are swept into a log-only commit (T-108).
-    The full contract is on ``_run_cycle_inner``."""
+    run-log shards this cycle wrote are swept into a log-only commit (T-108)
+    and a stderr summary narrates what the cycle produced (T-109). The full
+    contract is on ``_run_cycle_inner``."""
     root = Path(dir).resolve()
+    head = _git(["rev-parse", "HEAD"], root)
+    head_before = head.stdout.strip() if head.returncode == 0 else None
+    rc = None
     try:
-        return _run_cycle_inner(
+        rc = _run_cycle_inner(
             dir, env=env, step_max_iterations=step_max_iterations,
             step_tier=step_tier, interactive=interactive, recover=recover,
             _completion=_completion, _subrun=_subrun, _ask=_ask,
             _plan_iteration=_plan_iteration, _assess=_assess,
             _milestone=_milestone)
+        return rc
     finally:
         _sweep_run_logs(root)
+        _cycle_summary(root, head_before, rc)
+
+
+# Plain-words meaning of each cycle exit, for the closing summary (T-109).
+_EXIT_MEANINGS = {
+    EXIT_OK: "finished cleanly — the sentinel line above says whether to re-run",
+    EXIT_CONFIG: "configuration problem (endpoint/model/tier)",
+    EXIT_ENDPOINT: "the LLM endpoint did not respond",
+    EXIT_MAX_ITERATIONS: "the model hit its turn cap without finishing",
+    EXIT_SUSPEND: "paused for a human — answer the named file, then re-run",
+    EXIT_GATE: "a deterministic gate failed — see the report above",
+    EXIT_UNSUPPORTED: "this decision path is not automated",
+    EXIT_STEP: "a step failed — the log above names it",
+}
+
+
+def _cycle_summary(root, head_before, rc):
+    """T-109: close every cycle with a stderr summary — the commits it made
+    (which name the artifacts) and what the exit means. Never raises."""
+    try:
+        lines = []
+        if head_before:
+            log = _git(["log", "--format=%s", "%s..HEAD" % head_before], root)
+            subjects = [s for s in log.stdout.strip().splitlines() if s] \
+                if log.returncode == 0 else []
+            if subjects:
+                lines.append("cycle summary — %d commit(s) this cycle:"
+                             % len(subjects))
+                lines.extend("  + %s" % s for s in reversed(subjects))
+            else:
+                lines.append("cycle summary — no commits this cycle")
+        if rc is not None:
+            lines.append("cycle summary — exit %d: %s"
+                         % (rc, _EXIT_MEANINGS.get(rc, "unexpected exit")))
+        for line in lines:
+            _log(line)
+    except Exception:  # presentation must never mask the cycle's outcome
+        pass
 
 
 def _run_cycle_inner(dir, env=None,

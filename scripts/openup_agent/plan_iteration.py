@@ -483,6 +483,8 @@ def run_plan_iteration(root, phase, *, dispatch_objectives, dispatch_spec,
                        "docs(%s): %s — authored via %s [%s]"
                        % (iteration, lane["activity"], lane["skill"],
                           iteration))
+            log("plan-iteration: %s done — outputs gated and committed"
+                % lane["activity"])
             direct_done.append(lane["activity"])
             continue
         lid = (reserve_id(prefix, iteration) or "").strip()
