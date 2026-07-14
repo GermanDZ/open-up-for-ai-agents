@@ -180,7 +180,7 @@ only — the reintroduced T-099 roadmap-format constant (interim until T-106).
 
 ## Operations
 
-- [ ] Add `scripts/openup_agent/stamping.py` (type→prefix table, next-free id
+- [x] Add `scripts/openup_agent/stamping.py` (type→prefix table, next-free id
   scan, stamp/normalize frontmatter) + ship it in `process-manifest.txt`.
 - [ ] (tester) Add `test_openup_agent_stamping.py`: stamp body-only file,
   replace model-written frontmatter, `VIS-001`→`VIS-002` allocation,

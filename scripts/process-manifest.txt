@@ -68,6 +68,9 @@ openup_agent/cycle.py
 openup_agent/llm.py
 openup_agent/loop.py
 openup_agent/plan_iteration.py
+# T-104 — engine-owned authoring ceremony: stamps typed instance frontmatter on
+# direct-run artifacts (the model authors the body only; check-docs validates).
+openup_agent/stamping.py
 openup_agent/assess.py
 openup_agent/tiers.py
 openup_agent/tools.py
