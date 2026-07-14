@@ -7,6 +7,13 @@ estimate: 1 session
 plan: docs/iteration-plans/t-112-openup-cycle-skill.md
 depends-on: []
 blocks: []
+touches:
+  - docs-eng-process/procedures/openup-cycle.md
+  - docs-eng-process/.claude-templates/skills/openup-cycle/SKILL.md
+  - docs-eng-process/skills-guide.md
+  - docs-eng-process/model-tiers.md
+  - docs/iteration-plans/t-112-openup-cycle-skill.md
+  - docs/roadmap.md
 last-synced: ""
 ---
 
@@ -160,13 +167,13 @@ mirrors.
 
 ## Operations
 
-- [ ] (developer) Author `docs-eng-process/procedures/openup-cycle.md` per the design in `docs/iteration-plans/t-112-openup-cycle-skill.md` — frontmatter (name, description, `tier: reasoning`, capabilities, `fit` routing every non-pick/resume path to `/openup-next` by name) + full body (resolve → route → claim incl. `resumable_input` fold → box loop with script/judgment classification → gate-before-tick → tick → exit through the two legal exits).
-- [ ] `python3 scripts/render-skills-mirror.py --write`
-- [ ] `scripts/sync-templates-to-claude.sh`
-- [ ] `python3 scripts/check-skills-guide.py --write`
-- [ ] (tester) Verify classification fidelity: run `cycle.py`'s `classify_box`/`extract_command` against the Operations boxes of at least 5 archived `docs/changes/archive/T-*/plan.md` files and confirm the procedure's written classification rule produces the identical script/judgment split for each box; record the comparison in `docs/changes/T-112/design.md`.
-- [ ] `git diff -- docs-eng-process/procedures/openup-next.md`
-- [ ] `python3 scripts/render-skills-mirror.py --check && python3 scripts/check-skills-guide.py --check && python3 scripts/check-model-tiers.py && python3 scripts/check-docs.py`
+- [x] (developer) Author `docs-eng-process/procedures/openup-cycle.md` per the design in `docs/iteration-plans/t-112-openup-cycle-skill.md` — frontmatter (name, description, `tier: reasoning`, capabilities, `fit` routing every non-pick/resume path to `/openup-next` by name) + full body (resolve → route → claim incl. `resumable_input` fold → box loop with script/judgment classification → gate-before-tick → tick → exit through the two legal exits).
+- [x] `python3 scripts/render-skills-mirror.py --write`
+- [x] `scripts/sync-templates-to-claude.sh`
+- [x] `python3 scripts/check-skills-guide.py --write`
+- [x] (tester) Verify classification fidelity: run `cycle.py`'s `classify_box`/`extract_command` against the Operations boxes of at least 5 archived `docs/changes/archive/T-*/plan.md` files and confirm the procedure's written classification rule produces the identical script/judgment split for each box; record the comparison in `docs/changes/T-112/design.md`.
+- [x] `git diff -- docs-eng-process/procedures/openup-next.md`
+- [x] `python3 scripts/render-skills-mirror.py --check && python3 scripts/check-skills-guide.py --check && python3 scripts/check-model-tiers.py && python3 scripts/check-docs.py`
 
 ## Norms
 
@@ -205,14 +212,21 @@ Inherits from:
 ## Success Measures
 
 We expect the first 5 real `/openup-cycle` invocations in this repo's own
-delivery loop to show **zero** role-file/Ring-1/Ring-2 self-brief reads on any
-script-classified Operations box (a magnitude of exactly 0, vs. `/openup-next`'s
-current unconditional per-cycle self-brief regardless of box kind) —
-instrumentation: grep `docs/agent-logs/` run-log tool-call records for
-`read_file` calls against `.claude/teammates/*.md` / `docs/product/**` /
-`docs/changes/<task>/**` occurring in the same cycle as a box whose command was
-run via `exec`/Bash with no such read immediately before it. Read-back: after
-the 5th real `/openup-cycle` invocation, whenever that occurs.
+delivery loop to each report **zero** role-file/Ring-1/Ring-2 self-brief reads
+on every script-classified box in their mandated Output summary (a magnitude
+of exactly 0 self-brief reads per script box, vs. `/openup-next`'s current
+unconditional per-cycle self-brief regardless of box kind). Instrumentation:
+the procedure's own `## Output` section (`docs-eng-process/procedures/openup-cycle.md`)
+mandates reporting "how many boxes ran as script steps vs. judgment steps" in
+every invocation's printed summary — this is real instrumentation that exists
+in this task's diff, not a claim requiring new logging infrastructure. (An
+earlier draft of this measure proposed grepping `docs/agent-logs/` for
+per-tool-call `read_file` records — checked at completion time and found
+false: `docs/agent-logs/` records only session-level events (`session_begin`,
+`task_completed`, …), not individual tool calls, so that instrumentation does
+not exist. Revised to point at instrumentation that is actually in the diff.)
+Read-back: after the 5th real `/openup-cycle` invocation, whenever that
+occurs, by reading the printed summaries.
 
 ## Rollout
 
