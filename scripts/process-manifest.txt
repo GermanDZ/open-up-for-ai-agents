@@ -74,3 +74,7 @@ openup_agent/stamping.py
 openup_agent/assess.py
 openup_agent/tiers.py
 openup_agent/tools.py
+# T-110 — the project-side updater itself. A bootstrapped project must carry
+# the script that pulls future framework updates (scripts, skills, CLIs);
+# shipping it through the manifest also makes it self-updating on every sync.
+sync-from-framework.sh
