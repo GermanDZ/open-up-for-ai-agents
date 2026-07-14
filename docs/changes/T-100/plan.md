@@ -145,16 +145,16 @@ for the reader.
 
 ## Operations
 
-- [ ] Extend `_parse_flow_map` in `openup-process-map.py` to recurse on nested
+- [x] Extend `_parse_flow_map` in `openup-process-map.py` to recurse on nested
   `{...}` values (so `requires_input` parses to a dict).
-- [ ] Have `activities_for` + `activity` emit `requires_input` (dict|None) and
+- [x] Have `activities_for` + `activity` emit `requires_input` (dict|None) and
   `execution` (default `spec-then-execute`); extend `validate` with the three
   gates (input `path` present; `execution` enum; `direct` ⇒ 1 skill).
-- [ ] Declare `requires_input` (stakeholder brief) + `execution: direct` on
+- [x] Declare `requires_input` (stakeholder brief) + `execution: direct` on
   `initiate-project` in `process-map.yaml`; confirm `validate` passes.
-- [ ] (tester) Add `scripts/tests/test_openup_process_map.py` covering Req 1–5.
-- [ ] Document the new fields in `docs-eng-process/script-cli-reference.md`.
-- [ ] (tester) Reader tests green; `python3 scripts/openup-process-map.py
+- [x] (tester) Add `scripts/tests/test_openup_process_map.py` covering Req 1–5.
+- [x] Document the new fields in `docs-eng-process/script-cli-reference.md`.
+- [x] (tester) Reader tests green; `python3 scripts/openup-process-map.py
   validate` exit 0; `check-docs`, `spec-scenarios`, fence
   (`--base harness-optional`) green.
 

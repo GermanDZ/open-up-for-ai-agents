@@ -103,8 +103,22 @@ def _parse_flow_map(value: str) -> dict:
             raise MapError(f"malformed key: value pair: {pair!r}")
         key, _, val = pair.partition(":")
         key, val = key.strip(), val.strip()
-        out[key] = _parse_flow_list(val) if val.startswith("[") else val
+        if val.startswith("["):
+            out[key] = _parse_flow_list(val)
+        elif val.startswith("{"):
+            out[key] = _parse_flow_map(val)        # nested map (e.g. requires_input) — T-100
+        else:
+            out[key] = _unquote(val)
     return out
+
+
+def _unquote(val: str) -> str:
+    """Strip a single pair of matching surrounding quotes from a scalar (YAML
+    would); leaves an unquoted scalar untouched."""
+    val = val.strip()
+    if len(val) >= 2 and val[0] in "\"'" and val[-1] == val[0]:
+        return val[1:-1]
+    return val
 
 
 def load_map(root: Path) -> dict:
@@ -151,8 +165,29 @@ def load_map(root: Path) -> dict:
 
 # ── queries ─────────────────────────────────────────────────────────────────
 
+# Default execution mode when an activity does not declare one (T-100). Preserves
+# pre-T-100 behavior: a work item is a lane whose spec is authored then executed.
+DEFAULT_EXECUTION = "spec-then-execute"
+EXECUTION_MODES = ("direct", "spec-then-execute")
+
+
+def _activity_record(name: str, act: dict) -> dict:
+    """Normalize one activity to the exposed record, including the T-100 fields
+    ``requires_input`` (a ``{path, describe}`` dict or None) and ``execution``
+    (default ``spec-then-execute``)."""
+    ri = act.get("requires_input")
+    return {
+        "name": name,
+        "role": act.get("role"),
+        "skills": act.get("skills", []),
+        "requires_input": ri if isinstance(ri, dict) else None,
+        "execution": act.get("execution") or DEFAULT_EXECUTION,
+    }
+
+
 def activities_for(mp: dict, phase: str) -> list:
-    """Ordered activities for a phase, each resolved to {name, role, skills}."""
+    """Ordered activities for a phase, each resolved to {name, role, skills,
+    requires_input, execution}."""
     if phase not in mp["phases"]:
         raise MapError(f"unknown phase: {phase!r} (known: {', '.join(mp['phases'])})")
     out = []
@@ -160,15 +195,14 @@ def activities_for(mp: dict, phase: str) -> list:
         act = mp["activities"].get(name)
         if act is None:
             raise MapError(f"phase {phase!r} references unknown activity {name!r}")
-        out.append({"name": name, "role": act.get("role"), "skills": act.get("skills", [])})
+        out.append(_activity_record(name, act))
     return out
 
 
 def activity(mp: dict, name: str) -> dict:
     if name not in mp["activities"]:
         raise MapError(f"unknown activity: {name!r}")
-    act = mp["activities"][name]
-    return {"name": name, "role": act.get("role"), "skills": act.get("skills", [])}
+    return _activity_record(name, mp["activities"][name])
 
 
 def phase_letter(mp: dict, phase: str) -> str:
@@ -224,6 +258,22 @@ def validate(mp: dict) -> list:
                 problems.append(f"activity {name!r} has unknown role {role!r}")
             if "skills" in act and not isinstance(act["skills"], list):
                 problems.append(f"activity {name!r} skills is not a list")
+            # T-100: gate requires_input + execution.
+            ri = act.get("requires_input")
+            if ri is not None:
+                if not isinstance(ri, dict) or not str(ri.get("path", "")).strip():
+                    problems.append(
+                        f"activity {name!r} requires_input must be a map with a "
+                        f"non-empty 'path'")
+            ex = act.get("execution")
+            if ex is not None and ex not in EXECUTION_MODES:
+                problems.append(
+                    f"activity {name!r} execution {ex!r} not in "
+                    f"{EXECUTION_MODES}")
+            if ex == "direct" and len(act.get("skills", [])) != 1:
+                problems.append(
+                    f"activity {name!r} execution: direct requires exactly one "
+                    f"skill (the procedure to run), got {len(act.get('skills', []))}")
         if phase not in mp["phase_letters"]:
             problems.append(f"phase {phase!r} has no phase_letters entry")
     if not mp["phases"]:

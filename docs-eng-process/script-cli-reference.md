@@ -252,10 +252,20 @@ openup-process-map.py [--repo-root DIR] validate
   `docs-eng-process/process-map.yaml`; falls back to `scripts/process-map.yaml`
   (shipped-into-a-project layout). Exit 3 if the map file is absent.
 - **`activities-for <phase>`** — the ordered activity list for a phase, each
-  resolved to its `{name, role, skills}`. This is what Plan Iteration
-  (`/openup-start-iteration`) reads to generate phase-appropriate lanes.
-- **`activity <name>`** / **`phase-letter <phase>`** — one activity's role+skills;
-  the iteration-id prefix letter (e.g. `construction` → `C`, for `C3-001` minting).
+  resolved to its `{name, role, skills, requires_input, execution}`. This is what
+  Plan Iteration (`/openup-start-iteration`) reads to generate phase-appropriate
+  lanes.
+- **`activity <name>`** / **`phase-letter <phase>`** — one activity's
+  `{role, skills, requires_input, execution}`; the iteration-id prefix letter
+  (e.g. `construction` → `C`, for `C3-001` minting).
+- **Per-activity `requires_input` + `execution` (T-100, P1)** — an activity MAY
+  declare `requires_input: { path, describe }` (a human-authored file it reads)
+  and `execution: direct | spec-then-execute` (default `spec-then-execute`;
+  `direct` runs the activity's single skill/procedure without an intermediate lane
+  spec). `validate` hard-gates them (input has a `path`; `execution` in the enum;
+  `direct` ⇒ exactly one skill). The deterministic navigation layer (T-101/T-102)
+  reads these to drive input scaffolding + how each activity runs, replacing the
+  hardcoded Inception bootstrap. Fields absent ⇒ pre-T-100 behavior unchanged.
 - **`mint-iteration-id <phase>`** — the stable iteration id `<letter><ordinal>`
   (`C3`) for the phase; the ordinal is repo-monotonic per letter (max existing
   `C<n>-*` id + 1) so it stays globally unique across cycles — the ordinal is

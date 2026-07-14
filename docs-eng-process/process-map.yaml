@@ -24,8 +24,14 @@ phases:
   transition:   [ongoing-tasks, develop-solution-increment, test-solution, plan-manage-iteration]
 
 # ── Activity → role + skills (KB §4 activity meanings + atomic role tasks) ───
+# T-100 (P1): an activity MAY declare `requires_input: { path, describe }` — a
+# human-authored file it reads — and `execution: direct | spec-then-execute`
+# (default spec-then-execute). `direct` runs the activity's single skill/procedure
+# without an intermediate lane spec (for authoring activities). The deterministic
+# navigation layer (T-101/T-102) reads these to drive input scaffolding + how each
+# activity runs — replacing the hardcoded Inception bootstrap.
 activities:
-  initiate-project:             { role: analyst,         skills: [openup-create-vision] }
+  initiate-project:             { role: analyst,         skills: [openup-create-vision], requires_input: { path: docs/inputs/stakeholder-brief.md, describe: "a stakeholder brief (who/problem/desired outcomes/constraints)" }, execution: direct }
   agree-technical-approach:     { role: architect,       skills: [openup-shared-vision, openup-create-architecture-notebook] }
   identify-refine-requirements: { role: analyst,         skills: [openup-create-use-case, openup-detail-use-case] }
   develop-architecture:         { role: architect,       skills: [openup-create-architecture-notebook] }
