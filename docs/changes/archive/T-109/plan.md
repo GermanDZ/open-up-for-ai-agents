@@ -1,7 +1,7 @@
 ---
 id: T-109
 title: Narrated console output — say what the loop is doing, drop the noise
-status: ready
+status: done
 priority: high   # critical | high | medium | low
 estimate: 1 session
 plan: docs/roadmap.md#planned-driver-delivery-trail--console-narration-t-108-t-109
@@ -154,7 +154,7 @@ on stderr; stdout is only the sentinel, unchanged.
   format, summary present on advanced + failed exits, verbose switch; assert
   every existing stdout sentinel test still passes unchanged.
 - [x] Update `reference-driver.md` §output + `next-cycle` wording.
-- [ ] (tester) Full driver suite green; spec-scenarios, check-docs, fence
+- [x] (tester) Full driver suite green; spec-scenarios, check-docs, fence
   (`--base harness-optional`) green.
 
 ## Norms

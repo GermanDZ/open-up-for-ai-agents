@@ -1,0 +1,21 @@
+{
+  "schema": 2,
+  "task_id": "T-109",
+  "iteration": 75,
+  "iteration_id": null,
+  "cycle": 1,
+  "phase": "construction",
+  "track": "standard",
+  "branch": "feat/T-109-narrated-console",
+  "worktree": "/Users/germandz/personal-code/ai-dev-framework/open-up-for-ai-agents-T-109",
+  "session_id": "feat/T-109-narrated-console",
+  "started_at": "2026-07-14T11:21:31Z",
+  "gates": {
+    "team_deployed": false,
+    "plan_persisted": "docs/changes/T-109/plan.md",
+    "log_written": true,
+    "roadmap_synced": true,
+    "retro_due": false
+  },
+  "iterations_since_retro": 0
+}

@@ -832,7 +832,7 @@ authored when promoted.
 | ID | Title | Status | Priority | Depends on |
 |---|---|---|---|---|
 | [T-108](changes/T-108/plan.md) | Engine commits every artifact it produces — direct-path gate+commit + per-cycle run-log sweep | completed (2026-07-14) | high | — |
-| [T-109](changes/T-109/plan.md) | Narrated console output — activity headers, per-tool targets, progress, cycle-end summary; stdout contract unchanged | in-progress | high | — |
+| [T-109](changes/T-109/plan.md) | Narrated console output — activity headers, per-tool targets, progress, cycle-end summary; stdout contract unchanged | completed (2026-07-14) | high | — |
 
 ---
 
