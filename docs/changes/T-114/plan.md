@@ -139,12 +139,12 @@ directory.
 
 ## Operations
 
-- [ ] (developer) Create `docs-eng-process/templates/project-status.md`, lifting the exact structure from `openup-init.md`'s current §3 inline markdown.
-- [ ] (developer) Create `docs-eng-process/templates/roadmap.md`, lifting the exact structure from `openup-init.md`'s current §3 inline markdown.
-- [ ] (developer) Rewrite `openup-init.md` §3 to copy+fill all three templates (project-status, roadmap, input-request) alongside the existing project-config.example.yaml copy step.
-- [ ] `python3 scripts/render-skills-mirror.py --write && scripts/sync-templates-to-claude.sh && python3 scripts/check-skills-guide.py --write && python3 scripts/check-model-tiers.py --write`
-- [ ] `git diff harness-optional -- docs-eng-process/procedures/openup-next.md`
-- [ ] `python3 scripts/render-skills-mirror.py --check && python3 scripts/check-skills-guide.py --check && python3 scripts/check-model-tiers.py --check && python3 scripts/check-docs.py`
+- [x] (developer) Create `docs-eng-process/templates/project-status.md`, lifting the exact structure from `openup-init.md`'s current §3 inline markdown.
+- [x] (developer) Create `docs-eng-process/templates/roadmap.md`, lifting the exact structure from `openup-init.md`'s current §3 inline markdown.
+- [x] (developer) Rewrite `openup-init.md` §3 to copy+fill all three templates (project-status, roadmap, input-request) alongside the existing project-config.example.yaml copy step.
+- [x] `python3 scripts/render-skills-mirror.py --write && scripts/sync-templates-to-claude.sh && python3 scripts/check-skills-guide.py --write && python3 scripts/check-model-tiers.py --write`
+- [x] `git diff harness-optional -- docs-eng-process/procedures/openup-next.md`
+- [x] `python3 scripts/render-skills-mirror.py --check && python3 scripts/check-skills-guide.py --check && python3 scripts/check-model-tiers.py --check && python3 scripts/check-docs.py`
 
 ## Norms
 

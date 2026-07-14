@@ -92,38 +92,47 @@ mkdir -p docs/input-requests docs/use-cases docs/agent-logs
 
 ### 3. Generate Initial Documents
 
-Write each file below via Bash (see Gate awareness above). The markdown shown
-is the file *content*, not a `Write`-tool call.
+Copy each template below via Bash (see Gate awareness above — `cp` is
+gate-exempt), then fill its `[PLACEHOLDER]` fields. Copying from a committed
+template, not freehanding the markdown, keeps every bootstrap file's shape
+single-sourced.
 
 #### Project Status (`docs/project-status.md`)
-```markdown
-# Project Status
 
-**Project**: [PROJECT_NAME]
-**Phase**: [INITIAL_PHASE]
-**Iteration**: 0
-**Iteration Goal**: Project initialization
-**Status**: initialized
-**Current Task**: None
-**Started**: [DATE]
-**Last Updated**: [DATE]
-**Updated By**: openup-init
+```bash
+cp docs-eng-process/templates/project-status.md docs/project-status.md
 ```
+
+Fill `[PROJECT_NAME]`, `[INITIAL_PHASE]`, and `[DATE]` (twice) with the
+gathered project name, initial phase, and today's date.
 
 #### Roadmap (`docs/roadmap.md`)
-```markdown
-# Project Roadmap
 
-## T-001: Initialize OpenUP Project Structure
-**Status**: completed
-**Priority**: high
-**Description**: Initial project setup and documentation structure
-
-## T-002: [Next Task Placeholder]
-**Status**: pending
-**Priority**: medium
-**Description**: [To be defined]
+```bash
+cp docs-eng-process/templates/roadmap.md docs/roadmap.md
 ```
+
+Replace the `T-002: [Next Task Placeholder]` row with the project's actual
+first real task once known (or leave it as the placeholder if the first
+Inception activity — e.g. `/openup-create-vision` — will define it).
+
+#### Stakeholder Brief (`docs/input-requests/`)
+
+If the user has raw stakeholder input to capture before Inception drafting
+begins (a brief, a problem statement, target users), copy the input-request
+template rather than only creating the directory:
+
+```bash
+cp docs-eng-process/templates/input-request.md \
+   "docs/input-requests/stakeholder-brief-$(date +%Y%m%d).md"
+```
+
+Fill its `## Context`/`## Questions` sections with the gathered project
+information, or fill the **Answer** fields directly with what the user
+already told you — either is fine, this file is the source material the
+Vision document (`/openup-create-vision`) is authored from. Skip this file
+entirely when there's no stakeholder input yet (a fresh Inception can still
+start from `/openup-request-input` later).
 
 #### Project Config (`docs/project-config.yaml`)
 
