@@ -185,16 +185,16 @@ only — the reintroduced T-099 roadmap-format constant (interim until T-106).
 - [x] (tester) Add `test_openup_agent_stamping.py`: stamp body-only file,
   replace model-written frontmatter, `VIS-001`→`VIS-002` allocation,
   `check-docs` accepts the stamped artifact.
-- [ ] `plan_iteration.py`: assemble ceremony-exclusion + project-config
+- [x] `plan_iteration.py`: assemble ceremony-exclusion + project-config
   injection into the direct-run instruction; reintroduce the T-099
   `ROADMAP_FORMAT` constant appended to the `initiate-project` instruction.
-- [ ] `cycle.py`: wire stamping after a successful direct authoring sub-run,
+- [x] `cycle.py`: wire stamping after a successful direct authoring sub-run,
   before gates.
-- [ ] (tester) Instruction tests (exclusion text present; config injected when
+- [x] (tester) Instruction tests (exclusion text present; config injected when
   present, absent otherwise; roadmap format pinned) + the fresh-Inception
   regression test: scripted flow → `openup-roadmap.py next` finds a promotable
   entry; hermetic transcript shows zero ceremony-file reads.
-- [ ] Update `docs-eng-process/reference-driver.md` (direct-execution contract;
+- [x] Update `docs-eng-process/reference-driver.md` (direct-execution contract;
   self-critique-by-tier note).
 - [ ] (tester) Full driver suite green; `spec-scenarios`, `check-docs`,
   `process-map validate`, fence (`--base harness-optional`) green.

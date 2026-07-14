@@ -216,6 +216,82 @@ class RunPlanIterationTest(unittest.TestCase):
         rc = self._run(mint_id=lambda ph: "")
         self.assertEqual(rc, pi.PI_CONFIG)
 
+    # -- T-104: engine-owned authoring ceremony ------------------------------
+    def _direct_instruction(self, acts=None):
+        """Run one direct activity and capture the instruction it receives."""
+        brief = self.root / "docs" / "inputs" / "brief.md"
+        brief.parent.mkdir(parents=True, exist_ok=True)
+        brief.write_text("real brief\n")
+        seen = []
+        rc = self._run(activities_for=lambda ph: acts or self._DIRECT_ACTS,
+                       run_procedure=lambda proc, instr: seen.append(instr) or 0)
+        self.assertEqual(rc, pi.PI_OK)
+        return seen[0]
+
+    def test_direct_instruction_excludes_ceremony(self):
+        instr = self._direct_instruction()
+        self.assertIn("Author the document BODY only", instr)
+        for ceremony in ("doc-frontmatter.md", "docs-meta.schema.json",
+                         "trace-model.json", "rubric",
+                         "docs/project-config.yaml"):
+            self.assertIn(ceremony, instr)  # named as prohibited
+        self.assertIn("Do NOT self-critique", instr)
+
+    def test_initiate_project_carries_pinned_roadmap_format(self):
+        instr = self._direct_instruction()
+        self.assertIn(pi.ROADMAP_FORMAT, instr)
+        self.assertIn("T-001, T-002", instr)
+
+    def test_other_direct_activity_has_no_roadmap_format(self):
+        acts = [dict(self._DIRECT_ACTS[0], name="agree-technical-approach",
+                     skills=["openup-create-architecture-notebook"])]
+        instr = self._direct_instruction(acts)
+        self.assertNotIn(pi.ROADMAP_FORMAT, instr)
+
+    def test_project_config_injected_when_present(self):
+        cfg = self.root / "docs" / "project-config.yaml"
+        cfg.parent.mkdir(parents=True, exist_ok=True)
+        cfg.write_text(
+            "context: |\n  Tech stack: python\n  Domain: testing\n"
+            "rules:\n  vision:\n    - Name a paying customer\n"
+            "  use-case:\n    - Not for visions\n")
+        instr = self._direct_instruction()
+        self.assertIn("<project-context>", instr)
+        self.assertIn("Tech stack: python", instr)
+        self.assertIn("<project-rules>", instr)
+        self.assertIn("- Name a paying customer", instr)
+        self.assertNotIn("Not for visions", instr)  # other artifact's rules
+
+    def test_no_project_config_injects_nothing(self):
+        instr = self._direct_instruction()
+        self.assertNotIn("<project-context>", instr)
+        self.assertNotIn("<project-rules>", instr)
+
+
+class RoadmapFormatContractTest(unittest.TestCase):
+    """Regression for the T-103 gap: a roadmap authored exactly per
+    ROADMAP_FORMAT must be promotable by the real openup-roadmap.py."""
+
+    def test_format_compliant_roadmap_is_promotable(self):
+        import subprocess
+        scripts = Path(__file__).resolve().parents[1]
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "docs").mkdir()
+            (root / "docs" / "roadmap.md").write_text(
+                "# Roadmap\n\n"
+                "| ID | Title | Status | Priority | Dependencies | Value |\n"
+                "|---|---|---|---|---|---|\n"
+                "| T-001 | Foundation | pending | high | none | base |\n"
+                "| T-002 | Feature A | pending | medium | T-001 | value |\n")
+            proc = subprocess.run(
+                [sys.executable, str(scripts / "openup-roadmap.py"), "next",
+                 "--root", str(root), "--claims-dir", str(root / "claims"),
+                 "--no-remote-check"],
+                capture_output=True, text=True)
+            self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+            self.assertIn("T-001", proc.stdout)
+
 
 if __name__ == "__main__":
     unittest.main()

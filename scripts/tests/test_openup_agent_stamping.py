@@ -83,6 +83,15 @@ class StampFileTest(unittest.TestCase):
         self.assertEqual(stamping.stamp_file(self.root, path, "vision")["id"],
                          "VIS-006")
 
+    def test_restamp_keeps_existing_valid_id(self):
+        # Re-running normalize on an already-stamped artifact must not
+        # reallocate — other instances may reference the id in trace fields.
+        path = self._write("vision.md", "# V\n\nBody.\n")
+        first = stamping.stamp_file(self.root, path, "vision")
+        again = stamping.stamp_file(self.root, path, "vision")
+        self.assertEqual(first["id"], "VIS-001")
+        self.assertEqual(again["id"], "VIS-001")
+
     def test_unknown_type_raises(self):
         path = self._write("poem.md", "# Ode\n\nBody.\n")
         with self.assertRaises(ValueError):

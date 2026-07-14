@@ -87,6 +87,124 @@ Author ONLY the spec file — do not begin the activity's work itself."""
 
 
 # --------------------------------------------------------------------------
+# T-104 — engine-owned authoring ceremony for execution:direct sub-runs.
+# The model authors the document BODY only; frontmatter stamping (stamping.py),
+# project-config lookup, and validation (check-docs in the gates) are engine
+# work. The exclusion below counteracts the ceremony the procedure file still
+# fans out to in S1; the procedure read itself disappears in T-106.
+# --------------------------------------------------------------------------
+CEREMONY_EXCLUSION = """\
+Author the document BODY only — headings and prose. Do NOT write YAML
+frontmatter: the engine stamps the typed instance frontmatter (type, id, title,
+status) after you finish. Do NOT read or apply doc-frontmatter.md,
+docs-meta.schema.json, trace-model.json, or any rubric file, and do NOT read
+docs/project-config.yaml — everything project-specific you need is injected in
+this instruction. Do NOT self-critique or grade your own output; the engine
+validates the result deterministically (check-docs) after you finish."""
+
+# The T-099 pinned initial-roadmap contract, restored (the T-103 deletion of
+# navigator.VISION_INSTRUCTION regressed it): openup-roadmap.py's parser
+# (ID_RE `T-\\d+`) must find a freshly-authored roadmap promotable. INTERIM
+# home — T-106 moves this into the task library as the author-initial-roadmap
+# task def; retire this constant there.
+ROADMAP_FORMAT = (
+    "Also author an initial docs/roadmap.md that the deterministic tooling can "
+    "parse. docs/roadmap.md MUST contain a markdown table with EXACTLY this "
+    "header row `| ID | Title | Status | Priority | Dependencies | Value |` "
+    "followed by 5-8 entry rows. STRICT format for each row (the tooling "
+    "matches these literally): (1) ID MUST be of the form T-001, T-002, "
+    "T-003, … — the literal prefix 'T-' then a sequential zero-padded number; "
+    "do NOT invent other id schemes; (2) Status MUST be exactly `pending`; "
+    "(3) Priority MUST be one of `high`, `medium`, or `low`; (4) Dependencies "
+    "lists the T-NNN ids this entry depends on, comma-separated, or `none`; "
+    "(5) Value is a one-line rationale. Order the rows by delivery priority "
+    "(the first row should be a foundational entry with no dependencies). Do "
+    "NOT add YAML frontmatter to docs/roadmap.md (it is a plain view, not a "
+    "typed work product). Cover the path from the first use cases to the core "
+    "features.")
+
+CONFIG_REL = Path("docs") / "project-config.yaml"
+
+
+def _config_context(lines):
+    """The top-level ``context:`` block-scalar text (dedented), or ''."""
+    out, in_block = [], False
+    for raw in lines:
+        if in_block:
+            if raw.strip() and not raw.startswith((" ", "\t")):
+                break
+            out.append(raw.strip())
+        elif re.match(r"context:\s*(\|[+-]?\s*)?(#.*)?$", raw):
+            in_block = True
+        elif raw.startswith("context:"):
+            return raw.partition(":")[2].split("#", 1)[0].strip()
+    return "\n".join(out).strip()
+
+
+def _config_rules(lines, artifact):
+    """The ``rules.<artifact>:`` list items, or []. Artifact keys equal the
+    /openup-create-<type> skill suffix (project-config.md §artifact-type keys)."""
+    items, in_rules, in_artifact = [], False, False
+    for raw in lines:
+        stripped = raw.strip()
+        if in_artifact:
+            if stripped.startswith("- "):
+                items.append(stripped[2:].split(" #", 1)[0].strip())
+                continue
+            if stripped and not stripped.startswith("#"):
+                break
+        elif in_rules:
+            if raw.strip() and not raw.startswith((" ", "\t")):
+                break
+            if stripped.rstrip(":").strip() == artifact and stripped.endswith(":"):
+                in_artifact = True
+        elif raw.startswith("rules:"):
+            in_rules = True
+    return items
+
+
+def project_config_block(root, artifact=None):
+    """<project-context>/<project-rules> injection text from
+    docs/project-config.yaml, or '' when absent. The ENGINE reads the file,
+    exactly once — the model never probes for it (the 5x re-read noise
+    observed live on the qwen fixture)."""
+    path = Path(root) / CONFIG_REL
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return ""
+    parts = []
+    context = _config_context(lines)
+    if context:
+        parts.append("<project-context>\n%s\n</project-context>" % context)
+    rules = _config_rules(lines, artifact) if artifact else []
+    if rules:
+        parts.append("<project-rules>\n%s\n</project-rules>"
+                     % "\n".join("- %s" % r for r in rules))
+    return "\n\n".join(parts)
+
+
+def render_direct_instruction(root, lane, objectives):
+    """Assemble an execution:direct activity's instruction: the activity ask +
+    the T-104 engine-owned-ceremony contract (exclusion, injected config, and —
+    for initiate-project — the pinned initial-roadmap format)."""
+    parts = [
+        "Perform the OpenUP activity '%s' (role: %s) by running the %s "
+        "procedure to completion, in service of these objectives:\n%s"
+        % (lane["activity"], lane["role"], lane["skill"],
+           "\n".join("- %s" % o for o in objectives)),
+        CEREMONY_EXCLUSION,
+    ]
+    artifact = lane["skill"].rpartition("openup-create-")[2] or None
+    config = project_config_block(root, artifact)
+    if config:
+        parts.append(config)
+    if lane["activity"] == "initiate-project":
+        parts.append(ROADMAP_FORMAT)
+    return "\n\n".join(parts)
+
+
+# --------------------------------------------------------------------------
 # Deterministic helpers (pure / data)
 # --------------------------------------------------------------------------
 def build_objectives_input(phase, milestone, criteria, activities, roadmap_pending):
@@ -340,11 +458,7 @@ def run_plan_iteration(root, phase, *, dispatch_objectives, dispatch_spec,
                 log("plan-iteration: activity %s is execution:direct but no "
                     "procedure runner was wired — aborting" % lane["activity"])
                 return PI_CONFIG
-            instruction = (
-                "Perform the OpenUP activity '%s' (role: %s) by running the %s "
-                "procedure to completion, in service of these objectives:\n%s"
-                % (lane["activity"], lane["role"], lane["skill"],
-                   "\n".join("- %s" % o for o in objectives)))
+            instruction = render_direct_instruction(root, lane, objectives)
             log("plan-iteration: running direct activity %s via %s"
                 % (lane["activity"], lane["skill"]))
             rc = run_procedure(lane["skill"], instruction)

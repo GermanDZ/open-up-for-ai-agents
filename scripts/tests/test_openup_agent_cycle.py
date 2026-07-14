@@ -902,5 +902,44 @@ class AssessMilestoneDispatchTest(CycleFixture):
         self.assertEqual(len(reqs), 1)
 
 
+# --------------------------------------------------------------------------
+# Engine-owned frontmatter stamping on the direct path (T-104)
+# --------------------------------------------------------------------------
+class StampDirectArtifactTest(unittest.TestCase):
+    """The run_procedure seam stamps the direct artifact after a successful
+    sub-run, before the gates — the model authored the body only."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory(prefix="stamp-wire-")
+        self.root = Path(self.tmp.name)
+        (self.root / "docs").mkdir()
+        self.addCleanup(self.tmp.cleanup)
+
+    def test_known_procedure_stamps_its_artifact(self):
+        vision = self.root / "docs" / "vision.md"
+        vision.write_text("# Product Vision\n\nBody only.\n", encoding="utf-8")
+        rc = cycle._stamp_direct_artifact(self.root, "openup-create-vision")
+        self.assertEqual(rc, 0)
+        text = vision.read_text(encoding="utf-8")
+        self.assertTrue(text.startswith("---\ntype: vision\nid: VIS-001\n"))
+        self.assertIn("status: draft", text)
+        self.assertIn("# Product Vision\n\nBody only.\n", text)
+
+    def test_unknown_procedure_is_a_noop(self):
+        rc = cycle._stamp_direct_artifact(self.root, "openup-create-pr")
+        self.assertEqual(rc, 0)
+
+    def test_missing_artifact_file_is_a_noop(self):
+        rc = cycle._stamp_direct_artifact(self.root, "openup-create-vision")
+        self.assertEqual(rc, 0)
+
+    def test_roadmap_is_never_stamped(self):
+        # docs/roadmap.md is a plain derived view — not in PROCEDURE_ARTIFACTS.
+        from openup_agent import stamping
+        self.assertNotIn(
+            "docs/roadmap.md",
+            [rel for _, rel in stamping.PROCEDURE_ARTIFACTS.values()])
+
+
 if __name__ == "__main__":
     unittest.main()

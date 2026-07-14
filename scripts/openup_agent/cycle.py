@@ -73,7 +73,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-from . import assess, loop, plan_iteration, tiers
+from . import assess, loop, plan_iteration, stamping, tiers
 
 EXIT_OK = 0
 EXIT_CONFIG = 2
@@ -870,6 +870,28 @@ def complete(root, task, env, counts):
 # The cycle
 # --------------------------------------------------------------------------
 
+def _stamp_direct_artifact(root, procedure):
+    """T-104: after a successful execution:direct authoring sub-run, stamp the
+    typed instance frontmatter on the artifact the procedure produced — the
+    model authored the body only. Runs before the gates, so check-docs (already
+    in run_gates) validates the stamped result: the gate is the critic.
+    Returns 0, or EXIT_STEP when stamping fails."""
+    artifact = stamping.PROCEDURE_ARTIFACTS.get(procedure)
+    if not artifact:
+        return EXIT_OK
+    type_, rel = artifact
+    target = Path(root) / rel
+    if not target.exists():
+        return EXIT_OK
+    try:
+        info = stamping.stamp_file(root, target, type_)
+        _log("stamped %s as %s (%s, status draft)" % (rel, info["id"], type_))
+    except (ValueError, OSError) as e:
+        _log("stamping %s failed: %s" % (rel, e))
+        return EXIT_STEP
+    return EXIT_OK
+
+
 def _run_plan_iteration(root, phase, env, step_tier, cap, interactive,
                         _completion, _subrun):
     """Wire the real driver callables into plan_iteration.run_plan_iteration
@@ -978,10 +1000,12 @@ def _run_plan_iteration(root, phase, env, step_tier, cap, interactive,
                           interactive=interactive, instruction=instruction,
                           _completion=_completion)
         out = buf.getvalue()
-        if rc != 0 and out.strip():
-            sys.stdout.write(out)
-            sys.stdout.flush()
-        return rc
+        if rc != 0:
+            if out.strip():
+                sys.stdout.write(out)
+                sys.stdout.flush()
+            return rc
+        return _stamp_direct_artifact(root, procedure)
 
     return plan_iteration.run_plan_iteration(
         root, phase, dispatch_objectives=dispatch_objectives,

@@ -38,6 +38,14 @@ ID_PREFIXES = {
 
 ID_PAD = 3  # VIS-001, VIS-002, …
 
+# Which typed artifact an execution:direct procedure produces, and where.
+# INTERIM table — T-106's task-library defs carry `artifact` + `output_path`
+# as data; retire this there. docs/roadmap.md is deliberately absent: it is a
+# plain derived view, never a typed instance.
+PROCEDURE_ARTIFACTS = {
+    "openup-create-vision": ("vision", "docs/vision.md"),
+}
+
 _HEADING_RE = re.compile(r"^#\s+(.+?)\s*$", re.MULTILINE)
 
 
@@ -90,6 +98,24 @@ def next_free_id(root, type_):
     return "%s-%0*d" % (prefix, ID_PAD, n)
 
 
+def _existing_id(fm_inner, prefix):
+    """A valid ``<prefix>-NNN`` id already carried by the file's own
+    frontmatter, or None. A re-stamped artifact keeps its identity — other
+    instances may reference the id in their trace fields."""
+    if not fm_inner:
+        return None
+    pat = re.compile(r"%s-\d+$" % re.escape(prefix))
+    for line in fm_inner.splitlines():
+        key, _, rest = line.partition(":")
+        if key.strip() == "id":
+            rest = rest.split("#", 1)[0].strip()
+            if len(rest) >= 2 and rest[0] == rest[-1] and rest[0] in "\"'":
+                rest = rest[1:-1]
+            if pat.fullmatch(rest):
+                return rest
+    return None
+
+
 def _title_from(body, fm_inner, fallback):
     """Title precedence: first ATX heading in the body, then a ``title:`` the
     model wrote in its own (replaced) frontmatter, then the fallback."""
@@ -124,10 +150,14 @@ def stamp_file(root, path, type_, title=None):
     belongs to the engine; the body is preserved byte-for-byte. Returns the
     stamped fields ``{type, id, title, status, path}``.
     """
+    if type_ not in ID_PREFIXES:
+        raise ValueError("unknown work-product type %r (spine: %s)"
+                         % (type_, ", ".join(sorted(ID_PREFIXES))))
     path = Path(path)
     text = path.read_text(encoding="utf-8")
     fm_inner, body = split_frontmatter(text)
-    id_ = next_free_id(root, type_)
+    id_ = (_existing_id(fm_inner, ID_PREFIXES[type_])
+           or next_free_id(root, type_))
     final_title = title or _title_from(body, fm_inner,
                                        path.stem.replace("-", " ").strip())
     path.write_text(render_frontmatter(type_, id_, final_title)

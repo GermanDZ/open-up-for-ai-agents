@@ -343,7 +343,35 @@ restores the bare typed exits below.
     **runs its procedure directly** — no intermediate lane spec, killing the
     redundant re-authoring — and is recorded in the iteration-plan instance body;
     `spec-then-execute` activities keep the lane flow above. *(The per-cycle
-    navigator/bootstrap remain as now-unused code until T-103 deletes them.)*
+    navigator/bootstrap were deleted in T-103.)*
+  - **Engine-owned authoring ceremony (T-104).** On the `execution: direct` path
+    the **model authors the document body only**; every piece of ceremony is
+    engine work:
+    - **Frontmatter stamping** (`openup_agent/stamping.py`): after the sub-run
+      succeeds — and before the gates — the engine stamps the typed instance
+      frontmatter (`type`, next-free `id` per type prefix e.g. `VIS-001`,
+      `title`, `status: draft`) on the artifact the procedure produced
+      (`stamping.PROCEDURE_ARTIFACTS`; interim table until T-106's task-library
+      defs carry `artifact` + `output_path`). A model-written frontmatter block
+      is replaced; a valid already-stamped id is kept (re-runs never reallocate).
+      `check-docs` (already in the gates) validates the stamped result — **the
+      gate is the critic**.
+    - **Ceremony exclusion**: the direct-run instruction tells the model to
+      author the body only and NOT to read/write frontmatter, rubrics, trace
+      models, schemas, or `docs/project-config.yaml`, and not to self-critique.
+      (A strong-model tier MAY later run critique as a separate tiny sub-run —
+      noted, not built.)
+    - **Project-config injection**: the engine reads `docs/project-config.yaml`
+      once and injects its `context:` / relevant `rules.<artifact>` into the
+      instruction as `<project-context>` / `<project-rules>` — the model never
+      probes for the file.
+    - **Pinned initial-roadmap contract** (restores the T-099 format the T-103
+      deletion regressed): the `initiate-project` direct instruction carries
+      `plan_iteration.ROADMAP_FORMAT` — strict header row, `T-001, T-002, …`
+      ids, `pending` status, `high|medium|low` priority, comma-separated
+      `T-NNN` deps, priority-ordered, no YAML frontmatter — so
+      `openup-roadmap.py next` can promote from a freshly-authored roadmap.
+      Interim constant until T-106 moves it into the task library.
 - **Assess (T-091, one grading sub-run).** When a T-090-planned iteration's
   committed lanes are all delivered and its instance has no `## Assessment`,
   `resolve` returns `assess-iteration`. Done-ness is already code (it fired the
