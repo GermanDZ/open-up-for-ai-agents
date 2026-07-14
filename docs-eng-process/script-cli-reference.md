@@ -195,10 +195,17 @@ sync-status.py --reconcile [--dry-run] [--roadmap]
 
 ```
 check-docs.py [--docs DIR] [--schema PATH] [--model PATH] [--json] [--coverage]
+check-docs.py --show-archetype-defaults
 ```
 - Flat args, **no subcommand** (a frequent friction point — do not write
   `check-docs.py check …`). `--coverage` adds required-coverage rules; required
   gaps fail the run.
+- `--show-archetype-defaults` (T-115): prints the Development Case archetype
+  defaults (`quick`/`mvp`/`product`) plus what applies when
+  `docs/project-config.yaml`'s `process:` block is absent (today: no
+  archetype tailoring). Short-circuits before loading any `docs/` tree — safe
+  to run with no project docs at all. A different axis from the ceremony
+  track (`tracks.md`); don't conflate the two.
 
 ## openup-doctor.py — read-only project health diagnostic
 

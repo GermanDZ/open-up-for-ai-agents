@@ -370,5 +370,46 @@ class ChangeFolderRefTests(_FixtureBase):
         self.assertIn("dangling-ref", found)
 
 
+class ArchetypeDefaultsCLITests(unittest.TestCase):
+    """T-115: --show-archetype-defaults answers "what applies when
+    docs/project-config.yaml is absent" in one call, no docs/ tree needed."""
+
+    @classmethod
+    def setUpClass(cls):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("check_docs", SCRIPT)
+        cls.mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(cls.mod)
+
+    def _run(self):
+        proc = subprocess.run(
+            [sys.executable, str(SCRIPT), "--show-archetype-defaults"],
+            capture_output=True, text=True)
+        self.assertEqual(proc.returncode, OK, proc.stderr)
+        return json.loads(proc.stdout)
+
+    def test_exits_ok_with_no_docs_dir(self):
+        # No --docs given, and no docs/ dir exists in cwd — must not try to
+        # load or validate anything.
+        proc = subprocess.run(
+            [sys.executable, str(SCRIPT), "--show-archetype-defaults"],
+            capture_output=True, text=True, cwd=tempfile.gettempdir())
+        self.assertEqual(proc.returncode, OK, proc.stderr)
+
+    def test_default_when_absent_names_both_axes(self):
+        data = self._run()
+        msg = data["default_when_absent"]
+        self.assertIn("No archetype tailoring", msg)
+        self.assertIn("tracks.md", msg)
+
+    def test_archetypes_match_the_real_dict(self):
+        data = self._run()
+        self.assertEqual(
+            set(data["archetypes"].keys()),
+            set(self.mod.PROCESS_ARCHETYPE_DEFAULTS.keys()))
+        for name, expected in self.mod.PROCESS_ARCHETYPE_DEFAULTS.items():
+            self.assertEqual(data["archetypes"][name], expected)
+
+
 if __name__ == "__main__":
     unittest.main()

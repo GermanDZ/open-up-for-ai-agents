@@ -174,8 +174,11 @@ the same reason: the template is OpenUP-layer read-only):
 Uncommented, `archetype` selects a per-phase default set (`quick` degenerates to
 today's `/openup-quick-task` ceremony; `product` sizes Elaboration to open
 architectural risk); any explicit `phases:` key overrides that default. The
-section is structurally validated by `check-docs.py`. Left commented, the
-framework defaults apply. Full mapping: `docs-eng-process/project-config.md`.
+section is structurally validated by `check-docs.py`. Left commented, no
+archetype tailoring applies — run
+`python3 scripts/check-docs.py --show-archetype-defaults` to see exactly what
+that means and what each archetype would set instead. Full mapping:
+`docs-eng-process/project-config.md`.
 
 ### 4. Configure Agent Teams (if not skipped)
 

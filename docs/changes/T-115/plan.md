@@ -155,14 +155,14 @@ edits (disambiguation) and one `openup-init.md` pointer update.
 
 ## Operations
 
-- [ ] (developer) Add `--show-archetype-defaults` to `check-docs.py`'s `main()`: short-circuits before docs-dir/schema loading, prints `{"default_when_absent": "...", "archetypes": PROCESS_ARCHETYPE_DEFAULTS}` as JSON, exits 0.
-- [ ] (tester) Add a hermetic test class to `scripts/tests/test_check_docs.py` asserting the flag's exit code, JSON shape, and that `archetypes` matches `PROCESS_ARCHETYPE_DEFAULTS` for all three archetype names.
-- [ ] `python3 -m unittest scripts.tests.test_check_docs -v 2>&1 | tail -30`
-- [ ] (developer) Add the disambiguation sentence to `docs-eng-process/project-config.md`'s `process:` section and `docs-eng-process/tracks.md`'s track table, each naming the other.
-- [ ] (developer) Update `openup-init.md`'s "Project Config" subsection to name `check-docs.py --show-archetype-defaults`, and add the same flag's entry to `docs-eng-process/script-cli-reference.md`.
-- [ ] `python3 scripts/render-skills-mirror.py --write && scripts/sync-templates-to-claude.sh && python3 scripts/check-skills-guide.py --write && python3 scripts/check-model-tiers.py --write`
-- [ ] `git diff harness-optional -- docs-eng-process/procedures/openup-next.md`
-- [ ] `python3 scripts/render-skills-mirror.py --check && python3 scripts/check-skills-guide.py --check && python3 scripts/check-model-tiers.py --check && python3 scripts/check-docs.py`
+- [x] (developer) Add `--show-archetype-defaults` to `check-docs.py`'s `main()`: short-circuits before docs-dir/schema loading, prints `{"default_when_absent": "...", "archetypes": PROCESS_ARCHETYPE_DEFAULTS}` as JSON, exits 0.
+- [x] (tester) Add a hermetic test class to `scripts/tests/test_check_docs.py` asserting the flag's exit code, JSON shape, and that `archetypes` matches `PROCESS_ARCHETYPE_DEFAULTS` for all three archetype names.
+- [x] `python3 -m unittest scripts.tests.test_check_docs -v 2>&1 | tail -30`
+- [x] (developer) Add the disambiguation sentence to `docs-eng-process/project-config.md`'s `process:` section and `docs-eng-process/tracks.md`'s track table, each naming the other.
+- [x] (developer) Update `openup-init.md`'s "Project Config" subsection to name `check-docs.py --show-archetype-defaults`, and add the same flag's entry to `docs-eng-process/script-cli-reference.md`.
+- [x] `python3 scripts/render-skills-mirror.py --write && scripts/sync-templates-to-claude.sh && python3 scripts/check-skills-guide.py --write && python3 scripts/check-model-tiers.py --write`
+- [x] `git diff harness-optional -- docs-eng-process/procedures/openup-next.md`
+- [x] `python3 scripts/render-skills-mirror.py --check && python3 scripts/check-skills-guide.py --check && python3 scripts/check-model-tiers.py --check && python3 scripts/check-docs.py`
 
 ## Norms
 

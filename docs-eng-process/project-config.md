@@ -90,8 +90,13 @@ process:              # T-076 — Development Case: tailor the lifecycle by arch
     to these overrides — completion is the strictness floor.
 - **`process:`** — OpenUP's **Development Case** made machine-readable: an
   `archetype` (quick | mvp | product) sets per-phase defaults, overridable per
-  phase. Structurally validated by `check-docs.py` (see the dedicated section
-  below). Absent → framework defaults apply.
+  phase. **This `quick` is a different axis from the per-task ceremony
+  `quick`/`standard`/`full` track in `tracks.md`** — the archetype tailors an
+  entire phase's iteration budget/artifacts, the track sets one task's
+  ceremony; don't conflate them. Structurally validated by `check-docs.py`
+  (see the dedicated section below). Absent → no archetype tailoring applies
+  (see `check-docs.py --show-archetype-defaults` for the exact defaults each
+  archetype would set, and confirmation of what "absent" means).
 
 The `context:`, `rules:`, `environments:`, and `trace_rules:` keys are
 intentionally **unvalidated** (add a linter only if broadly adopted). The
