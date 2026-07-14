@@ -7,7 +7,8 @@
 **Current Task**: T-111
 **Iteration Started**: 2026-06-18
 **Last Updated**: 2026-07-14
-**Updated By**: sync-status.py
+**Updated By**: sync-status.py → openup-retrospective
+**Retrospective**: [iteration-77-retrospective.md](iteration-retrospectives/iteration-77-retrospective.md) — covers iterations 21–77 (2026-06-16 → 2026-07-14); first written retro since iteration 20
 
 ## Notes
 
