@@ -372,6 +372,16 @@ restores the bare typed exits below.
       `T-NNN` deps, priority-ordered, no YAML frontmatter — so
       `openup-roadmap.py next` can promote from a freshly-authored roadmap.
       Interim constant until T-106 moves it into the task library.
+  - **Everything the engine produces is committed (T-108).** A successful
+    direct activity is **gated and committed at the point of production**
+    (produce → stamp → gate → commit the `docs/` delta, message
+    `docs(<iter>): <activity> — authored via <skill> [<iter>]`); a gate failure
+    aborts with the typed step exit and nothing committed — same discipline as
+    the lane specs. And on **every** `run_cycle` exit path (advanced, done,
+    suspend, typed failure) the cycle's `docs/agent-logs/` shards are swept
+    into a log-only `chore(process): sweep run-log shards [openup-skip]`
+    commit, so each cycle is durably registered even when it fails mid-lane. A
+    sweep error is logged and never changes the cycle's exit code.
 - **Assess (T-091, one grading sub-run).** When a T-090-planned iteration's
   committed lanes are all delivered and its instance has no `## Assessment`,
   `resolve` returns `assess-iteration`. Done-ness is already code (it fired the

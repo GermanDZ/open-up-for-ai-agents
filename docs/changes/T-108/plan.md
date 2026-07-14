@@ -140,17 +140,17 @@ exit code always wins. Applied on every return path via a single wrapper point.
 
 ## Operations
 
-- [ ] `plan_iteration.py`: after a successful direct run, run gates (typed
+- [x] `plan_iteration.py`: after a successful direct run, run gates (typed
   abort on failure, nothing committed) and `git_commit(["docs/"], ...)` with an
   iteration-tagged message.
-- [ ] (tester) Plan-iteration tests: direct success → commit recorded with
+- [x] (tester) Plan-iteration tests: direct success → commit recorded with
   `docs/` staged; gate failure → typed abort, zero commits.
-- [ ] `cycle.py`: add `_sweep_run_logs(root)` and invoke it on every
+- [x] `cycle.py`: add `_sweep_run_logs(root)` and invoke it on every
   `run_cycle` exit path; log-only `[openup-skip]` message; git errors logged,
   exit code preserved.
-- [ ] (tester) Cycle tests: dirty agent-logs → swept on advanced AND on a
+- [x] (tester) Cycle tests: dirty agent-logs → swept on advanced AND on a
   failing exit; clean tree → no commit; commit error → original exit code.
-- [ ] Update `reference-driver.md` (direct commit + sweep).
+- [x] Update `reference-driver.md` (direct commit + sweep).
 - [ ] (tester) Full driver suite green; spec-scenarios, check-docs, fence
   (`--base harness-optional`) green.
 

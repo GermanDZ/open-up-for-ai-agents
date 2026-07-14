@@ -1051,10 +1051,58 @@ def _run_assess(root, decision, env, step_tier, cap, interactive, _completion,
                              git_commit=git_commit, log=_log)
 
 
+def _sweep_run_logs(root):
+    """T-108: register the cycle — sweep new/changed ``docs/agent-logs/``
+    shards into a log-only ``[openup-skip]`` commit on the current branch, on
+    EVERY cycle exit path. A cycle that suspended or failed still leaves its
+    audit trail durable (observed stranded live on my-product). Never raises
+    and never changes the cycle's exit code; a non-repo root is a no-op."""
+    logs_rel = "docs/agent-logs"
+    root = Path(root)
+    if not (root / logs_rel).is_dir():
+        return
+    status = _git(["status", "--porcelain", "--", logs_rel], root)
+    if status.returncode != 0 or not status.stdout.strip():
+        return
+    if _git(["add", "--", logs_rel], root).returncode != 0:
+        _log("run-log sweep: git add failed; shards left uncommitted")
+        return
+    commit = _git(["commit", "-m",
+                   "chore(process): sweep run-log shards [openup-skip]",
+                   "--", logs_rel], root)
+    if commit.returncode != 0:
+        _log("run-log sweep: commit failed: %s"
+             % (commit.stdout + commit.stderr).strip()[:200])
+    else:
+        _log("run-log sweep: committed %d shard change(s)"
+             % len(status.stdout.strip().splitlines()))
+
+
 def run_cycle(dir, env=None, step_max_iterations=DEFAULT_STEP_MAX_ITERATIONS,
               step_tier=DEFAULT_STEP_TIER, interactive=False, recover=True,
               _completion=None, _subrun=None, _ask=None,
               _plan_iteration=None, _assess=None, _milestone=None):
+    """Run ONE delivery cycle under ``dir``. Returns an int exit code. Thin
+    wrapper: on every exit path (advanced, done, suspend, typed failure) the
+    run-log shards this cycle wrote are swept into a log-only commit (T-108).
+    The full contract is on ``_run_cycle_inner``."""
+    root = Path(dir).resolve()
+    try:
+        return _run_cycle_inner(
+            dir, env=env, step_max_iterations=step_max_iterations,
+            step_tier=step_tier, interactive=interactive, recover=recover,
+            _completion=_completion, _subrun=_subrun, _ask=_ask,
+            _plan_iteration=_plan_iteration, _assess=_assess,
+            _milestone=_milestone)
+    finally:
+        _sweep_run_logs(root)
+
+
+def _run_cycle_inner(dir, env=None,
+                     step_max_iterations=DEFAULT_STEP_MAX_ITERATIONS,
+                     step_tier=DEFAULT_STEP_TIER, interactive=False,
+                     recover=True, _completion=None, _subrun=None, _ask=None,
+                     _plan_iteration=None, _assess=None, _milestone=None):
     """Run ONE delivery cycle under ``dir``. Returns an int exit code.
 
     ``recover`` (default True, T-092/T-094) lets the engine rebuild blocking

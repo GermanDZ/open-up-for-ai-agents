@@ -941,5 +941,55 @@ class StampDirectArtifactTest(unittest.TestCase):
             [rel for _, rel in stamping.PROCEDURE_ARTIFACTS.values()])
 
 
+# --------------------------------------------------------------------------
+# Per-cycle run-log sweep (T-108)
+# --------------------------------------------------------------------------
+class SweepRunLogsTest(CycleFixture):
+    """Every run_cycle exit sweeps docs/agent-logs/ into a log-only commit."""
+
+    def _head_count(self):
+        p = subprocess.run(["git", "rev-list", "--count", "HEAD"],
+                           cwd=str(self.root), capture_output=True, text=True)
+        return int(p.stdout.strip())
+
+    def _logs_dirty(self):
+        p = subprocess.run(
+            ["git", "status", "--porcelain", "--", "docs/agent-logs"],
+            cwd=str(self.root), capture_output=True, text=True)
+        return bool(p.stdout.strip())
+
+    def test_shards_swept_on_a_done_exit(self):
+        self._set_decision(_decision("noop", reason="board empty"))
+        self._git("add", "-A"); self._git("commit", "-m", "d", "-q")
+        shard = self.root / "docs" / "agent-logs" / "runs" / "x.jsonl"
+        shard.parent.mkdir(parents=True)
+        shard.write_text('{"event": "session_begin"}\n')
+        import io, contextlib
+        with contextlib.redirect_stdout(io.StringIO()):
+            rc = cycle.run_cycle(str(self.root), env=self.env)
+        self.assertEqual(rc, 0)
+        self.assertFalse(self._logs_dirty())
+        p = subprocess.run(["git", "log", "-1", "--format=%s"],
+                           cwd=str(self.root), capture_output=True, text=True)
+        self.assertIn("sweep run-log shards", p.stdout)
+        self.assertIn("[openup-skip]", p.stdout)
+
+    def test_no_empty_commit_when_clean(self):
+        self._set_decision(_decision("noop", reason="board empty"))
+        self._git("add", "-A"); self._git("commit", "-m", "d", "-q")
+        before = self._head_count()
+        import io, contextlib
+        with contextlib.redirect_stdout(io.StringIO()):
+            rc = cycle.run_cycle(str(self.root), env=self.env)
+        self.assertEqual(rc, 0)
+        self.assertEqual(self._head_count(), before)
+
+    def test_sweep_never_raises_outside_a_repo(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            (Path(tmp) / "docs" / "agent-logs").mkdir(parents=True)
+            (Path(tmp) / "docs" / "agent-logs" / "x.jsonl").write_text("{}\n")
+            cycle._sweep_run_logs(Path(tmp))  # must not raise
+
+
 if __name__ == "__main__":
     unittest.main()

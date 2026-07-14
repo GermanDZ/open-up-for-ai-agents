@@ -468,6 +468,21 @@ def run_plan_iteration(root, phase, *, dispatch_objectives, dispatch_spec,
                 log("plan-iteration: direct activity %s (%s) failed (exit %d) — "
                     "aborting" % (lane["activity"], lane["skill"], rc))
                 return rc if rc in (PI_CONFIG,) else PI_STEP
+            # T-108: the direct outputs (stamped artifact + companions like the
+            # initial roadmap) must be durable the moment they exist — gate,
+            # then commit the whole docs/ delta, same discipline as the lane
+            # specs below. An uncommitted vision/roadmap is invisible to the
+            # board and lost on a crash (observed live on my-product).
+            ok, report = run_gates()
+            if not ok:
+                log("plan-iteration: gates failed after direct activity %s — "
+                    "aborting, nothing committed:\n%s"
+                    % (lane["activity"], report))
+                return PI_STEP
+            git_commit(["docs/"],
+                       "docs(%s): %s — authored via %s [%s]"
+                       % (iteration, lane["activity"], lane["skill"],
+                          iteration))
             direct_done.append(lane["activity"])
             continue
         lid = (reserve_id(prefix, iteration) or "").strip()

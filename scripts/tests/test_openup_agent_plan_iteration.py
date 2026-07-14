@@ -267,6 +267,33 @@ class RunPlanIterationTest(unittest.TestCase):
         self.assertNotIn("<project-context>", instr)
         self.assertNotIn("<project-rules>", instr)
 
+    # -- T-108: direct outputs are gated + committed --------------------------
+    def test_direct_success_gates_and_commits_docs(self):
+        brief = self.root / "docs" / "inputs" / "brief.md"
+        brief.parent.mkdir(parents=True, exist_ok=True)
+        brief.write_text("real brief\n")
+        rc = self._run(activities_for=lambda ph: self._DIRECT_ACTS,
+                       run_procedure=lambda proc, instr: 0)
+        self.assertEqual(rc, pi.PI_OK)
+        direct = [c for c in self.commits if "initiate-project" in c[1]]
+        self.assertEqual(len(direct), 1)
+        paths, message = direct[0]
+        self.assertEqual(paths, ("docs/",))
+        self.assertIn("openup-create-vision", message)
+        self.assertIn("[I1]", message)
+        # committed before the iteration-plan instance (the last commit)
+        self.assertLess(self.commits.index(direct[0]), len(self.commits) - 1)
+
+    def test_direct_gate_failure_aborts_with_nothing_committed(self):
+        brief = self.root / "docs" / "inputs" / "brief.md"
+        brief.parent.mkdir(parents=True, exist_ok=True)
+        brief.write_text("real brief\n")
+        self.gate_ok = False
+        rc = self._run(activities_for=lambda ph: self._DIRECT_ACTS,
+                       run_procedure=lambda proc, instr: 0)
+        self.assertEqual(rc, pi.PI_STEP)
+        self.assertEqual(self.commits, [])
+
 
 class RoadmapFormatContractTest(unittest.TestCase):
     """Regression for the T-103 gap: a roadmap authored exactly per
