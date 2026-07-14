@@ -1,7 +1,7 @@
 ---
 id: T-108
 title: Engine commits every artifact it produces — direct artifacts + per-cycle run-log sweep
-status: ready
+status: done
 priority: high   # critical | high | medium | low
 estimate: 1 session
 plan: docs/roadmap.md#planned-driver-delivery-trail--console-narration-t-108-t-109
@@ -151,7 +151,7 @@ exit code always wins. Applied on every return path via a single wrapper point.
 - [x] (tester) Cycle tests: dirty agent-logs → swept on advanced AND on a
   failing exit; clean tree → no commit; commit error → original exit code.
 - [x] Update `reference-driver.md` (direct commit + sweep).
-- [ ] (tester) Full driver suite green; spec-scenarios, check-docs, fence
+- [x] (tester) Full driver suite green; spec-scenarios, check-docs, fence
   (`--base harness-optional`) green.
 
 ## Norms

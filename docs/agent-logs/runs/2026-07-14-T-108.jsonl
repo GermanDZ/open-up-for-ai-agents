@@ -1,1 +1,5 @@
 {"run_id": "d8bb79a8505a4ff780fae1878ff6a79a", "event": "commit", "task_id": "T-108", "branch": "harness-optional", "sha": "591ee998b0a057a0a066f51669a5f15bf3faff47", "model": null, "session_id": "feat/T-108-engine-commit-trail", "ts": "2026-07-14T11:12:21Z"}
+{"run_id": "T-108-iter74-2026-07-14", "event": "session_begin", "task_id": "T-108", "goal": "T-108 \u2014 Engine commits every artifact it produces (direct gate+commit + per-cycle run-log sweep)", "branch": "feat/T-108-engine-commit-trail", "phase": "construction", "ts": "2026-07-14T11:12:21Z"}
+{"run_id": "490e24441dda4f7196ecee4e0590cb8a", "event": "commit", "task_id": "T-108", "branch": "feat/T-108-engine-commit-trail", "sha": "4f306fedce26ba1a54b9d868bfe697f7cba7e486", "model": null, "session_id": "feat/T-108-engine-commit-trail", "ts": "2026-07-14T11:17:53Z"}
+{"run_id": "ea0e80d7a7824eb6a306566204da9cfa", "event": "commit", "task_id": "T-108", "branch": "feat/T-108-engine-commit-trail", "sha": "dc7dd7401e421aae620c4dcdde9610cc316010f2", "model": null, "session_id": "feat/T-108-engine-commit-trail", "ts": "2026-07-14T11:18:47Z"}
+{"event": "session_end", "task_id": "T-108", "ts": "2026-07-14T11:20:06Z"}
