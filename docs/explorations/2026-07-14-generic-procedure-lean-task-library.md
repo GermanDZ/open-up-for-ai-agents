@@ -258,11 +258,52 @@ regenerated output against the committed library (drift detection, same as the
 trace model); (8) golden-set testing — the compiler must reproduce (or improve
 per review) the S2 hand-distilled defs before being trusted on the rest.
 
+## 2026-07-14 (append 2) — re-sequenced: compiler-first (after S1)
+
+Owner follow-up: *"should we do the compiler first?"* — re-examined, and the
+earlier hand-distill-first argument **partially collapses**: it assumed
+acceptance = matching golden hand-authored text. Acceptance is **behavioral** —
+the T-080 bench + debug log on the qwen fixture ("def makes create-vision
+converge: ≤6 iters, zero restarts, ≥80% of runs") judges compiler output
+directly, no golden text needed. Once acceptance is behavioral, the compiler is
+the *better* tuning tool:
+- **tune → regenerate → rebench** is a tighter loop than divergent hand-edits
+  (adjust the distillation rules once; all defs regenerate consistently);
+- **uniformity** across defs (hand distillation drifts in style);
+- **schema-first discipline** — building the compiler forces the task-def schema
+  + validator up front (the T-099 lesson) instead of a schema emerging
+  implicitly from hand files;
+- it is **the product** — the whole arc is "compile the process once."
+
+What survives of the earlier caution:
+1. **S1 (engine-owned ceremony) still goes first** — the biggest context cut,
+   compiler-independent, and without it even perfect defs won't converge (the
+   sub-run would still drown in frontmatter/rubric/self-critique ceremony).
+2. **Minimal compiler, no gold-plating** — deterministic extraction (structure
+   from the regular UMA files, no LLM, same approach as `build-trace-model.py`)
+   + ONE schema-strict LLM distillation stage + validator + `--check` drift
+   mode; target the 5–7 map-referenced tasks only; seed the distillation prompt
+   with **one hand-calibrated example def** (vision) as a style anchor — one
+   def, not a hand-library. Extend to all 39 / customized processes only after
+   the bench passes.
+
+**Revised sequence (supersedes the S1→S2→S3 above):**
+- **S1 — engine-owned ceremony** (frontmatter stamping; strip rubric/
+  self-critique from the weak-model authoring path). Unchanged.
+- **S2′ — the process compiler, minimal** (`build-task-library.py`: extract +
+  distill + validate + `--check`), producing the lean task library for the
+  map-referenced tasks + the generic authoring procedure + map wiring;
+  acceptance = the behavioral measure on the qwen fixture.
+- **S3′ — scale it**: the remaining KB tasks, KB-update re-distillation, and
+  customized-process sources (the original P2 promise).
+
 ## Where this goes next
 
 → **iteration** — promote a program **"Lean authoring tasks"** on
-`harness-optional`: S1 (engine stamps frontmatter + slims the authoring sub-run
-context), then S2 (generic authoring procedure + hand-distilled lean-task
-library for the map-referenced tasks + activity→task map wiring), S3 = the
-deferred P2 compiler now targeted at task distillation; falsifiable measure as
-refined above, read back via the T-080 bench + debug log on the qwen fixture.
+`harness-optional`, sequenced per the compiler-first re-decision (append 2):
+S1 (engine stamps frontmatter + slims the authoring sub-run context), then
+S2′ (the minimal process compiler — `build-task-library.py` extract/distill/
+validate/`--check` — producing the lean task library for the map-referenced
+tasks, + the generic authoring procedure + map wiring; behavioral acceptance on
+the qwen fixture), then S3′ (scale to the full KB + customized processes);
+falsifiable measure as refined above, read back via the T-080 bench + debug log.
