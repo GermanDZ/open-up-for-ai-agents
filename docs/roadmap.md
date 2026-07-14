@@ -811,6 +811,31 @@ authored when promoted.
 
 ---
 
+### Planned: Driver delivery-trail & console narration (T-108, T-109)
+
+- **Status**: `planned` (2026-07-14)
+- **Created**: 2026-07-14 (owner ask after the my-product live run)
+- **Priority**: high
+- **Value**: The live run left `docs/vision.md`, `docs/roadmap.md`, and
+  `docs/agent-logs/` untracked (a crash loses authored work; the board can't see
+  it) and the console was unreadable (blank-line spam, `tool read_file -> 5706
+  chars`, truncated instruction dumps). The driver's one human surface must show
+  what it's doing, and everything it produces must be durable in git.
+- **Goal**: Every artifact the engine produces lands in a commit — direct-path
+  outputs are gated + committed at the point of production, every cycle exit
+  sweeps its run-log shards (T-108); the console narrates activity, per-tool
+  targets, progress, and a cycle-end summary, with the stdout sentinel contract
+  byte-unchanged (T-109).
+
+**Tasks**
+
+| ID | Title | Status | Priority | Depends on |
+|---|---|---|---|---|
+| [T-108](changes/T-108/plan.md) | Engine commits every artifact it produces — direct-path gate+commit + per-cycle run-log sweep | pending | high | — |
+| [T-109](changes/T-109/plan.md) | Narrated console output — activity headers, per-tool targets, progress, cycle-end summary; stdout contract unchanged | pending | high | — |
+
+---
+
 ### Completed: Deterministic process-map navigation (P1)
 
 - **Status**: `completed` (2026-07-14 — T-100..T-103; P2 compile step deferred)
