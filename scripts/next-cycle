@@ -139,7 +139,10 @@ def main(argv=None):
                     "with plain next-step guidance. The driver decides what the "
                     "project needs next; this wrapper knows no process.")
     ap.add_argument("--dir", default=".", help="OpenUP project root (default: .)")
-    args = ap.parse_args(argv)
+    # Unknown flags pass through to `openup-agent.py cycle` verbatim (T-111) —
+    # e.g. --step-max-iterations 15 — so the one-command entry point never has
+    # to be abandoned just to reach a driver knob.
+    args, passthrough = ap.parse_known_args(argv)
 
     root = Path(args.dir).resolve()
     if not (root / "scripts" / "openup-agent.py").exists():
@@ -156,6 +159,7 @@ def main(argv=None):
     driver_args = ["cycle", "--dir", str(root)]
     if interactive:
         driver_args.append("--interactive")
+    driver_args.extend(passthrough)
     rc, out = run_driver(root, driver_args, env)
     _say(guidance(rc, out))
     return rc

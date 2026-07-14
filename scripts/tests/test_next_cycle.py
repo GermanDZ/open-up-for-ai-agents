@@ -76,7 +76,7 @@ class NextCycleFixture(unittest.TestCase):
             return []
         return [json.loads(l) for l in p.read_text().splitlines() if l.strip()]
 
-    def _run(self, env_extra=None, with_url=True):
+    def _run(self, env_extra=None, with_url=True, extra_args=None):
         env = {k: v for k, v in os.environ.items()
                if k not in ("LLM_API_URL", "LLM_API_KEY",
                             "OPENUP_MODEL_MAIN", "OPENUP_MODEL_MID")}
@@ -84,7 +84,8 @@ class NextCycleFixture(unittest.TestCase):
             env["LLM_API_URL"] = "http://exported/v1"
         env.update(env_extra or {})
         proc = subprocess.run(
-            [sys.executable, str(_WRAPPER), "--dir", str(self.root)],
+            [sys.executable, str(_WRAPPER), "--dir", str(self.root)]
+            + list(extra_args or []),
             capture_output=True, text=True, env=env, stdin=subprocess.DEVNULL)
         return proc
 
@@ -200,6 +201,32 @@ class CycleStageTest(NextCycleFixture):
             [sys.executable, str(_WRAPPER), "--dir", self.tmp.name + "/nowhere"],
             capture_output=True, text=True, stdin=subprocess.DEVNULL)
         self.assertEqual(proc.returncode, 2)
+
+
+class PassthroughTest(NextCycleFixture):
+    """T-111: unknown flags forward verbatim to `openup-agent.py cycle`, so a
+    driver knob (e.g. --step-max-iterations) never forces abandoning the
+    one-command entry point."""
+
+    def test_unknown_flags_reach_the_driver(self):
+        self._mark_started()
+        self._behavior()
+        proc = self._run(extra_args=["--step-max-iterations", "15"])
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        calls = self._calls()
+        self.assertEqual(len(calls), 1)
+        argv = calls[0]["argv"]
+        self.assertEqual(argv[0], "cycle")
+        self.assertIn("--step-max-iterations", argv)
+        self.assertEqual(argv[argv.index("--step-max-iterations") + 1], "15")
+
+    def test_no_extra_flags_is_unchanged(self):
+        self._mark_started()
+        self._behavior()
+        proc = self._run()
+        self.assertEqual(proc.returncode, 0)
+        argv = self._calls()[0]["argv"]
+        self.assertNotIn("--step-max-iterations", argv)
 
 
 class ShippedTest(unittest.TestCase):

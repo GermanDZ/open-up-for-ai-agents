@@ -289,9 +289,13 @@ learnings     …   # append a dated iteration-learnings entry
 ## next-cycle — guided single entry point (T-095, thinned in T-096)
 
 ```
-./scripts/next-cycle [--dir .]     # env config -> one driver cycle;
+./scripts/next-cycle [--dir .] [driver flags…]
+                                   # env config -> one driver cycle;
                                    #   guidance on stderr, sentinel passthrough,
                                    #   exit code = the driver's
+                                   # unknown flags forward to `openup-agent.py
+                                   #   cycle` verbatim (T-111), e.g.
+                                   #   ./scripts/next-cycle --step-max-iterations 15
 ```
 - Composes `openup-agent.py` only and knows **no process** (T-096): loads
   `.openup/agent.env`, guides missing endpoint config, then runs ONE `cycle`
