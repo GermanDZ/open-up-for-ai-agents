@@ -1,7 +1,7 @@
 ---
 id: T-099
 title: Harden the Inception bootstrap handoff — ADVANCED sentinel + parseable-roadmap create-vision instruction
-status: ready   # proposed → ready → in-progress → done → verified
+status: done
 priority: medium   # critical | high | medium | low
 estimate: 1 session
 plan: docs/changes/archive/T-098/plan.md
