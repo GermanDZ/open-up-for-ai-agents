@@ -1,7 +1,7 @@
 ---
 id: T-103
 title: Delete the hardcoded bootstrap + retire the per-cycle LLM navigator
-status: ready   # proposed → ready → in-progress → done → verified
+status: done
 priority: high   # critical | high | medium | low
 estimate: 1 session
 plan: docs/iteration-plans/2026-07-14-deterministic-process-map-navigation.md
