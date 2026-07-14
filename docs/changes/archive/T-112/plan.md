@@ -1,7 +1,7 @@
 ---
 id: T-112
 title: New `/openup-cycle` skill — lower-ceremony deterministic-first pick/resume entry point
-status: ready
+status: done
 priority: medium
 estimate: 1 session
 plan: docs/iteration-plans/t-112-openup-cycle-skill.md

@@ -1,16 +1,18 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 77
-**Iteration Goal**: T-111 — `next-cycle` forwards unknown flags to `openup-agent.py cycle` verbatim (`--step-max-iterations 15` works through the one-command entry point)
+**Iteration**: 78
+**Iteration Goal**: T-112 — New `/openup-cycle` skill — deterministic-first pick/resume entry point that classifies Operations boxes as script-vs-judgment (mirrors `cycle.py`'s `classify_box`), skipping self-brief ceremony on mechanical steps and gating before every tick; every other `resolve` path (plan-iteration/assess/milestone/replenish) routes to `/openup-next`, which stays byte-unchanged
 **Status**: completed
-**Current Task**: T-111
+**Current Task**: T-112
 **Iteration Started**: 2026-06-18
 **Last Updated**: 2026-07-14
-**Updated By**: sync-status.py → openup-retrospective
+**Updated By**: sync-status.py
 **Retrospective**: [iteration-77-retrospective.md](iteration-retrospectives/iteration-77-retrospective.md) — covers iterations 21–77 (2026-06-16 → 2026-07-14); first written retro since iteration 20
 
 ## Notes
+
+- **Iteration 78** (2026-07-14): T-112 (standard) — **new `/openup-cycle` skill** — a lower-ceremony sibling of `/openup-next` that handles only the `pick`/`resume` `resolve()` paths, classifying each Operations box script-vs-judgment the same way the headless `cycle.py` engine does (`extract_command`/`classify_box`) — a script-shaped box runs directly with zero self-brief; only a judgment box pays the role-file/Ring-1/Ring-2 read. Gates (fence + check-docs) run before every tick, not just at completion — the one behavior addition beyond `/openup-next`. Claim (`/openup-start-iteration`) and completion (`/openup-complete-task`/`/openup-create-handoff`) delegate unchanged; every other `resolve()` path (plan-iteration/assess/milestone/replenish) routes to `/openup-next` by name rather than being re-derived. A `resume` carrying an answered input-request folds the answer into the spec via `/openup-create-task-spec` first (fix-spec-first), diverging deliberately from `cycle.py`'s driver-only shortcut. Classification fidelity checked against `cycle.py`'s real logic on 33 boxes across 6 archived plans, zero divergence (`docs/changes/T-112/design.md`). `/openup-next` verified byte-unchanged. No script code shipped — a pure procedure-pack addition + generated mirrors (`render-skills-mirror.py`, `sync-templates-to-claude.sh`, `check-skills-guide.py`, `check-model-tiers.py`). Solo, standard, worktree, on harness-optional.
 
 **Iteration 77** (2026-07-14): T-111 (quick) — **`next-cycle` forwards unknown flags to the driver** (owner hit it live: `./scripts/next-cycle --step-max-iterations 15` → "unrecognized arguments"). The wrapper now uses `parse_known_args` and appends the unknowns to the `openup-agent.py cycle` argv verbatim — the one-command entry point never has to be abandoned to reach a driver knob (`OPENUP_AGENT_VERBOSE=1 ./scripts/next-cycle --step-max-iterations 15` now works). `--dir` stays wrapper-owned; `--interactive` still auto-added on a TTY; stdout/exit contract untouched. +2 tests (flags recorded verbatim in the fake driver's argv; no-flags argv unchanged); 15 next-cycle suite green. CLI reference updated. Quick track, solo, worktree, on harness-optional.
 
