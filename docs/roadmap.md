@@ -804,7 +804,7 @@ authored when promoted.
 
 | ID | Title | Status | Priority | Depends on |
 |---|---|---|---|---|
-| T-100 | Process-map schema: per-activity `requires_input` + `execution` mode (+ `validate` gate) | pending | high | — |
+| T-100 | Process-map schema: per-activity `requires_input` + `execution` mode (+ `validate` gate) | completed (2026-07-14) | high | — |
 | T-101 | Fire T-090 Plan Iteration on a fresh project from `activities-for(phase)` (no roadmap needed) | pending | high | T-100 |
 | T-102 | Map-driven input scaffold (generalize T-097) + `execution: direct` (kills redundant `initiate-project` lane) | pending | high | T-100 |
 | T-103 | Delete the hardcoded bootstrap (T-098) + retire the per-cycle LLM navigator (T-096); rewire the noop path | pending | high | T-101, T-102 |
