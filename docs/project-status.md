@@ -1,15 +1,17 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 74
-**Iteration Goal**: T-108 — Engine commits every artifact it produces — direct-path gate+commit + per-cycle run-log sweep
-**Status**: completed
-**Current Task**: T-108
+**Iteration**: 75
+**Iteration Goal**: T-109 — Narrated console output — activity headers, per-tool targets, progress, cycle-end summary; stdout contract unchanged
+**Status**: in-progress
+**Current Task**: T-109
 **Iteration Started**: 2026-06-18
 **Last Updated**: 2026-07-14
 **Updated By**: sync-status.py
 
 ## Notes
+
+**Iteration 75** (2026-07-14): T-109 — **narrated console output** (owner ask, pairs with T-108). The driver's one human surface now narrates on stderr: **tool lines name their target** (`read_file docs/vision.md`, `write_file docs/roadmap.md`, `exec: git status`, ~60-char truncation) instead of `tool read_file -> 5706 chars`; **`model turn k/N`** per LLM call (a slow local model reads as a turn in progress, not a hang); **step headers** say the role hat, model, turn budget, and the step's first line — the truncated 200-char instruction dump is gone; **every `run_cycle` exit closes with a summary** (via the T-108 wrapper): the commits the cycle made — which name the artifacts — plus the exit code's plain-words meaning (`exit 5: paused for a human — answer the named file, then re-run`); **`_log` guards blank lines** (narration never emits empties). **`OPENUP_AGENT_VERBOSE=1`** restores the old detail (char counts, full instructions); the JSONL telemetry logs are untouched. **The stdout sentinel contract is byte-identical** — narration is stderr-only, asserted by tests (summary absent from stdout; sentinel present verbatim). `reference-driver.md` gains §Console output. +9 tests (tool-target format, verbose switch, turn progress, no-blank-lines ×2, exec/glob/truncation formatter, summary exit-meaning + commit list + no-commits). Full suite green minus the known stale `test_openup_state` failure. spec-scenarios, check-docs, fence (`--base harness-optional`) green. Solo, standard, worktree, on harness-optional. Closes the T-108/T-109 owner batch: every artifact committed + a console you can follow.
 
 **Iteration 74** (2026-07-14): T-108 — **engine commits every artifact it produces** (owner ask after the my-product live run, where `docs/vision.md`, `docs/roadmap.md`, and `docs/agent-logs/` were left untracked). **(1) Direct outputs committed at production**: `run_plan_iteration`'s `execution: direct` branch now runs the gates after the stamped run and commits the whole `docs/` delta (`docs(<iter>): <activity> — authored via <skill> [<iter>]`) before continuing; a gate failure aborts typed with **nothing committed** — the same discipline the lane specs already had. **(2) Every cycle is registered**: `run_cycle` is now a thin wrapper whose `finally:` sweeps new/changed `docs/agent-logs/` shards into a log-only `chore(process): sweep run-log shards [openup-skip]` commit on EVERY exit path (advanced, done, suspend, typed failure) — a failed or suspended cycle no longer strands its audit trail; the sweep never raises and never changes the cycle's exit code; clean tree → no empty commit. +5 tests (direct commit content/order, gate-abort-uncommitted, sweep-on-done-exit, no-empty-commit, non-repo no-raise); **572 suite pass** (only the known stale `test_openup_state` schema failure, outside touches). spec-scenarios, check-docs, fence (`--base harness-optional`) green. Solo, standard, worktree, on harness-optional. Pairs with T-109 (console narration), next.
 
