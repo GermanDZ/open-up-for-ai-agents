@@ -142,18 +142,18 @@ cycle noop tests to plain DONE assertions. Update the two docs.
 
 ## Operations
 
-- [ ] Delete `scripts/openup_agent/navigator.py` + remove it from
+- [x] Delete `scripts/openup_agent/navigator.py` + remove it from
   `scripts/process-manifest.txt`.
-- [ ] `cycle.py`: remove the `navigator` import, `_run_navigator`, the `navigate`
+- [x] `cycle.py`: remove the `navigator` import, `_run_navigator`, the `navigate`
   param + `_navigator` seam; make the `noop` branch print `DONE` (no navigate).
-- [ ] `openup-agent.py`: remove `--no-navigate` and the `navigate=` argument.
-- [ ] (tester) Delete `test_openup_agent_navigator.py`; remove
+- [x] `openup-agent.py`: remove `--no-navigate` and the `navigate=` argument.
+- [x] (tester) Delete `test_openup_agent_navigator.py`; remove
   `NavigatorDispatchTest` and revert the `navigate=False` switches (plain DONE) in
   `test_openup_agent_cycle.py`; add a fresh-project assertion that no navigator is
   involved.
-- [ ] Update `reference-driver.md` + `script-cli-reference.md` (deterministic
+- [x] Update `reference-driver.md` + `script-cli-reference.md` (deterministic
   navigation; navigator removed).
-- [ ] (tester) Full driver+board suite green; `check-docs`, `spec-scenarios`,
+- [x] (tester) Full driver+board suite green; `check-docs`, `spec-scenarios`,
   `process-map validate`, fence (`--base harness-optional`) green; `openup_agent`
   imports with no navigator.
 

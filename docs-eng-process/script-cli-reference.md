@@ -295,8 +295,9 @@ learnings     …   # append a dated iteration-learnings entry
 ```
 - Composes `openup-agent.py` only and knows **no process** (T-096): loads
   `.openup/agent.env`, guides missing endpoint config, then runs ONE `cycle`
-  (`--interactive` auto-added on a TTY). What a fresh/unclassifiable project
-  needs next is decided by the driver's process navigator, not the wrapper.
+  (`--interactive` auto-added on a TTY). What a fresh project needs next is
+  decided by the driver's **deterministic** navigation (the process map — a fresh
+  authoring phase → `plan-iteration`; T-101/T-103), not the wrapper.
   Scriptable exactly like `cycle`.
 
 ## openup-agent.py — reference driver (T-072 `run` · T-089 `cycle`)
@@ -305,7 +306,7 @@ learnings     …   # append a dated iteration-learnings entry
 run    --dir PATH --procedure NAME [--max-iterations 50] [--instruction TEXT]
        [--interactive]                  # LLM drives the whole procedure; exits 0/2/3/4/5
 cycle  --dir PATH [--step-max-iterations 10] [--step-tier authoring]
-       [--interactive] [--no-recover] [--no-navigate]  # deterministic engine: resolve → begin →
+       [--interactive] [--no-recover]   # deterministic engine: resolve → begin →
                                         #   per-Operations-box executor (scripts as code,
                                         #   judgment as bounded sub-runs) → gates →
                                         #   completion; exits 0/2/3/4/5/6/7/8
@@ -327,12 +328,13 @@ cycle  --dir PATH [--step-max-iterations 10] [--step-tier authoring]
   `--interactive`, else input-request + suspend exit 5) before ONE
   product-manager replenishment pass proposes new pending roadmap entries
   (T-094 — accepted only if `openup-roadmap.py next` then succeeds; an
-  answered `no` is durable). Navigation (T-096, default on; `--no-navigate` opts
-  out): on a `noop`/unclassifiable state (e.g. a fresh project with no roadmap)
-  one bounded **process-navigator** sub-run picks the next procedure from the
-  process map + lifecycle status + a Ring-1 artifact survey and runs it, or
-  raises a missing human input as an input-request (exit 5); product scope stays
-  behind the T-094 consent gate. Assess + milestone (T-091 — full `/openup-next`
+  answered `no` is durable). Fresh-project navigation is **deterministic**
+  (T-101/T-103): a fresh authoring phase resolves to `plan-iteration` from the
+  process map (no roadmap needed); each activity's declared `requires_input`
+  (T-100 data) is scaffolded as a marker-guarded template and the cycle suspends
+  until the human fills it; an `execution: direct` activity runs its procedure
+  directly. The per-cycle LLM **navigator** + hardcoded bootstrap were **retired**
+  (T-103) — the LLM only authors, never navigates. Assess + milestone (T-091 — full `/openup-next`
   parity): `assess-iteration` grades the exhausted iteration's non-derivable
   criteria in one bounded sub-run and appends a deterministic `## Assessment`
   section to its iteration-plan instance (`ADVANCED` sentinel; discovered work
