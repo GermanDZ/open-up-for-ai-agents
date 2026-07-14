@@ -1,10 +1,10 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 80
-**Iteration Goal**: T-114 — `/openup-init` template completeness — new `docs-eng-process/templates/project-status.md` + `roadmap.md`, and reference the existing `input-request.md` template for the stakeholder-brief step, instead of freehand heredoc authoring
+**Iteration**: 81
+**Iteration Goal**: T-115 — Queryable Development Case archetype default + track/archetype disambiguation — a single command answers "what applies when `docs/project-config.yaml` is absent" instead of a 4-grep prose hunt; `tracks.md`/`project-config.md` name each other where "quick" is first introduced
 **Status**: completed
-**Current Task**: T-114
+**Current Task**: T-115
 **Iteration Started**: 2026-06-18
 **Last Updated**: 2026-07-14
 **Updated By**: sync-status.py
@@ -13,6 +13,8 @@
 ## Notes
 
 - **Iteration 79** (2026-07-14): T-116 (standard) — **hook-sweep parity with `cycle.py`** — closes an avoidable-overhead gap the T-112/T-113 dry run surfaced live (6 redundant round trips in one bootstrap lane): `auto-log-commit.py` can only append its run-log line *after* a commit lands (`PostToolUse` can't run before `git commit` returns), so the Claude-Code-driven skills had no instruction to fold that delta into their next commit — an agent had to notice the dirty tree and improvise a follow-up commit, every time. Ports `cycle.py`'s proven `_sweep_run_logs` pattern (`scripts/openup_agent/cycle.py:1060-1084`) into prose: a new "Pre-Commit Housekeeping" section in `docs-eng-process/conventions.md` (the single source of truth every skill's Norms section inherits from) states the rule once; `openup-complete-task.md` step 2 and `openup-cycle.md`'s gate-before-tick step each carry an explicit pointer to it — the two highest-leverage commit points a lane always passes through. `openup-next.md` verified byte-unchanged. No script/hook code changed — the fix works with `auto-log-commit.py`'s post-commit-only timing, not around it. First of three tasks (T-116 → T-114 → T-115) promoted from `docs/explorations/2026-07-14-fresh-bootstrap-tool-call-overhead.md`. Solo, standard, worktree, on harness-optional.
+
+- **Iteration 81** (2026-07-14): T-115 (standard) — **queryable Development Case archetype default + track/archetype disambiguation** — third and last of three tasks promoted from `docs/explorations/2026-07-14-fresh-bootstrap-tool-call-overhead.md`. `PROCESS_ARCHETYPE_DEFAULTS` (`scripts/check-docs.py`) had no queryable accessor for "what applies when `docs/project-config.yaml` is absent" (observed live: 4 chained grep/search calls), and the answer is unrelated to the similarly-named `quick`/`standard`/`full` ceremony track, causing conflation. New `check-docs.py --show-archetype-defaults` prints both in one call — the exact "absent" answer plus all three archetypes' resolved defaults, sourced directly from `PROCESS_ARCHETYPE_DEFAULTS` (no duplicated copy) — short-circuiting before any `docs/` tree is loaded; +3 hermetic tests (26/26 green, zero pre-existing broken). `project-config.md` and `tracks.md` each name the other at their first `quick` mention; `openup-init.md` and `script-cli-reference.md` point at the new flag. `openup-next.md` verified byte-unchanged. Closes the T-116→T-114→T-115 bootstrap-overhead program. Solo, standard, worktree, on harness-optional.
 
 - **Iteration 80** (2026-07-14): T-114 (standard) — **`/openup-init` template completeness** — second of three tasks promoted from `docs/explorations/2026-07-14-fresh-bootstrap-tool-call-overhead.md`. `docs/project-status.md` and `docs/roadmap.md` were freehand-authored inline by `openup-init.md` (no template existed for either), and the stakeholder-brief step never referenced the existing, ready `docs-eng-process/templates/input-request.md` — both observed live. New `docs-eng-process/templates/project-status.md` + `roadmap.md` (verbatim lift of the fields `openup-init.md` already freehanded — mechanism change, not a content change), and §3 rewritten to `cp`+fill all three templates (plus the pre-existing `project-config.example.yaml` copy) the same way, including a new Stakeholder Brief subsection pointing at `input-request.md`. `openup-next.md` verified byte-unchanged. Solo, standard, worktree, on harness-optional.
 

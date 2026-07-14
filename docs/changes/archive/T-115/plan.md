@@ -1,7 +1,7 @@
 ---
 id: T-115
 title: "Queryable Development Case archetype default + track/archetype disambiguation"
-status: ready
+status: done
 priority: medium
 estimate: 1 session
 plan: docs/iteration-plans/2026-07-14-bootstrap-overhead-fixes.md
