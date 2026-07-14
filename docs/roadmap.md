@@ -790,6 +790,27 @@ authored when promoted.
 
 ---
 
+### Planned: Lean authoring tasks (S1 → S2′ → S3′)
+
+- **Status**: `planned` (2026-07-14)
+- **Plan**: [iteration-plans/2026-07-14-lean-authoring-tasks.md](iteration-plans/2026-07-14-lean-authoring-tasks.md)
+- **Exploration**: [explorations/2026-07-14-generic-procedure-lean-task-library.md](explorations/2026-07-14-generic-procedure-lean-task-library.md)
+- **Created**: 2026-07-14
+- **Priority**: high
+- **Value**: With navigation deterministic (P1), the authoring procedures are the weak-local-model reliability bottleneck — a create-vision sub-run holds ~650+ lines of ceremony spec and was caught restarting mid-run (debug log, 2026-07-14). Engine-owned ceremony + a process compiler producing lean task defs cut per-call context ~10× to the shape that measured 3/3-reliable (T-080); also restores the T-103-regressed pinned-roadmap contract.
+- **Goal**: The LLM only authors, from compiled lean task content: engine stamps frontmatter + validates (T-104); `build-task-library.py` compiles KB tasks into a committed, reviewed lean-task library (T-105); the cycle runs each authoring activity as small task-def sub-runs with no procedure file read (T-106); scale to the full KB + customized processes (T-107, gated on T-106's behavioral acceptance: zero restarts, ≤6 iters/sub-run, ≥80%/5 runs, ≤⅓ context on the qwen fixture).
+
+**Tasks**
+
+| ID | Title | Status | Priority | Depends on |
+|---|---|---|---|---|
+| T-104 | Engine-owned authoring ceremony (frontmatter stamping, config injection, ceremony-exclusion) + restore the pinned initial-roadmap contract (T-103 regression) | pending | high | — |
+| T-105 | Task-def schema + `build-task-library.py` process compiler (deterministic extraction + LLM distillation + validate + `--check`) + committed library for map-referenced tasks | pending | high | T-104 |
+| T-106 | Engine consumes the library: generic authoring sub-run (no procedure read) + `tasks:` map wiring + vision/roadmap split + bench measurement | pending | high | T-104, T-105 |
+| T-107 | Scale: full KB compile, doctor `--check` wiring, KB-update re-distillation, customized process sources (P2 lands) | pending | medium | T-106 + live acceptance |
+
+---
+
 ### Completed: Deterministic process-map navigation (P1)
 
 - **Status**: `completed` (2026-07-14 — T-100..T-103; P2 compile step deferred)
