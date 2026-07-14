@@ -1,10 +1,10 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 73
-**Iteration Goal**: T-104 — Engine-owned authoring ceremony (frontmatter stamping, config injection, ceremony-exclusion) + restore the pinned initial-roadmap contract (T-103 regression)
-**Status**: completed
-**Current Task**: T-104
+**Iteration**: 74
+**Iteration Goal**: T-108 — Engine commits every artifact it produces — direct-path gate+commit + per-cycle run-log sweep
+**Status**: in-progress
+**Current Task**: T-108
 **Iteration Started**: 2026-06-18
 **Last Updated**: 2026-07-14
 **Updated By**: sync-status.py
