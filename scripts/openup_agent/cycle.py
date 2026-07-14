@@ -1013,12 +1013,30 @@ def _run_plan_iteration(root, phase, env, step_tier, cap, interactive,
         except json.JSONDecodeError:
             return {}
 
+    def run_procedure(procedure, instruction):
+        # An execution:direct activity runs its create-* procedure directly (T-101).
+        # Capture the sub-procedure's DONE sentinel; the plan-iteration engine
+        # reports its own cycle-level outcome. On failure surface the output.
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            rc = loop.run(dir=str(root), procedure=procedure,
+                          max_iterations=loop.DEFAULT_MAX_ITERATIONS, env=env,
+                          interactive=interactive, instruction=instruction,
+                          _completion=_completion)
+        out = buf.getvalue()
+        if rc != 0 and out.strip():
+            sys.stdout.write(out)
+            sys.stdout.flush()
+        return rc
+
     return plan_iteration.run_plan_iteration(
         root, phase, dispatch_objectives=dispatch_objectives,
         dispatch_spec=dispatch_spec, run_gates=lambda: loop.run_gates(root),
         git_commit=git_commit, mint_id=mint_id, activities_for=activities_for,
         reserve_id=reserve_id, partition=partition,
-        roadmap_pending=roadmap_pending, lifecycle=lifecycle, log=_log)
+        roadmap_pending=roadmap_pending, lifecycle=lifecycle,
+        run_procedure=run_procedure, log=_log,
+        suspend_sentinel=loop.SUSPEND_SENTINEL)
 
 
 def _run_assess(root, decision, env, step_tier, cap, interactive, _completion,

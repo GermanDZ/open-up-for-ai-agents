@@ -123,6 +123,52 @@ class RunPlanIterationTest(unittest.TestCase):
     def _run(self, phase="inception", **over):
         return pi.run_plan_iteration(self.root, phase, **self._ops(**over))
 
+    # -- T-101: map-driven input gate + execution:direct --------------------
+    _DIRECT_ACTS = [{"name": "initiate-project", "role": "analyst",
+                     "skills": ["openup-create-vision"], "execution": "direct",
+                     "requires_input": {"path": "docs/inputs/brief.md",
+                                        "describe": "a stakeholder brief"}}]
+
+    def test_missing_input_scaffolds_and_suspends_before_minting(self):
+        minted = []
+        rc = self._run(activities_for=lambda ph: self._DIRECT_ACTS,
+                       mint_id=lambda ph: minted.append(ph) or "I1",
+                       run_procedure=lambda *a: self.fail("must not run yet"))
+        self.assertEqual(rc, pi.PI_SUSPEND)
+        brief = self.root / "docs" / "inputs" / "brief.md"
+        self.assertTrue(brief.exists())
+        self.assertIn(pi.INPUT_TEMPLATE_MARKER, brief.read_text())
+        self.assertEqual(minted, [])        # never minted
+        self.assertEqual(self.commits, [])  # authored nothing
+
+    def test_direct_activity_runs_procedure_no_lane(self):
+        brief = self.root / "docs" / "inputs" / "brief.md"
+        brief.parent.mkdir(parents=True)
+        brief.write_text("# Real brief\nmy product\n")  # present, no marker
+        ran = []
+        rc = self._run(activities_for=lambda ph: self._DIRECT_ACTS,
+                       run_procedure=lambda proc, instr: ran.append(proc) or 0)
+        self.assertEqual(rc, pi.PI_OK)
+        self.assertEqual(ran, ["openup-create-vision"])
+        # no change-folder lane authored for the direct activity
+        self.assertFalse((self.root / "docs" / "changes" / "I1-001").exists())
+        inst = self.root / "docs/phases/inception/iteration-I1-plan.md"
+        self.assertIn("Directly-run activities", inst.read_text())
+
+    def test_direct_without_runner_is_config_error(self):
+        brief = self.root / "docs" / "inputs" / "brief.md"
+        brief.parent.mkdir(parents=True); brief.write_text("real\n")
+        rc = self._run(activities_for=lambda ph: self._DIRECT_ACTS,
+                       run_procedure=None)
+        self.assertEqual(rc, pi.PI_CONFIG)
+
+    def test_present_input_does_not_scaffold(self):
+        brief = self.root / "docs" / "inputs" / "brief.md"
+        brief.parent.mkdir(parents=True); brief.write_text("real\n")
+        rc = self._run(activities_for=lambda ph: self._DIRECT_ACTS,
+                       run_procedure=lambda *a: 0)
+        self.assertEqual(rc, pi.PI_OK)  # proceeded, no suspend
+
     def test_happy_path_plans_two_lanes_and_instance(self):
         rc = self._run()
         self.assertEqual(rc, pi.PI_OK)

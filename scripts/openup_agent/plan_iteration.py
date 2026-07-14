@@ -129,24 +129,71 @@ def read_objectives(root):
 
 def generate_lanes(activities):
     """One candidate lane per phase activity (deterministic). Each carries the
-    activity name, its role hat, and its first authoring skill. Activities with
-    no skill (e.g. ``ongoing-tasks``) are skipped — nothing to author."""
+    activity name, its role hat, its first authoring skill, and (T-101) its
+    ``execution`` mode + declared ``requires_input``. Activities with no skill
+    (e.g. ``ongoing-tasks``) are skipped — nothing to author."""
     lanes = []
     for a in activities:
         skills = a.get("skills") or []
         if not skills:
             continue
         lanes.append({"activity": a.get("name"), "role": a.get("role"),
-                      "skill": skills[0]})
+                      "skill": skills[0],
+                      "execution": a.get("execution") or "spec-then-execute",
+                      "requires_input": a.get("requires_input")})
     return lanes
+
+
+# Marker distinguishing an unfilled scaffold from a human-filled artifact (T-101,
+# generalizing the T-097 brief scaffold to any declared input).
+INPUT_TEMPLATE_MARKER = ("<!-- template: replace this with your content, delete "
+                         "this line, then re-run -->")
+
+
+def _input_present(root, rel_path):
+    """True if a declared input file exists AND is not a bare template."""
+    p = Path(root) / rel_path
+    if not p.exists():
+        return False
+    try:
+        return INPUT_TEMPLATE_MARKER not in p.read_text(encoding="utf-8")
+    except OSError:
+        return False
+
+
+def _scaffold_required_input(root, rel_path, describe):
+    """Write a marker-guarded template at ``rel_path`` for a missing declared
+    input (never clobbering a filled/partial file). Returns True if it scaffolded
+    (or the file is a still-unfilled template); the caller suspends."""
+    p = Path(root) / rel_path
+    if p.exists():
+        return True  # exists but templated (caller checked _input_present) — keep
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text("%s\n\n# %s\n\n<Replace this with %s.>\n"
+                 % (INPUT_TEMPLATE_MARKER, describe or "Required input", describe
+                    or "your content"), encoding="utf-8")
+    return True
+
+
+def _first_missing_input(root, activities):
+    """The first activity (in order) whose declared requires_input is missing/
+    templated → (path, describe); or None when all declared inputs are present."""
+    for a in activities:
+        ri = a.get("requires_input")
+        if isinstance(ri, dict) and ri.get("path") and not _input_present(root, ri["path"]):
+            return ri["path"], ri.get("describe")
+    return None
 
 
 def iteration_plan_path(phase, iteration):
     return Path("docs") / "phases" / phase / ("iteration-%s-plan.md" % iteration)
 
 
-def render_iteration_plan_instance(phase, iteration, lane_ids, objectives):
-    """The iteration-plan work-product instance (typed; traces its lanes)."""
+def render_iteration_plan_instance(phase, iteration, lane_ids, objectives,
+                                   direct_done=None):
+    """The iteration-plan work-product instance (typed; traces its spec-then-
+    execute lanes). ``direct_done`` lists execution:direct activities that ran
+    their procedure directly (recorded in the body, not traced as work items)."""
     fm = [
         "---",
         "type: iteration-plan",
@@ -171,7 +218,10 @@ def render_iteration_plan_instance(phase, iteration, lane_ids, objectives):
         "## Committed Work Items",
         "",
     ]
-    fm += ["- %s" % lid for lid in lane_ids]
+    fm += ["- %s" % lid for lid in lane_ids] or ["- (none — all activities ran directly)"]
+    if direct_done:
+        fm += ["", "## Directly-run activities (execution: direct)", ""]
+        fm += ["- %s" % a for a in direct_done]
     fm += [
         "",
         "## Evaluation Criteria",
@@ -200,7 +250,8 @@ _SEQ_RE = re.compile(r"-(\d+)$")
 def run_plan_iteration(root, phase, *, dispatch_objectives, dispatch_spec,
                        run_gates, git_commit, mint_id, activities_for,
                        reserve_id, partition, roadmap_pending, lifecycle,
-                       log=None):
+                       run_procedure=None, log=None, print_=None,
+                       suspend_sentinel="OPENUP-AGENT: SUSPENDED"):
     """Plan one phase-appropriate iteration. Returns an int exit code.
 
     Injected callables (cycle.py wires the real ones; tests pass fakes):
@@ -217,11 +268,29 @@ def run_plan_iteration(root, phase, *, dispatch_objectives, dispatch_spec,
       - ``roadmap_pending() -> list[str]`` — pending roadmap titles, in order.
       - ``lifecycle() -> {phase, milestone, criteria}``.
     """
+    import sys as _sys
     log = log or (lambda m: None)
+    print_ = print_ or (lambda m: (_sys.stdout.write(m + "\n"), _sys.stdout.flush()))
     if phase not in AUTHORING_PHASES:
         log("plan-iteration: phase %r is not an authoring phase — not planned "
             "here (single-row promote handles it)" % phase)
         return PI_STEP
+
+    # 0. Map-driven input gate (T-101): before minting anything, ensure every
+    # activity's declared requires_input exists. The first missing one is
+    # scaffolded (marker-guarded template) and the cycle suspends — the human
+    # provides it and re-runs. This replaces the hardcoded brief bootstrap with a
+    # data-driven, process-agnostic affordance.
+    activities = activities_for(phase) or []
+    missing = _first_missing_input(root, activities)
+    if missing:
+        path, describe = missing
+        _scaffold_required_input(root, path, describe)
+        log("plan-iteration: activity input missing — scaffolded %s, awaiting fill"
+            % path)
+        print_("%s — fill %s (%s; a template is there), then re-run"
+               % (suspend_sentinel, path, describe or "required input"))
+        return PI_SUSPEND
 
     iteration = (mint_id(phase) or "").strip()
     if not iteration:
@@ -231,7 +300,6 @@ def run_plan_iteration(root, phase, *, dispatch_objectives, dispatch_spec,
 
     # 1. Objectives — one bounded sub-run.
     status = lifecycle() or {}
-    activities = activities_for(phase) or []
     facts = build_objectives_input(
         phase, status.get("milestone"), status.get("criteria", []),
         activities, roadmap_pending() or [])
@@ -258,10 +326,36 @@ def run_plan_iteration(root, phase, *, dispatch_objectives, dispatch_spec,
             "plan" % phase)
         return PI_STEP
 
-    # 3. Reserve an iteration-prefixed id per lane; author its spec; gate; commit.
+    # 3. Per activity: an `execution: direct` authoring activity RUNS its procedure
+    #    directly (no spec sub-run, no change-folder lane) — the model only authors
+    #    (reliable), navigation stays deterministic; a `spec-then-execute` activity
+    #    keeps the T-090 reserve-id + spec-authoring lane flow (traced by the
+    #    iteration-plan instance). Direct activities are recorded in the instance
+    #    body, not as `traces-from` work items (open question 2).
     prefix = "%s-" % iteration
-    lane_ids, lane_touches = [], []
+    lane_ids, lane_touches, direct_done = [], [], []
     for lane in candidate_lanes:
+        if lane.get("execution") == "direct":
+            if run_procedure is None:
+                log("plan-iteration: activity %s is execution:direct but no "
+                    "procedure runner was wired — aborting" % lane["activity"])
+                return PI_CONFIG
+            instruction = (
+                "Perform the OpenUP activity '%s' (role: %s) by running the %s "
+                "procedure to completion, in service of these objectives:\n%s"
+                % (lane["activity"], lane["role"], lane["skill"],
+                   "\n".join("- %s" % o for o in objectives)))
+            log("plan-iteration: running direct activity %s via %s"
+                % (lane["activity"], lane["skill"]))
+            rc = run_procedure(lane["skill"], instruction)
+            if rc == PI_SUSPEND:
+                return PI_SUSPEND
+            if rc != 0:
+                log("plan-iteration: direct activity %s (%s) failed (exit %d) — "
+                    "aborting" % (lane["activity"], lane["skill"], rc))
+                return rc if rc in (PI_CONFIG,) else PI_STEP
+            direct_done.append(lane["activity"])
+            continue
         lid = (reserve_id(prefix, iteration) or "").strip()
         if not lid:
             log("plan-iteration: could not reserve a lane id under %s" % prefix)
@@ -309,7 +403,8 @@ def run_plan_iteration(root, phase, *, dispatch_objectives, dispatch_spec,
     inst_path = Path(root) / inst_rel
     inst_path.parent.mkdir(parents=True, exist_ok=True)
     inst_path.write_text(
-        render_iteration_plan_instance(phase, iteration, lane_ids, objectives),
+        render_iteration_plan_instance(phase, iteration, lane_ids, objectives,
+                                       direct_done=direct_done),
         encoding="utf-8")
     ok, report = run_gates()
     if not ok:
@@ -319,6 +414,6 @@ def run_plan_iteration(root, phase, *, dispatch_objectives, dispatch_spec,
     git_commit([inst_rel],
                "docs(%s): iteration-plan instance via plan-iteration [%s]"
                % (iteration, iteration))
-    log("plan-iteration: iteration %s planned (%d lane(s)); re-resolve picks the "
-        "first lane" % (iteration, len(lane_ids)))
+    log("plan-iteration: iteration %s planned (%d lane(s), %d direct); re-resolve "
+        "continues" % (iteration, len(lane_ids), len(direct_done)))
     return PI_OK
