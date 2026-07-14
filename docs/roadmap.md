@@ -790,6 +790,27 @@ authored when promoted.
 
 ---
 
+### Planned: Deterministic process-map navigation (P1)
+
+- **Status**: `planned` (2026-07-14)
+- **Plan**: [iteration-plans/2026-07-14-deterministic-process-map-navigation.md](iteration-plans/2026-07-14-deterministic-process-map-navigation.md)
+- **Exploration**: [explorations/2026-07-14-process-map-as-compiled-navigator.md](explorations/2026-07-14-process-map-as-compiled-navigator.md)
+- **Created**: 2026-07-14
+- **Priority**: high
+- **Value**: Removes the per-cycle LLM navigator (T-096) + hardcoded Inception bootstrap (T-097/T-098) that produced four consecutive live bugs (T-096→T-099) on the one driver we have. Navigation becomes a deterministic walk of the shipped process map; per-activity human inputs are declared as **data**. Net-negative code; unlocks customized-process support (P2) as a free option.
+- **Goal**: Make loop navigation deterministic (the process map is the navigator; the LLM only authors) and delete the hardcoded bootstrap. Falsifiable: a fresh Inception-through-delivery run completes with **zero per-cycle navigator LLM calls** and the `navigator.py` decision code deleted, without regressing convergence or token cost (T-080 usage log read-back). **P2 (the LLM compile step) is deferred, not in P1.**
+
+**Tasks**
+
+| ID | Title | Status | Priority | Depends on |
+|---|---|---|---|---|
+| T-100 | Process-map schema: per-activity `requires_input` + `execution` mode (+ `validate` gate) | pending | high | — |
+| T-101 | Fire T-090 Plan Iteration on a fresh project from `activities-for(phase)` (no roadmap needed) | pending | high | T-100 |
+| T-102 | Map-driven input scaffold (generalize T-097) + `execution: direct` (kills redundant `initiate-project` lane) | pending | high | T-100 |
+| T-103 | Delete the hardcoded bootstrap (T-098) + retire the per-cycle LLM navigator (T-096); rewire the noop path | pending | high | T-101, T-102 |
+
+---
+
 ## T-099: Harden the Inception bootstrap handoff — ADVANCED sentinel + parseable-roadmap create-vision instruction
 **Status**: completed (2026-07-14)
 **Priority**: medium
