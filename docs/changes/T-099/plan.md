@@ -1,6 +1,6 @@
 ---
 id: T-099
-title: Navigator reports ADVANCED after a successful procedure run (not the procedure's DONE)
+title: Harden the Inception bootstrap handoff — ADVANCED sentinel + parseable-roadmap create-vision instruction
 status: ready   # proposed → ready → in-progress → done → verified
 priority: medium   # critical | high | medium | low
 estimate: 1 session
@@ -82,6 +82,17 @@ INVEST — ✅ Independent (navigator sentinel) · ✅ Negotiable (message text)
      **Then** the procedure's captured stdout is re-emitted (for diagnosis), no
      ADVANCED sentinel is printed, and the failing exit code is returned.
 
+5. **The create-vision bootstrap instruction produces a parseable roadmap.**
+   - **Given** the deterministic bootstrap runs `openup-create-vision`, **When**
+     the `VISION_INSTRUCTION` is handed to it, **Then** the instruction requires
+     the roadmap table to use `T-NNN` ids (the `openup-roadmap.py` `T-\d+`
+     contract), status `pending`, and priority `high|medium|low` — so the model
+     cannot invent an id scheme (e.g. `RDM-001`) the parser skips, which left the
+     roadmap unpromotable ("roadmap exhausted") after Inception (observed live,
+     my-product 2026-07-14).
+   - **Given** `VISION_INSTRUCTION`, **When** inspected, **Then** it names the
+     `T-001, T-002, …` id form, `pending`, and the priority vocabulary explicitly.
+
 ## Behavior Delta
 
 Ring-1 truth for the driver lives in `docs-eng-process/`.
@@ -90,9 +101,14 @@ Ring-1 truth for the driver lives in `docs-eng-process/`.
 - The navigator's sentinel after a procedure run —
   `docs-eng-process/reference-driver.md` (navigator section): a successful
   authoring run reports `ADVANCED` (progress), not the procedure's `DONE`.
+- The `VISION_INSTRUCTION` (the deterministic create-vision bootstrap prompt) —
+  now specifies the exact roadmap format the `openup-roadmap.py` parser requires
+  (`T-NNN` ids, `pending` status, `high|medium|low` priority), so Inception hands
+  off a promotable roadmap to the delivery loop.
 
 **Removed:** the misleading `DONE`/"nothing to do" outcome after a navigator
-authoring run.
+authoring run; and the loose roadmap instruction that let the model invent an
+unparseable id scheme.
 
 ## Entities
 
@@ -131,15 +147,18 @@ return the code. Progress/log lines (stderr) are unaffected.
 
 ## Operations
 
-- [ ] Change `run_procedure` (navigator contract) to return `(rc, captured_stdout)`
+- [x] Change `run_procedure` (navigator contract) to return `(rc, captured_stdout)`
   and update `cycle.py` `_run_navigator` to capture the sub-procedure stdout.
-- [ ] Add `_run_procedure_reporting` in `navigator.py` (ADVANCED on success;
+- [x] Add `_run_procedure_reporting` in `navigator.py` (ADVANCED on success;
   re-emit captured output + propagate on failure) and route the bootstrap +
   LLM-decided procedure paths through it.
-- [ ] (tester) Navigator tests (success → single ADVANCED, no DONE leak; failure
+- [x] (tester) Navigator tests (success → single ADVANCED, no DONE leak; failure
   → output surfaced + code) + a cycle wiring assertion.
-- [ ] Update the navigator section of `docs-eng-process/reference-driver.md`.
-- [ ] (tester) Full driver+navigator+cycle+next-cycle suite green; `check-docs`,
+- [x] Tighten `VISION_INSTRUCTION` in `navigator.py` to require the parseable
+  roadmap format (`T-NNN` ids, `pending`, `high|medium|low`) + a
+  `test_openup_agent_navigator.py` assertion.
+- [x] Update the navigator section of `docs-eng-process/reference-driver.md`.
+- [x] (tester) Full driver+navigator+cycle+next-cycle suite green; `check-docs`,
   `openup-spec-scenarios`, `openup-fence.py check --base harness-optional` green.
 
 ## Norms
