@@ -1,7 +1,7 @@
 ---
 id: T-118
 title: "Task-def authoring instruction names the concrete input path (kills glob-thrash)"
-status: ready
+status: done
 priority: medium
 estimate: 0.5 session
 plan: docs/iteration-plans/2026-07-14-lean-authoring-tasks.md
