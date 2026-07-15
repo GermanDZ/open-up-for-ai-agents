@@ -277,7 +277,27 @@ class RunPlanIterationTest(unittest.TestCase):
         instr = self._direct_instructions()[0]  # the vision task
         self.assertIn("docs/product/vision.md", instr)          # output path
         self.assertIn("States the problem before proposing", instr)  # judgment
-        self.assertIn("Inputs to read: Vision", instr)
+        self.assertIn("Vision", instr)                          # workproduct input name kept
+
+    # -- T-118: concrete input path named (kills the glob-thrash) -------------
+    def test_task_instruction_names_concrete_input_path(self):
+        # _DIRECT_ACTS declares requires_input docs/inputs/brief.md — the task
+        # instruction must name that exact path (not only the "Vision" name).
+        instr = self._direct_instructions()[0]  # the vision task
+        self.assertIn("docs/inputs/brief.md", instr)
+        self.assertIn("do not search for it", instr)
+        self.assertIn("Vision", instr)  # workproduct name kept as secondary context
+
+    def test_no_requires_input_uses_plain_inputs_line(self):
+        # An activity with no requires_input keeps the pre-T-118 "Inputs to read"
+        # line and names no phantom path.
+        acts = [dict(self._DIRECT_ACTS[0], name="develop-architecture",
+                     skills=["openup-create-architecture-notebook"],
+                     tasks=["refine-the-architecture"])]
+        acts[0].pop("requires_input", None)
+        instr = self._direct_instructions(acts)[0]
+        self.assertIn("Inputs to read:", instr)
+        self.assertNotIn("do not search for it", instr)
 
     def test_roadmap_task_carries_pinned_format(self):
         # The pinned roadmap format now lives in the author-initial-roadmap def's

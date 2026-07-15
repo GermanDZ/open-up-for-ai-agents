@@ -11,6 +11,7 @@ last-synced: ""
 touches:
   - scripts/openup_agent/plan_iteration.py
   - scripts/tests/test_openup_agent_plan_iteration.py
+  - docs-eng-process/reference-driver.md
 ---
 
 # T-118 — Task-def authoring instruction names the concrete input path
@@ -62,9 +63,9 @@ Give `render_task_instruction` an optional `input_path`. When set, prepend an ex
 
 ## Operations
 
-- [ ] Add `input_path=None` to `render_task_instruction`; when set, name the concrete file to read first and keep workproduct `inputs` as secondary.
-- [ ] In the direct branch, pass the lane's `requires_input.path` (when declared) to `render_task_instruction`.
-- [ ] (tester) Tests: concrete path present for `initiate-project`; unchanged when no `requires_input`; workproduct names still present.
+- [x] Add `input_path=None` to `render_task_instruction`; when set, name the concrete file to read first and keep workproduct `inputs` as secondary.
+- [x] In the direct branch, pass the lane's `requires_input.path` (when declared) to `render_task_instruction`.
+- [x] (tester) Tests: concrete path present for `initiate-project`; unchanged when no `requires_input`; workproduct names still present.
 
 ## Norms
 
