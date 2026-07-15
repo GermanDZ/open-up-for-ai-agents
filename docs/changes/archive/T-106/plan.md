@@ -1,7 +1,7 @@
 ---
 id: T-106
 title: "Engine consumes the task library: generic authoring sub-run + tasks map wiring"
-status: ready
+status: done
 priority: high
 estimate: 1-2 sessions
 plan: docs/iteration-plans/2026-07-14-lean-authoring-tasks.md
