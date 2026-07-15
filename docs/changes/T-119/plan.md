@@ -14,6 +14,7 @@ touches:
   - scripts/openup_agent/tools.py
   - scripts/tests/test_openup_agent_tools.py
   - scripts/tests/test_task_map_wiring.py
+  - scripts/tests/test_openup_process_map.py
   - docs-eng-process/reference-driver.md
 ---
 
