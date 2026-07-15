@@ -78,12 +78,12 @@ INVEST — ✅ Independent · ✅ Negotiable · ✅ Valuable · ✅ Estimable ·
 
 ## Operations
 
-- [ ] Guard `tools.py` `glob` against empty/invalid patterns (return `ERROR: …`, never raise).
-- [ ] Relax `openup-process-map.py` validate: `execution: direct` requires ≥1 `tasks:` entry (drop the exactly-one-skill rule).
-- [ ] Set `execution: direct` on agree-technical-approach, identify-refine-requirements, plan-manage-iteration in `process-map.yaml`.
-- [ ] (tester) Tests: `glob("")` returns an error not a crash; direct-without-tasks fails validate, direct-with-tasks+2-skills passes; shipped map validates; update any spec-lane test assuming those activities are spec-then-execute.
-- [ ] Update `reference-driver.md` (Inception authoring activities are direct/task-def).
-- [ ] Full suite green; fence `--base harness-optional`; then re-run the `inception-taskdef` bench (owner endpoint) for the full-cycle read-back.
+- [x] Guard `tools.py` `glob` against empty/invalid patterns (return `ERROR: …`, never raise).
+- [x] Relax `openup-process-map.py` validate: `execution: direct` requires ≥1 `tasks:` entry (drop the exactly-one-skill rule).
+- [x] Set `execution: direct` on agree-technical-approach, identify-refine-requirements, plan-manage-iteration in `process-map.yaml`.
+- [x] (tester) Tests: `glob("")` returns an error not a crash; direct-without-tasks fails validate, direct-with-tasks+2-skills passes; shipped map validates; update any spec-lane test assuming those activities are spec-then-execute.
+- [x] Update `reference-driver.md` (Inception authoring activities are direct/task-def).
+- [x] Full suite green; fence `--base harness-optional`; then re-run the `inception-taskdef` bench (owner endpoint) for the full-cycle read-back.
 
 ## Norms
 

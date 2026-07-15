@@ -93,6 +93,13 @@ class ToolsTest(unittest.TestCase):
     def test_glob_no_matches(self):
         self.assertIn("no matches", self.t.glob("nothing/*.zzz"))
 
+    def test_glob_empty_pattern_is_error_not_crash(self):
+        # T-119: pathlib.glob("") raises IndexError — a weak model's bad arg must
+        # NOT crash the driver; the tool returns an ERROR string it can recover from.
+        for bad in ("", "   ", None):
+            out = self.t.glob(bad)
+            self.assertTrue(out.startswith("ERROR:"), "expected ERROR for %r, got %r" % (bad, out))
+
     # -- grep -------------------------------------------------------------
     def test_grep_finds_line(self):
         self._write("r.md", "alpha\nid: T-072\nbeta\n")
