@@ -2,9 +2,9 @@
 
 **Phase**: construction
 **Iteration**: 1
-**Iteration Goal**: T-105 — Task-def schema + `build-task-library.py` process compiler (deterministic extraction + LLM distillation + validate + `--check`) + committed library for map-referenced tasks
+**Iteration Goal**: T-106 — Engine consumes the library: generic authoring sub-run (no procedure read) + `tasks:` map wiring + vision/roadmap split + bench measurement
 **Status**: completed
-**Current Task**: T-105
+**Current Task**: T-106
 **Iteration Started**: 2026-06-18
 **Last Updated**: 2026-07-15
 **Updated By**: sync-status.py
@@ -13,6 +13,8 @@
 ## Notes
 
 - **T-117** (2026-07-15): openup-doctor gains opt-in `--fix` — applies auto-heal-class findings (derived-view drift, unset `plan_persisted` gate) by invoking owning scripts; confirm-class behind `--confirm`, human-class never touched.
+
+- **T-106** (2026-07-15): the engine now consumes the task library — `process-map.yaml` authoring activities carry ordered `tasks:` resolving into `task-library.yaml`; the `execution: direct` path runs one bounded task-def sub-run per def (generic system prompt, **no procedure file read**), engine-stamped via the def's artifact/output_path. Retired `ROADMAP_FORMAT` + `PROCEDURE_ARTIFACTS` (now data). `inception-taskdef` bench added. Hermetic acceptance green (718 tests); live qwen-batch measure gates T-107.
 
 - **T-105** (2026-07-15): task-def library + `build-task-library.py` process compiler — lean authoring defs compiled from the KB (Stage-1 deterministic extract + Stage-2 LLM distillation w/ `--offline`), `tasks --validate` hard gate, `--check` skeleton drift. Committed but unconsumed (T-106 wires it in).
 
