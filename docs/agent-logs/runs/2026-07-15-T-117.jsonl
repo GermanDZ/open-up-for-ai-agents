@@ -1,0 +1,1 @@
+{"run_id": "T-117-run1", "event": "session_begin", "task_id": "T-117", "goal": "openup-doctor --fix applies auto-heal-class findings via owning scripts", "branch": "feat/T-117-doctor-fix", "phase": "inception", "ts": "2026-07-15T06:42:39Z"}

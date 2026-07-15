@@ -78,13 +78,13 @@ Give `Finding` two optional fields: `fix_class` (`auto` | `confirm` | `human` | 
 
 ## Operations
 
-- [ ] Add `fix_class` + `fix_cmd` to `Finding` (default `None`); include in `as_dict()`.
-- [ ] Tag auto-heal findings at their source: derived-view drift (aggregate + roadmap-status-drift) → `fix_class="auto"` with the generator command; unset `plan_persisted` gate detection (new, or extend state check) → `auto` with `set-gate` command.
-- [ ] Add a confirm-class example finding path so the boundary is testable (proposal-only unless `--confirm`).
-- [ ] Implement `apply_fixes(findings, repo, confirm)`: run auto (and confirm-if-flagged) `fix_cmd`s via `run()`, then re-detect and return post-fix findings.
-- [ ] Wire `--fix` / `--confirm` argparse flags into `main()`; exit code reflects post-fix findings; default run stays read-only.
-- [ ] (tester) Write `tests/test_openup_doctor_fix.py`: corrupt one state per class, assert `--fix` reaches green, confirm/human untouched without `--confirm`.
-- [ ] Update the module docstring to note `--fix` is opt-in and default stays read-only.
+- [x] Add `fix_class` + `fix_cmd` to `Finding` (default `None`); include in `as_dict()`.
+- [x] Tag auto-heal findings at their source: derived-view drift (aggregate + roadmap-status-drift) → `fix_class="auto"` with the generator command; unset `plan_persisted` gate detection (new, or extend state check) → `auto` with `set-gate` command.
+- [x] Add a confirm-class example finding path so the boundary is testable (proposal-only unless `--confirm`).
+- [x] Implement `apply_fixes(findings, repo, confirm)`: run auto (and confirm-if-flagged) `fix_cmd`s via `run()`, then re-detect and return post-fix findings.
+- [x] Wire `--fix` / `--confirm` argparse flags into `main()`; exit code reflects post-fix findings; default run stays read-only.
+- [x] (tester) Write `tests/test_openup_doctor_fix.py`: corrupt one state per class, assert `--fix` reaches green, confirm/human untouched without `--confirm`.
+- [x] Update the module docstring to note `--fix` is opt-in and default stays read-only.
 
 ## Norms
 
