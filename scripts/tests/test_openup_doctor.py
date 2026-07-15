@@ -196,7 +196,9 @@ class ContractTests(unittest.TestCase):
             self.assertIn("ok", payload)
             self.assertIn("findings", payload)
             for f in payload["findings"]:
-                self.assertEqual(set(f), {"severity", "check", "message"})
+                # Base contract keys must be present; T-117 added optional
+                # fix_class/fix_cmd, so assert a superset rather than exact set.
+                self.assertLessEqual({"severity", "check", "message"}, set(f))
                 self.assertIn(f["severity"], {"error", "warning", "info"})
 
     def test_unresolvable_root_exits_2(self):
