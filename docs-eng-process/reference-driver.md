@@ -354,9 +354,13 @@ restores the bare typed exits below.
     roadmap. Each sub-run's **system prompt is a slim generic shell** (role +
     "author the body, emit the sentinel"); the def's `name`/`artifact`/
     `output_path`/`judgment`/`inputs` travel in the **instruction**
-    (`plan_iteration.render_task_instruction`). No procedure file, no rubric, no
-    schema is read — the measured weak-model reliability fix. `validate` requires
-    every activity `tasks:` id to resolve in the library.
+    (`plan_iteration.render_task_instruction`). When the activity declares a
+    `requires_input` path (T-100), the instruction **names that concrete file to
+    read first** (T-118) — the def's `inputs` are KB workproduct display-names,
+    not paths, so without it a weak model spends several turns globbing to locate
+    the provided input. No procedure file, no rubric, no schema is read — the
+    measured weak-model reliability fix. `validate` requires every activity
+    `tasks:` id to resolve in the library.
   - **Engine-owned authoring ceremony (T-104, retained under T-106).** On the
     task-def path the **model authors the document body only**; every piece of
     ceremony is engine work:

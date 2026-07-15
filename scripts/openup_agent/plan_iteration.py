@@ -169,16 +169,28 @@ def project_config_block(root, artifact=None):
     return "\n\n".join(parts)
 
 
-def render_task_instruction(root, task_def, objectives):
+def render_task_instruction(root, task_def, objectives, input_path=None):
     """Assemble a task-def authoring sub-run's instruction (T-106): the task ask
     (name, role, artifact, output path) + its ``judgment`` (what-good-looks-like)
     + its declared inputs + the T-104 engine-owned-ceremony contract (exclusion,
     injected config). No procedure file is read — this instruction IS the spec.
 
     The pinned initial-roadmap format is carried by the author-initial-roadmap
-    def's judgment bullets (no special-casing here)."""
+    def's judgment bullets (no special-casing here).
+
+    T-118: when ``input_path`` (the activity's ``requires_input`` path) is given,
+    name that concrete file to read FIRST — the def's ``inputs`` are KB workproduct
+    display-names, not resolvable paths, so without this a weak model spends
+    several turns globbing to locate the provided input (observed live 2026-07-15:
+    5 globs / 4 turns before reading docs/inputs/stakeholder-brief.md)."""
     judgment = "\n".join("- %s" % b for b in task_def.get("judgment", []))
     inputs = ", ".join(task_def.get("inputs") or []) or "none"
+    if input_path:
+        read_line = ("Read the provided input file at `%s` FIRST (it exists at "
+                     "that exact path — do not search for it). Additional inputs "
+                     "to consider: %s." % (input_path, inputs))
+    else:
+        read_line = "Inputs to read: %s." % inputs
     parts = [
         "Perform the OpenUP task '%s' (role: %s). Produce the %s at %s, in "
         "service of these objectives:\n%s"
@@ -186,7 +198,7 @@ def render_task_instruction(root, task_def, objectives):
            task_def.get("output_path"),
            "\n".join("- %s" % o for o in objectives)),
         "What a good result looks like:\n%s" % judgment,
-        "Inputs to read: %s." % inputs,
+        read_line,
         CEREMONY_EXCLUSION,
     ]
     config = project_config_block(root, task_def.get("artifact"))
@@ -467,13 +479,19 @@ def run_plan_iteration(root, phase, *, dispatch_objectives, dispatch_spec,
                     "process map — aborting" % lane["activity"])
                 return PI_CONFIG
             defs = task_defs or {}
+            # T-118: the activity's human-provided input (T-100 requires_input) is a
+            # known concrete path — name it in each task instruction so the model
+            # reads it directly instead of globbing to find it.
+            ri = lane.get("requires_input")
+            input_path = ri.get("path") if isinstance(ri, dict) else None
             for tid in task_ids:
                 tdef = defs.get(tid)
                 if not tdef:
                     log("plan-iteration: task %r (activity %s) not in the task "
                         "library — aborting" % (tid, lane["activity"]))
                     return PI_CONFIG
-                instruction = render_task_instruction(root, tdef, objectives)
+                instruction = render_task_instruction(root, tdef, objectives,
+                                                      input_path=input_path)
                 log("plan-iteration: running task %s (%s → %s) for activity %s"
                     % (tid, tdef.get("artifact"), tdef.get("output_path"),
                        lane["activity"]))
