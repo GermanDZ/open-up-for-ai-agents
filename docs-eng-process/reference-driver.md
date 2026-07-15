@@ -351,7 +351,15 @@ restores the bare typed exits below.
     **`task-library.yaml`** (T-105); Plan Iteration runs **one bounded sub-run per
     def**, in order. `initiate-project: [develop-technical-vision,
     author-initial-roadmap]` is the flagship split — the vision body, then the
-    roadmap. Each sub-run's **system prompt is a slim generic shell** (role +
+    roadmap. **All Inception authoring activities are `execution: direct`** (T-119:
+    agree-technical-approach, identify-refine-requirements, plan-manage-iteration
+    joined initiate-project) — they author their documents directly via task defs
+    instead of the ceremony-heavy spec-then-execute lane authoring, which
+    overloaded the weak model (50-turn timeouts, live 2026-07-15). A direct
+    activity is validated as **task-driven** (`≥1 task`, any number of `skills`),
+    not the obsolete one-skill rule. Code activities (`develop-solution-increment`,
+    `ongoing-tasks`) carry no tasks and stay spec-then-execute. Each sub-run's
+    **system prompt is a slim generic shell** (role +
     "author the body, emit the sentinel"); the def's `name`/`artifact`/
     `output_path`/`judgment`/`inputs` travel in the **instruction**
     (`plan_iteration.render_task_instruction`). When the activity declares a

@@ -32,12 +32,12 @@ phases:
 # activity runs — replacing the hardcoded Inception bootstrap.
 activities:
   initiate-project:             { role: analyst,         skills: [openup-create-vision], requires_input: { path: docs/inputs/stakeholder-brief.md, describe: "a stakeholder brief (who/problem/desired outcomes/constraints)" }, execution: direct, tasks: [develop-technical-vision, author-initial-roadmap] }
-  agree-technical-approach:     { role: architect,       skills: [openup-shared-vision, openup-create-architecture-notebook], tasks: [envision-the-architecture] }
-  identify-refine-requirements: { role: analyst,         skills: [openup-create-use-case, openup-detail-use-case], tasks: [identify-and-outline-requirements, detail-use-case-scenarios] }
+  agree-technical-approach:     { role: architect,       skills: [openup-shared-vision, openup-create-architecture-notebook], execution: direct, tasks: [envision-the-architecture] }
+  identify-refine-requirements: { role: analyst,         skills: [openup-create-use-case, openup-detail-use-case], execution: direct, tasks: [identify-and-outline-requirements, detail-use-case-scenarios] }
   develop-architecture:         { role: architect,       skills: [openup-create-architecture-notebook], tasks: [refine-the-architecture] }
   develop-solution-increment:   { role: developer,       skills: [openup-tdd-workflow] }
   test-solution:                { role: tester,          skills: [openup-create-test-plan], tasks: [create-test-cases] }
-  plan-manage-iteration:        { role: project-manager, skills: [openup-create-iteration-plan, openup-create-risk-list], tasks: [plan-iteration] }
+  plan-manage-iteration:        { role: project-manager, skills: [openup-create-iteration-plan, openup-create-risk-list], execution: direct, tasks: [plan-iteration] }
   ongoing-tasks:                { role: developer,       skills: [] }
 
 # ── Iteration-id prefix letters (Assumption B: <letter><cycle-ordinal>) ──────

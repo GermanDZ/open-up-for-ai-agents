@@ -300,10 +300,14 @@ def validate(mp: dict, task_ids: set | None = None) -> list:
                 problems.append(
                     f"activity {name!r} execution {ex!r} not in "
                     f"{EXECUTION_MODES}")
-            if ex == "direct" and len(act.get("skills", [])) != 1:
+            # T-119: the direct path is TASK-driven (T-106), not skill-driven — it
+            # runs the activity's ordered `tasks:` defs, never a single procedure.
+            # So a direct activity must declare >=1 task; `skills` (Claude Code path)
+            # is no longer constrained. (Replaces the obsolete exactly-one-skill rule.)
+            if ex == "direct" and len(act.get("tasks", []) or []) < 1:
                 problems.append(
-                    f"activity {name!r} execution: direct requires exactly one "
-                    f"skill (the procedure to run), got {len(act.get('skills', []))}")
+                    f"activity {name!r} execution: direct requires >=1 task "
+                    f"(the task-def(s) to run); none wired")
         if phase not in mp["phase_letters"]:
             problems.append(f"phase {phase!r} has no phase_letters entry")
     if not mp["phases"]:

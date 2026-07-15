@@ -90,8 +90,20 @@ class Tools:
 
     # -- discovery --------------------------------------------------------
     def glob(self, pattern):
-        """List paths matching a glob pattern (relative to root). Subsumes list_dir."""
-        matches = sorted(str(p.relative_to(self.root)) for p in self.root.glob(pattern))
+        """List paths matching a glob pattern (relative to root). Subsumes list_dir.
+
+        A bad model arg must never crash the driver (T-119): an empty pattern makes
+        ``pathlib.glob('')`` raise IndexError, and other malformed patterns raise
+        ValueError — both are returned to the model as an ``ERROR:`` string so it
+        can recover, exactly as ``grep`` handles an invalid regex."""
+        if not pattern or not str(pattern).strip():
+            return ("ERROR: empty glob pattern; provide one like "
+                    "'docs/**/*.md' or 'docs/inputs/*'")
+        try:
+            matches = sorted(str(p.relative_to(self.root))
+                             for p in self.root.glob(pattern))
+        except (ValueError, IndexError, OSError) as e:
+            return "ERROR: invalid glob pattern %r: %s" % (pattern, e)
         if not matches:
             return "(no matches for %r)" % pattern
         return "\n".join(matches)

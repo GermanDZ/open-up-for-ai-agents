@@ -71,6 +71,20 @@ class TasksValidateTests(unittest.TestCase):
         self.assertEqual(pm.validate(_load_map(_MAP), task_ids=None), [])
 
 
+class DirectRequiresTaskTests(unittest.TestCase):
+    def test_direct_with_tasks_and_two_skills_passes(self):
+        # T-119: direct is task-driven — 2 skills + >=1 task is valid.
+        text = _MAP.replace(
+            "skills: [openup-create-vision], execution: direct",
+            "skills: [openup-create-vision, openup-shared-vision], execution: direct")
+        self.assertEqual(pm.validate(_load_map(text)), [])
+
+    def test_direct_without_tasks_fails(self):
+        text = _MAP.replace(", tasks: [develop-technical-vision, author-initial-roadmap]", "")
+        problems = pm.validate(_load_map(text))
+        self.assertTrue(any("direct" in p and "task" in p for p in problems))
+
+
 class ShippedMapTest(unittest.TestCase):
     def test_shipped_map_and_library_validate_together(self):
         mp = pm.load_map(_REPO)

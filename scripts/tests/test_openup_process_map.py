@@ -29,7 +29,7 @@ MAP = """\
 phases:
   inception: [initiate-project, test-solution]
 activities:
-  initiate-project: { role: analyst, skills: [openup-create-vision], requires_input: { path: docs/inputs/stakeholder-brief.md, describe: "a stakeholder brief" }, execution: direct }
+  initiate-project: { role: analyst, skills: [openup-create-vision], requires_input: { path: docs/inputs/stakeholder-brief.md, describe: "a stakeholder brief" }, execution: direct, tasks: [develop-technical-vision] }
   test-solution:    { role: tester,  skills: [openup-create-test-plan] }
 phase_letters:
   inception: I
@@ -92,12 +92,20 @@ class ValidateTest(unittest.TestCase):
         probs = self._validate(bad)
         self.assertTrue(any("execution" in p for p in probs))
 
-    def test_direct_requires_exactly_one_skill(self):
-        bad = MAP.replace(
+    def test_direct_with_multiple_skills_is_fine(self):
+        # T-119: the direct path is task-driven, not skill-driven — extra skills
+        # (the Claude Code path) are no longer constrained.
+        ok = MAP.replace(
             "skills: [openup-create-vision], requires_input",
             "skills: [openup-create-vision, openup-shared-vision], requires_input")
+        self.assertEqual(self._validate(ok), [])
+
+    def test_direct_requires_at_least_one_task(self):
+        # A direct activity with no tasks: wired is now the invalid case.
+        bad = MAP.replace(", execution: direct, tasks: [develop-technical-vision]",
+                          ", execution: direct")
         probs = self._validate(bad)
-        self.assertTrue(any("direct" in p and "one skill" in p for p in probs))
+        self.assertTrue(any("direct" in p and "task" in p for p in probs))
 
 
 class BackwardCompatTest(unittest.TestCase):

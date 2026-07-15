@@ -2,15 +2,17 @@
 
 **Phase**: construction
 **Iteration**: 1
-**Iteration Goal**: T-118 — Task-def authoring instruction names the activity's concrete `requires_input` path (kills the 5-glob/4-turn input hunt observed live on qwen-27b); workproduct-name inputs kept as secondary context; no execution change
+**Iteration Goal**: T-119 — Full Inception cycle on the weak model: all Inception authoring activities run `execution: direct` task-defs (retiring the spec-then-execute lane authoring that 50-turn-timed-out the qwen-27b live); direct validation is task-driven (≥1 task); guard the `glob` tool against empty/invalid patterns (was crashing the driver)
 **Status**: completed
-**Current Task**: T-118
+**Current Task**: T-119
 **Iteration Started**: 2026-06-18
 **Last Updated**: 2026-07-15
 **Updated By**: sync-status.py
 **Retrospective**: [iteration-77-retrospective.md](iteration-retrospectives/iteration-77-retrospective.md) — covers iterations 21–77 (2026-06-16 → 2026-07-14); first written retro since iteration 20
 
 ## Notes
+
+- **T-119** (2026-07-15): all Inception authoring activities now run `execution: direct` task-defs (agree-technical-approach, identify-refine-requirements, plan-manage-iteration joined initiate-project) — retiring the ceremony-heavy spec-then-execute lane authoring that overloaded the qwen-27b (50-turn timeouts, live). Direct validation is now task-driven (≥1 task). Guarded the `glob` tool against empty/invalid patterns (was crashing the driver with IndexError). Full suite 724 pass.
 
 - **T-118** (2026-07-15): task-def authoring instruction now names the activity's concrete `requires_input` path so the model reads it directly — kills the 5-glob/4-turn input hunt observed live on qwen-27b. No execution change; workproduct-name inputs kept as secondary context.
 
