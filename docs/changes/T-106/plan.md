@@ -14,8 +14,9 @@ touches:
   - scripts/openup_agent/stamping.py
   - docs-eng-process/process-map.yaml
   - scripts/openup-process-map.py
-  - scripts/bench-scenarios/inception-taskdef/scenario.json
+  - scripts/bench-scenarios/inception-taskdef/
   - scripts/tests/test_openup_agent_plan_iteration.py
+  - scripts/tests/test_openup_agent_cycle.py
   - scripts/tests/test_task_map_wiring.py
   - docs-eng-process/reference-driver.md
 ---
