@@ -3,14 +3,16 @@
 **Phase**: construction
 **Iteration**: 1
 **Iteration Goal**: T-106 — Engine consumes the library: generic authoring sub-run (no procedure read) + `tasks:` map wiring + vision/roadmap split + bench measurement
-**Status**: completed
-**Current Task**: T-106
+**Status**: in-progress
+**Current Task**: T-118
 **Iteration Started**: 2026-06-18
 **Last Updated**: 2026-07-15
 **Updated By**: sync-status.py
 **Retrospective**: [iteration-77-retrospective.md](iteration-retrospectives/iteration-77-retrospective.md) — covers iterations 21–77 (2026-06-16 → 2026-07-14); first written retro since iteration 20
 
 ## Notes
+
+- **T-118** (2026-07-15): task-def authoring instruction now names the activity's concrete `requires_input` path so the model reads it directly — kills the 5-glob/4-turn input hunt observed live on qwen-27b. No execution change; workproduct-name inputs kept as secondary context.
 
 - **T-117** (2026-07-15): openup-doctor gains opt-in `--fix` — applies auto-heal-class findings (derived-view drift, unset `plan_persisted` gate) by invoking owning scripts; confirm-class behind `--confirm`, human-class never touched.
 
