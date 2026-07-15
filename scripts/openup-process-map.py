@@ -197,6 +197,9 @@ def _activity_record(name: str, act: dict) -> dict:
         "skills": act.get("skills", []),
         "requires_input": ri if isinstance(ri, dict) else None,
         "execution": act.get("execution") or DEFAULT_EXECUTION,
+        # T-106: ordered task-library ids driving this activity's authoring
+        # sub-runs (the granularity mechanism). Empty ⇒ pre-T-106 procedure path.
+        "tasks": act.get("tasks", []),
     }
 
 
@@ -257,9 +260,21 @@ def mint_iteration_id(root: Path, mp: dict, phase: str) -> str:
     return f"{letter}{(max(ords) + 1) if ords else 1}"
 
 
-def validate(mp: dict) -> list:
-    """Return a list of structural problems (empty == valid)."""
+def validate(mp: dict, task_ids: set | None = None) -> list:
+    """Return a list of structural problems (empty == valid). When ``task_ids``
+    is given (the committed task-library ids), every activity ``tasks:`` entry
+    must resolve into it (T-106 map wiring)."""
     problems = []
+    for name, act in mp["activities"].items():
+        tasks = act.get("tasks") or []
+        if tasks and not isinstance(tasks, list):
+            problems.append(f"activity {name!r} tasks is not a list")
+        elif task_ids is not None:
+            for tid in tasks:
+                if tid not in task_ids:
+                    problems.append(
+                        f"activity {name!r} tasks references unknown task id {tid!r} "
+                        f"(not in task-library.yaml)")
     for phase, acts in mp["phases"].items():
         if phase not in KNOWN_PHASES:
             problems.append(f"phases: unknown phase {phase!r}")
@@ -451,7 +466,12 @@ def main(argv=None) -> int:
             print(mint_iteration_id(root, mp, args.phase))
             return 0
         if args.command == "validate":
-            problems = validate(mp)
+            # T-106: join activity tasks: against the committed library when present.
+            try:
+                task_ids = set(load_tasks(root))
+            except FileNotFoundError:
+                task_ids = None
+            problems = validate(mp, task_ids)
             if problems:
                 for p in problems:
                     print(f"[process-map] ✗ {p}", file=sys.stderr)

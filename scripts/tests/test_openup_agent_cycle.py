@@ -903,42 +903,49 @@ class AssessMilestoneDispatchTest(CycleFixture):
 
 
 # --------------------------------------------------------------------------
-# Engine-owned frontmatter stamping on the direct path (T-104)
+# Engine-owned frontmatter stamping on the direct path (T-104 / T-106)
 # --------------------------------------------------------------------------
-class StampDirectArtifactTest(unittest.TestCase):
-    """The run_procedure seam stamps the direct artifact after a successful
-    sub-run, before the gates — the model authored the body only."""
+class StampTaskArtifactTest(unittest.TestCase):
+    """The run_task seam stamps the task-def artifact after a successful sub-run,
+    before the gates — the model authored the body only. Keyed off the def's
+    artifact + output_path (T-106), not the interim PROCEDURE_ARTIFACTS table."""
+
+    _VISION_DEF = {"name": "Develop Technical Vision", "role": "analyst",
+                   "artifact": "vision", "output_path": "docs/product/vision.md",
+                   "source": "kb/vision.md", "inputs": [], "judgment": []}
+    _ROADMAP_DEF = {"name": "Author Initial Roadmap", "role": "project-manager",
+                    "artifact": "work-item", "output_path": "docs/roadmap.md",
+                    "source": "driver", "inputs": [], "judgment": []}
 
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory(prefix="stamp-wire-")
         self.root = Path(self.tmp.name)
-        (self.root / "docs").mkdir()
+        (self.root / "docs" / "product").mkdir(parents=True)
         self.addCleanup(self.tmp.cleanup)
 
-    def test_known_procedure_stamps_its_artifact(self):
-        vision = self.root / "docs" / "vision.md"
+    def test_task_def_stamps_its_artifact(self):
+        vision = self.root / "docs" / "product" / "vision.md"
         vision.write_text("# Product Vision\n\nBody only.\n", encoding="utf-8")
-        rc = cycle._stamp_direct_artifact(self.root, "openup-create-vision")
+        rc = cycle._stamp_task_artifact(self.root, self._VISION_DEF)
         self.assertEqual(rc, 0)
         text = vision.read_text(encoding="utf-8")
         self.assertTrue(text.startswith("---\ntype: vision\nid: VIS-001\n"))
         self.assertIn("status: draft", text)
         self.assertIn("# Product Vision\n\nBody only.\n", text)
 
-    def test_unknown_procedure_is_a_noop(self):
-        rc = cycle._stamp_direct_artifact(self.root, "openup-create-pr")
-        self.assertEqual(rc, 0)
-
     def test_missing_artifact_file_is_a_noop(self):
-        rc = cycle._stamp_direct_artifact(self.root, "openup-create-vision")
+        rc = cycle._stamp_task_artifact(self.root, self._VISION_DEF)
         self.assertEqual(rc, 0)
 
-    def test_roadmap_is_never_stamped(self):
-        # docs/roadmap.md is a plain derived view — not in PROCEDURE_ARTIFACTS.
+    def test_roadmap_plain_view_is_never_stamped(self):
+        # docs/roadmap.md is a plain derived view — stamp_for_task returns None.
         from openup_agent import stamping
-        self.assertNotIn(
-            "docs/roadmap.md",
-            [rel for _, rel in stamping.PROCEDURE_ARTIFACTS.values()])
+        roadmap = self.root / "docs" / "roadmap.md"
+        roadmap.write_text("# Roadmap\n\n| ID | ... |\n", encoding="utf-8")
+        info = stamping.stamp_for_task(self.root, self._ROADMAP_DEF)
+        self.assertIsNone(info)
+        self.assertFalse(roadmap.read_text().startswith("---"))  # untouched
+        self.assertEqual(cycle._stamp_task_artifact(self.root, self._ROADMAP_DEF), 0)
 
 
 # --------------------------------------------------------------------------

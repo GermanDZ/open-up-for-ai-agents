@@ -123,17 +123,43 @@ class RunPlanIterationTest(unittest.TestCase):
     def _run(self, phase="inception", **over):
         return pi.run_plan_iteration(self.root, phase, **self._ops(**over))
 
-    # -- T-101: map-driven input gate + execution:direct --------------------
+    # -- T-101/T-106: map-driven input gate + execution:direct task defs -----
     _DIRECT_ACTS = [{"name": "initiate-project", "role": "analyst",
                      "skills": ["openup-create-vision"], "execution": "direct",
+                     "tasks": ["develop-technical-vision", "author-initial-roadmap"],
                      "requires_input": {"path": "docs/inputs/brief.md",
                                         "describe": "a stakeholder brief"}}]
+
+    # T-106: the task library the direct path resolves activity tasks: against.
+    _TASK_DEFS = {
+        "develop-technical-vision": {
+            "name": "Develop Technical Vision", "role": "analyst",
+            "artifact": "vision", "output_path": "docs/product/vision.md",
+            "source": "kb/vision.md", "inputs": ["Vision"],
+            "judgment": ["States the problem before proposing a solution.",
+                         "Names the stakeholders and their needs.",
+                         "Lists features at capability granularity."]},
+        "author-initial-roadmap": {
+            "name": "Author Initial Roadmap", "role": "project-manager",
+            "artifact": "work-item", "output_path": "docs/roadmap.md",
+            "source": "driver", "inputs": [],
+            "judgment": ["Header row is exactly `| ID | Title | Status | Priority | Depends on |`.",
+                         "Task ids are T-001, T-002, … in sequence.",
+                         "Every Status is pending."]},
+        "refine-the-architecture": {
+            "name": "Refine the Architecture", "role": "architect",
+            "artifact": "decision", "output_path": "docs/product/architecture-notebook.md",
+            "source": "kb/arch.md", "inputs": ["Architecture Notebook"],
+            "judgment": ["Records the key decisions.", "Notes divergences.",
+                         "Keeps the significant list current."]},
+    }
 
     def test_missing_input_scaffolds_and_suspends_before_minting(self):
         minted = []
         rc = self._run(activities_for=lambda ph: self._DIRECT_ACTS,
                        mint_id=lambda ph: minted.append(ph) or "I1",
-                       run_procedure=lambda *a: self.fail("must not run yet"))
+                       task_defs=self._TASK_DEFS,
+                       run_task=lambda *a: self.fail("must not run yet"))
         self.assertEqual(rc, pi.PI_SUSPEND)
         brief = self.root / "docs" / "inputs" / "brief.md"
         self.assertTrue(brief.exists())
@@ -141,15 +167,17 @@ class RunPlanIterationTest(unittest.TestCase):
         self.assertEqual(minted, [])        # never minted
         self.assertEqual(self.commits, [])  # authored nothing
 
-    def test_direct_activity_runs_procedure_no_lane(self):
+    def test_direct_activity_runs_ordered_tasks_no_lane(self):
         brief = self.root / "docs" / "inputs" / "brief.md"
         brief.parent.mkdir(parents=True)
         brief.write_text("# Real brief\nmy product\n")  # present, no marker
         ran = []
         rc = self._run(activities_for=lambda ph: self._DIRECT_ACTS,
-                       run_procedure=lambda proc, instr: ran.append(proc) or 0)
+                       task_defs=self._TASK_DEFS,
+                       run_task=lambda tdef, instr: ran.append(tdef["name"]) or 0)
         self.assertEqual(rc, pi.PI_OK)
-        self.assertEqual(ran, ["openup-create-vision"])
+        # both tasks ran, in the map-declared order (vision then roadmap)
+        self.assertEqual(ran, ["Develop Technical Vision", "Author Initial Roadmap"])
         # no change-folder lane authored for the direct activity
         self.assertFalse((self.root / "docs" / "changes" / "I1-001").exists())
         inst = self.root / "docs/phases/inception/iteration-I1-plan.md"
@@ -159,14 +187,21 @@ class RunPlanIterationTest(unittest.TestCase):
         brief = self.root / "docs" / "inputs" / "brief.md"
         brief.parent.mkdir(parents=True); brief.write_text("real\n")
         rc = self._run(activities_for=lambda ph: self._DIRECT_ACTS,
-                       run_procedure=None)
+                       task_defs=self._TASK_DEFS, run_task=None)
+        self.assertEqual(rc, pi.PI_CONFIG)
+
+    def test_direct_unknown_task_id_is_config_error(self):
+        brief = self.root / "docs" / "inputs" / "brief.md"
+        brief.parent.mkdir(parents=True); brief.write_text("real\n")
+        rc = self._run(activities_for=lambda ph: self._DIRECT_ACTS,
+                       task_defs={}, run_task=lambda *a: 0)  # library empty
         self.assertEqual(rc, pi.PI_CONFIG)
 
     def test_present_input_does_not_scaffold(self):
         brief = self.root / "docs" / "inputs" / "brief.md"
         brief.parent.mkdir(parents=True); brief.write_text("real\n")
         rc = self._run(activities_for=lambda ph: self._DIRECT_ACTS,
-                       run_procedure=lambda *a: 0)
+                       task_defs=self._TASK_DEFS, run_task=lambda *a: 0)
         self.assertEqual(rc, pi.PI_OK)  # proceeded, no suspend
 
     def test_happy_path_plans_two_lanes_and_instance(self):
@@ -216,20 +251,21 @@ class RunPlanIterationTest(unittest.TestCase):
         rc = self._run(mint_id=lambda ph: "")
         self.assertEqual(rc, pi.PI_CONFIG)
 
-    # -- T-104: engine-owned authoring ceremony ------------------------------
-    def _direct_instruction(self, acts=None):
-        """Run one direct activity and capture the instruction it receives."""
+    # -- T-104/T-106: engine-owned ceremony + task-def instructions ----------
+    def _direct_instructions(self, acts=None):
+        """Run the direct activity and capture the instruction each task gets."""
         brief = self.root / "docs" / "inputs" / "brief.md"
         brief.parent.mkdir(parents=True, exist_ok=True)
         brief.write_text("real brief\n")
         seen = []
         rc = self._run(activities_for=lambda ph: acts or self._DIRECT_ACTS,
-                       run_procedure=lambda proc, instr: seen.append(instr) or 0)
+                       task_defs=self._TASK_DEFS,
+                       run_task=lambda tdef, instr: seen.append(instr) or 0)
         self.assertEqual(rc, pi.PI_OK)
-        return seen[0]
+        return seen
 
     def test_direct_instruction_excludes_ceremony(self):
-        instr = self._direct_instruction()
+        instr = self._direct_instructions()[0]  # the vision task
         self.assertIn("Author the document BODY only", instr)
         for ceremony in ("doc-frontmatter.md", "docs-meta.schema.json",
                          "trace-model.json", "rubric",
@@ -237,16 +273,28 @@ class RunPlanIterationTest(unittest.TestCase):
             self.assertIn(ceremony, instr)  # named as prohibited
         self.assertIn("Do NOT self-critique", instr)
 
-    def test_initiate_project_carries_pinned_roadmap_format(self):
-        instr = self._direct_instruction()
-        self.assertIn(pi.ROADMAP_FORMAT, instr)
-        self.assertIn("T-001, T-002", instr)
+    def test_task_instruction_carries_judgment_and_output(self):
+        instr = self._direct_instructions()[0]  # the vision task
+        self.assertIn("docs/product/vision.md", instr)          # output path
+        self.assertIn("States the problem before proposing", instr)  # judgment
+        self.assertIn("Inputs to read: Vision", instr)
 
-    def test_other_direct_activity_has_no_roadmap_format(self):
-        acts = [dict(self._DIRECT_ACTS[0], name="agree-technical-approach",
-                     skills=["openup-create-architecture-notebook"])]
-        instr = self._direct_instruction(acts)
-        self.assertNotIn(pi.ROADMAP_FORMAT, instr)
+    def test_roadmap_task_carries_pinned_format(self):
+        # The pinned roadmap format now lives in the author-initial-roadmap def's
+        # judgment (retiring the ROADMAP_FORMAT constant) — it reaches the model
+        # through that task's instruction (the second direct task).
+        instrs = self._direct_instructions()
+        roadmap_instr = instrs[1]
+        self.assertIn("| ID | Title | Status | Priority | Depends on |", roadmap_instr)
+        self.assertIn("T-001, T-002", roadmap_instr)
+        self.assertFalse(hasattr(pi, "ROADMAP_FORMAT"))  # constant retired
+
+    def test_non_roadmap_task_has_no_roadmap_format(self):
+        acts = [dict(self._DIRECT_ACTS[0], name="develop-architecture",
+                     skills=["openup-create-architecture-notebook"],
+                     tasks=["refine-the-architecture"])]
+        instr = self._direct_instructions(acts)[0]
+        self.assertNotIn("| ID | Title | Status | Priority | Depends on |", instr)
 
     def test_project_config_injected_when_present(self):
         cfg = self.root / "docs" / "project-config.yaml"
@@ -255,7 +303,7 @@ class RunPlanIterationTest(unittest.TestCase):
             "context: |\n  Tech stack: python\n  Domain: testing\n"
             "rules:\n  vision:\n    - Name a paying customer\n"
             "  use-case:\n    - Not for visions\n")
-        instr = self._direct_instruction()
+        instr = self._direct_instructions()[0]  # the vision task
         self.assertIn("<project-context>", instr)
         self.assertIn("Tech stack: python", instr)
         self.assertIn("<project-rules>", instr)
@@ -263,7 +311,7 @@ class RunPlanIterationTest(unittest.TestCase):
         self.assertNotIn("Not for visions", instr)  # other artifact's rules
 
     def test_no_project_config_injects_nothing(self):
-        instr = self._direct_instruction()
+        instr = self._direct_instructions()[0]
         self.assertNotIn("<project-context>", instr)
         self.assertNotIn("<project-rules>", instr)
 
@@ -273,13 +321,14 @@ class RunPlanIterationTest(unittest.TestCase):
         brief.parent.mkdir(parents=True, exist_ok=True)
         brief.write_text("real brief\n")
         rc = self._run(activities_for=lambda ph: self._DIRECT_ACTS,
-                       run_procedure=lambda proc, instr: 0)
+                       task_defs=self._TASK_DEFS,
+                       run_task=lambda tdef, instr: 0)
         self.assertEqual(rc, pi.PI_OK)
         direct = [c for c in self.commits if "initiate-project" in c[1]]
-        self.assertEqual(len(direct), 1)
+        self.assertEqual(len(direct), 1)  # ONE commit for the whole activity's tasks
         paths, message = direct[0]
         self.assertEqual(paths, ("docs/",))
-        self.assertIn("openup-create-vision", message)
+        self.assertIn("task defs", message)
         self.assertIn("[I1]", message)
         # committed before the iteration-plan instance (the last commit)
         self.assertLess(self.commits.index(direct[0]), len(self.commits) - 1)
@@ -290,7 +339,8 @@ class RunPlanIterationTest(unittest.TestCase):
         brief.write_text("real brief\n")
         self.gate_ok = False
         rc = self._run(activities_for=lambda ph: self._DIRECT_ACTS,
-                       run_procedure=lambda proc, instr: 0)
+                       task_defs=self._TASK_DEFS,
+                       run_task=lambda tdef, instr: 0)
         self.assertEqual(rc, pi.PI_STEP)
         self.assertEqual(self.commits, [])
 

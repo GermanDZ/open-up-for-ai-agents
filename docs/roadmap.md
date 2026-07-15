@@ -813,7 +813,7 @@ authored when promoted.
 |---|---|---|---|---|
 | T-104 | Engine-owned authoring ceremony (frontmatter stamping, config injection, ceremony-exclusion) + restore the pinned initial-roadmap contract (T-103 regression) | completed (2026-07-14) | high | — |
 | T-105 | Task-def schema + `build-task-library.py` process compiler (deterministic extraction + LLM distillation + validate + `--check`) + committed library for map-referenced tasks | completed (2026-07-15) | high | T-104 |
-| T-106 | Engine consumes the library: generic authoring sub-run (no procedure read) + `tasks:` map wiring + vision/roadmap split + bench measurement | pending | high | T-104, T-105 |
+| T-106 | Engine consumes the library: generic authoring sub-run (no procedure read) + `tasks:` map wiring + vision/roadmap split + bench measurement | completed (2026-07-15) | high | T-104, T-105 |
 | T-107 | Scale: full KB compile, doctor `--check` wiring, KB-update re-distillation, customized process sources (P2 lands) | pending | medium | T-106 + live acceptance |
 
 ---
