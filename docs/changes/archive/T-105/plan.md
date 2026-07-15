@@ -1,7 +1,7 @@
 ---
 id: T-105
 title: "Task-def schema + build-task-library.py process compiler + committed library"
-status: ready
+status: done
 priority: high
 estimate: 1-2 sessions
 plan: docs/iteration-plans/2026-07-14-lean-authoring-tasks.md
