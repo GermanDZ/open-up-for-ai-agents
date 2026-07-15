@@ -1,0 +1,2 @@
+{"run_id": "T-105-run1", "event": "session_begin", "task_id": "T-105", "goal": "Compile KB authoring tasks into a committed, validated lean-task library (unconsumed)", "branch": "feat/T-105-task-library", "phase": "construction", "ts": "2026-07-15T09:33:57Z"}
+{"run_id": "620d864b7520437d99bffd692f346529", "event": "commit", "task_id": "T-105", "branch": "feat/T-105-task-library", "sha": "d5377ad207da8fd5ccd6908d49aad908bb9f3a77", "model": null, "session_id": "feat/T-105-task-library", "ts": "2026-07-15T09:49:37Z"}
