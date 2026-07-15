@@ -1,0 +1,2 @@
+{"run_id": "T-106-run1", "event": "session_begin", "task_id": "T-106", "goal": "Engine consumes task library: generic authoring sub-run + tasks map wiring", "branch": "feat/T-106-engine-consumes-library", "phase": "construction", "ts": "2026-07-15T10:12:09Z"}
+{"run_id": "8616bd4355c5473381f3c1f41b0e2a83", "event": "commit", "task_id": "T-106", "branch": "feat/T-106-engine-consumes-library", "sha": "753b3413a53db3075b0013a57861629f5fb54d0e", "model": null, "session_id": "feat/T-106-engine-consumes-library", "ts": "2026-07-15T10:30:24Z"}
