@@ -5,6 +5,7 @@
 
 | ID | Title | Status | Priority | Depends on |
 |---|---|---|---|---|
+| [T-119](changes/T-119/plan.md) | Full Inception cycle on the weak model: all Inception authoring activities run `execution: direct` task-defs (retiring the spec-then-execute lane authoring that 50-turn-timed-out the qwen-27b live); direct validation is task-driven (≥1 task); guard the `glob` tool against empty/invalid patterns (was crashing the driver) | completed (2026-07-15) | high | T-106 |
 | [T-118](changes/archive/T-118/plan.md) | Task-def authoring instruction names the activity's concrete `requires_input` path (kills the 5-glob/4-turn input hunt observed live on qwen-27b); workproduct-name inputs kept as secondary context; no execution change | completed (2026-07-15) | medium | T-106 |
 | [T-117](changes/archive/T-117/plan.md) | `openup-doctor --fix`: apply auto-heal-class findings (derived/mirror-view drift + single-valued unset `plan_persisted` gate) by invoking their owning scripts (DD1: invoke, never reimplement); confirm-class findings printed as proposals behind `--fix --confirm`; human-only findings never touched; proven by a per-class corrupt→fix→clean test | completed (2026-07-15) | medium | — |
 | [T-116](changes/T-116/plan.md) | Hook-sweep parity with `cycle.py` — fold hook-appended `docs/agent-logs/` shards into the same commit `/openup-next`/`/openup-complete-task`/`/openup-cycle` already make, instead of a manual noticed-then-recommitted follow-up (found live: 6 round trips in one bootstrap lane) | completed (2026-07-14) | medium | — |
