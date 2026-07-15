@@ -1,10 +1,10 @@
 # Project Status
 
-**Phase**: inception
+**Phase**: construction
 **Iteration**: 1
-**Iteration Goal**: T-117 — `openup-doctor --fix`: apply auto-heal-class findings (derived/mirror-view drift + single-valued unset `plan_persisted` gate) by invoking their owning scripts (DD1: invoke, never reimplement); confirm-class findings printed as proposals behind `--fix --confirm`; human-only findings never touched; proven by a per-class corrupt→fix→clean test
+**Iteration Goal**: T-105 — Task-def schema + `build-task-library.py` process compiler (deterministic extraction + LLM distillation + validate + `--check`) + committed library for map-referenced tasks
 **Status**: completed
-**Current Task**: T-117
+**Current Task**: T-105
 **Iteration Started**: 2026-06-18
 **Last Updated**: 2026-07-15
 **Updated By**: sync-status.py
@@ -13,6 +13,8 @@
 ## Notes
 
 - **T-117** (2026-07-15): openup-doctor gains opt-in `--fix` — applies auto-heal-class findings (derived-view drift, unset `plan_persisted` gate) by invoking owning scripts; confirm-class behind `--confirm`, human-class never touched.
+
+- **T-105** (2026-07-15): task-def library + `build-task-library.py` process compiler — lean authoring defs compiled from the KB (Stage-1 deterministic extract + Stage-2 LLM distillation w/ `--offline`), `tasks --validate` hard gate, `--check` skeleton drift. Committed but unconsumed (T-106 wires it in).
 
 - **Iteration 79** (2026-07-14): T-116 (standard) — **hook-sweep parity with `cycle.py`** — closes an avoidable-overhead gap the T-112/T-113 dry run surfaced live (6 redundant round trips in one bootstrap lane): `auto-log-commit.py` can only append its run-log line *after* a commit lands (`PostToolUse` can't run before `git commit` returns), so the Claude-Code-driven skills had no instruction to fold that delta into their next commit — an agent had to notice the dirty tree and improvise a follow-up commit, every time. Ports `cycle.py`'s proven `_sweep_run_logs` pattern (`scripts/openup_agent/cycle.py:1060-1084`) into prose: a new "Pre-Commit Housekeeping" section in `docs-eng-process/conventions.md` (the single source of truth every skill's Norms section inherits from) states the rule once; `openup-complete-task.md` step 2 and `openup-cycle.md`'s gate-before-tick step each carry an explicit pointer to it — the two highest-leverage commit points a lane always passes through. `openup-next.md` verified byte-unchanged. No script/hook code changed — the fix works with `auto-log-commit.py`'s post-commit-only timing, not around it. First of three tasks (T-116 → T-114 → T-115) promoted from `docs/explorations/2026-07-14-fresh-bootstrap-tool-call-overhead.md`. Solo, standard, worktree, on harness-optional.
 

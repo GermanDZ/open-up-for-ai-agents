@@ -252,6 +252,7 @@ openup-process-map.py [--repo-root DIR] activity <name> [--json]
 openup-process-map.py [--repo-root DIR] phase-letter <phase>
 openup-process-map.py [--repo-root DIR] mint-iteration-id <phase>
 openup-process-map.py [--repo-root DIR] validate
+openup-process-map.py [--repo-root DIR] tasks [--validate] [--json]
 ```
 - **Read-only.** Loads the vendored `docs-eng-process/process-map.yaml` (KB §4:
   phase → ordered activities, activity → `{role, skills}`, phase → iteration-id
@@ -283,6 +284,34 @@ openup-process-map.py [--repo-root DIR] validate
 - **`validate`** — every activity named in `phases:` has an `activities:` entry,
   each role is known, each phase has a prefix letter. Exit 2 (naming the problem)
   on any structural fault; the map is the single source the thin phase skills front.
+- **`tasks [--validate] [--json]` (T-105)** — reads the committed task library
+  `docs-eng-process/task-library.yaml` (lean authoring task defs) with the same
+  stdlib parser. `--validate` hard-gates every def: all fields present, `artifact`
+  in the v1 spine enum, `role` known, `judgment` 3–8 bullets, `output_path` a
+  relative `.md` path — exit 2 on any fault. `--json` dumps the parsed defs. The
+  library is unconsumed by the engine until T-106.
+
+## build-task-library.py — task-library compiler (T-105)
+
+```
+build-task-library.py [--repo-root DIR]              # online compile (needs endpoint)
+build-task-library.py [--repo-root DIR] --offline DIR # emit distillation prompts, no LLM
+build-task-library.py [--repo-root DIR] --check       # skeleton drift vs KB sources
+```
+- **Sibling of `build-trace-model.py`.** Compiles the vendored KB authoring task
+  files into `docs-eng-process/task-library.yaml`. Two stages: (1) deterministic
+  extraction of the def *skeleton* (`name`, `role` = primary performer, `inputs`)
+  from each KB task's UMA structure; (2) LLM distillation of the task prose into
+  the 3–8 `judgment` bullets via `openup_agent/llm.py` (compile with a **strong**
+  model; output human-reviewed before commit).
+- **`--offline DIR`** — writes each KB-sourced task's distillation prompt to
+  `DIR/<task-id>.prompt.txt` and makes no network call; complete/review out of band.
+- **`--check`** — re-extracts the skeleton from each def's `source` and diffs
+  against the committed library; exit 1 on skeleton drift (`name`/`role`/`inputs`).
+  Prose (`judgment`) drift is advisory — regeneration is a reviewed act. Driver-native
+  defs (`source: driver`, e.g. `author-initial-roadmap`) have no KB skeleton and are
+  skipped. Online compile needs `LLM_API_URL` + `OPENUP_COMPILE_MODEL` (or `LLM_MODEL`).
+- Exit codes: 0 ok / in-sync · 1 `--check` drift · 2 usage / could-not-run.
 
 ## openup-scribe.py — deterministic scribe writes
 
