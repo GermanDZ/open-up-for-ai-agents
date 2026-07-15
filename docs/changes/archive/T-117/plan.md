@@ -1,7 +1,7 @@
 ---
 id: T-117
 title: "openup-doctor --fix: apply auto-heal-class findings"
-status: ready
+status: done
 priority: medium
 estimate: 1 session
 plan: docs/explorations/2026-07-15-self-healing-interrupted-process-state.md
