@@ -38,13 +38,10 @@ ID_PREFIXES = {
 
 ID_PAD = 3  # VIS-001, VIS-002, …
 
-# Which typed artifact an execution:direct procedure produces, and where.
-# INTERIM table — T-106's task-library defs carry `artifact` + `output_path`
-# as data; retire this there. docs/roadmap.md is deliberately absent: it is a
-# plain derived view, never a typed instance.
-PROCEDURE_ARTIFACTS = {
-    "openup-create-vision": ("vision", "docs/vision.md"),
-}
+# Output paths that are plain derived views — never typed instances, so never
+# stamped (T-106). docs/roadmap.md is authored by the author-initial-roadmap task
+# def but is a plain view (a table of work items), not a single typed work product.
+PLAIN_VIEW_PATHS = {"docs/roadmap.md"}
 
 _HEADING_RE = re.compile(r"^#\s+(.+?)\s*$", re.MULTILINE)
 
@@ -164,3 +161,21 @@ def stamp_file(root, path, type_, title=None):
                     + body.lstrip("\n"), encoding="utf-8")
     return {"type": type_, "id": id_, "title": final_title,
             "status": "draft", "path": str(path)}
+
+
+def stamp_for_task(root, task_def):
+    """T-106: stamp the typed instance frontmatter for a completed task-def
+    authoring sub-run, keyed off the def's ``artifact`` (spine type) +
+    ``output_path`` (data, replacing the interim PROCEDURE_ARTIFACTS table).
+
+    Returns the ``stamp_file`` info dict, or ``None`` when the def targets a
+    plain view (e.g. ``docs/roadmap.md``), its ``artifact`` is not a stampable
+    spine type, or the output file does not exist."""
+    artifact = (task_def.get("artifact") or "").strip()
+    out = (task_def.get("output_path") or "").strip()
+    if not out or out in PLAIN_VIEW_PATHS or artifact not in ID_PREFIXES:
+        return None
+    target = Path(root) / out
+    if not target.exists():
+        return None
+    return stamp_file(root, target, artifact)

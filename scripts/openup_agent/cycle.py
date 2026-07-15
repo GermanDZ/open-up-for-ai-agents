@@ -876,25 +876,49 @@ def complete(root, task, env, counts):
 # The cycle
 # --------------------------------------------------------------------------
 
-def _stamp_direct_artifact(root, procedure):
-    """T-104: after a successful execution:direct authoring sub-run, stamp the
-    typed instance frontmatter on the artifact the procedure produced — the
-    model authored the body only. Runs before the gates, so check-docs (already
-    in run_gates) validates the stamped result: the gate is the critic.
-    Returns 0, or EXIT_STEP when stamping fails."""
-    artifact = stamping.PROCEDURE_ARTIFACTS.get(procedure)
-    if not artifact:
-        return EXIT_OK
-    type_, rel = artifact
-    target = Path(root) / rel
-    if not target.exists():
-        return EXIT_OK
+def _load_task_defs(root):
+    """T-106: the committed task library ``{id: def}`` via openup-process-map.py
+    (single source of the parser). Empty dict if unavailable — the direct path
+    then aborts with a clear 'not in the task library' error."""
+    p = _run(["python3", "scripts/openup-process-map.py", "tasks", "--json"], root)
+    if p.returncode != 0:
+        return {}
     try:
-        info = stamping.stamp_file(root, target, type_)
-        _log("stamped %s as %s (%s, status draft)" % (rel, info["id"], type_))
+        data = json.loads(p.stdout)
+        return data if isinstance(data, dict) else {}
+    except (json.JSONDecodeError, ValueError):
+        return {}
+
+
+def _task_system_prompt(task_def):
+    """The slim generic shell for a task-def authoring sub-run (T-106) — replaces
+    reading the full procedure file. The specifics (judgment, inputs, output
+    path) travel in the instruction; the shell frames the role + the sentinel."""
+    return (
+        "You are an OpenUP authoring agent performing a single task. Produce "
+        "exactly the one artifact the instruction names, writing the document "
+        "BODY only — the engine stamps the typed frontmatter and validates. Read "
+        "only the inputs the instruction lists; do not load procedures, rubrics, "
+        "or schemas. When the file is saved, emit the line `OPENUP-TASK: DONE` "
+        "and stop."
+    )
+
+
+def _stamp_task_artifact(root, task_def):
+    """T-106: after a successful task-def authoring sub-run, stamp the typed
+    instance frontmatter on the artifact the def declares (``artifact`` +
+    ``output_path``) — the model authored the body only. Runs before the gates,
+    so check-docs (already in run_gates) validates the stamped result: the gate
+    is the critic. A plain-view def (e.g. author-initial-roadmap → docs/roadmap.md)
+    stamps nothing. Returns 0, or EXIT_STEP when stamping fails."""
+    try:
+        info = stamping.stamp_for_task(root, task_def)
     except (ValueError, OSError) as e:
-        _log("stamping %s failed: %s" % (rel, e))
+        _log("stamping %s failed: %s" % (task_def.get("output_path"), e))
         return EXIT_STEP
+    if info:
+        _log("stamped %s as %s (%s, status draft)"
+             % (task_def.get("output_path"), info["id"], info["type"]))
     return EXIT_OK
 
 
@@ -911,6 +935,14 @@ def _run_plan_iteration(root, phase, env, step_tier, cap, interactive,
     except tiers.TierError as e:
         _log("FATAL: %s" % e)
         return EXIT_CONFIG
+    # T-106: authoring sub-runs use the `authoring` tier (what the create-*
+    # procedures declared); fall back to the step model if the tier is absent.
+    try:
+        authoring_model = tiers.resolve_tier_model(root, "authoring", target="driver", env=env)
+    except tiers.TierError:
+        authoring_model = model
+    # The committed task library, resolved once for the direct path (T-106).
+    task_defs = _load_task_defs(root)
 
     def _runner(argv):
         p = _run(argv, root)
@@ -995,15 +1027,20 @@ def _run_plan_iteration(root, phase, env, step_tier, cap, interactive,
         except json.JSONDecodeError:
             return {}
 
-    def run_procedure(procedure, instruction):
-        # An execution:direct activity runs its create-* procedure directly (T-101).
-        # Capture the sub-procedure's DONE sentinel; the plan-iteration engine
-        # reports its own cycle-level outcome. On failure surface the output.
+    def run_task(task_def, instruction):
+        # T-106: a task-def authoring sub-run. The system prompt is a slim
+        # generic shell built from the def — NO procedure file is read (the
+        # T-089 system_prompt seam); the model authors the body, the engine
+        # stamps + gates. Capture the sub-run's DONE sentinel; surface output
+        # on failure.
+        system_prompt = _task_system_prompt(task_def)
         buf = io.StringIO()
         with contextlib.redirect_stdout(buf):
-            rc = loop.run(dir=str(root), procedure=procedure,
+            rc = loop.run(dir=str(root),
+                          procedure=task_def.get("id") or task_def.get("name") or "task",
                           max_iterations=loop.DEFAULT_MAX_ITERATIONS, env=env,
                           interactive=interactive, instruction=instruction,
+                          system_prompt=system_prompt, model=authoring_model,
                           _completion=_completion)
         out = buf.getvalue()
         if rc != 0:
@@ -1011,7 +1048,7 @@ def _run_plan_iteration(root, phase, env, step_tier, cap, interactive,
                 sys.stdout.write(out)
                 sys.stdout.flush()
             return rc
-        return _stamp_direct_artifact(root, procedure)
+        return _stamp_task_artifact(root, task_def)
 
     return plan_iteration.run_plan_iteration(
         root, phase, dispatch_objectives=dispatch_objectives,
@@ -1019,7 +1056,7 @@ def _run_plan_iteration(root, phase, env, step_tier, cap, interactive,
         git_commit=git_commit, mint_id=mint_id, activities_for=activities_for,
         reserve_id=reserve_id, partition=partition,
         roadmap_pending=roadmap_pending, lifecycle=lifecycle,
-        run_procedure=run_procedure, log=_log,
+        run_task=run_task, task_defs=task_defs, log=_log,
         suspend_sentinel=loop.SUSPEND_SENTINEL)
 
 

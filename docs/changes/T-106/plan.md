@@ -95,13 +95,13 @@ Wire `tasks:` onto activities in the map + parser; `validate` joins them to `loa
 
 ## Operations
 
-- [ ] Parse `tasks:` on activities in `openup-process-map.py` (`_activity_record` + `activities_for`); extend `validate` to require every listed id resolve in `load_tasks`.
-- [ ] Add `tasks:` to `process-map.yaml` authoring activities — flagship `initiate-project: [develop-technical-vision, author-initial-roadmap]` + the other authoring activities' defs.
-- [ ] Add `stamp_for_task(root, task_def)` to `stamping.py` (key off `artifact`/`output_path`); remove `PROCEDURE_ARTIFACTS`.
-- [ ] Rework `plan_iteration.py` direct branch to iterate ordered task defs, build the per-task generic instruction, call injected `run_task`; delete `ROADMAP_FORMAT` (now in the `author-initial-roadmap` def).
-- [ ] Rework `cycle.py`'s runner into `run_task`: build the generic `system_prompt` shell from the def, `loop.run(system_prompt=…, model=…)` (no procedure read), stamp via `stamp_for_task`.
-- [ ] Add the `inception-taskdef` bench scenario (`command: cycle`, deliverable + markers) wired to the usage/debug logs.
-- [ ] (tester) Hermetic tests: map `tasks:` parse+validate join; direct path runs N sub-runs with `system_prompt` (no procedure read); stamping keyed off the def; roadmap def carries the pinned format. Full suite green; fence `--base harness-optional`.
+- [x] Parse `tasks:` on activities in `openup-process-map.py` (`_activity_record` + `activities_for`); extend `validate` to require every listed id resolve in `load_tasks`.
+- [x] Add `tasks:` to `process-map.yaml` authoring activities — flagship `initiate-project: [develop-technical-vision, author-initial-roadmap]` + the other authoring activities' defs.
+- [x] Add `stamp_for_task(root, task_def)` to `stamping.py` (key off `artifact`/`output_path`); remove `PROCEDURE_ARTIFACTS`.
+- [x] Rework `plan_iteration.py` direct branch to iterate ordered task defs, build the per-task generic instruction, call injected `run_task`; delete `ROADMAP_FORMAT` (now in the `author-initial-roadmap` def).
+- [x] Rework `cycle.py`'s runner into `run_task`: build the generic `system_prompt` shell from the def, `loop.run(system_prompt=…, model=…)` (no procedure read), stamp via `stamp_for_task`.
+- [x] Add the `inception-taskdef` bench scenario (`command: cycle`, deliverable + markers) wired to the usage/debug logs.
+- [x] (tester) Hermetic tests: map `tasks:` parse+validate join; direct path runs N sub-runs with `system_prompt` (no procedure read); stamping keyed off the def; roadmap def carries the pinned format. Full suite green; fence `--base harness-optional`.
 
 ## Norms
 

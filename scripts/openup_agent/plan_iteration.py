@@ -102,26 +102,11 @@ docs/project-config.yaml — everything project-specific you need is injected in
 this instruction. Do NOT self-critique or grade your own output; the engine
 validates the result deterministically (check-docs) after you finish."""
 
-# The T-099 pinned initial-roadmap contract, restored (the T-103 deletion of
-# navigator.VISION_INSTRUCTION regressed it): openup-roadmap.py's parser
-# (ID_RE `T-\\d+`) must find a freshly-authored roadmap promotable. INTERIM
-# home — T-106 moves this into the task library as the author-initial-roadmap
-# task def; retire this constant there.
-ROADMAP_FORMAT = (
-    "Also author an initial docs/roadmap.md that the deterministic tooling can "
-    "parse. docs/roadmap.md MUST contain a markdown table with EXACTLY this "
-    "header row `| ID | Title | Status | Priority | Dependencies | Value |` "
-    "followed by 5-8 entry rows. STRICT format for each row (the tooling "
-    "matches these literally): (1) ID MUST be of the form T-001, T-002, "
-    "T-003, … — the literal prefix 'T-' then a sequential zero-padded number; "
-    "do NOT invent other id schemes; (2) Status MUST be exactly `pending`; "
-    "(3) Priority MUST be one of `high`, `medium`, or `low`; (4) Dependencies "
-    "lists the T-NNN ids this entry depends on, comma-separated, or `none`; "
-    "(5) Value is a one-line rationale. Order the rows by delivery priority "
-    "(the first row should be a foundational entry with no dependencies). Do "
-    "NOT add YAML frontmatter to docs/roadmap.md (it is a plain view, not a "
-    "typed work product). Cover the path from the first use cases to the core "
-    "features.")
+# T-106: the T-099 pinned initial-roadmap contract now lives in the task library
+# as the `author-initial-roadmap` def's `judgment` bullets (the header row, the
+# `T-NNN` id scheme, `pending` status, the priority enum, and delivery ordering) —
+# retiring the interim ROADMAP_FORMAT constant that lived here (T-104). The
+# roadmap task's instruction is built from that def like any other task.
 
 CONFIG_REL = Path("docs") / "project-config.yaml"
 
@@ -184,23 +169,29 @@ def project_config_block(root, artifact=None):
     return "\n\n".join(parts)
 
 
-def render_direct_instruction(root, lane, objectives):
-    """Assemble an execution:direct activity's instruction: the activity ask +
-    the T-104 engine-owned-ceremony contract (exclusion, injected config, and —
-    for initiate-project — the pinned initial-roadmap format)."""
+def render_task_instruction(root, task_def, objectives):
+    """Assemble a task-def authoring sub-run's instruction (T-106): the task ask
+    (name, role, artifact, output path) + its ``judgment`` (what-good-looks-like)
+    + its declared inputs + the T-104 engine-owned-ceremony contract (exclusion,
+    injected config). No procedure file is read — this instruction IS the spec.
+
+    The pinned initial-roadmap format is carried by the author-initial-roadmap
+    def's judgment bullets (no special-casing here)."""
+    judgment = "\n".join("- %s" % b for b in task_def.get("judgment", []))
+    inputs = ", ".join(task_def.get("inputs") or []) or "none"
     parts = [
-        "Perform the OpenUP activity '%s' (role: %s) by running the %s "
-        "procedure to completion, in service of these objectives:\n%s"
-        % (lane["activity"], lane["role"], lane["skill"],
+        "Perform the OpenUP task '%s' (role: %s). Produce the %s at %s, in "
+        "service of these objectives:\n%s"
+        % (task_def.get("name"), task_def.get("role"), task_def.get("artifact"),
+           task_def.get("output_path"),
            "\n".join("- %s" % o for o in objectives)),
+        "What a good result looks like:\n%s" % judgment,
+        "Inputs to read: %s." % inputs,
         CEREMONY_EXCLUSION,
     ]
-    artifact = lane["skill"].rpartition("openup-create-")[2] or None
-    config = project_config_block(root, artifact)
+    config = project_config_block(root, task_def.get("artifact"))
     if config:
         parts.append(config)
-    if lane["activity"] == "initiate-project":
-        parts.append(ROADMAP_FORMAT)
     return "\n\n".join(parts)
 
 
@@ -258,7 +249,9 @@ def generate_lanes(activities):
         lanes.append({"activity": a.get("name"), "role": a.get("role"),
                       "skill": skills[0],
                       "execution": a.get("execution") or "spec-then-execute",
-                      "requires_input": a.get("requires_input")})
+                      "requires_input": a.get("requires_input"),
+                      # T-106: ordered task-library ids driving the direct path.
+                      "tasks": a.get("tasks") or []})
     return lanes
 
 
@@ -368,7 +361,7 @@ _SEQ_RE = re.compile(r"-(\d+)$")
 def run_plan_iteration(root, phase, *, dispatch_objectives, dispatch_spec,
                        run_gates, git_commit, mint_id, activities_for,
                        reserve_id, partition, roadmap_pending, lifecycle,
-                       run_procedure=None, log=None, print_=None,
+                       run_task=None, task_defs=None, log=None, print_=None,
                        suspend_sentinel="OPENUP-AGENT: SUSPENDED"):
     """Plan one phase-appropriate iteration. Returns an int exit code.
 
@@ -385,6 +378,12 @@ def run_plan_iteration(root, phase, *, dispatch_objectives, dispatch_spec,
       - ``partition(candidates) -> list[list[str]]`` — T-079 clusters.
       - ``roadmap_pending() -> list[str]`` — pending roadmap titles, in order.
       - ``lifecycle() -> {phase, milestone, criteria}``.
+      - ``run_task(task_def, instruction) -> int`` (T-106) — a bounded authoring
+        sub-run driven by a task def (a generic system prompt, no procedure file
+        read); stamps the def's typed artifact on success.
+      - ``task_defs`` — the committed task library ``{id: def}`` (from
+        ``openup-process-map.py load_tasks``); the direct path resolves each
+        activity ``tasks:`` id against it.
     """
     import sys as _sys
     log = log or (lambda m: None)
@@ -454,20 +453,37 @@ def run_plan_iteration(root, phase, *, dispatch_objectives, dispatch_spec,
     lane_ids, lane_touches, direct_done = [], [], []
     for lane in candidate_lanes:
         if lane.get("execution") == "direct":
-            if run_procedure is None:
+            # T-106: iterate the activity's ordered task-library defs, one bounded
+            # authoring sub-run each (generic system prompt, no procedure file
+            # read). initiate-project runs [develop-technical-vision,
+            # author-initial-roadmap] — vision body, then the roadmap.
+            if run_task is None:
                 log("plan-iteration: activity %s is execution:direct but no "
-                    "procedure runner was wired — aborting" % lane["activity"])
+                    "task runner was wired — aborting" % lane["activity"])
                 return PI_CONFIG
-            instruction = render_direct_instruction(root, lane, objectives)
-            log("plan-iteration: running direct activity %s via %s"
-                % (lane["activity"], lane["skill"]))
-            rc = run_procedure(lane["skill"], instruction)
-            if rc == PI_SUSPEND:
-                return PI_SUSPEND
-            if rc != 0:
-                log("plan-iteration: direct activity %s (%s) failed (exit %d) — "
-                    "aborting" % (lane["activity"], lane["skill"], rc))
-                return rc if rc in (PI_CONFIG,) else PI_STEP
+            task_ids = lane.get("tasks") or []
+            if not task_ids:
+                log("plan-iteration: direct activity %s has no tasks: wired in the "
+                    "process map — aborting" % lane["activity"])
+                return PI_CONFIG
+            defs = task_defs or {}
+            for tid in task_ids:
+                tdef = defs.get(tid)
+                if not tdef:
+                    log("plan-iteration: task %r (activity %s) not in the task "
+                        "library — aborting" % (tid, lane["activity"]))
+                    return PI_CONFIG
+                instruction = render_task_instruction(root, tdef, objectives)
+                log("plan-iteration: running task %s (%s → %s) for activity %s"
+                    % (tid, tdef.get("artifact"), tdef.get("output_path"),
+                       lane["activity"]))
+                rc = run_task(tdef, instruction)
+                if rc == PI_SUSPEND:
+                    return PI_SUSPEND
+                if rc != 0:
+                    log("plan-iteration: task %s (activity %s) failed (exit %d) — "
+                        "aborting" % (tid, lane["activity"], rc))
+                    return rc if rc in (PI_CONFIG,) else PI_STEP
             # T-108: the direct outputs (stamped artifact + companions like the
             # initial roadmap) must be durable the moment they exist — gate,
             # then commit the whole docs/ delta, same discipline as the lane
@@ -480,9 +496,8 @@ def run_plan_iteration(root, phase, *, dispatch_objectives, dispatch_spec,
                     % (lane["activity"], report))
                 return PI_STEP
             git_commit(["docs/"],
-                       "docs(%s): %s — authored via %s [%s]"
-                       % (iteration, lane["activity"], lane["skill"],
-                          iteration))
+                       "docs(%s): %s — authored via task defs [%s]"
+                       % (iteration, lane["activity"], iteration))
             log("plan-iteration: %s done — outputs gated and committed"
                 % lane["activity"])
             direct_done.append(lane["activity"])
