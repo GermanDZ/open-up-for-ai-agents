@@ -1,0 +1,1 @@
+{"run_id": "T-119-run1", "event": "session_begin", "task_id": "T-119", "goal": "Full Inception cycle on weak model: direct task-def authoring + tool-arg guard", "branch": "feat/T-119-full-inception-direct", "phase": "construction", "ts": "2026-07-15T14:42:22Z"}
