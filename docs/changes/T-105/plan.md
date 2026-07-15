@@ -94,13 +94,13 @@ Clone the `build-trace-model.py` precedent. `task-library.yaml` mirrors `process
 
 ## Operations
 
-- [ ] Author `docs-eng-process/task-library.yaml`: reviewed lean defs for the map-referenced authoring tasks (develop-technical-vision, author-initial-roadmap [driver], identify-and-outline-requirements, detail-use-case-scenarios, envision-the-architecture, refine-the-architecture, plan-iteration, create-test-cases), each with id/name/role/artifact/output_path/judgment/inputs/source.
-- [ ] Extend `openup-process-map.py` with `load_tasks()` + `validate_tasks()` + a `tasks` subcommand (`--validate`), mirroring the existing `validate` convention/exit codes.
-- [ ] Implement `build-task-library.py` Stage-1 deterministic extraction (UMA frontmatter + Inputs/Outputs parse) → def skeleton.
-- [ ] Implement Stage-2 distillation via `openup_agent/llm.py` with an embedded vision style-anchor example; add `--offline` prompt-emission mode.
-- [ ] Implement `--check` drift mode (re-extract skeletons, diff committed library); wire into `openup-doctor.py`'s aggregate check table + `_AUTO_FIX` is NOT added (regeneration is a human-reviewed act — advisory only).
-- [ ] (tester) Write `test_build_task_library.py` (extraction from the vision KB fixture, `--offline` prompt emission, `--check` drift) + `test_task_library_validate.py` (reject each malformed-def class; committed library passes).
-- [ ] Register `build-task-library.py` in `process-manifest.txt` + document it in `script-cli-reference.md`; run the full suite to confirm zero engine behavior change.
+- [x] Author `docs-eng-process/task-library.yaml`: reviewed lean defs for the map-referenced authoring tasks (develop-technical-vision, author-initial-roadmap [driver], identify-and-outline-requirements, detail-use-case-scenarios, envision-the-architecture, refine-the-architecture, plan-iteration, create-test-cases), each with id/name/role/artifact/output_path/judgment/inputs/source.
+- [x] Extend `openup-process-map.py` with `load_tasks()` + `validate_tasks()` + a `tasks` subcommand (`--validate`), mirroring the existing `validate` convention/exit codes.
+- [x] Implement `build-task-library.py` Stage-1 deterministic extraction (UMA frontmatter + Inputs/Outputs parse) → def skeleton.
+- [x] Implement Stage-2 distillation via `openup_agent/llm.py` with an embedded vision style-anchor example; add `--offline` prompt-emission mode.
+- [x] Implement `--check` drift mode (re-extract skeletons, diff committed library). Doctor wiring is deferred to T-107 (its own deliverable) — and would false-positive in a downstream project lacking the vendored KB; T-105 ships the `--check` CLI only.
+- [x] (tester) Write `test_build_task_library.py` (extraction from the vision KB fixture, `--offline` prompt emission, `--check` drift) + `test_task_library_validate.py` (reject each malformed-def class; committed library passes).
+- [x] Register `build-task-library.py` in `process-manifest.txt` + document it in `script-cli-reference.md`; run the full suite to confirm zero engine behavior change.
 
 ## Norms
 

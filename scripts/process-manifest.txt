@@ -78,3 +78,9 @@ openup_agent/tools.py
 # the script that pulls future framework updates (scripts, skills, CLIs);
 # shipping it through the manifest also makes it self-updating on every sync.
 sync-from-framework.sh
+
+# T-105 — task-library compiler. Distills the vendored KB authoring tasks into
+# the lean-task library docs-eng-process/task-library.yaml (object code the
+# engine consumes at T-106). Sibling of build-trace-model.py; --check surfaces
+# skeleton drift. (The task-library.yaml itself ships under docs-eng-process/.)
+build-task-library.py

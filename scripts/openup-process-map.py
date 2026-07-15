@@ -52,6 +52,21 @@ KNOWN_ROLES = {
 }
 KNOWN_PHASES = ("inception", "elaboration", "construction", "transition")
 
+# ── Task library (T-105) ─────────────────────────────────────────────────────
+# The v1 spine work-product types (mirror scripts/docs-meta.schema.json `type`
+# enum) an authoring task def may declare as its `artifact`.
+SPINE_TYPES = (
+    "vision", "requirement", "work-item", "iteration-plan",
+    "use-case", "test-case", "decision",
+)
+_TASK_CANDIDATES = (
+    "docs-eng-process/task-library.yaml",  # canonical (framework repo)
+    "scripts/task-library.yaml",           # shipped-into-a-project fallback
+)
+# Fields on a task def: scalars first, then the two list fields.
+_TASK_SCALARS = ("name", "role", "artifact", "output_path", "source")
+_TASK_LISTS = ("inputs", "judgment")
+
 
 class MapError(Exception):
     """Structural problem in the process map (usage error, exit 2)."""
@@ -281,6 +296,102 @@ def validate(mp: dict) -> list:
     return problems
 
 
+# ── Task library (T-105): block parser + validator ──────────────────────────
+# task-library.yaml is a two-level block map (no pyyaml): `tasks:` → task-id
+# (2-space indent) → field (4-space); list fields (`inputs`, `judgment`) carry
+# `- item` entries at 6-space indent. Kept a dedicated parser (not the flow-map
+# parser) so `judgment` prose bullets stay readable one-per-line.
+
+def _indent(raw: str) -> int:
+    return len(raw) - len(raw.lstrip(" "))
+
+
+def load_tasks(root: Path) -> dict:
+    """Parse task-library.yaml into {task-id: {name, role, artifact,
+    output_path, source, inputs:[...], judgment:[...]}}."""
+    path = None
+    for rel in _TASK_CANDIDATES:
+        cand = root / rel
+        if cand.exists():
+            path = cand
+            break
+    if path is None:
+        raise FileNotFoundError(
+            "task-library.yaml not found (looked in " + ", ".join(_TASK_CANDIDATES) + ")")
+
+    tasks: dict = {}
+    in_tasks = False
+    cur_id = None
+    cur_list = None  # name of the list field currently accumulating items
+    for raw in path.read_text().splitlines():
+        line = _strip_comment(raw).rstrip()
+        if not line.strip():
+            continue
+        ind = _indent(line)
+        stripped = line.strip()
+        if ind == 0:
+            in_tasks = (stripped == "tasks:")
+            cur_id = cur_list = None
+            continue
+        if not in_tasks:
+            continue
+        if ind == 2 and stripped.endswith(":"):
+            cur_id = stripped[:-1].strip()
+            tasks[cur_id] = {"inputs": [], "judgment": []}
+            cur_list = None
+            continue
+        if cur_id is None:
+            raise MapError(f"task field before any task id: {stripped!r}")
+        if ind == 6 and stripped.startswith("- "):
+            if cur_list is None:
+                raise MapError(f"list item outside a list field: {stripped!r}")
+            tasks[cur_id][cur_list].append(_unquote(stripped[2:].strip()))
+            continue
+        if ind == 4:
+            if ":" not in stripped:
+                raise MapError(f"malformed task field: {stripped!r}")
+            key, _, val = stripped.partition(":")
+            key, val = key.strip(), val.strip()
+            if key in _TASK_LISTS:
+                cur_list = key
+                if val:  # inline flow list allowed too: inputs: [a, b]
+                    tasks[cur_id][key] = _parse_flow_list(val)
+                    cur_list = None
+            else:
+                tasks[cur_id][key] = _unquote(val)
+                cur_list = None
+            continue
+        raise MapError(f"unexpected indentation in task-library: {raw!r}")
+    return tasks
+
+
+def validate_tasks(tasks: dict) -> list:
+    """Return a list of task-def problems (empty == valid). Hard gate."""
+    problems = []
+    if not tasks:
+        problems.append("no tasks defined")
+    for tid, d in tasks.items():
+        for f in _TASK_SCALARS:
+            if not str(d.get(f, "")).strip():
+                problems.append(f"task {tid!r} missing field {f!r}")
+        role = d.get("role")
+        if role and role not in KNOWN_ROLES:
+            problems.append(f"task {tid!r} unknown role {role!r}")
+        artifact = d.get("artifact")
+        if artifact and artifact not in SPINE_TYPES:
+            problems.append(f"task {tid!r} artifact {artifact!r} not a spine type "
+                            f"({', '.join(SPINE_TYPES)})")
+        out = str(d.get("output_path", ""))
+        if out and (out.startswith("/") or not out.endswith(".md")):
+            problems.append(f"task {tid!r} output_path {out!r} must be a relative .md path")
+        judgment = d.get("judgment") or []
+        if not (3 <= len(judgment) <= 8):
+            problems.append(f"task {tid!r} judgment has {len(judgment)} bullets (need 3–8)")
+        if not isinstance(d.get("inputs"), list):
+            problems.append(f"task {tid!r} inputs is not a list")
+    return problems
+
+
 # ── CLI ─────────────────────────────────────────────────────────────────────
 
 def main(argv=None) -> int:
@@ -304,6 +415,11 @@ def main(argv=None) -> int:
     pm.add_argument("phase")
 
     sub.add_parser("validate", help="Structural check of the shipped map.")
+
+    pt = sub.add_parser("tasks", help="Task-library queries (T-105).")
+    pt.add_argument("--validate", action="store_true",
+                    help="Structural check of the committed task-library.yaml.")
+    pt.add_argument("--json", action="store_true")
 
     args = parser.parse_args(argv)
     root = Path(args.repo_root).resolve() if args.repo_root else REPO_ROOT
@@ -342,6 +458,22 @@ def main(argv=None) -> int:
                 return 2
             n = len(mp["phases"])
             print(f"[process-map] ✓ valid — {n} phases, {len(mp['activities'])} activities")
+            return 0
+        if args.command == "tasks":
+            try:
+                tasks = load_tasks(root)
+            except FileNotFoundError as exc:
+                print(f"[task-library] {exc}", file=sys.stderr)
+                return 3
+            if args.json:
+                print(json.dumps(tasks, indent=1))
+                return 0
+            problems = validate_tasks(tasks)
+            if problems:
+                for p in problems:
+                    print(f"[task-library] ✗ {p}", file=sys.stderr)
+                return 2
+            print(f"[task-library] ✓ valid — {len(tasks)} task def(s)")
             return 0
     except MapError as exc:
         print(f"[process-map] ✗ {exc}", file=sys.stderr)

@@ -1,0 +1,152 @@
+# OpenUP task library — lean authoring task defs (object code, T-105)
+#
+# Framework-owned, vendored. COMPILED, not hand-maintained: `scripts/build-task-
+# library.py` distills each def from a vendored KB task file (the `source`), then
+# a human reviews and commits it. The engine does NOT consume this file yet —
+# T-106 wires `process-map.yaml` activities to these task ids. This is the
+# schema-first-then-consumer pattern (T-100).
+#
+# Read only by scripts/openup-process-map.py (stdlib, no pyyaml). Block shape:
+#   tasks:
+#     <task-id>:
+#       name / role / artifact / output_path / source   (scalars, 4-space indent)
+#       inputs:      (list, `- item` at 6-space indent)
+#       judgment:    (list, 3–8 bullets of what-good-looks-like)
+#
+# Skeleton fields (name, role, inputs, source) are deterministically re-extracted
+# by `build-task-library.py --check`; `artifact`/`output_path` are the framework's
+# primary-spine-output decision; `judgment` is the distilled prose (drift advisory).
+#
+# `openup-process-map.py tasks --validate` hard-gates: all fields present,
+# `artifact` in the v1 spine enum, `role` known, `judgment` 3–8 bullets,
+# `output_path` a relative .md path.
+
+tasks:
+  develop-technical-vision:
+    name: Develop Technical Vision
+    role: analyst
+    artifact: vision
+    output_path: docs/product/vision.md
+    source: docs-eng-process/openup-knowledge-base/practice-technical/shared_vision/tasks/develop-technical-vision-1.md
+    inputs:
+      - Vision
+    judgment:
+      - States the problem and who has it before proposing any solution.
+      - Names the stakeholders and what each needs from the system.
+      - Lists 3–7 system features at capability granularity, not implementation tasks.
+      - Defines the solution scope — what is in and, explicitly, what is out.
+      - Captures the shared vocabulary (key terms) the rest of the docs rely on.
+
+  author-initial-roadmap:
+    name: Author Initial Roadmap
+    role: project-manager
+    artifact: work-item
+    output_path: docs/roadmap.md
+    source: driver
+    inputs:
+      - Vision
+    judgment:
+      - Emits docs/roadmap.md as a single Markdown table, no YAML frontmatter.
+      - Header row is exactly `| ID | Title | Status | Priority | Depends on |`.
+      - Task ids are `T-001`, `T-002`, … in sequence, one per row.
+      - Every Status is `pending`; every Priority is one of `high`/`medium`/`low`.
+      - Depends-on is a comma-separated list of `T-NNN` ids, or `—` when none.
+      - Rows are ordered by priority (high first) so `openup-roadmap.py next` promotes correctly.
+
+  identify-and-outline-requirements:
+    name: Identify and Outline Requirements
+    role: analyst
+    artifact: use-case
+    output_path: docs/product/use-cases/UC-001.md
+    source: docs-eng-process/openup-knowledge-base/practice-technical/use_case_driven_dev/tasks/identify-and-outline-requirements-1.md
+    inputs:
+      - Technical Specification
+    judgment:
+      - Captures each requirement as a use case named by the actor's goal.
+      - Outlines the main success scenario as numbered actor/system steps.
+      - Names the primary actor and the trigger for each use case.
+      - Keeps requirements outcome-focused — what the user achieves, not UI detail.
+      - Flags system-wide (non-functional) requirements separately from use cases.
+
+  detail-use-case-scenarios:
+    name: Detail Use-Case Scenarios
+    role: analyst
+    artifact: use-case
+    output_path: docs/product/use-cases/UC-001.md
+    source: docs-eng-process/openup-knowledge-base/practice-technical/use_case_driven_dev/tasks/detail-use-case-scenarios-1.md
+    inputs:
+      - Use Case
+    judgment:
+      - Expands the outlined use case into a full main flow plus alternate flows.
+      - Each alternate/exception flow names its branching condition and outcome.
+      - Every step is a concrete actor action or observable system response.
+      - Pre-conditions and post-conditions are stated and checkable.
+      - Detail is testable — a tester could derive test cases directly from it.
+
+  envision-the-architecture:
+    name: Envision the Architecture
+    role: architect
+    artifact: decision
+    output_path: docs/product/architecture-notebook.md
+    source: docs-eng-process/openup-knowledge-base/practice-technical/evolutionary_arch/tasks/envision-the-architecture-1.md
+    inputs:
+      - Technical Specification
+      - Architecture Notebook
+    judgment:
+      - Records the key architectural decisions and the reasoning behind each.
+      - States the architecturally significant requirements the design must satisfy.
+      - Identifies the main components and how they interact, at a high level.
+      - Names the technologies/frameworks chosen and why they were selected.
+      - Keeps it a notebook of decisions, not an exhaustive design document.
+
+  refine-the-architecture:
+    name: Refine the Architecture
+    role: architect
+    artifact: decision
+    output_path: docs/product/architecture-notebook.md
+    source: docs-eng-process/openup-knowledge-base/practice-technical/evolutionary_arch/tasks/refine-the-architecture-1.md
+    inputs:
+      - Technical Specification
+      - Architecture Notebook
+      - Technical Design
+      - Technical Implementation
+    judgment:
+      - Updates the notebook with decisions validated or revised by implementation.
+      - Records new architectural mechanisms introduced since the last increment.
+      - Notes where the built solution diverged from the envisioned architecture and why.
+      - Keeps the significant-decisions list current — supersedes stale entries.
+
+  plan-iteration:
+    name: Plan Iteration
+    role: project-manager
+    artifact: iteration-plan
+    output_path: docs/iteration-plans/iteration-plan.md
+    source: docs-eng-process/openup-knowledge-base/practice-management/iterative_dev/tasks/plan-iteration-1.md
+    inputs:
+      - Work Items List
+      - Technical Architecture
+      - Technical Specification
+      - Iteration Plan
+      - Risk List
+    judgment:
+      - States the iteration objectives — what this iteration will demonstrably deliver.
+      - Selects work items for the iteration from the top of the prioritized list.
+      - Defines evaluation criteria the iteration is assessed against at its end.
+      - Accounts for the highest-exposure risks in the item selection.
+      - Scopes to what the team can complete in one iteration — no overcommit.
+
+  create-test-cases:
+    name: Create Test Cases
+    role: tester
+    artifact: test-case
+    output_path: docs/product/test-cases/TC-001.md
+    source: docs-eng-process/openup-knowledge-base/practice-technical/concurrent_testing/tasks/create-test-cases-1.md
+    inputs:
+      - Technical Specification
+      - Test Case
+    judgment:
+      - Derives each test case from a use-case scenario or a requirement.
+      - Specifies concrete inputs, steps, and the expected observable result.
+      - Covers the main success flow and the significant alternate/exception flows.
+      - Each test case has a clear pass/fail condition — no subjective outcome.
+      - Names any preconditions or test data the case depends on.
