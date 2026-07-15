@@ -2,8 +2,8 @@
 
 **Phase**: construction
 **Iteration**: 1
-**Iteration Goal**: T-106 — Engine consumes the library: generic authoring sub-run (no procedure read) + `tasks:` map wiring + vision/roadmap split + bench measurement
-**Status**: in-progress
+**Iteration Goal**: T-118 — Task-def authoring instruction names the activity's concrete `requires_input` path (kills the 5-glob/4-turn input hunt observed live on qwen-27b); workproduct-name inputs kept as secondary context; no execution change
+**Status**: completed
 **Current Task**: T-118
 **Iteration Started**: 2026-06-18
 **Last Updated**: 2026-07-15
