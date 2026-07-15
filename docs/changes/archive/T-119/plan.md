@@ -1,7 +1,7 @@
 ---
 id: T-119
 title: "Full Inception cycle on the weak model: direct task-def authoring for all authoring activities + tool-arg guard"
-status: ready
+status: done
 priority: high
 estimate: 1 session
 plan: docs/iteration-plans/2026-07-14-lean-authoring-tasks.md
