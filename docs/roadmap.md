@@ -846,14 +846,15 @@ authored when promoted.
 ---
 
 <!-- plan-hook: 2026-07-16 -->
-### Planned: Cycle orchestration economics — inline context, bug sweep, dirty-aware gates
+### Completed: Cycle orchestration economics — inline context, bug sweep, dirty-aware gates
 
-- **Status**: `planned` (2026-07-16)
+- **Status**: `completed` (2026-07-16 — all of T-120…T-123 delivered on `harness-optional`)
 - **Exploration**: [explorations/2026-07-16-cycle-orchestration-economics.md](explorations/2026-07-16-cycle-orchestration-economics.md)
 - **Created**: 2026-07-16
 - **Priority**: high
 - **Value**: The 2026-07-16 review measured where the cycle still wastes turns, tokens, and commits: sub-runs are briefed with **paths instead of content the engine already holds** (2–4 read round-trips per judgment box; N spec lanes re-read the same vision; task-def inputs still carry unresolvable workproduct display-names beyond the one T-118 fixed), gates re-scan every doc after every box, and both live rework episodes on the my-product-2 sample trace to gate/parser bugs (INDEX.md fence gap, prose-roadmap parser). Fixing briefing + gating cuts driver turns and wall-clock without removing a single judgment point.
 - **Acceptance (falsifiable, per the exploration's challenge pass)**: after T-120, the T-080 bench on the same scenario shows **median turns per authoring/judgment sub-run ≤3 and zero re-reads of engine-inlined files**. Tool-surface additions (E3) are deliberately sequenced **behind** that re-measure; ceremony-commit batching (E6) stays gated on an owner decision — neither is scheduled here.
+- **Next step**: Program complete — T-120 (inline briefing context) → T-121 (tool/cycle bug sweep B1,B2,B4–B7) → T-122 (process-gate fixes B8,B9) → T-123 (dirty-aware gating E2) all merged into `harness-optional`. Deferred by design: B3 (prose-safe box classification — tested match-anywhere contract), E3 (tool surface v2 — sequenced behind the T-080 bench re-measure), E4/E5 (tier/cap + loop hygiene), E6 (ceremony commit batching — owner-gated). The live-model bench read-back of the E1 acceptance measure is the T-080 owner batch.
 
 **Tasks**
 
