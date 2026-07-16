@@ -1,10 +1,10 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 85
-**Iteration Goal**: T-123 — Dirty-aware gating (E2): per-box check-docs runs only when docs/*.md changed since the last gate pass; completion re-run deduped; `check-docs.py --changed-only`
-**Status**: completed
-**Current Task**: T-123
+**Iteration**: 86
+**Iteration Goal**: T-124 — Make the Inception use-case/architecture task-defs converge on the weak model (T-107 gate blocker): non-resolving KB input names (e.g. "Technical Specification") alias to real upstream artifacts (Vision, Architecture Notebook) so the sub-run gets context instead of hunting; direct-sub-run convergence contract (single write, no verify-reread, no input re-read, emit `OPENUP-TASK: DONE` immediately) stops the 28+-turn re-read-until-timeout loop found live
+**Status**: in-progress
+**Current Task**: T-124
 **Iteration Started**: 2026-06-18
 **Last Updated**: 2026-07-16
 **Updated By**: sync-status.py
