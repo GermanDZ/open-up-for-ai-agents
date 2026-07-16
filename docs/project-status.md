@@ -3,7 +3,7 @@
 **Phase**: construction
 **Iteration**: 82
 **Iteration Goal**: T-120 — Inline engine-held context into sub-run briefings (E1): judgment boxes get plan.md/design.md content inlined (engine already parsed plan.md), task-def instructions resolve workproduct-name inputs → concrete paths via the loaded library (small files inlined, size-capped + truncation marker), spec lanes get engine-read vision, assess gets a deterministic evidence bundle
-**Status**: in-progress
+**Status**: completed
 **Current Task**: T-120
 **Iteration Started**: 2026-06-18
 **Last Updated**: 2026-07-16
@@ -11,6 +11,8 @@
 **Retrospective**: [iteration-77-retrospective.md](iteration-retrospectives/iteration-77-retrospective.md) — covers iterations 21–77 (2026-06-16 → 2026-07-14); first written retro since iteration 20
 
 ## Notes
+
+- **Iteration 82** (2026-07-16): T-120 (standard) — **inline engine-held context into sub-run briefings (E1)**. The cycle engine's four sub-run briefings now carry the CONTENT the engine already holds instead of paths the model re-reads: judgment boxes inline plan.md (already parsed for its boxes) + design.md + the answered resumable input; task-def instructions resolve workproduct-name inputs (e.g. "Vision") to concrete paths via the loaded library and inline the small existing ones (on top of T-118's requires_input path); each plan-iteration spec lane gets the product vision read once; assess grading gets a deterministic delivered-lanes evidence bundle. Every block is size-capped (12k) with a path-named truncation marker and degrades to path-naming when a file is absent, so sub-runs always launch. No execution-seam/stamping/gate change. Falsifiable measure (bench median ≤3 turns per sub-run, zero re-reads of inlined files) reads from the pre-existing OPENUP_AGENT_DEBUG_LOG + OPENUP_AGENT_USAGE_LOG. +16 tests; full suite 634 pass. First of the T-120→T-123 orchestration-economics program. Solo, standard, worktree, on harness-optional.
 
 - **T-119** (2026-07-15): all Inception authoring activities now run `execution: direct` task-defs (agree-technical-approach, identify-refine-requirements, plan-manage-iteration joined initiate-project) — retiring the ceremony-heavy spec-then-execute lane authoring that overloaded the qwen-27b (50-turn timeouts, live). Direct validation is now task-driven (≥1 task). Guarded the `glob` tool against empty/invalid patterns (was crashing the driver with IndexError). Full suite 724 pass.
 
