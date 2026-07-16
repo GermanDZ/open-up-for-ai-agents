@@ -845,6 +845,27 @@ authored when promoted.
 
 ---
 
+<!-- plan-hook: 2026-07-16 -->
+### Planned: Cycle orchestration economics — inline context, bug sweep, dirty-aware gates
+
+- **Status**: `planned` (2026-07-16)
+- **Exploration**: [explorations/2026-07-16-cycle-orchestration-economics.md](explorations/2026-07-16-cycle-orchestration-economics.md)
+- **Created**: 2026-07-16
+- **Priority**: high
+- **Value**: The 2026-07-16 review measured where the cycle still wastes turns, tokens, and commits: sub-runs are briefed with **paths instead of content the engine already holds** (2–4 read round-trips per judgment box; N spec lanes re-read the same vision; task-def inputs still carry unresolvable workproduct display-names beyond the one T-118 fixed), gates re-scan every doc after every box, and both live rework episodes on the my-product-2 sample trace to gate/parser bugs (INDEX.md fence gap, prose-roadmap parser). Fixing briefing + gating cuts driver turns and wall-clock without removing a single judgment point.
+- **Acceptance (falsifiable, per the exploration's challenge pass)**: after T-120, the T-080 bench on the same scenario shows **median turns per authoring/judgment sub-run ≤3 and zero re-reads of engine-inlined files**. Tool-surface additions (E3) are deliberately sequenced **behind** that re-measure; ceremony-commit batching (E6) stays gated on an owner decision — neither is scheduled here.
+
+**Tasks**
+
+| ID | Title | Status | Priority | Depends on |
+|---|---|---|---|---|
+| T-120 | Inline engine-held context into sub-run briefings (E1): judgment boxes get plan.md/design.md content inlined (engine already parsed plan.md), task-def instructions resolve workproduct-name inputs → concrete paths via the loaded library (small files inlined, size-capped + truncation marker), spec lanes get engine-read vision, assess gets a deterministic evidence bundle | pending | high | T-106 |
+| T-121 | Cycle-engine + tool bug sweep (B1–B7): grep default-ignores .git/vendor + size cap; exec cwd ToolError caught (uncaught driver crash); prose-safe Operations-box classification; wrapped judgment-box bodies preserved; merge-fail no longer strands an archived lane; read_file truncation marker; exec output cap | pending | high | — |
+| T-122 | Process-gate fixes (B8–B9): docs/INDEX.md joins the fence's auto-allowed derived views (T-003 rework episode); openup-claims.py roadmap_status parses prose `## T-NNN:` sections like openup-roadmap.py does (T-009 hand-replication episode) | pending | medium | — |
+| T-123 | Dirty-aware gating (E2): per-box check-docs runs only when docs/*.md changed since the last gate pass; completion re-run deduped; `check-docs.py --changed-only` | pending | medium | — |
+
+---
+
 ### Completed: Deterministic process-map navigation (P1)
 
 - **Status**: `completed` (2026-07-14 — T-100..T-103; P2 compile step deferred)
