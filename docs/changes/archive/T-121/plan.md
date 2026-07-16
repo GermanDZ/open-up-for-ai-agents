@@ -1,7 +1,7 @@
 ---
 id: T-121
-title: "Cycle-engine + tool bug sweep (B1–B7)"
-status: ready
+title: "Cycle-engine + tool bug sweep (B1, B2, B4–B7; B3 deferred)"
+status: done
 priority: high
 estimate: 1 session
 plan: docs/roadmap.md
@@ -16,33 +16,46 @@ touches:
   - docs-eng-process/reference-driver.md
 ---
 
-# T-121 — Cycle-engine + tool bug sweep (B1–B7)
+# T-121 — Cycle-engine + tool bug sweep (B1, B2, B4–B7)
 
 ## Story
 
 > **As a** weak local model (or a human) driving the reference cycle engine
 > **I want** the six-tool surface and the box executor to fail safe on hostile
 > or unusual input, and completion to never strand a delivered lane
-> **So that** a single bad tool arg, a prose-mentioned command, a wrapped
-> checkbox, or a merge conflict doesn't crash the driver, misfire a step, or
-> lose finished work
+> **So that** a single bad tool arg, a wrapped checkbox, or a merge conflict
+> doesn't crash the driver, lose a step's context, or lose finished work
 
 INVEST — ✅ Independent · ✅ Negotiable · ✅ Valuable · ✅ Estimable · ✅ Small · ✅ Testable
 
 ## Analysis Context
 
-- **Domain.** Seven concrete defects found in the 2026-07-16 orchestration-economics
-  review (`docs/explorations/2026-07-16-cycle-orchestration-economics.md`, B1–B7).
-  All in `tools.py` (the six-tool surface) and `cycle.py` (the box executor +
-  deterministic completion). Each is small and independent; grouped as one
-  correctness sweep.
+- **Domain.** Concrete defects found in the 2026-07-16 orchestration-economics
+  review (`docs/explorations/2026-07-16-cycle-orchestration-economics.md`,
+  B1–B7). All in `tools.py` (the six-tool surface) and `cycle.py` (the box
+  executor + deterministic completion). Each is small and independent; grouped
+  as one correctness sweep.
+- **B3 deferred (scope decision, 2026-07-16).** The review's B3 ("prose-safe
+  Operations-box classification") is **not a bounded bug** and is dropped from
+  this sweep. `classify_box`'s match-anywhere behavior is an **intended,
+  explicitly-tested contract**: `test_backticked_git_command_is_script` asserts
+  `"Sweep with `+"`git status --porcelain`"+` before moving on"` → **script**,
+  and `test_plain_python3_command_is_script` asserts `"Run python3 scripts/
+  sync-status.py"` → **script**. The review's B3 example ("use `+"`git log`"+`
+  to understand history") is *syntactically identical* to those — the only
+  difference is author intent, which no parser can recover. The existing escape
+  hatch is the `(judgment)` marker (`test_judgment_marker_forces_subrun`).
+  Making classification "prose-safe" would require breaking those deliberate
+  tests; that is a **contract change**, not a fix, and belongs in its own task
+  (with a design decision on how authors signal run-vs-mention) if the owner
+  wants it. Recorded so the finding is not lost.
 - **Scope boundaries.** Correctness/robustness only — no contextualization
   change (that was T-120), no gate-frequency change (that is T-123), no
   process-gate change (B8–B9 are T-122). No new tool is added; the six-tool
   surface and its dispatch contract are unchanged in shape.
-- **Definition of done.** Each of B1–B7 has a fix and a hermetic test proving
-  the failure no longer occurs, with no regression to the existing tool/executor
-  behavior.
+- **Definition of done.** Each of B1, B2, B4, B5, B6, B7 has a fix and a
+  hermetic test proving the failure no longer occurs, with no regression to the
+  existing tool/executor behavior.
 
 ## Requirements
 
@@ -60,23 +73,16 @@ INVEST — ✅ Independent · ✅ Negotiable · ✅ Valuable · ✅ Estimable ·
      **Then** the result is an `ERROR:` string reporting the escape and the
      driver does not raise (dispatch returns a string).
 
-3. **B3 — Operations-box classification is prose-safe.** A box whose prose only
-   *mentions* a backticked command is a judgment step, not a script step.
-   - **Given** a box `- [ ] (analyst) use `+"`git log`"+` to review history`
-     **When** classified **Then** the kind is `judgment` (no command extracted).
-   - **Given** a command-first box `- [ ] python3 scripts/x.py --flag` **When**
-     classified **Then** the kind is `script` with that exact command (no
-     regression).
-   - **Given** an explicit `- [ ] (auto) `+"`git tag`"+`` box **When** classified
-     **Then** the kind is `script` (the marker still forces it; no regression).
-
-4. **B4 — Wrapped judgment-box bodies are preserved.** A continuation line of a
+3. **B4 — Wrapped judgment-box bodies are preserved.** A continuation line of a
    wrapped Operations checkbox is retained in that box's body.
    - **Given** an Operations box whose text wraps onto a second indented line
      **When** `parse_boxes` runs **Then** the parsed box `body` contains the
      continuation text (not only the first line).
+   - **Given** a wrapped box that carries a command on its first line **When**
+     classified **Then** the command still extracts (no classification
+     regression from the appended continuation).
 
-5. **B5 — A completion merge failure does not strand the lane.** When the
+4. **B5 — A completion merge failure does not strand the lane.** When the
    `complete()` merge back to base fails, the base is left clean, the completed
    lane stays reachable, and a re-run finishes the merge instead of re-planning.
    - **Given** `complete()` reaches step 10 and the `--no-ff` merge fails **When**
@@ -87,13 +93,13 @@ INVEST — ✅ Independent · ✅ Negotiable · ✅ Valuable · ✅ Estimable ·
      pre-pass runs **Then** it retries the merge (and clears the marker on
      success) before any plan-iteration.
 
-6. **B6 — `read_file` marks truncation.** A whole-file read over the byte cap
+5. **B6 — `read_file` marks truncation.** A whole-file read over the byte cap
    ends with an explicit marker naming the path.
    - **Given** a file larger than the read byte cap **When** `read_file(path)` is
      called with no offset/limit **Then** the returned text ends with a marker
      that states truncation and names the path.
 
-7. **B7 — `exec` output is capped.** Combined stdout/stderr over a cap is
+6. **B7 — `exec` output is capped.** Combined stdout/stderr over a cap is
    truncated with a marker; the `exit=` line is preserved.
    - **Given** an allowlisted command whose combined output exceeds the cap
      **When** `exec` returns **Then** the result begins with the `exit=<code>`
@@ -103,23 +109,20 @@ INVEST — ✅ Independent · ✅ Negotiable · ✅ Valuable · ✅ Estimable ·
 
 **Modified** — `tools.py`: `grep` (ignore set + size/binary skip), `exec` (catch
 `ToolError` from `cwd` resolution; cap output), `read_file` (truncation marker),
-`dispatch` (catch `ToolError`). `cycle.py`: `extract_command`/`classify_box`
-(command-first, not match-anywhere), `parse_boxes` (retain continuation lines),
-`complete()` (clean, recoverable merge-fail) + the recovery pre-pass
+`dispatch` (catch `ToolError`). `cycle.py`: `parse_boxes` (retain continuation
+lines), `complete()` (clean, recoverable merge-fail) + the recovery pre-pass
 (`pending_merge` retry). Ring-1 driver doc: a note in
-`docs-eng-process/reference-driver.md` on the hardened tool + classification
-behavior.
+`docs-eng-process/reference-driver.md` on the hardened tool behavior.
 
 **Added** — a `pending_merge` key in the cycle meta (`.openup/cycle.json`).
-**Removed** — the match-anywhere command heuristic (superseded by command-first).
+**Removed** — n/a (B3's match-anywhere classification is intentionally retained).
 
 ## Entities
 
 - **Tool surface** (modified) — `scripts/openup_agent/tools.py`: `grep`, `exec`,
   `read_file`, `dispatch`, plus the byte/output caps.
 - **Box executor + completion** (modified) — `scripts/openup_agent/cycle.py`:
-  `extract_command`, `classify_box`, `parse_boxes`, `complete`, and the recovery
-  pre-pass in `_run_cycle_inner`.
+  `parse_boxes`, `complete`, and the recovery pre-pass in `_run_cycle_inner`.
 
 ## Approach
 
@@ -127,23 +130,19 @@ Each fix is local and additive:
 - **B1** `grep`: skip a default ignore set (`.git`, `node_modules`, `vendor`,
   `.venv`, `__pycache__`, `dist`, `build`, `tmp`, `log`, `storage`) and any file
   over a size cap; keep the 500-hit cap and the invalid-regex error.
-- **B2** `exec`: move the `cwd` `_resolve` inside the try/return-string path, and
-  broaden `dispatch` to catch `ToolError` (→ `ERROR:` string) as well as
-  `TypeError`.
-- **B3** classification: `extract_command` returns a command only when the
-  stripped body **starts** with `python3 `/`git `, or **is** a single
-  backtick span wrapping such a command (or a `scripts/*.py` span). A backtick
-  span mid-prose no longer matches. `(auto)` still forces script; `(judgment)`
-  still forces judgment.
+- **B2** `exec`: move the `cwd` `_resolve` inside a try that returns an `ERROR:`
+  string, and broaden `dispatch` to catch `ToolError` (→ `ERROR:` string) as
+  well as `TypeError`.
 - **B4** `parse_boxes`: a non-checkbox, non-heading line inside `## Operations`
   with a current box appends (space-joined) to that box's `body`; blank lines
-  are skipped.
+  are skipped. Classification is unchanged, so a first-line command still
+  extracts.
 - **B5** `complete()`: on merge failure, `git merge --abort`, `git checkout
   <branch>`, `_write_cycle_meta(..., pending_merge=branch)`, return the distinct
   exit. The recovery pre-pass reads `pending_merge`, retries `git checkout base
   && git merge --no-ff branch`, clears it on success, before resolve/plan.
 - **B6** `read_file`: when the whole-file read is truncated at `_MAX_READ_BYTES`,
-  append `\n… [truncated at N bytes — full file at <path>]`.
+  append `\n… [truncated — full file at <path>]`.
 - **B7** `exec`: cap the combined output at a constant; if exceeded, keep the
   `exit=` line and append a truncation marker.
 
@@ -151,41 +150,44 @@ Each fix is local and additive:
 
 **Modify:**
 - `scripts/openup_agent/tools.py` — B1, B2, B6, B7 + the caps/ignore constants.
-- `scripts/openup_agent/cycle.py` — B3, B4, B5 + recovery `pending_merge` retry.
+- `scripts/openup_agent/cycle.py` — B4, B5 + recovery `pending_merge` retry.
 - `scripts/tests/test_openup_agent_tools.py` — grep ignore/size, exec cwd-escape,
   read_file marker, exec output cap.
-- `scripts/tests/test_openup_agent_cycle.py` — prose-vs-command classification,
-  wrapped-box body, merge-fail clean+recover.
+- `scripts/tests/test_openup_agent_cycle.py` — wrapped-box body, merge-fail
+  clean+recover.
 - `docs-eng-process/reference-driver.md` — hardened-behavior note.
 
-**Do not touch:** the execution seam / sub-run mechanics, stamping, the process
-map, `task-library.yaml`, the gates, and the fence (B8–B9 are T-122).
+**Do not touch:** `extract_command`/`classify_box` (B3 deferred — the
+match-anywhere contract is intended and tested), the execution seam / sub-run
+mechanics, stamping, the process map, `task-library.yaml`, the gates, and the
+fence (B8–B9 are T-122).
 
 ## Operations
 
-- [ ] B1 — `grep` default-ignores `.git`/vendor/build trees and skips over-cap files; keep 500-hit + invalid-regex behavior.
-- [ ] B2 — `exec` cwd-escape returns an `ERROR:` string (dispatch catches `ToolError`); no uncaught crash.
-- [ ] B3 — command-first classification in `extract_command`; prose backtick mentions are judgment; `(auto)`/`(judgment)`/command-first still work.
-- [ ] B4 — `parse_boxes` retains wrapped continuation lines in the box body.
-- [ ] B5 — merge-fail in `complete()` aborts cleanly, returns to the branch, records `pending_merge`; recovery pre-pass retries it before planning.
-- [ ] B6 — `read_file` whole-file truncation appends a path-named marker.
-- [ ] B7 — `exec` caps combined output with a marker; preserves the `exit=` line.
-- [ ] (tester) Hermetic tests for B1–B7 (each failure no longer occurs; no regression to existing tool/executor tests).
+- [x] B1 — `grep` default-ignores `.git`/vendor/build trees and skips over-cap files; keep 500-hit + invalid-regex behavior.
+- [x] B2 — `exec` cwd-escape returns an `ERROR:` string (dispatch also catches `ToolError`); no uncaught crash.
+- [x] B4 — `parse_boxes` retains wrapped continuation lines in the box body; first-line command still classifies as script.
+- [x] B5 — merge-fail in `complete()` aborts cleanly, returns to the branch, records `pending_merge`; recovery pre-pass retries it before planning.
+- [x] B6 — `read_file` whole-file truncation appends a path-named marker.
+- [x] B7 — `exec` caps combined output with a marker; preserves the `exit=` line.
+- [x] (tester) Hermetic tests for B1, B2, B4–B7 (each failure no longer occurs; no regression to existing tool/executor tests).
 
 ## Norms
 
 Inherits from:
 - `docs-eng-process/conventions.md`
 - T-072 tool-surface contract (the six tools this hardens)
-- T-089 box executor + T-091/T-108 completion (the paths B3–B5 touch)
+- T-089 box executor + T-091/T-108 completion (the paths B4–B5 touch)
 
 ## Safeguards
 
-- **No behavior change to the happy path.** Command-first boxes, valid tool
-  args, small files, and a clean merge all behave exactly as before — every fix
-  is a guard on a failure mode.
+- **No behavior change to the happy path.** Valid tool args, small files, a
+  well-formed box, and a clean merge all behave exactly as before — every fix is
+  a guard on a failure mode.
 - **No new tool, no dispatch-shape change.** The six-tool surface and its
   `DISPATCH_TOOL_NAMES` are unchanged; only their internals harden.
+- **Classification contract preserved.** `classify_box`/`extract_command` are
+  untouched (B3 deferred) — no regression to the tested match-anywhere behavior.
 - **Reversibility.** Each bug's fix is independent; reverting one does not affect
   the others.
 
@@ -197,7 +199,7 @@ Inherits from:
 ## Success Measures
 
 n/a — internal correctness sweep on harness-optional; the falsifiable check is
-the seven hermetic regression tests (each reproduces the pre-fix failure and
+the six hermetic regression tests (each reproduces the pre-fix failure and
 asserts the post-fix behavior). No runtime metric or flag.
 
 ## Rollout

@@ -160,6 +160,19 @@ The model is handed exactly six tools (OpenAI function definitions), all rooted 
 every file tool refuses paths that escape `--dir` — a bare model gets the
 deterministic OpenUP scripts, not an arbitrary shell.
 
+**Hardened against hostile/unusual input (T-121).** Each tool fails safe rather
+than crashing the run or flooding context: `grep`'s default tree walk prunes
+`.git/`, `node_modules`, `vendor`, build/`tmp`/`log` trees and skips
+pathologically large files (was O(repo) — decoding git objects and binaries); an
+`exec` `cwd` that escapes `--dir` returns an `ERROR:` string instead of raising
+an uncaught exception (which had killed the whole run); `read_file` marks a
+whole-file truncation and names the path so the model can slice the rest; and
+`exec` caps each of stdout/stderr (the `exit=` line is always preserved). The box
+executor also retains a wrapped Operations checkbox's continuation lines in the
+step briefing (classification still reads only the first line), and a completion
+merge-back that conflicts no longer strands the finished lane — it aborts
+cleanly and records a `pending_merge` marker the next cycle retries.
+
 ## Asking the human — `ask_user`
 
 Many OpenUP procedures legitimately hit a **blocking question** — a choice the specs

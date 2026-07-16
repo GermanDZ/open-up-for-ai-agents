@@ -463,6 +463,33 @@ class ClassificationTest(unittest.TestCase):
         self.assertEqual([(b["checked"], b["body"]) for b in boxes],
                          [(True, "first"), (False, "second")])
 
+    # -- B4: wrapped judgment-box bodies are preserved ----------------------
+    def test_wrapped_box_retains_continuation_in_body(self):
+        boxes = cycle.parse_boxes(
+            "## Operations\n\n"
+            "- [ ] (analyst) Assess the risk and\n"
+            "      document the mitigation in design.md\n")
+        self.assertEqual(len(boxes), 1)
+        self.assertIn("document the mitigation", boxes[0]["body"])
+        self.assertEqual(cycle.classify_box(boxes[0])[0], "judgment")
+
+    def test_wrapped_continuation_does_not_flip_judgment_to_script(self):
+        # A continuation mentioning a command must not make a judgment box script.
+        boxes = cycle.parse_boxes(
+            "## Operations\n\n"
+            "- [ ] (analyst) Decide the approach;\n"
+            "      note whether `git rebase` is safe here\n")
+        self.assertEqual(cycle.classify_box(boxes[0]), ("judgment", None))
+        self.assertIn("git rebase", boxes[0]["body"])   # retained for the briefing
+
+    def test_wrapped_box_first_line_command_still_scripts(self):
+        boxes = cycle.parse_boxes(
+            "## Operations\n\n"
+            "- [ ] python3 scripts/sync-status.py\n"
+            "      (regenerates the derived views)\n")
+        self.assertEqual(cycle.classify_box(boxes[0]),
+                         ("script", "python3 scripts/sync-status.py"))
+
 
 class CompletionTest(CycleFixture):
     def test_full_completion_ceremony_and_sentinel(self):
@@ -532,6 +559,81 @@ class CompletionTest(CycleFixture):
         self.assertNotIn("OPENUP-STEP", buf.getvalue())
         self.assertIn("OPENUP-NEXT: ADVANCED", buf.getvalue())
 
+
+
+# --------------------------------------------------------------------------
+# B5 (T-121): a completion merge failure must not strand the lane
+# --------------------------------------------------------------------------
+class MergeFailB5Test(CycleFixture):
+    def _branch(self):
+        return "task/%s-cycle" % self.TASK
+
+    def _head(self):
+        return subprocess.run(["git", "rev-parse", "--abbrev-ref", "HEAD"],
+                              cwd=str(self.root), capture_output=True,
+                              text=True).stdout.strip()
+
+    def test_complete_merge_conflict_records_pending_and_leaves_base_clean(self):
+        # A real rename/modify vs modify conflict between the task branch and base.
+        self._seed_lane([(True, "(developer) done")])
+        self._git("checkout", "-b", self._branch())
+        (self.root / "docs" / "conflict.txt").write_text("branch side\n")
+        self._git("add", "-A"); self._git("commit", "-m", "branch change", "-q")
+        cycle._write_cycle_meta(self.root, {"task": self.TASK,
+                                            "branch": self._branch(),
+                                            "base_branch": "main"})
+        self._git("checkout", "main")
+        (self.root / "docs" / "conflict.txt").write_text("main side\n")
+        self._git("add", "-A"); self._git("commit", "-m", "main change", "-q")
+        self._git("checkout", self._branch())
+        (self.root / ".openup").mkdir(exist_ok=True)
+        (self.root / ".openup" / "state.json").write_text(
+            '{"task_id": "%s", "track": "standard"}' % self.TASK)
+
+        rc = cycle.complete(self.root, self.TASK, self.env,
+                            {"script": 0, "judgment": 1})
+        self.assertEqual(rc, cycle.EXIT_STEP)
+        # base is left clean — no merge in progress, back on the task branch
+        self.assertFalse((self.root / ".git" / "MERGE_HEAD").exists())
+        self.assertEqual(self._head(), self._branch())
+        # pending_merge marker recorded for the next cycle's retry
+        self.assertEqual(cycle.read_cycle_meta(self.root).get("pending_merge"),
+                         self._branch())
+
+    def test_retry_pending_merge_merges_and_clears_marker(self):
+        self._git("checkout", "-b", self._branch())
+        (self.root / "newfile.txt").write_text("branch work\n")
+        self._git("add", "-A"); self._git("commit", "-m", "work", "-q")
+        cycle._write_cycle_meta(self.root, {"task": self.TASK,
+                                            "branch": self._branch(),
+                                            "base_branch": "main",
+                                            "pending_merge": self._branch()})
+        self.assertTrue(cycle._retry_pending_merge(self.root))
+        self.assertIsNone(cycle.read_cycle_meta(self.root).get("pending_merge"))
+        self.assertEqual(self._head(), "main")
+        self.assertTrue((self.root / "newfile.txt").exists())
+
+    def test_retry_pending_merge_conflict_keeps_marker_and_returns_to_branch(self):
+        self._git("checkout", "-b", self._branch())
+        (self.root / "c.txt").write_text("branch\n")
+        self._git("add", "-A"); self._git("commit", "-m", "b", "-q")
+        self._git("checkout", "main")
+        (self.root / "c.txt").write_text("main\n")
+        self._git("add", "-A"); self._git("commit", "-m", "m", "-q")
+        self._git("checkout", self._branch())
+        cycle._write_cycle_meta(self.root, {"task": self.TASK,
+                                            "branch": self._branch(),
+                                            "base_branch": "main",
+                                            "pending_merge": self._branch()})
+        self.assertTrue(cycle._retry_pending_merge(self.root))
+        # conflict → aborted cleanly, marker kept, back on the branch
+        self.assertFalse((self.root / ".git" / "MERGE_HEAD").exists())
+        self.assertEqual(cycle.read_cycle_meta(self.root).get("pending_merge"),
+                         self._branch())
+        self.assertEqual(self._head(), self._branch())
+
+    def test_retry_pending_merge_noop_without_marker(self):
+        self.assertFalse(cycle._retry_pending_merge(self.root))
 
 
 # --------------------------------------------------------------------------
