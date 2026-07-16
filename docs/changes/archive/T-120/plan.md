@@ -1,7 +1,7 @@
 ---
 id: T-120
 title: "Inline engine-held context into sub-run briefings (E1) — paths become content"
-status: ready
+status: done
 priority: high
 estimate: 1 session
 plan: docs/roadmap.md
@@ -124,11 +124,11 @@ additive to instruction strings — sub-run mechanics untouched.
 
 ## Operations
 
-- [ ] Add the capped `inline_block` helper (truncation marker names the path); thread plan/design/resumable-input content into `build_step_instruction` from the engine-held text.
-- [ ] `render_task_instruction`: build the name→path map from loaded task defs; inline resolvable existing inputs (cap + marker); keep T-118's requires_input first; degrade cleanly on unresolvable names.
-- [ ] Inline engine-read vision into spec-lane instructions; drop the read-first directive when inlined.
-- [ ] Assess: assemble the deterministic evidence bundle (delivered lanes + artifact paths) into the grading instruction.
-- [ ] (tester) Hermetic tests: each builder's inlined shape; cap + marker; absent-file fallback; no-regression when nothing is inlinable.
+- [x] Add the capped `inline_block` helper (truncation marker names the path); thread plan/design/resumable-input content into `build_step_instruction` from the engine-held text.
+- [x] `render_task_instruction`: build the name→path map from loaded task defs; inline resolvable existing inputs (cap + marker); keep T-118's requires_input first; degrade cleanly on unresolvable names.
+- [x] Inline engine-read vision into spec-lane instructions; drop the read-first directive when inlined.
+- [x] Assess: assemble the deterministic evidence bundle (delivered lanes + artifact paths) into the grading instruction.
+- [x] (tester) Hermetic tests: each builder's inlined shape; cap + marker; absent-file fallback; no-regression when nothing is inlinable.
 
 ## Norms
 

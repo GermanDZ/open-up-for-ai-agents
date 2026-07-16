@@ -28,6 +28,7 @@ git-commit, running scripts) are injected, so this module imports nothing from
 """
 
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -77,13 +78,78 @@ _META_REL = Path(".openup") / "cycle.json"
 # --------------------------------------------------------------------------
 # Assess helpers (pure)
 # --------------------------------------------------------------------------
-def render_grading_instruction(instance_text):
-    return (
+def render_grading_instruction(instance_text, evidence=""):
+    """The grading sub-run's instruction. T-120: when the engine assembles a
+    deterministic ``evidence`` bundle (delivered lanes + their artifact paths),
+    inline it so the grader needs no discovery grep to find repo evidence."""
+    head = (
         "The committed lanes of this iteration are ALL delivered (that is why "
         "assessment is due). Grade it against its evaluation criteria using repo "
-        "evidence, and write the decision file.\n\n"
-        "Iteration-plan instance (objectives, committed work items, evaluation "
-        "criteria):\n\n" + instance_text)
+        "evidence, and write the decision file.\n\n")
+    body = ("Iteration-plan instance (objectives, committed work items, "
+            "evaluation criteria):\n\n" + instance_text)
+    if evidence:
+        return head + evidence + "\n\n" + body
+    return head + body
+
+
+def _read_frontmatter(path):
+    """Minimal front-matter reader for evidence gathering: scalar ``title`` /
+    ``status`` plus the ``touches:`` list. Self-contained (assess.py imports
+    nothing from cycle)."""
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError:
+        return {}
+    if not text.startswith("---"):
+        return {}
+    end = text.find("\n---", 3)
+    block = text[3:end] if end != -1 else text[3:]
+    fm, in_touches, touches = {}, False, []
+    for line in block.splitlines():
+        if in_touches:
+            m = re.match(r"\s+-\s+(.*)$", line)
+            if m:
+                touches.append(m.group(1).strip().strip("\"'"))
+                continue
+            in_touches = False
+        m = re.match(r"([\w-]+):\s*(.*)$", line)
+        if not m:
+            continue
+        key, val = m.group(1), m.group(2).strip()
+        if key == "touches" and not val:
+            in_touches = True
+            continue
+        fm[key] = val.strip("\"'")
+    fm["touches"] = touches
+    return fm
+
+
+def _iteration_evidence(root, iteration):
+    """Deterministic grading evidence: the iteration's delivered lanes (active or
+    archived change folders under the ``<iteration>-`` prefix) with their
+    status/title and declared artifact paths — so the grader needs no discovery
+    grep (T-120). Returns '' when nothing is found (grader falls back to the
+    instance text alone)."""
+    root = Path(root)
+    changes = root / "docs" / "changes"
+    prefix = "%s-" % iteration
+    lines = []
+    for base in (changes, changes / "archive"):
+        if not base.is_dir():
+            continue
+        for plan in sorted(base.glob("%s*/plan.md" % prefix)):
+            fm = _read_frontmatter(plan)
+            lid = plan.parent.name
+            status = (fm.get("status") or "?").strip()
+            title = (fm.get("title") or "").strip()
+            lines.append("- %s (%s) — %s" % (lid, status, title))
+            for t in fm.get("touches") or []:
+                lines.append("    · %s" % t)
+    if not lines:
+        return ""
+    return ("Delivered lanes and their declared artifacts (repo evidence):\n"
+            + "\n".join(lines))
 
 
 def read_assessment(root):
@@ -173,7 +239,9 @@ def run_assess(root, decision, *, dispatch, run_gates, git_commit,
         stale.unlink()
     except OSError:
         pass
-    instruction = render_grading_instruction(inst_path.read_text(encoding="utf-8"))
+    evidence = _iteration_evidence(root, iteration)
+    instruction = render_grading_instruction(
+        inst_path.read_text(encoding="utf-8"), evidence)
     system_prompt = GRADING_SYSTEM_PROMPT % {
         "assessment": ASSESSMENT_REL.as_posix(), "sentinel": ASSESSMENT_SENTINEL}
     rc = dispatch(instruction, system_prompt)
