@@ -4,3 +4,4 @@
 {"run_id": "a185e6b3c7ea4c7eb7c5bebaeb76c1a1", "event": "commit", "task_id": "T-121", "branch": "feat/T-121-tool-bug-sweep", "sha": "a34090fce75a7af81b1e7eff4dd6f47b9ddc5f71", "model": null, "session_id": "feat/T-121-tool-bug-sweep", "ts": "2026-07-16T13:10:46Z"}
 {"event": "iteration_complete", "task_id": "T-121", "branch": "feat/T-121-tool-bug-sweep", "phase": "construction", "ts": "2026-07-16T13:10:58Z"}
 {"run_id": "f8e93d197bdd4ae8bde4ebb3d43837d5", "event": "commit", "task_id": "T-121", "branch": "feat/T-121-tool-bug-sweep", "sha": "e42c6c9ea47eb49d45f38644feccdd951f7f9745", "model": null, "session_id": "feat/T-121-tool-bug-sweep", "ts": "2026-07-16T13:10:58Z"}
+{"event": "session_end", "task_id": "T-121", "ts": "2026-07-16T13:12:11Z"}

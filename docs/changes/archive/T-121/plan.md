@@ -1,7 +1,7 @@
 ---
 id: T-121
 title: "Cycle-engine + tool bug sweep (B1, B2, B4–B7; B3 deferred)"
-status: ready
+status: done
 priority: high
 estimate: 1 session
 plan: docs/roadmap.md
