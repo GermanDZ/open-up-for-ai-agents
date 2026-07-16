@@ -1,12 +1,12 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 1
-**Iteration Goal**: T-119 — Full Inception cycle on the weak model: all Inception authoring activities run `execution: direct` task-defs (retiring the spec-then-execute lane authoring that 50-turn-timed-out the qwen-27b live); direct validation is task-driven (≥1 task); guard the `glob` tool against empty/invalid patterns (was crashing the driver)
-**Status**: completed
-**Current Task**: T-119
+**Iteration**: 82
+**Iteration Goal**: T-120 — Inline engine-held context into sub-run briefings (E1): judgment boxes get plan.md/design.md content inlined (engine already parsed plan.md), task-def instructions resolve workproduct-name inputs → concrete paths via the loaded library (small files inlined, size-capped + truncation marker), spec lanes get engine-read vision, assess gets a deterministic evidence bundle
+**Status**: in-progress
+**Current Task**: T-120
 **Iteration Started**: 2026-06-18
-**Last Updated**: 2026-07-15
+**Last Updated**: 2026-07-16
 **Updated By**: sync-status.py
 **Retrospective**: [iteration-77-retrospective.md](iteration-retrospectives/iteration-77-retrospective.md) — covers iterations 21–77 (2026-06-16 → 2026-07-14); first written retro since iteration 20
 
