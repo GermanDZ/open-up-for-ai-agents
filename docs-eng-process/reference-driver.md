@@ -407,9 +407,19 @@ restores the bare typed exits below.
     the provided input. **T-120** resolves those remaining display-names to
     concrete paths via the loaded library (a produced workproduct's `output_path`)
     and **inlines the small existing ones**, so the model reads their content
-    directly rather than globbing. No procedure file, no rubric, no schema is
-    read — the measured weak-model reliability fix. `validate` requires every
-    activity `tasks:` id to resolve in the library.
+    directly rather than globbing. **T-124** adds an alias step: a KB input
+    display-name with **no producer** in the library (e.g. `identify-and-outline-
+    requirements`'s `Technical Specification`) resolves through
+    `_INPUT_ALIASES` to the real upstream artifacts that realize it (Vision +
+    Architecture Notebook) — so the use-case sub-run gets context instead of the
+    28+-turn re-read hunt that timed out the weak model live (2026-07-16). No
+    procedure file, no rubric, no schema is read — the measured weak-model
+    reliability fix. `validate` requires every activity `tasks:` id to resolve in
+    the library. The slim system shell (`cycle._task_system_prompt`) also carries
+    a **convergence contract** (T-124): write the one artifact with a single
+    `write_file`, do **not** read it back to verify or re-read inputs already
+    given, and emit `OPENUP-TASK: DONE` immediately — the weak model otherwise
+    loops re-reading its own output instead of stopping.
   - **Engine-owned authoring ceremony (T-104, retained under T-106).** On the
     task-def path the **model authors the document body only**; every piece of
     ceremony is engine work:

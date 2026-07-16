@@ -1038,8 +1038,12 @@ def _task_system_prompt(task_def):
         "exactly the one artifact the instruction names, writing the document "
         "BODY only — the engine stamps the typed frontmatter and validates. Read "
         "only the inputs the instruction lists; do not load procedures, rubrics, "
-        "or schemas. When the file is saved, emit the line `OPENUP-TASK: DONE` "
-        "and stop."
+        "or schemas.\n"
+        "Converge — do not loop (T-124): write the artifact with a SINGLE "
+        "write_file call. The tool result confirms the write succeeded, so do NOT "
+        "read the file back to verify it, and do NOT re-read any input you were "
+        "given or have already read. The moment the artifact is written, your "
+        "NEXT reply MUST be the line `OPENUP-TASK: DONE` with no tool calls."
     )
 
 

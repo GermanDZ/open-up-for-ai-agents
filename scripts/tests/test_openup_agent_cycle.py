@@ -1173,6 +1173,17 @@ class StampTaskArtifactTest(unittest.TestCase):
         (self.root / "docs" / "product").mkdir(parents=True)
         self.addCleanup(self.tmp.cleanup)
 
+    def test_task_system_prompt_carries_convergence_contract(self):
+        # T-124: the direct-sub-run shell must tell the weak model to converge —
+        # single write, no verify-reread, no input re-read, emit DONE immediately.
+        p = cycle._task_system_prompt(self._VISION_DEF)
+        pl = p.lower()
+        self.assertIn("single write_file", pl)          # one write
+        self.assertIn("do not read the file back", pl)  # no verify-reread
+        self.assertIn("do not re-read any input", pl)   # no input re-read
+        self.assertIn("OPENUP-TASK: DONE", p)           # terminal sentinel
+        self.assertIn("no tool calls", pl)              # emitted alone
+
     def test_task_def_stamps_its_artifact(self):
         vision = self.root / "docs" / "product" / "vision.md"
         vision.write_text("# Product Vision\n\nBody only.\n", encoding="utf-8")

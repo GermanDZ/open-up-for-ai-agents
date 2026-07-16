@@ -1,0 +1,2 @@
+{"run_id": "T-124-62bea25", "event": "session_begin", "task_id": "T-124", "goal": "T-124 \u2014 task-def convergence on the weak model (unblock T-107 gate): input aliases + direct-sub-run convergence contract", "branch": "fix/T-124-taskdef-convergence", "phase": "construction", "ts": "2026-07-16T18:50:09Z"}
+{"run_id": "2f11f3092dd2448899b61da3f825134a", "event": "commit", "task_id": "T-124", "branch": "fix/T-124-taskdef-convergence", "sha": "7b3442fe3af2b04815bee0d9b03469dbe6243b73", "model": null, "session_id": "fix/T-124-taskdef-convergence", "ts": "2026-07-16T18:50:14Z"}

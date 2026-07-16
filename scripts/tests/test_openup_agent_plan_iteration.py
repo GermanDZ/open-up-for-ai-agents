@@ -332,12 +332,52 @@ class RunPlanIterationTest(unittest.TestCase):
         self.assertIn("Vision", instr)                              # display name kept
 
     def test_task_instruction_unresolvable_name_degrades(self):
-        consumer = self._consumer_def(inputs=["Technical Specification"])
+        # A name with no producer AND no alias (T-124) stays a display name only.
+        consumer = self._consumer_def(inputs=["Glossary"])
         lib = dict(self._TASK_DEFS, **{"author-roadmap": consumer})
         instr = pi.render_task_instruction(self.root, consumer, ["x"],
                                            task_defs=lib)
         self.assertNotIn("already loaded", instr)
+        self.assertIn("Glossary", instr)
+
+    # -- T-124: alias a non-resolving KB input name to real upstream artifacts --
+    def test_task_instruction_aliases_nonresolving_input(self):
+        # "Technical Specification" has no producer, but aliases to Vision +
+        # Architecture Notebook — both get inlined so the sub-run needs no hunt.
+        prod = self.root / "docs" / "product"
+        prod.mkdir(parents=True, exist_ok=True)
+        (prod / "vision.md").write_text("# Vision\nMakers need a better widget.\n")
+        (prod / "architecture-notebook.md").write_text("# Arch\nEvent-driven core.\n")
+        consumer = self._consumer_def(inputs=["Technical Specification"])
+        lib = dict(self._TASK_DEFS, **{"author-roadmap": consumer})
+        instr = pi.render_task_instruction(self.root, consumer, ["ship"],
+                                           task_defs=lib)
+        self.assertIn("already loaded", instr)                       # a block was inlined
+        self.assertIn("Makers need a better widget", instr)          # vision content
+        self.assertIn("Event-driven core", instr)                    # architecture content
+        self.assertIn("Technical Specification", instr)              # display name kept
+
+    def test_task_instruction_alias_target_absent_degrades(self):
+        # aliased, but the alias targets are absent on disk ⇒ no phantom block.
+        consumer = self._consumer_def(inputs=["Technical Specification"])
+        lib = dict(self._TASK_DEFS, **{"author-roadmap": consumer})
+        instr = pi.render_task_instruction(self.root, consumer, ["ship"],
+                                           task_defs=lib)
+        self.assertNotIn("already loaded", instr)
         self.assertIn("Technical Specification", instr)
+
+    def test_task_instruction_direct_resolve_unchanged_by_alias(self):
+        # A directly-resolving name (Vision) still resolves via the producer map,
+        # not the alias path — behavior byte-identical to T-120.
+        (self.root / "docs" / "product").mkdir(parents=True, exist_ok=True)
+        (self.root / "docs" / "product" / "vision.md").write_text(
+            "# Vision\nBuild the best widget for makers.\n")
+        consumer = self._consumer_def()  # inputs: [Vision]
+        lib = dict(self._TASK_DEFS, **{"author-roadmap": consumer})
+        instr = pi.render_task_instruction(self.root, consumer, ["ship"],
+                                           task_defs=lib)
+        self.assertIn("Build the best widget for makers", instr)
+        self.assertIn("docs/product/vision.md", instr)
 
     def test_task_instruction_without_library_is_unchanged(self):
         # No task_defs passed ⇒ pre-T-120 behavior (no resolution attempted).
