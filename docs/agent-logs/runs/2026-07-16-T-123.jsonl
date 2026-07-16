@@ -3,3 +3,4 @@
 {"run_id": "8e7fd1dbf2944bcc92a1be7a1a7a886f", "event": "commit", "task_id": "T-123", "branch": "feat/T-123-dirty-aware-gating", "sha": "bbe211896b91c12b5c665e8a6e99d5bfde534c1c", "model": null, "session_id": "feat/T-123-dirty-aware-gating", "ts": "2026-07-16T17:05:48Z"}
 {"event": "iteration_complete", "task_id": "T-123", "branch": "feat/T-123-dirty-aware-gating", "phase": "construction", "ts": "2026-07-16T17:06:46Z"}
 {"run_id": "d3cde43a048f4f0ca464ed6008b8e703", "event": "commit", "task_id": "T-123", "branch": "feat/T-123-dirty-aware-gating", "sha": "c22b1fecd3438118a0ba17f872128384f5ef6140", "model": null, "session_id": "feat/T-123-dirty-aware-gating", "ts": "2026-07-16T17:06:46Z"}
+{"event": "session_end", "task_id": "T-123", "ts": "2026-07-16T17:09:39Z"}

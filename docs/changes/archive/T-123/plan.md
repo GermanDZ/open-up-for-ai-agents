@@ -1,7 +1,7 @@
 ---
 id: T-123
 title: "Dirty-aware gating (E2): per-box check-docs runs only when docs changed; completion re-run deduped; check-docs.py --changed-only"
-status: ready
+status: done
 priority: medium
 estimate: 1 session
 plan: docs/roadmap.md
