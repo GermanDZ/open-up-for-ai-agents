@@ -232,7 +232,12 @@ def parse_boxes(plan_text):
             continue
         m = BOX_RE.match(line)
         if not m:
-            # continuation lines of a wrapped box are context, not new steps
+            # T-121/B4 — a wrapped box's continuation line is retained on the
+            # current box's body (was dropped, losing everything after line 1).
+            # Classification still reads only the first line (extract_command), so
+            # a continuation cannot flip a judgment box to a script step.
+            if boxes and line.strip():
+                boxes[-1]["body"] += "\n" + line.strip()
             continue
         checked, text = m.group(1) == "x", m.group(2)
         hat = "developer"
@@ -252,14 +257,20 @@ def parse_boxes(plan_text):
 
 
 def extract_command(body):
-    """The script command a box carries, or None (⇒ judgment step)."""
-    for span in BACKTICK_RE.findall(body):
+    """The script command a box carries, or None (⇒ judgment step).
+
+    T-121/B4 — reads only the box's FIRST line: a command box is command-only on
+    one line (the authoring contract), and a wrapped judgment box's continuation
+    (now retained in body) must not contribute a spurious command. Single-line
+    boxes are unaffected — the classification contract is unchanged."""
+    first = (body.splitlines() or [""])[0]
+    for span in BACKTICK_RE.findall(first):
         span = span.strip()
         if span.startswith(("python3 ", "git ")):
             return span
         if re.match(r"^scripts/[\w./-]+\.py(\s|$)", span):
             return "python3 " + span
-    m = CMD_START_RE.search(body)
+    m = CMD_START_RE.search(first)
     if m:
         return m.group(0).rstrip(" .`")
     return None
@@ -903,11 +914,47 @@ def complete(root, task, env, counts):
                       "merge %s: %s [%s]" % (branch, fm.get("title") or task, task)],
                      root)
         if merge.returncode != 0:
-            _log("merge back to %s failed — task branch %s holds the completed "
-                 "lane:\n%s" % (base, branch, (merge.stdout + merge.stderr)[:1000]))
+            # T-121/B5 — do not strand the completed lane. Abort the half-merge so
+            # base stays clean, return to the task branch (which holds the
+            # archived, done lane), and record a pending_merge marker so the next
+            # cycle's recovery pre-pass retries the merge instead of re-planning
+            # atop finished work (which the archived folder hides from resolve).
+            _git(["merge", "--abort"], root)
+            _git(["checkout", branch], root)
+            meta["pending_merge"] = branch
+            _write_cycle_meta(root, meta)
+            _log("merge back to %s failed — recorded pending_merge=%s; base left "
+                 "clean, a re-run will retry the merge:\n%s"
+                 % (base, branch, (merge.stdout + merge.stderr)[:1000]))
             return EXIT_STEP
     print("OPENUP-NEXT: ADVANCED — %s" % task)
     return EXIT_OK
+
+
+def _retry_pending_merge(root):
+    """T-121/B5 — finish a prior cycle's stranded completion merge. When a
+    ``complete()`` merge-back fails, the done+archived lane lives on its task
+    branch with a ``pending_merge`` marker in ``.openup/cycle.json``. Retry the
+    merge into base; clear the marker on success, else abort cleanly and leave it
+    for a human. Returns True iff a retry was attempted."""
+    meta = read_cycle_meta(root)
+    branch = meta.get("pending_merge")
+    base = meta.get("base_branch")
+    if not branch or not base:
+        return False
+    _git(["checkout", base], root)
+    merge = _git(["merge", "--no-ff", branch, "-m",
+                  "merge %s (pending-merge retry)" % branch], root)
+    if merge.returncode == 0:
+        meta.pop("pending_merge", None)
+        _write_cycle_meta(root, meta)
+        _log("pending_merge: merged %s into %s on retry" % (branch, base))
+    else:
+        _git(["merge", "--abort"], root)
+        _git(["checkout", branch], root)
+        _log("pending_merge: retry of %s into %s still conflicts — human merge "
+             "needed; the completed lane remains on the branch" % (branch, base))
+    return True
 
 
 # --------------------------------------------------------------------------
@@ -1247,6 +1294,11 @@ def _run_cycle_inner(dir, env=None,
     import os
     env = os.environ if env is None else env
     root = Path(dir).resolve()
+
+    # T-121/B5 — before anything else, finish a prior cycle's stranded completion
+    # merge (a done+archived lane left on its task branch by a failed merge-back).
+    if recover:
+        _retry_pending_merge(root)
 
     try:
         decision = resolve_decision(root)

@@ -113,6 +113,44 @@ class ToolsTest(unittest.TestCase):
     def test_grep_invalid_regex(self):
         self.assertIn("invalid regex", self.t.grep("(", "."))
 
+    # -- B1: grep ignores VCS/vendor noise + skips oversized files ----------
+    def test_grep_default_ignores_git_and_vendor(self):
+        self._write("src/app.py", "MATCHME here\n")
+        self._write(".git/config", "MATCHME in git\n")
+        self._write("node_modules/pkg/index.js", "MATCHME in vendor\n")
+        out = self.t.grep("MATCHME")            # default path="."
+        self.assertIn("src/app.py:1:MATCHME here", out)
+        self.assertNotIn(".git/", out)
+        self.assertNotIn("node_modules/", out)
+
+    def test_grep_explicit_path_into_ignored_dir_still_works(self):
+        # The ignore set only prunes the default tree walk; an explicit request
+        # into .git is honored.
+        self._write(".git/notes.txt", "MATCHME explicit\n")
+        out = self.t.grep("MATCHME", ".git")
+        self.assertIn("MATCHME explicit", out)
+
+    def test_grep_skips_oversized_file(self):
+        self._write("big.log", "MATCHME\n" + ("x" * (tools._GREP_MAX_FILE_BYTES + 10)))
+        self._write("small.txt", "MATCHME small\n")
+        out = self.t.grep("MATCHME")
+        self.assertIn("small.txt:1:MATCHME small", out)
+        self.assertNotIn("big.log", out)
+
+    # -- B6: read_file truncation marker -----------------------------------
+    def test_read_file_truncation_marks_and_names_path(self):
+        self._write("huge.md", "y" * (tools._MAX_READ_BYTES + 5000))
+        out = self.t.read_file("huge.md")
+        self.assertIn("truncated", out)
+        self.assertIn("huge.md", out)          # names the path for a follow-up read
+        self.assertLess(len(out), tools._MAX_READ_BYTES + 200)
+
+    def test_read_file_under_cap_unmarked(self):
+        self._write("ok.md", "z" * 100)
+        out = self.t.read_file("ok.md")
+        self.assertNotIn("truncated", out)
+        self.assertEqual(out, "z" * 100)
+
     # -- exec allowlist ---------------------------------------------------
     def test_exec_refuses_non_allowlisted(self):
         out = self.t.exec("rm -rf /")
@@ -136,6 +174,26 @@ class ToolsTest(unittest.TestCase):
         out = self.t.exec("python3 scripts/hi.py")
         self.assertIn("exit=0", out)
         self.assertIn("hi from script", out)
+
+    # -- B2: exec cwd escaping the root returns an error, never crashes ------
+    def test_exec_cwd_escape_returns_error_not_crash(self):
+        out = self.t.exec("git status", cwd="..")
+        self.assertTrue(out.startswith("ERROR"))
+        self.assertIn("escapes the working root", out)
+
+    def test_dispatch_exec_cwd_escape_is_string(self):
+        # Through dispatch (the loop's path) an escaping cwd is a string, not a raise.
+        out = self.t.dispatch("exec", {"command": "git status", "cwd": ".."})
+        self.assertTrue(out.startswith("ERROR"))
+
+    # -- B7: exec output is capped with a marker; exit= line preserved -------
+    def test_exec_output_capped_with_marker(self):
+        big = tools._EXEC_MAX_OUTPUT + 5000
+        self._write("scripts/spew.py", "print('Q' * %d)\n" % big)
+        out = self.t.exec("python3 scripts/spew.py")
+        self.assertIn("exit=0", out)           # the exit line survives
+        self.assertIn("truncated", out)
+        self.assertLess(len(out), tools._EXEC_MAX_OUTPUT + 500)
 
     # -- dispatch ---------------------------------------------------------
     def test_dispatch_unknown_tool(self):

@@ -21,6 +21,17 @@ from pathlib import Path
 _ALLOWED_EXEC = "git <subcmd>  |  python3 scripts/<script>.py [args]"
 _MAX_READ_BYTES = 400_000
 
+# T-121/B1 — a default-tree `grep` must not read VCS/vendor/build noise or
+# pathologically large files (was rglob-ing `.git/` objects + binaries, O(repo)).
+_GREP_IGNORE_DIRS = frozenset({
+    ".git", "node_modules", "vendor", ".venv", "venv", "__pycache__",
+    "dist", "build", "tmp", "log", "storage", ".mypy_cache", ".pytest_cache",
+})
+_GREP_MAX_FILE_BYTES = 1_000_000
+# T-121/B7 — cap each of exec's stdout/stderr so a failing script can't dump an
+# unbounded report into the model's context forever.
+_EXEC_MAX_OUTPUT = 40_000
+
 
 class ToolError(Exception):
     """Unrecoverable tool misconfiguration (e.g. path escaping the root)."""
@@ -33,6 +44,13 @@ def _resolve(root, path):
     if root != target and root not in target.parents:
         raise ToolError("path '%s' escapes the working root" % path)
     return target
+
+
+def _cap(text, limit):
+    """Truncate `text` to `limit` chars with an explicit marker when over (T-121)."""
+    if len(text) <= limit:
+        return text
+    return text[:limit] + "\n… [truncated — %d more chars]" % (len(text) - limit)
 
 
 class Tools:
@@ -53,7 +71,12 @@ class Tools:
             return "ERROR: %s is a directory (use glob)" % path
         text = target.read_text(encoding="utf-8", errors="replace")
         if offset is None and limit is None:
-            return text[:_MAX_READ_BYTES]
+            if len(text) > _MAX_READ_BYTES:
+                # T-121/B6 — mark the truncation and name the path so the model
+                # knows the read was clipped and can slice the rest with offset/limit.
+                return (text[:_MAX_READ_BYTES]
+                        + "\n… [truncated — full file at %s]" % path)
+            return text
         lines = text.splitlines()
         start = int(offset) if offset else 0
         end = start + int(limit) if limit else len(lines)
@@ -116,12 +139,20 @@ class Tools:
             return "ERROR: %s" % e
         except re.error as e:
             return "ERROR: invalid regex: %s" % e
-        files = [base] if base.is_file() else sorted(base.rglob("*"))
+        if base.is_file():
+            files = [base]
+        else:
+            # T-121/B1 — prune VCS/vendor/build dirs from the tree walk so grep
+            # doesn't decode `.git/` objects, node_modules, or vendored trees.
+            files = [f for f in sorted(base.rglob("*"))
+                     if not (_GREP_IGNORE_DIRS & set(f.relative_to(base).parts[:-1]))]
         hits = []
         for f in files:
             if not f.is_file():
                 continue
             try:
+                if f.stat().st_size > _GREP_MAX_FILE_BYTES:
+                    continue  # T-121/B1 — skip pathologically large / binary files
                 for n, line in enumerate(f.read_text(encoding="utf-8", errors="replace").splitlines(), 1):
                     if rx.search(line):
                         hits.append("%s:%d:%s" % (f.relative_to(self.root), n, line))
@@ -145,15 +176,21 @@ class Tools:
                 "REFUSED: '%s' is not on the exec allowlist. Allowed: %s"
                 % (argv[0], _ALLOWED_EXEC)
             )
-        run_cwd = self.root if not cwd else _resolve(self.root, cwd)
+        try:
+            # T-121/B2 — a cwd escaping the root must return an error STRING, not
+            # raise ToolError uncaught (which crashed the whole run, exit 1).
+            run_cwd = self.root if not cwd else _resolve(self.root, cwd)
+        except ToolError as e:
+            return "ERROR: %s" % e
         try:
             proc = subprocess.run(
                 argv, cwd=str(run_cwd), capture_output=True, text=True, timeout=300
             )
         except subprocess.TimeoutExpired:
             return "ERROR: command timed out after 300s"
-        out = proc.stdout or ""
-        err = proc.stderr or ""
+        # T-121/B7 — cap each stream; the `exit=` line is always preserved.
+        out = _cap(proc.stdout or "", _EXEC_MAX_OUTPUT)
+        err = _cap(proc.stderr or "", _EXEC_MAX_OUTPUT)
         return "exit=%d\n--- stdout ---\n%s\n--- stderr ---\n%s" % (
             proc.returncode, out, err
         )
@@ -176,6 +213,10 @@ class Tools:
             return fn(**arguments)
         except TypeError as e:
             return "ERROR: bad arguments for %s: %s" % (name, e)
+        except ToolError as e:
+            # T-121/B2 — any tool that lets a ToolError escape returns a string
+            # here rather than crashing the driver.
+            return "ERROR: %s" % e
 
 
 # The six dispatchable file/shell tools. `ask_user` is a 7th advertised tool but

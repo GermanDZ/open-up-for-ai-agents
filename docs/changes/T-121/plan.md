@@ -164,13 +164,13 @@ fence (B8–B9 are T-122).
 
 ## Operations
 
-- [ ] B1 — `grep` default-ignores `.git`/vendor/build trees and skips over-cap files; keep 500-hit + invalid-regex behavior.
-- [ ] B2 — `exec` cwd-escape returns an `ERROR:` string (dispatch also catches `ToolError`); no uncaught crash.
-- [ ] B4 — `parse_boxes` retains wrapped continuation lines in the box body; first-line command still classifies as script.
-- [ ] B5 — merge-fail in `complete()` aborts cleanly, returns to the branch, records `pending_merge`; recovery pre-pass retries it before planning.
-- [ ] B6 — `read_file` whole-file truncation appends a path-named marker.
-- [ ] B7 — `exec` caps combined output with a marker; preserves the `exit=` line.
-- [ ] (tester) Hermetic tests for B1, B2, B4–B7 (each failure no longer occurs; no regression to existing tool/executor tests).
+- [x] B1 — `grep` default-ignores `.git`/vendor/build trees and skips over-cap files; keep 500-hit + invalid-regex behavior.
+- [x] B2 — `exec` cwd-escape returns an `ERROR:` string (dispatch also catches `ToolError`); no uncaught crash.
+- [x] B4 — `parse_boxes` retains wrapped continuation lines in the box body; first-line command still classifies as script.
+- [x] B5 — merge-fail in `complete()` aborts cleanly, returns to the branch, records `pending_merge`; recovery pre-pass retries it before planning.
+- [x] B6 — `read_file` whole-file truncation appends a path-named marker.
+- [x] B7 — `exec` caps combined output with a marker; preserves the `exit=` line.
+- [x] (tester) Hermetic tests for B1, B2, B4–B7 (each failure no longer occurs; no regression to existing tool/executor tests).
 
 ## Norms
 
