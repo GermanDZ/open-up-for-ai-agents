@@ -1,7 +1,7 @@
 ---
 id: T-122
 title: "Process-gate fixes (B8, B9): INDEX.md is a fenced derived view; roadmap_status parses prose sections"
-status: ready
+status: done
 priority: medium
 estimate: 1 session
 plan: docs/roadmap.md

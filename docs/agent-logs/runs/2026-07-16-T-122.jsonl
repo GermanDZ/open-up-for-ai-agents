@@ -3,3 +3,4 @@
 {"run_id": "b7d2441fd21c4202ba88866f5ae4c592", "event": "commit", "task_id": "T-122", "branch": "fix/T-122-process-gate-fixes", "sha": "bb2d49c88106493decd4f4b413cc263bd6c0183f", "model": null, "session_id": "fix/T-122-process-gate-fixes", "ts": "2026-07-16T16:40:24Z"}
 {"run_id": "5f4cacb24c4d44928508249de6611935", "event": "commit", "task_id": "T-122", "branch": "fix/T-122-process-gate-fixes", "sha": "bb1f5c2b30bb4f63cfffc094ae995bc58d33c36d", "model": null, "session_id": "fix/T-122-process-gate-fixes", "ts": "2026-07-16T16:42:03Z"}
 {"event": "iteration_complete", "task_id": "T-122", "branch": "fix/T-122-process-gate-fixes", "phase": "construction", "ts": "2026-07-16T16:42:24Z"}
+{"event": "session_end", "task_id": "T-122", "ts": "2026-07-16T16:42:42Z"}
