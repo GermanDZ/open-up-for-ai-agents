@@ -862,7 +862,7 @@ authored when promoted.
 | T-120 | Inline engine-held context into sub-run briefings (E1): judgment boxes get plan.md/design.md content inlined (engine already parsed plan.md), task-def instructions resolve workproduct-name inputs → concrete paths via the loaded library (small files inlined, size-capped + truncation marker), spec lanes get engine-read vision, assess gets a deterministic evidence bundle | completed (2026-07-16) | high | T-106 |
 | T-121 | Cycle-engine + tool bug sweep (B1, B2, B4–B7; B3 deferred): grep default-ignores .git/vendor + size cap; exec cwd ToolError caught (uncaught driver crash); wrapped judgment-box bodies preserved; merge-fail no longer strands an archived lane; read_file truncation marker; exec output cap. B3 (prose-safe box classification) deferred — match-anywhere is an intended, tested contract; the `(judgment)` marker is the escape hatch | completed (2026-07-16) | high | — |
 | T-122 | Process-gate fixes (B8–B9): docs/INDEX.md joins the fence's auto-allowed derived views (T-003 rework episode); openup-claims.py roadmap_status parses prose `## T-NNN:` sections like openup-roadmap.py does (T-009 hand-replication episode) | completed (2026-07-16) | medium | — |
-| T-123 | Dirty-aware gating (E2): per-box check-docs runs only when docs/*.md changed since the last gate pass; completion re-run deduped; `check-docs.py --changed-only` | pending | medium | — |
+| T-123 | Dirty-aware gating (E2): per-box check-docs runs only when docs/*.md changed since the last gate pass; completion re-run deduped; `check-docs.py --changed-only` | completed (2026-07-16) | medium | — |
 
 ---
 

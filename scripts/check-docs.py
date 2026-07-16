@@ -41,6 +41,7 @@ Exit codes:
 """
 
 import argparse
+import hashlib
 import importlib.util
 import json
 import re
@@ -643,6 +644,72 @@ def is_hard(finding) -> bool:
     return not finding.message.startswith("[advisory]")
 
 
+# --------------------------------------------------------------------------
+# --changed-only (T-123): skip a full rescan when nothing check-docs cares about
+# has changed since the last successful pass. A cheap STAT signature over every
+# docs/**/*.md plus the schema + trace-model (the inputs that determine the
+# result); cached in Ring-3 ``.openup/`` so any caller — the harness's defensive
+# re-runs, the cycle engine — gets the skip for free. Conservative: any stat
+# difference (a changed/added/removed .md, a schema/model edit) forces the full
+# check, so the skip only fires on a proven no-op.
+# --------------------------------------------------------------------------
+def docs_signature(docs_dir: Path, schema_path: Path, model_path: Path) -> str:
+    parts = []
+    if docs_dir.is_dir():
+        for p in sorted(docs_dir.rglob("*.md")):
+            try:
+                st = p.stat()
+            except OSError:
+                continue
+            parts.append("%s\0%d\0%d" % (p.relative_to(docs_dir),
+                                         st.st_size, st.st_mtime_ns))
+    for extra in (schema_path, model_path):
+        try:
+            st = extra.stat()
+            parts.append("@%s\0%d\0%d" % (extra.name, st.st_size, st.st_mtime_ns))
+        except OSError:
+            parts.append("@%s\0missing" % extra.name)
+    return hashlib.sha256("\n".join(parts).encode("utf-8")).hexdigest()
+
+
+def _cache_file(docs_dir: Path) -> Path:
+    return docs_dir.resolve().parent / ".openup" / "check-docs-cache.json"
+
+
+def _cache_key(docs_dir: Path, coverage: bool) -> str:
+    # A coverage run validates more, so its skip is tracked separately.
+    return "%s|cov=%s" % (docs_dir.resolve(), bool(coverage))
+
+
+def read_changed_only_cache(docs_dir: Path, coverage: bool):
+    """Return the cached ``{sig, ok}`` for this (docs, coverage) or None."""
+    try:
+        data = json.loads(_cache_file(docs_dir).read_text(encoding="utf-8"))
+        entry = data.get(_cache_key(docs_dir, coverage))
+        if isinstance(entry, dict) and "sig" in entry:
+            return entry
+    except (OSError, json.JSONDecodeError, AttributeError):
+        return None
+    return None
+
+
+def write_changed_only_cache(docs_dir: Path, coverage: bool, sig: str, ok: bool):
+    """Persist ``{sig, ok}`` for this (docs, coverage). Best-effort."""
+    cf = _cache_file(docs_dir)
+    try:
+        cf.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            data = json.loads(cf.read_text(encoding="utf-8"))
+            if not isinstance(data, dict):
+                data = {}
+        except (OSError, json.JSONDecodeError):
+            data = {}
+        data[_cache_key(docs_dir, coverage)] = {"sig": sig, "ok": bool(ok)}
+        cf.write_text(json.dumps(data, indent=2, sort_keys=True), encoding="utf-8")
+    except OSError:
+        pass
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--docs", help="docs/ directory to check "
@@ -662,6 +729,12 @@ def main(argv=None) -> int:
                              "docs/project-config.yaml's process: block is "
                              "absent, then exit — no docs/ tree is loaded "
                              "or validated (T-115)")
+    parser.add_argument("--changed-only", action="store_true",
+                        help="skip the full validation and exit 0 when the docs "
+                             "tree + schema + trace-model are unchanged since the "
+                             "last successful --changed-only pass (a stat "
+                             "signature cached in .openup/; T-123). Any delta "
+                             "runs the full check. Serves defensive re-runs.")
     args = parser.parse_args(argv)
 
     if args.show_archetype_defaults:
@@ -691,8 +764,27 @@ def main(argv=None) -> int:
     except (OSError, json.JSONDecodeError):
         model = {}  # degrade: schema + existence still run, no type-direction
 
+    # --changed-only: short-circuit an unchanged rescan (T-123). Compute the
+    # signature after schema/model load so a broken schema/model still errors
+    # normally; skip only when a PRIOR run passed on the identical inputs.
+    sig = None
+    if args.changed_only:
+        sig = docs_signature(docs_dir, schema_path, model_path)
+        cached = read_changed_only_cache(docs_dir, args.coverage)
+        if cached and cached.get("sig") == sig and cached.get("ok"):
+            if args.json:
+                print(json.dumps({"ok": True, "skipped": True,
+                                  "reason": "no docs delta since last pass"},
+                                 indent=2, sort_keys=True))
+            else:
+                print("check-docs: no docs delta since last pass — skipping")
+            return EXIT_OK
+
     findings, count = check(docs_dir, schema, model, coverage=args.coverage)
     hard = [f for f in findings if is_hard(f)]
+
+    if args.changed_only:
+        write_changed_only_cache(docs_dir, args.coverage, sig, not hard)
 
     if args.json:
         print(json.dumps({

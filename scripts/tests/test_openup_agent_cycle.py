@@ -89,6 +89,7 @@ sys.exit(1 if os.path.exists(".fence_block") else 0)
 
 FAKE_CHECK_DOCS = """\
 import os, sys
+open("scripts/_calls.log", "a").write("check-docs:run\\n")  # T-123: count invocations
 sys.exit(1 if os.path.exists(".docs_block") else 0)
 """
 
@@ -559,6 +560,111 @@ class CompletionTest(CycleFixture):
         self.assertNotIn("OPENUP-STEP", buf.getvalue())
         self.assertIn("OPENUP-NEXT: ADVANCED", buf.getvalue())
 
+
+# --------------------------------------------------------------------------
+# E2 (T-123): dirty-aware gating — check-docs runs per box only on a
+# check-docs-relevant docs delta; the completion re-run is deduped.
+# --------------------------------------------------------------------------
+class DirtyGatingTest(CycleFixture):
+    def _check_docs_runs(self):
+        return sum(1 for l in self._calls() if l == "check-docs:run")
+
+    def test_code_only_box_skips_check_docs_and_completion_dedups(self):
+        # box1 authors a doc (check-docs runs, baseline); box2 touches only code
+        # (no relevant delta → skip); completion writes only irrelevant docs
+        # (status flip/note/views → dedup). check-docs must run exactly ONCE.
+        self._seed_lane([
+            (False, "(developer) Author docs/product/foo.md"),
+            (False, "(developer) Write the code"),
+        ])
+        step = {"n": 0}
+
+        def subrun(task, box, instruction):
+            step["n"] += 1
+            if step["n"] == 1:
+                (self.root / "docs" / "product").mkdir(parents=True, exist_ok=True)
+                (self.root / "docs" / "product" / "foo.md").write_text("# foo\n")
+            else:
+                (self.root / "src").mkdir(exist_ok=True)
+                (self.root / "src" / "impl.py").write_text("x = 1\n")  # code, not docs
+            return 0
+
+        rc = cycle.run_cycle(str(self.root), env=self.env, _subrun=subrun)
+        self.assertEqual(rc, 0)
+        self.assertEqual(self._check_docs_runs(), 1)  # box1 only; box2+completion skipped
+
+    def test_relevant_doc_change_on_later_box_reruns_check_docs(self):
+        # both boxes author a (different) doc → each is a relevant delta → 2 runs;
+        # completion has no new relevant delta → deduped. Total = 2.
+        self._seed_lane([
+            (False, "(developer) Author docs/product/a.md"),
+            (False, "(developer) Author docs/product/b.md"),
+        ])
+        step = {"n": 0}
+
+        def subrun(task, box, instruction):
+            step["n"] += 1
+            name = "a.md" if step["n"] == 1 else "b.md"
+            (self.root / "docs" / "product").mkdir(parents=True, exist_ok=True)
+            (self.root / "docs" / "product" / name).write_text("# %s\n" % name)
+            return 0
+
+        rc = cycle.run_cycle(str(self.root), env=self.env, _subrun=subrun)
+        self.assertEqual(rc, 0)
+        self.assertEqual(self._check_docs_runs(), 2)
+
+    def test_gate_failure_on_later_doc_box_still_caught(self):
+        # box1 authors a doc (passes); box2 authors another doc AND breaks the
+        # docs gate. The relevant delta forces check-docs to run → failure is
+        # caught (exit 6), box2 left unticked. Dirty-gating never hides a failure.
+        self._seed_lane([
+            (False, "(developer) Author docs/product/a.md"),
+            (False, "(developer) Author docs/product/b.md and break docs"),
+        ])
+        step = {"n": 0}
+
+        def subrun(task, box, instruction):
+            step["n"] += 1
+            (self.root / "docs" / "product").mkdir(parents=True, exist_ok=True)
+            if step["n"] == 1:
+                (self.root / "docs" / "product" / "a.md").write_text("# a\n")
+            else:
+                (self.root / "docs" / "product" / "b.md").write_text("# b\n")
+                (self.root / ".docs_block").write_text("")  # gate now fails
+            return 0
+
+        rc = cycle.run_cycle(str(self.root), env=self.env, _subrun=subrun)
+        self.assertEqual(rc, cycle.EXIT_GATE)
+        self.assertIn("- [ ] (developer) Author docs/product/b.md and break docs",
+                      self._plan_text())
+
+    def test_relevant_docs_sig_fail_open_without_git(self):
+        # A non-repo dir → None (fail-open: the caller runs the full gate).
+        with tempfile.TemporaryDirectory() as d:
+            self.assertIsNone(cycle._relevant_docs_sig(d, self.TASK))
+
+    def test_relevant_docs_sig_excludes_noise_includes_instances(self):
+        # A product doc is relevant; the active change folder, the derived views,
+        # and the lane-owned audit trees are excluded.
+        (self.root / "docs" / "product").mkdir(parents=True, exist_ok=True)
+        (self.root / "docs" / "product" / "keep.md").write_text("# keep\n")
+        (self.root / "docs" / "changes" / self.TASK).mkdir(parents=True, exist_ok=True)
+        (self.root / "docs" / "changes" / self.TASK / "plan.md").write_text("ticked\n")
+        (self.root / "docs" / "status-notes").mkdir(parents=True, exist_ok=True)
+        (self.root / "docs" / "status-notes" / "note.md").write_text("note\n")
+        (self.root / "docs" / "roadmap.md").write_text("# Roadmap v2\n")
+        sig = cycle._relevant_docs_sig(str(self.root), self.TASK)
+        self.assertIn("docs/product/keep.md", sig)
+        self.assertNotIn("roadmap.md", sig)
+        self.assertNotIn("status-notes", sig)
+        self.assertNotIn("changes/%s" % self.TASK, sig)
+
+    def test_relevant_docs_sig_includes_schema_and_model_outside_docs(self):
+        # A schema/trace-model edit (outside docs/) still counts — check-docs
+        # reads them, so a change must force a re-run.
+        (self.root / "scripts" / "docs-meta.schema.json").write_text("{}\n")
+        sig = cycle._relevant_docs_sig(str(self.root), self.TASK)
+        self.assertIn("docs-meta.schema.json", sig)
 
 
 # --------------------------------------------------------------------------

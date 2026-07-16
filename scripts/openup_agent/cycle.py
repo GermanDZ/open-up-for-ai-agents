@@ -152,6 +152,52 @@ def _git(args, root, check=False):
 
 
 # --------------------------------------------------------------------------
+# Dirty-aware gating (T-123): a signature of the *check-docs-relevant* docs delta
+# vs HEAD. check-docs' verdict depends on the typed instance docs + the .md link
+# graph under docs/ + the schema / trace-model — NOT on the active change folder
+# (plan.md ticks, design.md notes), the derived views, or the lane-owned audit
+# trees. A box (or the completion ceremony) that changed none of the former
+# cannot change the verdict, so its per-box check-docs run is redundant.
+#   returns: a stable signature of the surviving changed paths ("" = no relevant
+#   delta); or None when git is unavailable (fail-open → the caller runs the full
+#   gate). The fence runs every box regardless — only check-docs is skipped.
+# --------------------------------------------------------------------------
+_SIG_RELEVANT_CONFIG = ("docs-meta.schema.json", "trace-model.json")
+
+
+def _relevant_docs_sig(root, task_id):
+    # Whole tree (schema/model live outside docs/); --untracked-files=all so a
+    # brand-new docs subtree lists its individual .md files instead of collapsing
+    # to a single "?? docs/product/" directory entry (which the .md filter misses).
+    proc = _git(["status", "--porcelain", "--untracked-files=all"], root)
+    if proc.returncode != 0:
+        return None
+    excluded = (
+        "docs/changes/%s/" % task_id,
+        "docs/changes/archive/%s/" % task_id,
+        "docs/roadmap.md", "docs/project-status.md", "docs/INDEX.md",
+        "docs/status-notes/", "docs/agent-logs/", "docs/explorations/",
+    )
+    relevant = []
+    for line in proc.stdout.splitlines():
+        if len(line) < 4:
+            continue
+        status, path = line[:2], line[3:].strip()
+        if " -> " in path:                       # rename: score the destination
+            path = path.split(" -> ", 1)[1]
+        path = path.strip().strip('"')
+        if path.rsplit("/", 1)[-1] in _SIG_RELEVANT_CONFIG:
+            relevant.append("%s:%s" % (status, path))
+            continue
+        if not path.endswith(".md") or not path.startswith("docs/"):
+            continue
+        if any(path.startswith(p) for p in excluded):
+            continue
+        relevant.append("%s:%s" % (status, path))
+    return "\n".join(sorted(relevant))
+
+
+# --------------------------------------------------------------------------
 # Repo readers (deliberately tiny — the scripts stay the source of truth)
 # --------------------------------------------------------------------------
 def read_frontmatter(path):
@@ -861,7 +907,7 @@ def _write_status_note(root, task, fm, counts):
     )
 
 
-def complete(root, task, env, counts):
+def complete(root, task, env, counts, last_docs_sig=None):
     """All boxes ticked → close the lane deterministically, sentinel, exit 0."""
     root = Path(root)
     plan = root / "docs" / "changes" / task / "plan.md"
@@ -883,8 +929,16 @@ def complete(root, task, env, counts):
     if sync.returncode != 0:
         _log("sync-status.py failed (exit %d) — views not regenerated:\n%s"
              % (sync.returncode, (sync.stdout + sync.stderr).strip()[:800]))
-    # 5. final deterministic gates before anything irreversible.
-    ok, report = loop.run_gates(root)
+    # 5. final deterministic gates before anything irreversible. Dirty-aware
+    #    (T-123): the completion writes above (status flip, status-note,
+    #    regenerated views) are all check-docs-irrelevant, so skip the redundant
+    #    check-docs re-run when nothing relevant changed since the last box's
+    #    pass; the fence still runs. Any relevant delta (or git unavailable) →
+    #    the full gate runs.
+    if last_docs_sig is not None and _relevant_docs_sig(root, task) == last_docs_sig:
+        ok, report = loop.run_gates(root, skip={"check-docs"})
+    else:
+        ok, report = loop.run_gates(root)
     if not ok:
         _log("completion gates FAILED:\n%s" % report)
         return EXIT_GATE
@@ -1436,6 +1490,9 @@ def _run_cycle_inner(dir, env=None,
 
     plan = root / "docs" / "changes" / task / "plan.md"
     counts = {"script": 0, "judgment": 0}
+    # Dirty-aware gating (T-123): the relevant-docs signature at the last
+    # check-docs pass. None until the first box runs the full gate.
+    last_docs_sig = None
 
     while True:
         try:
@@ -1492,8 +1549,17 @@ def _run_cycle_inner(dir, env=None,
                                     EXIT_MAX_ITERATIONS) else EXIT_STEP
 
         # gates BEFORE the tick: a failed gate leaves the box unchecked so a
-        # resumed cycle retries the step (spec Req 4).
-        ok, report = loop.run_gates(root)
+        # resumed cycle retries the step (spec Req 4). Dirty-aware (T-123): run
+        # check-docs only on the first box (baseline) or when a check-docs-relevant
+        # doc changed since the last pass; the fence runs every box regardless.
+        docs_sig = _relevant_docs_sig(root, task)
+        if last_docs_sig is not None and docs_sig is not None \
+                and docs_sig == last_docs_sig:
+            ok, report = loop.run_gates(root, skip={"check-docs"})
+        else:
+            ok, report = loop.run_gates(root)
+            if ok and docs_sig is not None:
+                last_docs_sig = docs_sig
         if not ok:
             _log("gates FAILED after step; box left unticked:\n%s" % report)
             return EXIT_GATE
@@ -1505,7 +1571,7 @@ def _run_cycle_inner(dir, env=None,
         _log("ticked: %s" % box["body"][:80])
 
     try:
-        return complete(root, task, env, counts)
+        return complete(root, task, env, counts, last_docs_sig=last_docs_sig)
     except CycleError as e:
         _log("FATAL: completion failed — %s" % e)
         return EXIT_STEP

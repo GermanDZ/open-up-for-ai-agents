@@ -210,6 +210,18 @@ the sentinel is honored only once the gates are clean. Enforcement never depends
 the model remembering to check. A gate whose script is absent under `--dir` is
 skipped, so the driver stays usable on partial trees.
 
+**Dirty-aware gating (T-123).** The `cycle` engine runs the write-fence after
+**every** Operations box (it is cheap and diff-based), but runs `check-docs` only
+when a *check-docs-relevant* doc changed since the last pass — the first box
+establishes the baseline, and later boxes that touch only code (or only the change
+folder / derived views / lane-owned audit trees, none of which `check-docs`
+validates) reuse it and skip the rescan; the completion re-run is deduped the same
+way. Any relevant `.md` / schema / trace-model change forces the full check, and
+git being unavailable fails open to running it — so no gate is ever weakened, only
+its redundant re-runs are elided. Outside the engine, any caller can get the same
+skip for a defensively-repeated run with `python3 scripts/check-docs.py
+--changed-only` (a stat-signature cached in `.openup/`).
+
 ## The guided entry point — `scripts/next-cycle` (T-095, thinned in T-096)
 
 ```
