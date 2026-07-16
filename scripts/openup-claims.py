@@ -233,21 +233,67 @@ def is_archived_plan(plan_path: Path, root: Path) -> bool:
     return len(rel.parts) > 0 and rel.parts[0] == "archive"
 
 
+# Reuse openup-roadmap.py's roadmap parser so table/prose status parsing never
+# drifts (T-122/B9). openup-roadmap.py imports THIS module at its top; we load it
+# LAZILY (at call time, not module init) via the same file-path importlib idiom
+# the fence uses — by the time roadmap_status() runs, both modules' top-level code
+# has executed, so there is no initialization cycle. Cached after first load.
+_ROADMAP_MOD = None
+_ROADMAP_LOAD_FAILED = False
+
+
+def _load_roadmap_module():
+    """Lazily load & cache scripts/openup-roadmap.py. Returns the module or None."""
+    global _ROADMAP_MOD, _ROADMAP_LOAD_FAILED
+    if _ROADMAP_MOD is not None or _ROADMAP_LOAD_FAILED:
+        return _ROADMAP_MOD
+    try:
+        import importlib.util
+        path = Path(__file__).resolve().parent / "openup-roadmap.py"
+        spec = importlib.util.spec_from_file_location("openup_roadmap", path)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)  # type: ignore[union-attr]
+        _ROADMAP_MOD = mod
+    except Exception:
+        _ROADMAP_LOAD_FAILED = True
+        return None
+    return _ROADMAP_MOD
+
+
 def roadmap_status(task_id: str, root: Path):
-    """Best-effort status of a task from the roadmap table (human view)."""
+    """Best-effort status of a task from the roadmap — both markdown-table rows
+    AND prose ``## T-NNN:`` sections, via openup-roadmap.py's shared parser so the
+    two parsers cannot drift (T-122/B9; a prose roadmap previously returned None
+    here and forced the T-009 session flow to be hand-replicated).
+
+    Returns the normalized bare-word status (``completed`` / ``pending`` / …), by
+    EXACT id match, or None if the id is absent from the roadmap.
+    """
     rm = root / "docs" / "roadmap.md"
     if not rm.exists():
         return None
-    for line in rm.read_text(encoding="utf-8").splitlines():
+    try:
+        text = rm.read_text(encoding="utf-8")
+    except OSError:
+        return None
+    rmod = _load_roadmap_module()
+    if rmod is not None:
+        for entry in rmod.parse_roadmap(text):
+            if entry.get("id") == task_id:
+                status = entry.get("status")
+                return status.lower() if status else None
+        return None
+    # Defensive fallback: legacy table-only scan if the parser cannot be loaded
+    # (so the table path never regresses even without openup-roadmap.py present).
+    for line in text.splitlines():
         if not line.lstrip().startswith("|"):
             continue
         cells = [c.strip() for c in line.strip().strip("|").split("|")]
         if not cells:
             continue
-        # id cell may be a markdown link like [T-001](path)
-        cell0 = cells[0]
+        cell0 = cells[0]  # id cell may be a markdown link like [T-001](path)
         if task_id in cell0 and len(cells) >= 3:
-            return cells[2].split()[0].lower()  # e.g. "completed (2026-..)" -> completed
+            return cells[2].split()[0].lower()  # "completed (2026-..)" -> completed
     return None
 
 

@@ -145,12 +145,12 @@ tool surface (T-121), the fence's OUT-OF-LANE / quick-unfenced logic.
 
 ## Operations
 
-- [ ] B8 — add `docs/INDEX.md` to `openup-fence.py` `VIEW_PATHS` (+ docstring view list).
-- [ ] B8 — name `docs/INDEX.md` (via `docs-index.py`) in the parallel-lanes class-3 derived-view row.
-- [ ] B9 — `openup-claims.py` gains a lazily-cached importlib loader for `openup-roadmap.py`; `roadmap_status()` delegates to `parse_roadmap` (exact id match, normalized status), legacy table scan kept as fallback.
-- [ ] (tester) Fence tests: INDEX fresh-base passes, stale-base → STALE VIEW, `--allow-views` overrides, `allowed` lists INDEX.
-- [ ] (tester) Claims tests: prose-section status resolved, table status still resolved, missing id → None, archived-dep-via-prose-roadmap satisfied.
-- [ ] Run `python3 scripts/openup-roadmap.py list` sanity + full suite; fence `--base harness-optional` + check-docs clean.
+- [x] B8 — add `docs/INDEX.md` to `openup-fence.py` `VIEW_PATHS` (+ docstring view list).
+- [x] B8 — name `docs/INDEX.md` (via `docs-index.py`) in the parallel-lanes class-3 derived-view row.
+- [x] B9 — `openup-claims.py` gains a lazily-cached importlib loader for `openup-roadmap.py`; `roadmap_status()` delegates to `parse_roadmap` (exact id match, normalized status), legacy table scan kept as fallback.
+- [x] (tester) Fence tests: INDEX fresh-base passes, stale-base → STALE VIEW, `--allow-views` overrides, `allowed` lists INDEX.
+- [x] (tester) Claims tests: prose-section status resolved, table status still resolved, missing id → None, archived-dep-via-prose-roadmap satisfied.
+- [x] Run `python3 scripts/openup-roadmap.py list` sanity + full suite; fence `--base harness-optional` + check-docs clean.
 
 ## Norms
 

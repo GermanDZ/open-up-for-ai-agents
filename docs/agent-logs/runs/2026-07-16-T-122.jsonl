@@ -1,0 +1,2 @@
+{"run_id": "T-122-b8b78fa", "event": "session_begin", "task_id": "T-122", "goal": "T-122 \u2014 process-gate fixes B8 (INDEX.md fenced view) + B9 (roadmap_status parses prose sections)", "branch": "fix/T-122-process-gate-fixes", "phase": "construction", "ts": "2026-07-16T16:32:55Z"}
+{"run_id": "49c1f6cbd4044e3d9619a535969cc784", "event": "commit", "task_id": "T-122", "branch": "fix/T-122-process-gate-fixes", "sha": "8d2255008ff373f3c4efc3d9c2fec0949345764d", "model": null, "session_id": "fix/T-122-process-gate-fixes", "ts": "2026-07-16T16:33:06Z"}
