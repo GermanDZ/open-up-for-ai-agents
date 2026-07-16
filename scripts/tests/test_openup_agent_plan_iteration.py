@@ -299,6 +299,92 @@ class RunPlanIterationTest(unittest.TestCase):
         self.assertIn("Inputs to read:", instr)
         self.assertNotIn("do not search for it", instr)
 
+    # -- T-120: resolve + inline workproduct-name inputs ---------------------
+    def _consumer_def(self, **over):
+        d = {"name": "Author Roadmap", "role": "project-manager",
+             "artifact": "work-item", "output_path": "docs/roadmap.md",
+             "inputs": ["Vision"], "judgment": ["ordered by priority"]}
+        d.update(over)
+        return d
+
+    def test_task_instruction_resolves_and_inlines_workproduct_input(self):
+        # inputs: [Vision] resolves to the vision producer's output_path and
+        # inlines its content (Req 2).
+        (self.root / "docs" / "product").mkdir(parents=True, exist_ok=True)
+        (self.root / "docs" / "product" / "vision.md").write_text(
+            "# Vision\nBuild the best widget for makers.\n")
+        consumer = self._consumer_def()
+        lib = dict(self._TASK_DEFS, **{"author-roadmap": consumer})
+        instr = pi.render_task_instruction(self.root, consumer, ["ship v1"],
+                                           task_defs=lib)
+        self.assertIn("docs/product/vision.md", instr)              # resolved path
+        self.assertIn("Build the best widget for makers", instr)    # content inlined
+        self.assertIn("Vision", instr)                              # display name kept
+
+    def test_task_instruction_absent_input_file_degrades(self):
+        # Resolvable name but the file is absent ⇒ no phantom path, no inlined
+        # block; the display name stays (Req 2 bullet 2 / Req 6).
+        consumer = self._consumer_def()
+        lib = dict(self._TASK_DEFS, **{"author-roadmap": consumer})
+        instr = pi.render_task_instruction(self.root, consumer, ["ship"],
+                                           task_defs=lib)
+        self.assertNotIn("already loaded", instr)                   # no inlined block
+        self.assertIn("Vision", instr)                              # display name kept
+
+    def test_task_instruction_unresolvable_name_degrades(self):
+        consumer = self._consumer_def(inputs=["Technical Specification"])
+        lib = dict(self._TASK_DEFS, **{"author-roadmap": consumer})
+        instr = pi.render_task_instruction(self.root, consumer, ["x"],
+                                           task_defs=lib)
+        self.assertNotIn("already loaded", instr)
+        self.assertIn("Technical Specification", instr)
+
+    def test_task_instruction_without_library_is_unchanged(self):
+        # No task_defs passed ⇒ pre-T-120 behavior (no resolution attempted).
+        consumer = self._consumer_def()
+        instr = pi.render_task_instruction(self.root, consumer, ["x"])
+        self.assertNotIn("already loaded", instr)
+        self.assertIn("Vision", instr)
+
+    def test_inline_file_caps_with_path_marker(self):
+        (self.root / "big.md").write_text("x" * (pi.INLINE_CAP + 5000))
+        block = pi.inline_file(self.root, "big.md", "Big")
+        self.assertIn("truncated — full file at `big.md`", block)
+        self.assertLess(len(block), pi.INLINE_CAP + 200)
+
+    def test_inline_file_absent_returns_empty(self):
+        self.assertEqual(pi.inline_file(self.root, "nope.md", "X"), "")
+
+    # -- T-120: spec lanes carry engine-read vision (read once) --------------
+    def _spec_instructions(self):
+        seen = []
+
+        def cap(lane_id, instruction):
+            seen.append(instruction)
+            d = self.root / "docs" / "changes" / lane_id
+            d.mkdir(parents=True, exist_ok=True)
+            (d / "plan.md").write_text(
+                "---\nid: %s\nstatus: ready\n---\n# %s\n" % (lane_id, lane_id))
+            return 0
+
+        rc = self._run(dispatch_spec=cap)
+        self.assertEqual(rc, pi.PI_OK)
+        return seen
+
+    def test_spec_lane_instruction_inlines_vision(self):
+        (self.root / "docs" / "product").mkdir(parents=True, exist_ok=True)
+        (self.root / "docs" / "product" / "vision.md").write_text(
+            "# Vision\nEmpower solo makers.\n")
+        instrs = self._spec_instructions()
+        self.assertTrue(instrs)
+        for instr in instrs:                                   # read once, inlined into all
+            self.assertIn("Empower solo makers", instr)
+            self.assertNotIn("Read docs/vision.md and the Ring-1", instr)
+
+    def test_spec_lane_instruction_degrades_without_vision(self):
+        instr = self._spec_instructions()[0]
+        self.assertIn("Read docs/vision.md and the Ring-1", instr)
+
     def test_roadmap_task_carries_pinned_format(self):
         # The pinned roadmap format now lives in the author-initial-roadmap def's
         # judgment (retiring the ROADMAP_FORMAT constant) — it reaches the model

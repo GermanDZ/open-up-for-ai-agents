@@ -318,6 +318,48 @@ class StepExecutorTest(CycleFixture):
         self.assertEqual(rc, cycle.EXIT_STEP)
         self.assertIn("- [ ] Run python3 scripts/boom.py", self._plan_text())
 
+    # -- T-120: judgment briefings inline engine-held context ----------------
+    def test_judgment_instruction_inlines_plan_and_design(self):
+        lane = self.root / "docs" / "changes" / self.TASK
+        lane.mkdir(parents=True, exist_ok=True)
+        (lane / "plan.md").write_text("# spec\nRequirement 1: do the thing\n")
+        (lane / "design.md").write_text("Decision: use approach Z\n")
+        instr = cycle.build_step_instruction(
+            self.TASK, "developer", "Author the module",
+            root=str(self.root), plan_text="# spec\nRequirement 1: do the thing\n")
+        self.assertIn("Requirement 1: do the thing", instr)   # plan content inlined
+        self.assertIn("Decision: use approach Z", instr)       # design content inlined
+        self.assertIn("do not re-read these", instr)
+        # the path still appears (in the block label), so it stays clickable
+        self.assertIn("docs/changes/%s/plan.md" % self.TASK, instr)
+
+    def test_judgment_instruction_inlines_resumable_input(self):
+        lane = self.root / "docs" / "changes" / self.TASK
+        lane.mkdir(parents=True, exist_ok=True)
+        (lane / "plan.md").write_text("# spec\n")
+        ans = self.root / "docs" / "input-requests" / "q.md"
+        ans.parent.mkdir(parents=True, exist_ok=True)
+        ans.write_text("status: answered\nAnswer: ship it on Tuesday\n")
+        instr = cycle.build_step_instruction(
+            self.TASK, "developer", "Act on the answer",
+            resumable_input="docs/input-requests/q.md", root=str(self.root),
+            plan_text="# spec\n")
+        self.assertIn("ship it on Tuesday", instr)             # answer content inlined
+
+    def test_judgment_instruction_degrades_without_root(self):
+        # No root ⇒ pre-T-120 path-naming briefing (Req 6), always launches.
+        instr = cycle.build_step_instruction(
+            self.TASK, "developer", "Do a thing")
+        self.assertIn("Briefing (read before acting):", instr)
+        self.assertIn("docs/changes/%s/plan.md" % self.TASK, instr)
+        self.assertNotIn("do not re-read", instr)
+
+    def test_judgment_instruction_degrades_when_plan_absent(self):
+        # root given but no files on disk ⇒ still degrades cleanly (Req 6).
+        instr = cycle.build_step_instruction(
+            self.TASK, "developer", "Do a thing", root=str(self.root))
+        self.assertIn("Briefing (read before acting):", instr)
+
     def test_judgment_instruction_carries_box_hat_and_briefing(self):
         self._seed_lane([(False, "(tester) Describe the risks in docs/scratch/r.md")])
         seen = {}

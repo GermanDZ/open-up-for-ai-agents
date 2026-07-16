@@ -71,8 +71,7 @@ Author the task spec at docs/changes/%(lane)s/plan.md for iteration %(iteration)
 This lane performs the OpenUP activity **%(activity)s** (role: %(role)s) using the
 %(skill)s procedure, in service of these iteration objectives:
 %(objectives)s
-
-Read docs/vision.md and the Ring-1 product docs (docs/product/) first if present.
+%(context)s
 The spec file MUST carry:
 - YAML frontmatter: id: %(lane)s, title, status: ready, priority, track
   (quick|standard), touches (the file paths this lane will produce/change),
@@ -169,7 +168,65 @@ def project_config_block(root, artifact=None):
     return "\n\n".join(parts)
 
 
-def render_task_instruction(root, task_def, objectives, input_path=None):
+# --------------------------------------------------------------------------
+# T-120 — inline engine-held context into sub-run briefings.
+# The engine already holds (or can read once) the files a sub-run would
+# otherwise spend 2-4 turns re-reading. Thread the CONTENT into the instruction
+# instead of a path. Every block is size-capped with a marker that names the
+# path, so a model can still read_file the remainder; an absent/empty file
+# yields '' so the caller degrades to today's path-naming (Req 6).
+# --------------------------------------------------------------------------
+INLINE_CAP = 12_000  # chars per inlined file (~3k tokens) — keeps first prompts bounded
+
+
+def inline_file(root, rel_path, label, cap=INLINE_CAP, text=None):
+    """A labelled, path-tagged, size-capped block for ``rel_path``.
+
+    ``text`` (when given) is the content the engine already read — used verbatim
+    so the file is not re-read; otherwise ``rel_path`` is read under ``root``.
+    Returns '' when the file is absent, unreadable, or blank — the caller then
+    degrades to naming the path (no phantom path, no crash)."""
+    if text is None:
+        try:
+            text = (Path(root) / rel_path).read_text(encoding="utf-8")
+        except OSError:
+            return ""
+    body = text.strip("\n")
+    if not body.strip():
+        return ""
+    if len(body) > cap:
+        body = body[:cap].rstrip() + "\n… [truncated — full file at `%s`]" % rel_path
+    return "%s (`%s`):\n%s" % (label, rel_path, body)
+
+
+def _norm(s):
+    return re.sub(r"[^a-z0-9]", "", str(s).lower())
+
+
+def _input_path_map(task_defs, exclude=None):
+    """Map a workproduct display-name (normalized) → its producer's output_path,
+    from the loaded library — so a def's ``inputs`` (KB display-names, not paths)
+    resolve to concrete files. A def is keyed by its ``artifact`` slug and its
+    output basename stem (catches e.g. "Architecture Notebook" → the
+    architecture-notebook.md producer whose artifact is "decision")."""
+    m = {}
+    for d in (task_defs or {}).values():
+        if exclude is not None and d is exclude:
+            continue
+        out = d.get("output_path")
+        if not out:
+            continue
+        keys = set()
+        if d.get("artifact"):
+            keys.add(_norm(d["artifact"]))
+        keys.add(_norm(Path(out).stem))
+        for k in keys:
+            m.setdefault(k, out)
+    return m
+
+
+def render_task_instruction(root, task_def, objectives, input_path=None,
+                            task_defs=None):
     """Assemble a task-def authoring sub-run's instruction (T-106): the task ask
     (name, role, artifact, output path) + its ``judgment`` (what-good-looks-like)
     + its declared inputs + the T-104 engine-owned-ceremony contract (exclusion,
@@ -182,15 +239,33 @@ def render_task_instruction(root, task_def, objectives, input_path=None):
     name that concrete file to read FIRST — the def's ``inputs`` are KB workproduct
     display-names, not resolvable paths, so without this a weak model spends
     several turns globbing to locate the provided input (observed live 2026-07-15:
-    5 globs / 4 turns before reading docs/inputs/stakeholder-brief.md)."""
+    5 globs / 4 turns before reading docs/inputs/stakeholder-brief.md).
+
+    T-120: resolve those workproduct-name ``inputs`` to concrete paths via the
+    loaded ``task_defs`` (a produced workproduct's ``output_path``) and inline the
+    small existing ones, so the model reads the content directly rather than
+    globbing for it. Unresolvable names / missing files degrade to the display
+    name (no phantom path)."""
     judgment = "\n".join("- %s" % b for b in task_def.get("judgment", []))
-    inputs = ", ".join(task_def.get("inputs") or []) or "none"
+    input_names = task_def.get("inputs") or []
+    inputs = ", ".join(input_names) or "none"
     if input_path:
         read_line = ("Read the provided input file at `%s` FIRST (it exists at "
                      "that exact path — do not search for it). Additional inputs "
                      "to consider: %s." % (input_path, inputs))
     else:
         read_line = "Inputs to read: %s." % inputs
+    # T-120: inline resolvable existing inputs so they need no discovery.
+    resolved, seen = [], set()
+    pmap = _input_path_map(task_defs, exclude=task_def) if task_defs else {}
+    for name in input_names:
+        rel = pmap.get(_norm(name))
+        if not rel or rel in seen:
+            continue
+        block = inline_file(root, rel, "Input — %s" % name)
+        if block:
+            resolved.append(block)
+            seen.add(rel)
     parts = [
         "Perform the OpenUP task '%s' (role: %s). Produce the %s at %s, in "
         "service of these objectives:\n%s"
@@ -199,8 +274,11 @@ def render_task_instruction(root, task_def, objectives, input_path=None):
            "\n".join("- %s" % o for o in objectives)),
         "What a good result looks like:\n%s" % judgment,
         read_line,
-        CEREMONY_EXCLUSION,
     ]
+    if resolved:
+        parts.append("Provided inputs (already loaded — read these, do not "
+                     "search):\n\n" + "\n\n".join(resolved))
+    parts.append(CEREMONY_EXCLUSION)
     config = project_config_block(root, task_def.get("artifact"))
     if config:
         parts.append(config)
@@ -462,6 +540,16 @@ def run_plan_iteration(root, phase, *, dispatch_objectives, dispatch_spec,
     #    iteration-plan instance). Direct activities are recorded in the instance
     #    body, not as `traces-from` work items (open question 2).
     prefix = "%s-" % iteration
+    # T-120: read the product vision ONCE and inline it into every spec-lane
+    # instruction, so N lanes don't each re-read the same file.
+    vision_block = (inline_file(root, "docs/product/vision.md", "Product vision")
+                    or inline_file(root, "docs/vision.md", "Product vision"))
+    if vision_block:
+        lane_context = ("\n" + vision_block + "\n\nConsult the other Ring-1 "
+                        "product docs (docs/product/) if the spec needs them.\n")
+    else:
+        lane_context = ("\nRead docs/vision.md and the Ring-1 product docs "
+                        "(docs/product/) first if present.\n")
     lane_ids, lane_touches, direct_done = [], [], []
     for lane in candidate_lanes:
         if lane.get("execution") == "direct":
@@ -491,7 +579,8 @@ def run_plan_iteration(root, phase, *, dispatch_objectives, dispatch_spec,
                         "library — aborting" % (tid, lane["activity"]))
                     return PI_CONFIG
                 instruction = render_task_instruction(root, tdef, objectives,
-                                                      input_path=input_path)
+                                                      input_path=input_path,
+                                                      task_defs=defs)
                 log("plan-iteration: running task %s (%s → %s) for activity %s"
                     % (tid, tdef.get("artifact"), tdef.get("output_path"),
                        lane["activity"]))
@@ -527,7 +616,8 @@ def run_plan_iteration(root, phase, *, dispatch_objectives, dispatch_spec,
         instruction = LANE_SPEC_CONTRACT % {
             "lane": lid, "iteration": iteration, "activity": lane["activity"],
             "role": lane["role"], "skill": lane["skill"],
-            "objectives": "\n".join("- %s" % o for o in objectives)}
+            "objectives": "\n".join("- %s" % o for o in objectives),
+            "context": lane_context}
         rc = dispatch_spec(lid, instruction)
         if rc == PI_SUSPEND:
             return PI_SUSPEND

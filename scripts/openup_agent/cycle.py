@@ -371,21 +371,53 @@ def acquire(root, task, decision, env):
 # --------------------------------------------------------------------------
 # Judgment sub-run (fresh, bounded loop.run — the measured cheap shape)
 # --------------------------------------------------------------------------
-def build_step_instruction(task, hat, body, resumable_input=None):
+def build_step_instruction(task, hat, body, resumable_input=None, root=None,
+                           plan_text=None):
+    """The one-step briefing for a judgment sub-run.
+
+    T-120: when ``root`` is given, inline the change-folder context the engine
+    already holds (``plan_text``, read once for box parsing) or can read once
+    (design.md, the answered input) instead of handing paths the sub-run must
+    re-read (2-4 wasted turns per box). Any absent file degrades to naming its
+    path — the pre-T-120 behavior — so the sub-run always launches (Req 6)."""
     lines = [
         "Task: %s. Role hat for this step: %s." % (task, hat),
         "",
         "THE ONE STEP TO COMPLETE NOW:",
         body,
         "",
-        "Briefing (read before acting):",
-        "- docs/changes/%s/plan.md — the task spec (requirements, safeguards)" % task,
-        "- docs/changes/%s/design.md — in-flight decisions (if present)" % task,
-        "- Ring-1 product docs under docs/product/ — consult what the step needs",
     ]
-    if resumable_input:
-        lines.append("- %s — the answered human input that resumed this lane"
-                     % resumable_input)
+    plan_rel = "docs/changes/%s/plan.md" % task
+    design_rel = "docs/changes/%s/design.md" % task
+    briefed = []
+    if root is not None:
+        briefed.append(plan_iteration.inline_file(
+            root, plan_rel, "The task spec (requirements, safeguards)",
+            text=plan_text))
+        briefed.append(plan_iteration.inline_file(
+            root, design_rel, "In-flight design decisions"))
+        if resumable_input:
+            briefed.append(plan_iteration.inline_file(
+                root, resumable_input,
+                "The answered human input that resumed this lane"))
+    briefed = [b for b in briefed if b]
+    if briefed:
+        lines.append("Context (already loaded for you — do not re-read these "
+                     "files):")
+        lines.append("")
+        lines.append("\n\n".join(briefed))
+        lines.append("")
+        lines.append("Ring-1 product docs under docs/product/ — consult if the "
+                     "step needs them.")
+    else:
+        lines.append("Briefing (read before acting):")
+        lines.append("- %s — the task spec (requirements, safeguards)" % plan_rel)
+        lines.append("- %s — in-flight decisions (if present)" % design_rel)
+        lines.append("- Ring-1 product docs under docs/product/ — consult what "
+                     "the step needs")
+        if resumable_input:
+            lines.append("- %s — the answered human input that resumed this lane"
+                         % resumable_input)
     lines += [
         "",
         "Persist your output to files. Then emit `%s — <summary>`." % STEP_SENTINEL_HINT,
@@ -395,14 +427,16 @@ def build_step_instruction(task, hat, body, resumable_input=None):
 
 def run_judgment_step(root, task, box, env, step_tier, max_iterations,
                       interactive=False, resumable_input=None, _completion=None,
-                      instruction=None):
+                      instruction=None, plan_text=None):
     """One fresh, bounded sub-run for one judgment box. Returns loop exit code.
 
     ``instruction`` (T-094) overrides the default change-folder briefing — used
-    by steps that belong to no lane (the replenishment pass)."""
+    by steps that belong to no lane (the replenishment pass). ``plan_text``
+    (T-120) is the already-read spec, inlined into the default briefing."""
     model = tiers.resolve_tier_model(root, step_tier, target="driver", env=env)
     instruction = instruction or build_step_instruction(
-        task, box["hat"], box["body"], resumable_input=resumable_input)
+        task, box["hat"], box["body"], resumable_input=resumable_input,
+        root=root, plan_text=plan_text)
     # T-109: narrate the step in one line — the box's first line says what it
     # does; the full instruction is verbose-only detail.
     summary = " ".join((box["body"].strip().splitlines() or [""])[0].split())
@@ -435,18 +469,22 @@ def run_judgment_step(root, task, box, env, step_tier, max_iterations,
 
 
 def _dispatch_judgment(root, task, box, env, step_tier, cap, interactive,
-                       resumable_input, _completion, _subrun, instruction=None):
+                       resumable_input, _completion, _subrun, instruction=None,
+                       plan_text=None):
     """One judgment step through the seam or the live sub-run (shared by the
     executor and recovery). Returns the loop exit code; raises TierError.
-    ``instruction`` overrides the default change-folder briefing (T-094)."""
+    ``instruction`` overrides the default change-folder briefing (T-094);
+    ``plan_text`` (T-120) is the already-read spec inlined into that briefing."""
     if _subrun is not None:
         instruction = instruction or build_step_instruction(
-            task, box["hat"], box["body"], resumable_input=resumable_input)
+            task, box["hat"], box["body"], resumable_input=resumable_input,
+            root=root, plan_text=plan_text)
         return _subrun(task, box, instruction)
     return run_judgment_step(root, task, box, env, step_tier, cap,
                              interactive=interactive,
                              resumable_input=resumable_input,
-                             _completion=_completion, instruction=instruction)
+                             _completion=_completion, instruction=instruction,
+                             plan_text=plan_text)
 
 
 # --------------------------------------------------------------------------
@@ -1349,10 +1387,11 @@ def _run_cycle_inner(dir, env=None,
 
     while True:
         try:
-            boxes = parse_boxes(plan.read_text(encoding="utf-8"))
+            plan_text = plan.read_text(encoding="utf-8")
         except OSError as e:
             _log("FATAL: cannot read %s: %s" % (plan, e))
             return EXIT_CONFIG
+        boxes = parse_boxes(plan_text)
         pending = [b for b in boxes if not b["checked"]]
         if not boxes:
             _log("FATAL: %s has no Operations checkboxes — nothing the engine "
@@ -1387,7 +1426,8 @@ def _run_cycle_inner(dir, env=None,
             try:
                 rc = _dispatch_judgment(
                     root, task, box, env, step_tier, step_max_iterations,
-                    interactive, resumable_input, _completion, _subrun)
+                    interactive, resumable_input, _completion, _subrun,
+                    plan_text=plan_text)
             except tiers.TierError as e:
                 _log("FATAL: %s" % e)
                 return EXIT_CONFIG

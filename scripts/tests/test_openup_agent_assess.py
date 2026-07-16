@@ -39,6 +39,36 @@ class HelperTest(unittest.TestCase):
         self.assertIn("### Demo scope", text)
         self.assertIn("defect X", text)
 
+    # -- T-120: grading gets a deterministic evidence bundle -----------------
+    def test_grading_instruction_includes_evidence(self):
+        instr = assess.render_grading_instruction(
+            "INSTANCE-BODY", evidence="EVIDENCE-BUNDLE")
+        self.assertIn("EVIDENCE-BUNDLE", instr)
+        self.assertIn("INSTANCE-BODY", instr)
+
+    def test_grading_instruction_without_evidence_unchanged(self):
+        instr = assess.render_grading_instruction("INSTANCE-BODY")
+        self.assertIn("INSTANCE-BODY", instr)
+        self.assertNotIn("None", instr)
+
+    def test_iteration_evidence_lists_delivered_lanes(self):
+        root = Path(tempfile.mkdtemp())
+        lane = root / "docs" / "changes" / "archive" / "I1-001"
+        lane.mkdir(parents=True)
+        (lane / "plan.md").write_text(
+            "---\nid: I1-001\ntitle: Build the vision\nstatus: done\n"
+            "touches:\n  - docs/product/vision.md\n---\n# spec\n")
+        ev = assess._iteration_evidence(root, "I1")
+        self.assertIn("I1-001", ev)
+        self.assertIn("done", ev)
+        self.assertIn("Build the vision", ev)
+        self.assertIn("docs/product/vision.md", ev)   # artifact path from touches
+
+    def test_iteration_evidence_empty_when_none(self):
+        root = Path(tempfile.mkdtemp())
+        (root / "docs" / "changes").mkdir(parents=True)
+        self.assertEqual(assess._iteration_evidence(root, "I9"), "")
+
 
 def _normalize(raw):
     """Mirror read_assessment's normalization for a dict fixture."""

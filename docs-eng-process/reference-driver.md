@@ -258,6 +258,19 @@ Per **unchecked `## Operations` box** in the picked lane's `plan.md`:
   The sub-run's model resolves from the tier map's `driver` column via
   `--step-tier` (default `authoring` → `OPENUP_MODEL_MID`).
 
+**Briefings inline content, not paths (T-120).** A sub-run's briefing carries
+the **content** the engine already holds (or reads once), not a list of paths
+the model must re-read: the judgment-box briefing inlines the change folder's
+`plan.md` (the engine already parsed it for the boxes) + `design.md` + the
+answered input that resumed the lane; a task-def instruction resolves its
+workproduct-name `inputs` to concrete paths via the loaded library and inlines
+the small existing ones (on top of T-118's named `requires_input` path); each
+spec lane in a plan-iteration gets the product vision inlined once; the assess
+grader gets a deterministic evidence bundle (delivered lanes + artifact paths).
+Every inlined block is size-capped with a marker naming the path, and an
+absent file degrades to naming the path — the pre-T-120 behavior — so a sub-run
+always launches.
+
 Keep script-step boxes **command-only** — trailing prose after an unquoted
 command becomes part of the command line.
 
@@ -366,9 +379,12 @@ restores the bare typed exits below.
     `requires_input` path (T-100), the instruction **names that concrete file to
     read first** (T-118) — the def's `inputs` are KB workproduct display-names,
     not paths, so without it a weak model spends several turns globbing to locate
-    the provided input. No procedure file, no rubric, no schema is read — the
-    measured weak-model reliability fix. `validate` requires every activity
-    `tasks:` id to resolve in the library.
+    the provided input. **T-120** resolves those remaining display-names to
+    concrete paths via the loaded library (a produced workproduct's `output_path`)
+    and **inlines the small existing ones**, so the model reads their content
+    directly rather than globbing. No procedure file, no rubric, no schema is
+    read — the measured weak-model reliability fix. `validate` requires every
+    activity `tasks:` id to resolve in the library.
   - **Engine-owned authoring ceremony (T-104, retained under T-106).** On the
     task-def path the **model authors the document body only**; every piece of
     ceremony is engine work:
