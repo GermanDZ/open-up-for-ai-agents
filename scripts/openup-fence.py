@@ -18,10 +18,11 @@ Allowed for task T-NNN:
   * lane-owned / append-only audit surfaces that never conflict:
     ``docs/agent-logs/`` (dated files + the merge=union JSONL),
     ``docs/status-notes/`` (sharded status entries), ``docs/explorations/``;
-  * the shared views ``docs/roadmap.md`` / ``docs/project-status.md`` ONLY if
-    the base ref is an ancestor of HEAD (the **fresh-base rule**: views may
-    only be regenerated against the current trunk — otherwise rebase and
-    re-run ``scripts/sync-status.py``), or unconditionally with
+  * the shared derived views ``docs/roadmap.md`` / ``docs/project-status.md``
+    (written by ``sync-status.py``) and ``docs/INDEX.md`` (the trace-web index,
+    written by ``docs-index.py``) ONLY if the base ref is an ancestor of HEAD
+    (the **fresh-base rule**: views may only be regenerated against the current
+    trunk — otherwise rebase and re-run the generator), or unconditionally with
     ``--allow-views`` (used by complete-task immediately after it rebased).
 
 Design rules (mirror scripts/openup-claims.py / openup-board.py):
@@ -65,8 +66,12 @@ EXIT_USAGE = 2
 EXIT_NO_TASK = 3
 EXIT_VIOLATION = 8
 
-# Shared views: written ONLY by scripts/sync-status.py against a fresh trunk.
-VIEW_PATHS = ["docs/roadmap.md", "docs/project-status.md"]
+# Shared derived views: regenerated ONLY against a fresh trunk, never hand-edited.
+# roadmap.md / project-status.md are written by scripts/sync-status.py; INDEX.md
+# (the trace-web index) by scripts/docs-index.py — all three are subject to the
+# fresh-base rule below. (T-122/B8: INDEX.md joins the fenced views — its absence
+# flagged a legitimate regeneration OUT OF LANE and caused the T-003 revert.)
+VIEW_PATHS = ["docs/roadmap.md", "docs/project-status.md", "docs/INDEX.md"]
 
 # Lane-owned / append-only surfaces every lane may write without conflicting:
 # dated one-file-per-entry trees and the merge=union run log.

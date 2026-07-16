@@ -10,6 +10,7 @@ Hermetic: every test injects an isolated --claims-dir and uses --touches /
 dep-resolution tests, which deliberately use a fabricated unmet dep id).
 """
 
+import importlib.util
 import json
 import subprocess
 import sys
@@ -18,6 +19,11 @@ import unittest
 from pathlib import Path
 
 SCRIPT = Path(__file__).resolve().parents[1] / "openup-claims.py"
+
+# Load the module directly for unit-level tests of pure functions (roadmap_status).
+_spec = importlib.util.spec_from_file_location("openup_claims_under_test", SCRIPT)
+claims_mod = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(claims_mod)
 
 # exit codes (mirror the script)
 OK, DEP, COLL, NOTFOUND, OWNER, BAD = 0, 3, 4, 5, 6, 7
@@ -404,10 +410,67 @@ def _plan(tid, status):
 
 
 def _roadmap(rows):
-    out = ["# Roadmap", "", "| Task | Title | Status | Priority |", "|---|---|---|---|"]
+    # Canonical roadmap table — the `| ID | …` header the shared parser
+    # (openup-roadmap.py parse_roadmap, reused by roadmap_status per T-122/B9)
+    # requires; every real roadmap uses it.
+    out = ["# Roadmap", "", "| ID | Title | Status | Priority |", "|---|---|---|---|"]
     for tid, status_cell in rows:
         out.append(f"| [{tid}](changes/archive/{tid}/plan.md) | t | {status_cell} | high |")
     return "\n".join(out) + "\n"
+
+
+def _roadmap_prose(rows):
+    # Prose `## T-NNN:` section roadmap (the shape this repo's own roadmap uses
+    # below its maintenance table) — table-only roadmap_status returned None here
+    # before T-122/B9.
+    out = ["# Roadmap", ""]
+    for tid, status in rows:
+        out += [f"## {tid}: sample task", f"**Status**: {status}",
+                "**Priority**: high", "**Dependencies**: none", ""]
+    return "\n".join(out) + "\n"
+
+
+class RoadmapStatusTests(unittest.TestCase):
+    """T-122/B9 — roadmap_status reads BOTH table rows and prose ## T-NNN:
+    sections, via openup-roadmap.py's shared parser (no drift)."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self._tmp.name)
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def _status(self, tid):
+        return claims_mod.roadmap_status(tid, self.root)
+
+    def test_prose_section_status_resolved(self):
+        _write(self.root / "docs/roadmap.md",
+               _roadmap_prose([("T-050", "completed (2026-07-05)")]))
+        self.assertEqual(self._status("T-050"), "completed")
+
+    def test_prose_section_pending_resolved(self):
+        _write(self.root / "docs/roadmap.md", _roadmap_prose([("T-051", "pending")]))
+        self.assertEqual(self._status("T-051"), "pending")
+
+    def test_table_row_status_still_resolved(self):
+        _write(self.root / "docs/roadmap.md",
+               _roadmap([("T-052", "completed (2026-01-01)")]))
+        self.assertEqual(self._status("T-052"), "completed")
+
+    def test_missing_id_returns_none(self):
+        _write(self.root / "docs/roadmap.md", _roadmap([("T-052", "completed")]))
+        self.assertIsNone(self._status("T-999"))
+
+    def test_no_roadmap_returns_none(self):
+        self.assertIsNone(self._status("T-050"))
+
+    def test_exact_id_match_not_substring(self):
+        # Old substring scan would match "T-1" inside a "T-12" row; the shared
+        # parser matches ids exactly.
+        _write(self.root / "docs/roadmap.md", _roadmap([("T-12", "completed")]))
+        self.assertIsNone(self._status("T-1"))
+        self.assertEqual(self._status("T-12"), "completed")
 
 
 class ArchivedDepTests(unittest.TestCase):
@@ -440,6 +503,15 @@ class ArchivedDepTests(unittest.TestCase):
         _write(self.root / "docs/changes/archive/T-900/plan.md", _plan("T-900", "in-progress"))
         _write(self.root / "docs/roadmap.md", _roadmap([("T-900", "completed (2026-01-01)")]))
         self.assertIn("READY", self._pf("T-900", OK).stdout)
+
+    def test_archived_stale_but_PROSE_roadmap_completed_is_satisfied(self):
+        # T-122/B9 — the T-009 path: a prose ## T-NNN: roadmap must vouch a
+        # stale archived plan's completion (table-only roadmap_status returned
+        # None here before, blocking the dep and forcing a hand-replicated flow).
+        _write(self.root / "docs/changes/archive/T-904/plan.md", _plan("T-904", "in-progress"))
+        _write(self.root / "docs/roadmap.md",
+               _roadmap_prose([("T-904", "completed (2026-07-05)")]))
+        self.assertIn("READY", self._pf("T-904", OK).stdout)
 
     def test_archived_deferred_and_roadmap_deferred_blocks(self):
         _write(self.root / "docs/changes/archive/T-901/plan.md", _plan("T-901", "deferred"))
