@@ -158,15 +158,22 @@ def _system_prompt(root, procedure, procedure_text):
     ) % (root, procedure, procedure_text)
 
 
-def run_gates(root):
+def run_gates(root, skip=None):
     """Run each present deterministic gate. Return (ok, report_str).
 
-    ok is False iff any *present* gate exits non-zero. A gate whose script is
-    absent under --dir is skipped (the driver stays usable on partial trees).
+    ok is False iff any *present, run* gate exits non-zero. A gate whose script is
+    absent under --dir is skipped (the driver stays usable on partial trees). A
+    gate whose label is in ``skip`` is deliberately not run — reported, never
+    failed — used by the cycle engine's dirty-aware gating (T-123) to skip
+    check-docs on a box that changed nothing check-docs validates.
     """
     root = Path(root)
+    skip = set(skip or ())
     lines, ok = [], True
     for label, argv in GATES:
+        if label in skip:
+            lines.append("%s: skipped (dirty-aware — unchanged since last pass)" % label)
+            continue
         script = root / argv[1]
         if not script.exists():
             lines.append("%s: skipped (no %s)" % (label, argv[1]))

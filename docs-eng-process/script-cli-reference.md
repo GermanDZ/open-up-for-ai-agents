@@ -194,12 +194,18 @@ sync-status.py --reconcile [--dry-run] [--roadmap]
 ## check-docs.py — work-product validator
 
 ```
-check-docs.py [--docs DIR] [--schema PATH] [--model PATH] [--json] [--coverage]
+check-docs.py [--docs DIR] [--schema PATH] [--model PATH] [--json] [--coverage] [--changed-only]
 check-docs.py --show-archetype-defaults
 ```
 - Flat args, **no subcommand** (a frequent friction point — do not write
   `check-docs.py check …`). `--coverage` adds required-coverage rules; required
   gaps fail the run.
+- `--changed-only` (T-123): skip the full validation and exit 0 when the docs
+  tree + schema + trace-model are byte-identical (by a cheap stat signature) to
+  the last **successful** `--changed-only` pass; any delta — or a prior failure —
+  runs the full check. The signature is cached in `.openup/check-docs-cache.json`
+  (Ring-3, gitignored), keyed by docs dir + `--coverage`. Cuts the harness flow's
+  repeated defensive re-runs; the default (no-flag) path is untouched.
 - `--show-archetype-defaults` (T-115): prints the Development Case archetype
   defaults (`quick`/`mvp`/`product`) plus what applies when
   `docs/project-config.yaml`'s `process:` block is absent (today: no

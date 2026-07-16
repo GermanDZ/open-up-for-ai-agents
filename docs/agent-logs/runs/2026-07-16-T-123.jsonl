@@ -1,0 +1,2 @@
+{"run_id": "T-123-d2da00f", "event": "session_begin", "task_id": "T-123", "goal": "T-123 \u2014 dirty-aware gating (E2): check-docs --changed-only + engine per-box/completion dedup", "branch": "feat/T-123-dirty-aware-gating", "phase": "construction", "ts": "2026-07-16T16:51:26Z"}
+{"run_id": "29a75d68b0b8432b85ffe698a6691e81", "event": "commit", "task_id": "T-123", "branch": "feat/T-123-dirty-aware-gating", "sha": "63f438251239bb2cbc876537e5391c8cabb575d9", "model": null, "session_id": "feat/T-123-dirty-aware-gating", "ts": "2026-07-16T16:51:27Z"}

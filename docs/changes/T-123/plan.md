@@ -184,15 +184,15 @@ gates (T-122), `sync-status.py` / `openup-fence.py` internals.
 
 ## Operations
 
-- [ ] `check-docs.py --changed-only`: stat-signature (docs/**/*.md + schema + trace-model) cached under `.openup/check-docs-cache.json`; skip (exit 0) when unchanged & last ok, else run full; coverage-keyed; default path untouched.
-- [ ] `loop.run_gates(root, skip=None)`: skip a named gate (reported, not failed); `skip=None` unchanged.
-- [ ] `cycle._relevant_docs_sig(root, task_id)`: git-delta of check-docs-relevant docs (excludes change folder + views + audit trees; includes schema/model; fail-open None).
-- [ ] cycle box loop: run check-docs per box only on first box or a relevant-docs delta; fence always runs.
-- [ ] `cycle.complete()` accepts `last_docs_sig` and dedups the completion check-docs re-run.
-- [ ] (tester) check-docs tests: skip-unchanged, rerun-on-delta, no-skip-after-failure, coverage-keyed, default-byte-identical.
-- [ ] (tester) cycle tests: code-only box skips check-docs, gate failure still exits 6, completion dedup.
-- [ ] Docs: reference-driver dirty-aware note + script-cli `--changed-only` entry.
-- [ ] Full suite green; fence `--base harness-optional` + check-docs clean.
+- [x] `check-docs.py --changed-only`: stat-signature (docs/**/*.md + schema + trace-model) cached under `.openup/check-docs-cache.json`; skip (exit 0) when unchanged & last ok, else run full; coverage-keyed; default path untouched.
+- [x] `loop.run_gates(root, skip=None)`: skip a named gate (reported, not failed); `skip=None` unchanged.
+- [x] `cycle._relevant_docs_sig(root, task_id)`: git-delta of check-docs-relevant docs (excludes change folder + views + audit trees; includes schema/model; `--untracked-files=all` so new subtrees list files; fail-open None).
+- [x] cycle box loop: run check-docs per box only on first box or a relevant-docs delta; fence always runs.
+- [x] `cycle.complete()` accepts `last_docs_sig` and dedups the completion check-docs re-run.
+- [x] (tester) check-docs tests: skip-unchanged, rerun-on-delta, no-skip-after-failure, coverage-keyed, default-byte-identical.
+- [x] (tester) cycle tests: code-only box skips check-docs + completion dedup, relevant-later-box reruns, gate failure still exits 6, sig unit tests (fail-open/excludes noise/includes schema).
+- [x] Docs: reference-driver dirty-aware note + script-cli `--changed-only` entry.
+- [x] Full suite green; fence `--base harness-optional` + check-docs clean.
 
 ## Norms
 
