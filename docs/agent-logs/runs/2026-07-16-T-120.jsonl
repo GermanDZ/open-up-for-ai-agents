@@ -4,3 +4,4 @@
 {"run_id": "2a02bb16142c4d4a8bdc0c17aa967a5f", "event": "commit", "task_id": "T-120", "branch": "feat/T-120-inline-subrun-context", "sha": "8dc277fcb65c77130747079600f58eff8c7c1231", "model": null, "session_id": "feat/T-120-inline-subrun-context", "ts": "2026-07-16T12:39:31Z"}
 {"run_id": "95fbba66867d40f5ba1c341657ebcfc8", "event": "commit", "task_id": "T-120", "branch": "feat/T-120-inline-subrun-context", "sha": "d2382a501d215bec34bf6817a994daaf2dbf5b79", "model": null, "session_id": "feat/T-120-inline-subrun-context", "ts": "2026-07-16T12:40:28Z"}
 {"event": "iteration_complete", "task_id": "T-120", "branch": "feat/T-120-inline-subrun-context", "phase": "construction", "ts": "2026-07-16T12:41:12Z"}
+{"event": "session_end", "task_id": "T-120", "ts": "2026-07-16T12:42:00Z"}

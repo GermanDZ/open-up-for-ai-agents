@@ -1,0 +1,21 @@
+{
+  "schema": 2,
+  "task_id": "T-120",
+  "iteration": 82,
+  "iteration_id": null,
+  "cycle": 1,
+  "phase": "construction",
+  "track": "standard",
+  "branch": "feat/T-120-inline-subrun-context",
+  "worktree": "/Users/germandz/personal-code/ai-dev-framework/open-up-for-ai-agents-T-120",
+  "session_id": "feat/T-120-inline-subrun-context",
+  "started_at": "2026-07-16T07:49:56Z",
+  "gates": {
+    "team_deployed": false,
+    "plan_persisted": "docs/changes/T-120/plan.md",
+    "log_written": true,
+    "roadmap_synced": true,
+    "retro_due": false
+  },
+  "iterations_since_retro": 0
+}

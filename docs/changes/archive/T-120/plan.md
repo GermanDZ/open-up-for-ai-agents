@@ -1,7 +1,7 @@
 ---
 id: T-120
 title: "Inline engine-held context into sub-run briefings (E1) — paths become content"
-status: ready
+status: done
 priority: high
 estimate: 1 session
 plan: docs/roadmap.md
