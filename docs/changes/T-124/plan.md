@@ -152,12 +152,12 @@ write, no verify-reread, no input re-read, emit DONE immediately). A note in
 
 ## Operations
 
-- [ ] F1 — `plan_iteration._INPUT_ALIASES` + alias resolution in `render_task_instruction` (non-resolving KB input names → real upstream artifacts, inlined; direct-resolve unchanged; absent-target degrades).
-- [ ] F2 — `cycle._task_system_prompt` convergence contract: single write, no verify-reread, no input re-read, emit `OPENUP-TASK: DONE` immediately.
-- [ ] (tester) Hermetic tests: alias resolves+inlines Vision+Architecture; direct-resolve path unchanged; absent alias target degrades; prompt carries the four convergence clauses.
-- [ ] Docs: reference-driver note on the convergence contract + input aliasing.
-- [ ] Live acceptance: re-run `inception-taskdef` (`command: cycle`) on the endpoint; use-case sub-run converges (≤6 iters, `OPENUP-TASK: DONE`, no post-write re-read, no timeout). Record the before/after in `design.md`.
-- [ ] Full suite green; fence `--base harness-optional` + check-docs clean.
+- [x] F1 — `plan_iteration._INPUT_ALIASES` + alias resolution in `render_task_instruction` (non-resolving KB input names → real upstream artifacts, inlined; direct-resolve unchanged; absent-target degrades).
+- [x] F2 — `cycle._task_system_prompt` convergence contract: single write, no verify-reread, no input re-read, emit `OPENUP-TASK: DONE` immediately.
+- [x] (tester) Hermetic tests: alias resolves+inlines Vision+Architecture; direct-resolve path unchanged; absent alias target degrades; prompt carries the four convergence clauses.
+- [x] Docs: reference-driver note on the convergence contract + input aliasing.
+- [x] Live acceptance: re-run `inception-taskdef` (`command: cycle`) on the endpoint; use-case sub-run converges (6 iters, `OPENUP-TASK: DONE`, 0 reads, 0 post-write re-reads) — before/after in `design.md` (28+→6).
+- [x] Full suite green (780); fence `--base harness-optional` + check-docs + build-task-library `--check` clean.
 
 ## Norms
 
