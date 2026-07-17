@@ -1,7 +1,7 @@
 ---
 id: T-124
 title: "Make the Inception use-case/architecture task-defs converge on the weak model (T-107 gate blocker)"
-status: ready
+status: done
 priority: high
 estimate: 1 session
 plan: docs/roadmap.md
