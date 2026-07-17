@@ -1,16 +1,18 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 85
-**Iteration Goal**: T-123 — Dirty-aware gating (E2): per-box check-docs runs only when docs/*.md changed since the last gate pass; completion re-run deduped; `check-docs.py --changed-only`
+**Iteration**: 86
+**Iteration Goal**: T-124 — Make the Inception use-case/architecture task-defs converge on the weak model (T-107 gate blocker): non-resolving KB input names (e.g. "Technical Specification") alias to real upstream artifacts (Vision, Architecture Notebook) so the sub-run gets context instead of hunting; direct-sub-run convergence contract (single write, no verify-reread, no input re-read, emit `OPENUP-TASK: DONE` immediately) stops the 28+-turn re-read-until-timeout loop found live
 **Status**: completed
-**Current Task**: T-123
+**Current Task**: T-124
 **Iteration Started**: 2026-06-18
-**Last Updated**: 2026-07-16
+**Last Updated**: 2026-07-17
 **Updated By**: sync-status.py
 **Retrospective**: [iteration-77-retrospective.md](iteration-retrospectives/iteration-77-retrospective.md) — covers iterations 21–77 (2026-06-16 → 2026-07-14); first written retro since iteration 20
 
 ## Notes
+
+- **Iteration 86** (2026-07-17): T-124 (standard) — **task-def convergence on the weak model** (unblocks the T-107 gate). Live diagnosis of the T-107 promotion-gate run (qwen3.6-27b) showed the initiate-project defs (vision/roadmap) converge but the later `execution: direct` Inception activities flail: `envision-the-architecture` 9 turns, and `identify-and-outline-requirements` (use-case) **ran away 28+ turns → timeout**, repeatedly re-reading vision/brief/architecture (its declared KB input "Technical Specification" resolves to a useless generic slot doc, so it hunts) then re-reading its own 16 KB output after writing (weak terminal-sentinel contract). Two render/prompt-layer fixes, no compiled-library edit: **F1** — `_INPUT_ALIASES` maps a non-resolving KB input display-name to the real upstream artifacts (Technical Specification → Vision + Architecture Notebook) so `render_task_instruction` inlines actual context; **F2** — `_task_system_prompt` gains a convergence contract (single `write_file`, do NOT read the artifact back or re-read inputs, emit `OPENUP-TASK: DONE` immediately). Live re-run: **every** Inception sub-run now ≤6 turns — vision 3, roadmap 3, architecture 4 (was 9), **use-case 6 (was 28+): 0 reads, 0 globs, 0 post-write re-reads, DONE emitted**. +7 hermetic tests; full suite 780 green; fence `--base harness-optional` + check-docs + build-task-library `--check` clean. Solo, standard, in-place branch, on harness-optional.
 
 - **Iteration 85** (2026-07-16): T-123 (standard) — **dirty-aware gating (E2)**. Closes the last task of the T-120→T-123 orchestration-economics program. The 2026-07-16 review measured a 6-box lane paying 13 full-doc `check-docs` scans (`run_gates` after every box + again at completion, each rglobbing all docs). Three pieces, no judgment point removed, no gate weakened: **(1) `check-docs.py --changed-only`** — a cheap stat signature over `docs/**/*.md` + schema + trace-model, cached in Ring-3 `.openup/check-docs-cache.json` (coverage-keyed); skips (exit 0) when byte-identical to the last **successful** pass, re-runs on any delta or after a failure — serving the harness flow's 107 defensive re-runs. **(2) `loop.run_gates(root, skip=)`** — a named gate can be skipped (reported, never failed); `skip=None` is byte-identical to today. **(3) engine dirty-aware gating** — the `cycle` box loop computes `_relevant_docs_sig` (a git delta of check-docs-relevant docs, **excluding** the active change folder + derived views + lane audit trees — none of which affect check-docs' verdict — and **including** schema/trace-model even outside `docs/`, via `git status --porcelain --untracked-files=all` so new subtrees list their files); check-docs runs on the first box (baseline) and on any relevant-docs delta, and `complete()` dedups its redundant re-run the same way. The **fence runs every box** unchanged (cheap, diff-based); git-unavailable fails open to the full gate; the default check-docs path is untouched. +12 tests (5 `--changed-only`; 3 engine skip/rerun/gate-failure; 3 sig unit; completion-dedup). Full suite green; fence `--base harness-optional` + check-docs clean. Solo, standard, in-place branch, on harness-optional.
 

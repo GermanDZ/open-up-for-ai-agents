@@ -203,6 +203,18 @@ def _norm(s):
     return re.sub(r"[^a-z0-9]", "", str(s).lower())
 
 
+# T-124: KB workproduct input display-names with NO producer in the loaded
+# library (so the T-120 name→path map misses them) → the real upstream artifacts
+# that realize them in the driver's flow. Keys and values are ``_norm``-ed to the
+# same keys ``_input_path_map`` builds (a def's ``artifact`` slug / output stem).
+# Without this, ``identify-and-outline-requirements`` (inputs: [Technical
+# Specification]) gets no inlined context and the weak model hunts/re-reads for
+# vision/architecture until it times out (found live 2026-07-16, T-107 gate).
+_INPUT_ALIASES = {
+    "technicalspecification": ["vision", "architecturenotebook"],
+}
+
+
 def _input_path_map(task_defs, exclude=None):
     """Map a workproduct display-name (normalized) → its producer's output_path,
     from the loaded library — so a def's ``inputs`` (KB display-names, not paths)
@@ -256,16 +268,28 @@ def render_task_instruction(root, task_def, objectives, input_path=None,
     else:
         read_line = "Inputs to read: %s." % inputs
     # T-120: inline resolvable existing inputs so they need no discovery.
+    # T-124: a name the producer map misses (a KB workproduct with no producer,
+    # e.g. "Technical Specification") resolves through _INPUT_ALIASES to the real
+    # upstream artifacts — so the sub-run gets context instead of hunting.
     resolved, seen = [], set()
     pmap = _input_path_map(task_defs, exclude=task_def) if task_defs else {}
     for name in input_names:
-        rel = pmap.get(_norm(name))
-        if not rel or rel in seen:
-            continue
-        block = inline_file(root, rel, "Input — %s" % name)
-        if block:
-            resolved.append(block)
-            seen.add(rel)
+        candidates = []  # (label, relpath)
+        direct = pmap.get(_norm(name))
+        if direct:
+            candidates.append((name, direct))
+        else:
+            for akey in _INPUT_ALIASES.get(_norm(name), []):
+                arel = pmap.get(akey)
+                if arel:
+                    candidates.append(("%s (for %s)" % (Path(arel).name, name), arel))
+        for label, rel in candidates:
+            if rel in seen:
+                continue
+            block = inline_file(root, rel, "Input — %s" % label)
+            if block:
+                resolved.append(block)
+                seen.add(rel)
     parts = [
         "Perform the OpenUP task '%s' (role: %s). Produce the %s at %s, in "
         "service of these objectives:\n%s"
