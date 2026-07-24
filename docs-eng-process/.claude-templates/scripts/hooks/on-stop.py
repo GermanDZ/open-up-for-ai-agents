@@ -32,6 +32,7 @@ Hook event: Stop
 import json
 import os
 import re
+import shlex
 import subprocess
 import sys
 from pathlib import Path
@@ -42,7 +43,15 @@ from pathlib import Path
 # auto-log-commit hook appends a commit record to the lane shard AFTER each
 # commit, so the shard lags HEAD by one append exactly as agent-runs.jsonl used
 # to. Exempt the whole shard dir by prefix (filenames vary by date+lane).
-EXEMPT_DIRTY_PREFIXES = ("docs/agent-logs/runs/",)
+#
+# .claude/memory/bypass-log.md has the identical lag: validate-commit.py,
+# check-iteration.py, and gate-edits.py each append a bypass record to it
+# AFTER the commit they describe (the record names the commit that just
+# happened, which doesn't exist until it does). In this dev repo /.claude/*
+# is gitignored so the file never shows as dirty here, but downstream
+# projects that track it hit the same tail-chase on-stop was already fixed
+# for the run-log shards.
+EXEMPT_DIRTY_PREFIXES = ("docs/agent-logs/runs/", ".claude/memory/bypass-log.md")
 
 
 def is_exempt_dirty(path: str) -> bool:
@@ -203,15 +212,31 @@ def main() -> None:
                 # it — there is no new record and therefore no tail-chase. Fail
                 # open on any git error (e.g. missing identity): a stop hook must
                 # never trap the session.
+                #
+                # Add exactly the exempt paths that are actually dirty (not a
+                # fixed pathspec list) so this sweeps whichever hook-managed
+                # files exist in this project — e.g. bypass-log.md may not be
+                # tracked at all in a repo that gitignores .claude/.
+                exempt_paths = [
+                    porcelain_path(line) for line in dirty.splitlines()
+                    if is_exempt_dirty(porcelain_path(line))
+                ]
+                # Shell-quote each path and prefix the list with `--`: a git
+                # porcelain path can carry arbitrary bytes (the exempt prefix
+                # only constrains the head), so naive f'"{p}"' interpolation
+                # would let a crafted filename break out of the string. shlex
+                # neutralizes metacharacters; `--` stops a leading `-` from
+                # being read as a flag.
+                add_cmd = " ".join(shlex.quote(p) for p in exempt_paths)
                 code, _ = run(
-                    "git add docs/agent-logs/runs/ && "
-                    'git commit -m "chore(process): sweep run-log shards '
+                    f"git add -- {add_cmd} && "
+                    'git commit -m "chore(process): sweep hook-managed logs '
                     '[openup-skip]"',
                     cwd,
                 )
                 if code == 0:
                     print(
-                        "[on-stop] ✓ Swept the run-log shards into a "
+                        "[on-stop] ✓ Swept hook-managed logs into a "
                         "log-only commit — tree is clean.",
                         file=sys.stderr,
                     )
