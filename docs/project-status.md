@@ -8,7 +8,7 @@
 **Iteration Started**: 2026-06-18
 **Last Updated**: 2026-07-17
 **Updated By**: sync-status.py
-**Retrospective**: [iteration-77-retrospective.md](iteration-retrospectives/iteration-77-retrospective.md) — covers iterations 21–77 (2026-06-16 → 2026-07-14); first written retro since iteration 20
+**Retrospective**: [iteration-86-retrospective.md](iteration-retrospectives/iteration-86-retrospective.md) — covers iterations 78–86 (2026-07-15 → 2026-07-24), incl. quick fixes T-125/T-126; prev [iteration-77-retrospective.md](iteration-retrospectives/iteration-77-retrospective.md) (iterations 21–77)
 
 ## Notes
 
