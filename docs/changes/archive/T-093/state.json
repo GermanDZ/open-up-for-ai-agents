@@ -1,0 +1,21 @@
+{
+  "schema": 2,
+  "task_id": "T-093",
+  "iteration": 60,
+  "iteration_id": null,
+  "cycle": 1,
+  "phase": "construction",
+  "track": "quick",
+  "branch": "quick/T-093-roadmap-missing-fix",
+  "worktree": "/Users/germandz/personal-code/ai-dev-framework/open-up-for-ai-agents",
+  "session_id": "quick/T-093-roadmap-missing-fix",
+  "started_at": "2026-07-13T15:35:58Z",
+  "gates": {
+    "team_deployed": false,
+    "plan_persisted": false,
+    "log_written": true,
+    "roadmap_synced": true,
+    "retro_due": false
+  },
+  "iterations_since_retro": 4
+}

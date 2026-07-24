@@ -122,11 +122,38 @@ class ResolvePathTests(unittest.TestCase):
         self.assertEqual(d["lane"]["task"], "T-901")
 
     def test_promote_roadmap_task(self):
-        """No lanes at all, but a pending roadmap task → promote."""
+        """No lanes at all, but a pending roadmap task → plan-iteration (the
+        promote path, renamed to plan-iteration in T-078; legacy_path == promote)."""
         write_roadmap(self.root, [("T-950", "pending")])
         d = self.decision()
-        self.assertEqual(d["path"], "promote")
-        self.assertEqual(d["lane"]["task"], "T-950")
+        self.assertEqual(d["path"], "plan-iteration")
+        self.assertEqual(d.get("legacy_path"), "promote")
+        self.assertEqual((d.get("lane") or {}).get("task"), "T-950")
+
+    def _write_process_map(self):
+        d = self.root / "docs-eng-process"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "process-map.yaml").write_text(
+            "phases:\n  inception: [initiate-project]\n"
+            "activities:\n  initiate-project: { role: analyst, "
+            "skills: [openup-create-vision] }\n"
+            "phase_letters:\n  inception: I\n", encoding="utf-8")
+
+    def test_fresh_inception_plans_from_map(self):
+        """T-101: a fresh authoring phase (inception; unmet machine criteria) with
+        no roadmap and a process map → plan-iteration, phase-driven (no lane)."""
+        self._write_process_map()  # no roadmap, no vision, no state
+        d = self.decision()
+        self.assertEqual(d["path"], "plan-iteration")
+        self.assertEqual(d["phase"], "inception")
+        self.assertEqual(d.get("legacy_path"), "plan-fresh")
+        self.assertIsNone(d.get("lane"))
+
+    def test_fresh_without_process_map_stays_noop(self):
+        """Fail-open: no process map → the fresh trigger cannot resolve
+        activities, so it does not fire (noop), never a crash."""
+        d = self.decision()  # no process-map.yaml seeded
+        self.assertEqual(d["path"], "noop")
 
     def test_promote_matches_roadmap_next(self):
         """resolve's promote pick == `openup-roadmap.py next` (no divergence)."""

@@ -1,0 +1,3 @@
+{"event": "session_begin", "task_id": "T-087", "goal": "Getting-started doc for running your own project with the reference driver + your LLM (new + adopt scenarios)", "branch": "feat/T-087-driver-getting-started", "phase": "construction", "ts": "2026-07-13T14:13:25Z"}
+{"run_id": "36210df218fa47f7b89cf97584a6f9ff", "event": "commit", "task_id": "T-087", "branch": "feat/T-087-driver-getting-started", "sha": "79b053582622a6d73be2f897b67a4c787b64f64b", "model": null, "session_id": "feat/T-087-driver-getting-started", "ts": "2026-07-13T14:15:37Z"}
+{"event": "session_end", "task_id": "T-087", "ts": "2026-07-13T14:16:15Z"}

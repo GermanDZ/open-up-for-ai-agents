@@ -589,6 +589,43 @@ Rubric-based readiness assessment before task completion or phase transition
 
 **See Also**: `openup-complete-task` · `openup-retrospective` · `openup-phase-review`
 
+### /openup-assess-iteration
+
+Run OpenUP Assess Results at iteration end — check evaluation criteria, demo only completed acceptance-tested work, feed discovered work back, and trigger the milestone review at a phase boundary
+
+**Model**: `sonnet`
+
+**When NOT to Use**
+
+- A single lane finished → `/openup-complete-task` (this assesses the *whole
+  iteration*, after all its lanes are complete).
+- The iteration still has unfinished work items → keep working them (`resolve`
+  would return `pick`/`resume`, not `assess-iteration`).
+- Whole-project reflection / cadence retro → `/openup-retrospective` (this skill
+  *composes* it for the retro half — see step 5 — rather than replacing it).
+
+**Success Criteria**
+
+- [ ] The iteration-plan instance's **evaluation criteria** are each graded met /
+      unmet against repo evidence.
+- [ ] The demo scope lists **only completed, acceptance-tested** work items;
+      anything incomplete or untested is excluded and re-queued.
+- [ ] Discovered work / defects are enqueued as pending roadmap items.
+- [ ] An **`## Assessment`** section is written into the iteration-plan instance
+      (the assessed marker `resolve` reads to stop re-offering this path).
+- [ ] If the Development Case marks the phase's exit criteria met, the next move
+      named is `/openup-phase-review` — the phase is **not** advanced here.
+
+**Fit**:
+- Great fit: closing a phase-aware iteration, the loop's convergence step, deciding whether a phase is ready for its milestone
+- OK fit: a human manually assessing an iteration mid-program
+- Poor fit: single-task wrap-ups (use /openup-complete-task), the whole-project retro (use /openup-retrospective), planning the next iteration (use /openup-start-iteration)
+
+**Arguments**:
+- `iteration_id` (optional) — The minted iteration to assess (e.g. C3). Optional — the board's assess-iteration decision supplies it; omit to assess the active iteration.
+
+**See Also**: `openup-next` · `openup-phase-review` · `openup-retrospective` · `openup-create-iteration-plan`
+
 ### /openup-complete-task
 
 Mark a task as complete, update roadmap, commit changes, and prepare traceability logs
@@ -663,6 +700,36 @@ Create a pull request with proper description linking to roadmap task context
 - `base` (optional) — Base branch to merge into (e.g., main, develop). Auto-detected if not provided.
 
 **See Also**: `openup-complete-task` · `openup-start-iteration`
+
+### /openup-cycle
+
+Execute an already-claimed lane's Operations boxes with script/judgment classification — script steps run directly with zero self-brief, judgment steps self-brief and execute. Handles only pick/resume; every other resolve path routes to /openup-next.
+
+**Model**: `inherit`
+
+**Success Criteria**
+
+After this skill completes, ALL of these must be true:
+- [ ] `openup-board.py resolve` was called once. If `.path` is not `pick` or
+      `resume`, the cycle routed to `/openup-next` and stopped — it did not
+      attempt to plan, assess, or replenish.
+- [ ] A `resume` carrying `resumable_input` folded the answer into the spec via
+      `/openup-create-task-spec` (fix-spec-first) before any box ran.
+- [ ] Every Operations box that ran was gated (fence + check-docs) before its
+      checkbox was ticked; a gate failure left the box unticked and stopped the
+      cycle.
+- [ ] The cycle exited through `/openup-complete-task` or
+      `/openup-create-handoff` — never a raw commit, never a third path.
+
+**Fit**:
+- Great fit: advancing a lane whose Operations boxes are mostly mechanical script calls, an outer loop repeating pure delivery cycles once planning is done, minimizing self-brief overhead on gate/sync/scaffold-heavy lanes
+- OK fit: a lane with a mix of script and judgment boxes
+- Poor fit: no active lane and nothing pickable — use /openup-next (needs plan-iteration), an iteration needing assess-iteration or milestone-review — use /openup-next, a stuck backlog needing consent-gated replenishment — use /openup-next
+
+**Arguments**:
+- `task_id` (optional) — Optional. Force a specific lane instead of the board's top pick (must still be pickable). Omit to take the top READY collision-free lane.
+
+**See Also**: `openup-next` · `openup-start-iteration` · `openup-complete-task` · `openup-create-handoff` · `openup-create-task-spec`
 
 ### /openup-deploy-team
 
@@ -892,45 +959,41 @@ Run a full orchestrated iteration — PM decomposes the goal, delegates to speci
 
 ### /openup-phase-review
 
-Check phase completion criteria and prepare for phase review
+Run the phase milestone go/no-go — prepare derived evidence, pause for the human decision via an input-request, and record the milestone (never advance the phase itself)
 
 **Model**: `inherit`
 
-**When to Use**
-
-Use this skill when:
-- Nearing end of a phase and need to check completion
-- Preparing for phase review meeting with stakeholders
-- Assessing readiness to move to next phase
-- Generating phase summary documentation
-- Need to demonstrate phase accomplishments
-
 **When NOT to Use**
 
-Do NOT use this skill when:
-- Just starting a phase (use phase skill instead)
-- Need to complete iteration tasks (use `/openup-complete-task`)
-- Looking for iteration planning (use `/openup-create-iteration-plan`)
-- Phase is clearly not complete (continue work first)
+- Just starting a phase → the phase skill (`/openup-inception` …).
+- A lane finished / iteration to assess → `/openup-complete-task` /
+  `/openup-assess-iteration` (assess-iteration is what *precedes* and triggers
+  this at a phase boundary).
+- The phase is clearly not done → keep delivering; `resolve` returns
+  `plan-iteration`, not `milestone-review`, until the roadmap is drained and the
+  exit criteria are met.
 
 **Success Criteria**
 
-After using this skill, verify:
-- [ ] All phase completion criteria are checked
-- [ ] Missing items are clearly identified
-- [ ] Phase review summary is generated
-- [ ] Recommendations for next phase are provided
-- [ ] User knows what decisions are needed
+- [ ] The phase + cycle and per-criterion state are read from
+      `openup-lifecycle.py status` (derived, not hand-judged).
+- [ ] A milestone **input-request** carries the go/no-go to the human; the loop
+      exits DONE ("milestone-review pending human input") while it is unanswered.
+- [ ] On an answered **GO**, `docs/product/milestones/<phase>-<cycle>.md` is
+      written; the phase is **not** set directly.
+- [ ] On **NO-GO / CONDITIONAL**, the decision is recorded and the follow-on work
+      is re-queued (Construction resumes in `cycle`+1 on NO-GO).
+- [ ] The request is archived after it is processed.
 
 **Fit**:
-- Great fit: end-of-phase milestone evaluation, transition gate decisions
-- OK fit: mid-phase sanity check on completion criteria
-- Poor fit: within-iteration progress checks, single-task decisions
+- Great fit: end-of-phase milestone go/no-go, the loop's milestone-review pause, recording a stakeholder LCO/LCA/IOC/PR decision
+- OK fit: a human mid-phase sanity check on completion criteria
+- Poor fit: within-iteration progress checks, single-task decisions, planning the next iteration (use /openup-start-iteration)
 
 **Arguments**:
-- `phase` (optional) — The phase to review (inception, elaboration, construction, transition)
+- `phase` (optional) — The phase to review (optional — derived from openup-lifecycle.py when omitted)
 
-**See Also**: `openup-inception` · `openup-elaboration` · `openup-construction` · `openup-transition`
+**See Also**: `openup-assess-iteration` · `openup-request-input` · `openup-next`
 
 ### /openup-plan-feature
 
@@ -1236,9 +1299,11 @@ Every available skill, grouped. Generated by `scripts/check-skills-guide.py`.
 | `/openup-detail-use-case` | Artifact | Transform a high-level use case into detailed scenarios with test cases |
 | `/openup-shared-vision` | Artifact | Create shared technical vision for team alignment |
 | `/openup-assess-completeness` | Workflow | Rubric-based readiness assessment before task completion or phase transition |
+| `/openup-assess-iteration` | Workflow | Run OpenUP Assess Results at iteration end — check evaluation criteria, demo only completed acceptance-tested work, feed discovered work back, and trigger the milestone review at a phase boundary |
 | `/openup-complete-task` | Workflow | Mark a task as complete, update roadmap, commit changes, and prepare traceability logs |
 | `/openup-create-handoff` | Workflow | Produce a handoff brief (acceptance criteria, test cases, troubleshooting, open questions) for a change, so the next owner can pick it up cold |
 | `/openup-create-pr` | Workflow | Create a pull request with proper description linking to roadmap task context |
+| `/openup-cycle` | Workflow | Execute an already-claimed lane's Operations boxes with script/judgment classification — script steps run directly with zero self-brief, judgment steps self-brief and execute. Handles only pick/resume; every other resolve path routes to /openup-next. |
 | `/openup-deploy-team` | Workflow | Deploy an OpenUP agent team to work on the current iteration |
 | `/openup-doctor` | Workflow | Read-only project health check — framework/manifest drift, .openup/state.json integrity, and aggregation of existing --check validators |
 | `/openup-explore` | Workflow | Sanctioned pre-iteration mode — think through ideas, investigate problems, sketch options before committing to delivery |
@@ -1247,7 +1312,7 @@ Every available skill, grouped. Generated by `scripts/check-skills-guide.py`.
 | `/openup-log-run` | Workflow | Create traceability logs (markdown + JSONL) for the current agent run |
 | `/openup-next` | Workflow | Run ONE OpenUP delivery cycle — resume the active iteration if one stopped mid-work, else claim the top READY lane, else promote the next pending roadmap task and start it. Always advances; only no-ops when nothing is left to do. The sequential continue-loop. |
 | `/openup-orchestrate` | Workflow | Run a full orchestrated iteration — PM decomposes the goal, delegates to specialist roles, collects outputs, and synthesizes results |
-| `/openup-phase-review` | Workflow | Check phase completion criteria and prepare for phase review |
+| `/openup-phase-review` | Workflow | Run the phase milestone go/no-go — prepare derived evidence, pause for the human decision via an input-request, and record the milestone (never advance the phase itself) |
 | `/openup-plan-feature` | Workflow | Generate iteration plan and roadmap entry for a feature idea |
 | `/openup-quick-task` | Workflow | Fast iteration mode for small changes - simplified workflow with minimal overhead |
 | `/openup-readiness` | Workflow | Compute the change-folder dependency DAG and print READY/BLOCKED/collision report for PM intake |

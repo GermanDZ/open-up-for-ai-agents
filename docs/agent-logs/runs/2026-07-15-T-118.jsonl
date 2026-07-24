@@ -1,0 +1,5 @@
+{"run_id": "T-118-run1", "event": "session_begin", "task_id": "T-118", "goal": "Task-def authoring instruction names the concrete input path (kills glob-thrash)", "branch": "feat/T-118-input-path", "phase": "construction", "ts": "2026-07-15T12:51:46Z"}
+{"run_id": "d6cd7174fbf047eb8470e3ab4fbf5422", "event": "commit", "task_id": "T-118", "branch": "feat/T-118-input-path", "sha": "1d79d3f259eb7538cb3e767eb1102f8230889892", "model": null, "session_id": "feat/T-118-input-path", "ts": "2026-07-15T12:55:15Z"}
+{"run_id": "f44b1f8ead5a40f9967fc49fa92931af", "event": "commit", "task_id": "T-118", "branch": "feat/T-118-input-path", "sha": "067e2422556ede564b5495d9350cd2c685dc3fca", "model": null, "session_id": "feat/T-118-input-path", "ts": "2026-07-15T12:55:56Z"}
+{"event": "iteration_complete", "task_id": "T-118", "branch": "feat/T-118-input-path", "phase": "construction", "ts": "2026-07-15T12:56:16Z"}
+{"event": "session_end", "task_id": "T-118", "ts": "2026-07-15T12:56:16Z"}

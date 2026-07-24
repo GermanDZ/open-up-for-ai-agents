@@ -707,7 +707,49 @@ class OnStopTests(unittest.TestCase):
         head_after = git(self.repo.dir, "rev-parse", "HEAD").stdout.strip()
         self.assertNotEqual(head_before, head_after, "sweep commit expected off trunk")
         last_msg = git(self.repo.dir, "log", "-1", "--format=%s").stdout
-        self.assertIn("sweep run-log shards", last_msg)
+        self.assertIn("sweep hook-managed logs", last_msg)
+
+    def test_exempt_bypass_log_dirty_does_not_block(self):
+        # A downstream project that tracks .claude/memory/bypass-log.md hits
+        # the same lag-by-one-append pattern as the run-log shards: validate-
+        # commit.py appends a bypass record AFTER the commit it describes.
+        # With gates satisfied and ONLY the bypass log dirty, on-stop must
+        # allow stop (and sweep it) rather than tail-chase forever.
+        self._commit_on_branch()
+        state_cli(self.repo.state_dir, "set-gate", "log_written", "true")
+        state_cli(self.repo.state_dir, "set-gate", "roadmap_synced", "true")
+        log = self.repo.dir / ".claude" / "memory" / "bypass-log.md"
+        log.parent.mkdir(parents=True, exist_ok=True)
+        log.write_text("# Bypass Log\n")
+        git(self.repo.dir, "add", "-A")
+        git(self.repo.dir, "commit", "-q", "-m", "chore: track bypass log [T-006]")
+        with log.open("a") as fh:
+            fh.write("- commit deadbeef bypassed validate-commit\n")
+        st = git(self.repo.dir, "status", "--porcelain").stdout.strip()
+        self.assertIn(".claude/memory/bypass-log.md", st)
+        proc = run_hook("on-stop.py", self._stop_payload(), self.repo.dir)
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+
+    def test_feature_branch_sweeps_bypass_log_too(self):
+        # Off trunk, the sweep must pick up bypass-log.md alongside (or
+        # instead of) the run-log shard — not just the hardcoded shard dir.
+        git(self.repo.dir, "checkout", "-q", "-b", "feature/T-006-y")
+        state_cli(self.repo.state_dir, "set-gate", "log_written", "true")
+        state_cli(self.repo.state_dir, "set-gate", "roadmap_synced", "true")
+        log = self.repo.dir / ".claude" / "memory" / "bypass-log.md"
+        log.parent.mkdir(parents=True, exist_ok=True)
+        log.write_text("# Bypass Log\n")
+        git(self.repo.dir, "add", "-A")
+        git(self.repo.dir, "commit", "-q", "-m", "chore: track bypass log [T-006]")
+        with log.open("a") as fh:
+            fh.write("- commit deadbeef bypassed validate-commit\n")
+        head_before = git(self.repo.dir, "rev-parse", "HEAD").stdout.strip()
+        proc = run_hook("on-stop.py", self._stop_payload(), self.repo.dir)
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        head_after = git(self.repo.dir, "rev-parse", "HEAD").stdout.strip()
+        self.assertNotEqual(head_before, head_after, "sweep commit expected")
+        st = git(self.repo.dir, "status", "--porcelain").stdout
+        self.assertNotIn(".claude/memory/bypass-log.md", st)
 
 
 # --------------------------------------------------------------------------

@@ -25,9 +25,14 @@ aggregation over the existing read-only / ``--check`` validators:
      of truth that drifts). Tools with no read-only mode (e.g. ``sync-status.py``
      writes) are intentionally excluded — see docs/changes/T-053/design.md DD1.
 
-Doctor is strictly diagnostic: it never writes, mutates, or fixes anything.
-Fixes stay in their owning scripts (``sync-from-framework.sh``, ``sync-status.py``,
-the derived-view generators).
+By default doctor is strictly diagnostic: it never writes, mutates, or fixes
+anything. The opt-in ``--fix`` mode (T-117) applies **auto-heal-class** findings —
+those whose file is a pure function of tracked inputs (stale derived/mirror views,
+a single-valued unset ``plan_persisted`` gate) — by **invoking the owning
+fix-script** (``sync-status.py --reconcile``, the derived-view generators,
+``openup-state.py set-gate``); it never reimplements a fix (DD1). Confirm-class
+findings are applied only under ``--fix --confirm``; human-judgment-only findings
+are never auto-applied. Fixes always stay in their owning scripts.
 
 Severity model:
   error    corrupt/unreadable .openup/state.json; a manifest-listed CLI missing;
@@ -43,6 +48,7 @@ Exit codes:
 
 Usage:
   python3 scripts/openup-doctor.py [--repo-root DIR] [--framework-path DIR] [--json]
+                                   [--fix [--confirm]]
 """
 
 from __future__ import annotations
@@ -60,16 +66,35 @@ INFO = "info"
 _RANK = {ERROR: 2, WARNING: 1, INFO: 0}
 
 
-class Finding:
-    __slots__ = ("severity", "check", "message")
+# ── Fix class (T-117) ────────────────────────────────────────────────────────
+# Three-way classification of a finding's remediability (exploration
+# 2026-07-15-self-healing-interrupted-process-state.md §2):
+#   auto    — the file is a pure function of tracked inputs; regenerating cannot
+#             lose information. Applied non-interactively by `--fix`.
+#   confirm — mechanical to propose but touches persisted intent / destructive if
+#             the diagnosis is wrong. Applied only under `--fix --confirm`.
+#   human   — recovering or inventing intent; never auto-applied.
+AUTO = "auto"
+CONFIRM = "confirm"
+HUMAN = "human"
 
-    def __init__(self, severity: str, check: str, message: str):
+
+class Finding:
+    __slots__ = ("severity", "check", "message", "fix_class", "fix_cmd")
+
+    def __init__(self, severity: str, check: str, message: str,
+                 fix_class: str | None = None, fix_cmd: list | None = None):
         self.severity = severity
         self.check = check
         self.message = message
+        # fix_class ∈ {AUTO, CONFIRM, HUMAN, None}; fix_cmd is argv relative to
+        # scripts/ (e.g. ["docs-index.py"]) that `--fix` invokes to heal it.
+        self.fix_class = fix_class
+        self.fix_cmd = fix_cmd
 
     def as_dict(self) -> dict:
-        return {"severity": self.severity, "check": self.check, "message": self.message}
+        return {"severity": self.severity, "check": self.check, "message": self.message,
+                "fix_class": self.fix_class, "fix_cmd": self.fix_cmd}
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
@@ -229,12 +254,36 @@ _AGGREGATED = [
     ("build-trace-model.py --check", ["build-trace-model.py", "--check"], WARNING),
     ("check-skills-guide.py --check", ["check-skills-guide.py", "--check"], WARNING),
     ("check-model-tiers.py --check", ["check-model-tiers.py", "--check"], WARNING),
+    ("render-skills-mirror.py --check", ["render-skills-mirror.py", "--check"], WARNING),
     ("check-claude-sync.sh", ["check-claude-sync.sh"], WARNING),
 ]
 
 
 def _interp(script_name: str):
     return ["bash"] if script_name.endswith(".sh") else ["python3"]
+
+
+# Auto-heal-class owning generators (T-117): a failed aggregate --check is a stale
+# derived view whose regeneration is the *defined* repair. Keyed by aggregate label
+# → the owning script's write-mode argv (relative to scripts/). Doctor invokes
+# these, never reimplements them (DD1). Order-independent: apply_fixes re-runs the
+# owning generators in dependency order (trace-model before the index it feeds).
+_AUTO_FIX = {
+    "docs-index.py --check": ["docs-index.py"],
+    "build-trace-model.py --check": ["build-trace-model.py"],
+    "render-skills-mirror.py --check": ["render-skills-mirror.py", "--write"],
+    "check-claude-sync.sh": ["sync-templates-to-claude.sh"],
+}
+
+# Dependency order for applying auto fixes: lower runs first. build-trace-model
+# writes trace-model.json which docs-index reads, so it must precede docs-index.
+_FIX_ORDER = {
+    "build-trace-model.py": 0,
+    "sync-templates-to-claude.sh": 1,
+    "render-skills-mirror.py": 1,
+    "sync-status.py": 1,
+    "docs-index.py": 2,
+}
 
 
 def check_aggregate(repo: str) -> list[Finding]:
@@ -255,7 +304,9 @@ def check_aggregate(repo: str) -> list[Finding]:
             out.append(Finding(INFO, chk, f"{label}: could not run ({output})"))
         else:
             tail = (output.splitlines() or [""])[-1][:200]
-            out.append(Finding(sev, chk, f"{label}: failed (exit {code}) {tail}".rstrip()))
+            fix = _AUTO_FIX.get(label)
+            out.append(Finding(sev, chk, f"{label}: failed (exit {code}) {tail}".rstrip(),
+                               fix_class=AUTO if fix else None, fix_cmd=fix))
 
     # Fence is lane-diff-scoped: only meaningful with an active lane (DD1).
     fence = os.path.join(scripts_dir, "openup-fence.py")
@@ -289,8 +340,135 @@ def check_section_status_drift(repo: str) -> list[Finding]:
     for task_id in drifted:
         out.append(Finding(WARNING, chk,
                            f"{task_id}: archived but roadmap Status not 'completed' — "
-                           f"run `python3 scripts/sync-status.py --reconcile`"))
+                           f"run `python3 scripts/sync-status.py --reconcile`",
+                           fix_class=AUTO, fix_cmd=["sync-status.py", "--reconcile"]))
     return out
+
+
+def check_plan_gate(repo: str) -> list[Finding]:
+    """Detect a single-valued unset `plan_persisted` gate (T-117 / heal-class C).
+
+    When an active lane's `gates.plan_persisted` is falsy but its
+    `docs/changes/<id>/plan.md` demonstrably exists, the gate's correct value is a
+    *lookup, not a judgment* — so this is auto-heal-class. The owning fix is
+    `openup-state.py set-gate` (doctor never edits state itself). Read-only here;
+    the fix runs only under `--fix`."""
+    out: list[Finding] = []
+    chk = "plan-gate"
+    state_file = os.path.join(repo, ".openup", "state.json")
+    if not os.path.isfile(state_file):
+        return out
+    try:
+        with open(state_file, encoding="utf-8") as fh:
+            state = json.load(fh)
+    except (OSError, ValueError):
+        return out  # corrupt state is check_state_integrity's job, not ours
+    gates = state.get("gates") or {}
+    if gates.get("plan_persisted"):
+        return out  # already set — nothing to heal
+    task_id = state.get("task_id") or state.get("task")
+    if not task_id:
+        return out
+    plan_rel = os.path.join("docs", "changes", str(task_id), "plan.md")
+    if not os.path.isfile(os.path.join(repo, plan_rel)):
+        return out  # no plan to point at — not the single-valued case
+    out.append(Finding(WARNING, chk,
+                       f"{task_id}: gates.plan_persisted unset but {plan_rel} exists — "
+                       f"run `python3 scripts/openup-state.py set-gate plan_persisted {plan_rel}`",
+                       fix_class=AUTO,
+                       fix_cmd=["openup-state.py", "set-gate", "plan_persisted", plan_rel]))
+    return out
+
+
+def check_process_config(repo: str) -> list[Finding]:
+    """Report the Development Case (`process:` section of docs/project-config.yaml,
+    T-076) status. Read-only: reuses check-docs.py's structural validator. INFO
+    when absent/valid, WARNING (never ERROR) when malformed — the human-readable
+    pointer at check-docs.py, which is the actual gate (run by check_aggregate)."""
+    import importlib.util
+    out: list[Finding] = []
+    chk = "process-config"
+    config = os.path.join(repo, "docs", "project-config.yaml")
+    checker = os.path.join(repo, "scripts", "check-docs.py")
+    if not os.path.isfile(checker):
+        return out
+    if not os.path.isfile(config):
+        out.append(Finding(INFO, chk,
+                           "no docs/project-config.yaml — framework defaults apply"))
+        return out
+    try:
+        spec = importlib.util.spec_from_file_location("_openup_check_docs", checker)
+        cd = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(cd)  # type: ignore[union-attr]
+        from pathlib import Path
+        findings = cd.validate_process_config(Path(config))
+        process = cd.parse_process_section(Path(config).read_text(encoding="utf-8"))
+    except Exception as exc:  # never let a diagnostic crash the doctor
+        out.append(Finding(INFO, chk, f"could not check ({exc})"))
+        return out
+    if process is None:
+        out.append(Finding(INFO, chk,
+                           "no `process:` section — framework defaults apply"))
+        return out
+    if findings:
+        for f in findings:
+            out.append(Finding(WARNING, chk,
+                               f"invalid `process:` section — {f.message} "
+                               f"(run `python3 scripts/check-docs.py`)"))
+    else:
+        arche = process.get("archetype", "?")
+        out.append(Finding(INFO, chk, f"Development Case: archetype={arche}"))
+    return out
+
+
+# ── Detection + fix orchestration ─────────────────────────────────────────────
+def detect_all(repo: str, framework_path: str | None) -> list[Finding]:
+    """Run every read-only check and return the collated findings."""
+    findings: list[Finding] = []
+    findings += check_framework_drift(repo, framework_path)
+    findings += check_state_integrity(repo)
+    findings += check_aggregate(repo)
+    findings += check_section_status_drift(repo)
+    findings += check_plan_gate(repo)
+    findings += check_process_config(repo)
+    return findings
+
+
+def apply_fixes(repo: str, findings: list[Finding], confirm: bool,
+                framework_path: str | None) -> tuple[list[Finding], list[str]]:
+    """Invoke owning fix-scripts for remediable findings, then re-detect (T-117).
+
+    AUTO-class fixes always run; CONFIRM-class fixes run only when ``confirm`` is
+    set (otherwise they are left as printed proposals). HUMAN-class findings and
+    findings without a ``fix_cmd`` are never touched. Doctor delegates to the
+    owning scripts — it never reimplements a fix (DD1). Returns
+    ``(post_fix_findings, applied_labels)``."""
+    to_apply = {}  # dedupe by fix_cmd; last-write of the same argv wins
+    for f in findings:
+        if not f.fix_cmd:
+            continue
+        if f.fix_class == AUTO or (f.fix_class == CONFIRM and confirm):
+            to_apply[tuple(f.fix_cmd)] = f.fix_cmd
+    applied: list[str] = []
+    scripts_dir = os.path.join(repo, "scripts")
+    ordered = sorted(to_apply.values(), key=lambda c: _FIX_ORDER.get(c[0], 5))
+    for argv in ordered:
+        script_path = os.path.join(scripts_dir, argv[0])
+        if not os.path.isfile(script_path):
+            applied.append(f"SKIP {' '.join(argv)} (script absent)")
+            continue
+        cmd = _interp(argv[0]) + [script_path] + argv[1:]
+        code, output = run(cmd, repo)
+        status = "ok" if code == 0 else f"exit {code}"
+        applied.append(f"{'ran' if code == 0 else 'FAILED'} {' '.join(argv)} ({status})")
+    return detect_all(repo, framework_path), applied
+
+
+def unapplied_proposals(findings: list[Finding], confirm: bool) -> list[Finding]:
+    """CONFIRM-class findings left as proposals (only when --confirm is absent)."""
+    if confirm:
+        return []
+    return [f for f in findings if f.fix_class == CONFIRM and f.fix_cmd]
 
 
 # ── Reporting ────────────────────────────────────────────────────────────────
@@ -322,6 +500,12 @@ def main(argv=None) -> int:
                              "drift detection (offline-degraded if omitted)")
     parser.add_argument("--json", action="store_true",
                         help="emit a single JSON object of findings instead of text")
+    parser.add_argument("--fix", action="store_true",
+                        help="apply auto-heal-class findings by invoking their owning "
+                             "scripts, then re-report (opt-in; default stays read-only)")
+    parser.add_argument("--confirm", action="store_true",
+                        help="with --fix, also apply confirm-class findings (else they "
+                             "are printed as proposals only)")
     args = parser.parse_args(argv)
 
     repo = resolve_repo_root(args.repo_root)
@@ -333,22 +517,34 @@ def main(argv=None) -> int:
             print(f"openup-doctor: {msg}", file=sys.stderr)
         return 2
 
-    findings: list[Finding] = []
-    findings += check_framework_drift(repo, args.framework_path)
-    findings += check_state_integrity(repo)
-    findings += check_aggregate(repo)
-    findings += check_section_status_drift(repo)
+    findings = detect_all(repo, args.framework_path)
 
+    applied: list[str] = []
+    if args.fix:
+        findings, applied = apply_fixes(repo, findings, args.confirm, args.framework_path)
+
+    proposals = unapplied_proposals(findings, args.confirm)
     has_error = any(f.severity == ERROR for f in findings)
 
     if args.json:
         print(json.dumps({
             "repo_root": repo,
             "ok": not has_error,
+            "fixed": args.fix,
+            "applied": applied,
             "findings": [f.as_dict() for f in findings],
         }, indent=2))
     else:
+        if applied:
+            print("Applied fixes:")
+            for line in applied:
+                print(f"  · {line}")
+            print()
         print(render_human(findings))
+        if proposals:
+            print("\nConfirm-class proposals (re-run with --fix --confirm to apply):")
+            for f in proposals:
+                print(f"  ? [{f.check}] {f.message}")
 
     return 1 if has_error else 0
 

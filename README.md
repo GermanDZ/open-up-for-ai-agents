@@ -14,6 +14,7 @@ This template organizes documentation into two distinct areas:
 **Start here**: [AGENTS.md](AGENTS.md) → [docs-eng-process/README.md](docs-eng-process/README.md)
 
 - **Running agents via CLI**: See [RUNNING-AGENTS.md](RUNNING-AGENTS.md) for instructions on using Cursor CLI or Claude Code to execute tasks following the OpenUP process.
+- **Harness-free / local models**: Run a delivery cycle with no harness on any OpenAI-compatible endpoint (LM Studio, Ollama, vLLM, OpenAI) via the reference driver — see [docs-eng-process/reference-driver.md](docs-eng-process/reference-driver.md).
 - **Complete agent workflow**: The full operating procedures are documented in [docs-eng-process/agent-workflow.md](docs-eng-process/agent-workflow.md).
 
 ### For Users - Getting Started

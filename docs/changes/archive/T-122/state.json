@@ -1,0 +1,21 @@
+{
+  "schema": 2,
+  "task_id": "T-122",
+  "iteration": 84,
+  "iteration_id": null,
+  "cycle": 1,
+  "phase": "construction",
+  "track": "standard",
+  "branch": "fix/T-122-process-gate-fixes",
+  "worktree": "/Users/germandz/personal-code/ai-dev-framework/open-up-for-ai-agents",
+  "session_id": "fix/T-122-process-gate-fixes",
+  "started_at": "2026-07-16T16:32:55Z",
+  "gates": {
+    "team_deployed": false,
+    "plan_persisted": "docs/changes/T-122/plan.md",
+    "log_written": true,
+    "roadmap_synced": true,
+    "retro_due": false
+  },
+  "iterations_since_retro": 0
+}

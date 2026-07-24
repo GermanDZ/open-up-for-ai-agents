@@ -48,6 +48,125 @@ After this skill completes, ALL of these must be true:
 
 ## Process
 
+### 0a. Two modes — single-lane start vs Plan Iteration (T-077)
+
+This skill has **two entry modes**, chosen by whether a concrete `task_id` was
+handed in:
+
+- **Single-lane start** (a `task_id` is given — a human names a task, or
+  `/openup-next` resolved one lane). This is the classic flow: steps 0–9 below
+  create a branch/worktree for that one task and begin it. **Unchanged.**
+- **Plan Iteration** (no `task_id` — the board's `plan-iteration` decision, or a
+  human running `/openup-start-iteration` with no argument). Instead of starting
+  one hand-named task, **plan a phase-appropriate iteration**: derive the phase,
+  mint an iteration id, choose 1–5 objectives, and generate the iteration's
+  work-item lanes *from the process map* — then start its first lane through the
+  single-lane flow. Run **§0b**, then rejoin at step 3.
+
+The guard is exactly step 0's guard (*was I handed a `task_id`?*), extended: no
+`task_id` **and** no pre-resolved lane ⇒ Plan Iteration (§0b).
+
+### 0b. Plan Iteration — generate phase-appropriate lanes from the map (T-077)
+
+Real **Plan Iteration** (KB §3): commit a set of work items to a named iteration
+instead of promoting one roadmap row. Everything deterministic is a script call;
+the only generative step is choosing objectives (the PM/analyst judgment the KB
+assigns to a human role).
+
+1. **Derive the phase** (never guess it):
+   ```bash
+   PHASE=$(python3 scripts/openup-lifecycle.py status --json | python3 -c 'import sys,json;print(json.load(sys.stdin)["phase"])')
+   ```
+
+2. **Read the Development Case** (T-076 tailoring) from `docs/project-config.yaml`
+   `process:` — the archetype sets iteration budget + ceremony. **If the archetype
+   resolves to `quick`, or this phase is `skipped`/single-iteration: degenerate to
+   one work item** — take the board's `lane.task` (the `plan-iteration` decision's
+   single next roadmap task) and go straight to the single-lane flow (step 3).
+   This is the efficiency guardrail: `quick` costs exactly today's promote path.
+
+3. **Mint the iteration id** and record it:
+   ```bash
+   ITER=$(python3 scripts/openup-process-map.py mint-iteration-id "$PHASE")   # e.g. C3
+   ```
+
+4. **Choose 1–5 objectives** (the generative step) from, in order: the **risk
+   list** (highest-exposure items first), the **PM value order** (roadmap pending
+   order — consume as given, never re-rank), and the **phase's objectives**. Keep
+   it to what one iteration can deliver.
+
+5. **Read the phase's activity composition** from the process map:
+   ```bash
+   python3 scripts/openup-process-map.py activities-for "$PHASE" --json
+   ```
+   Each entry is `{name, role, skills}` — the ordered activities OpenUP runs in
+   this phase (Inception → vision/use-case/risk with `analyst`; Elaboration →
+   architecture/increment/test; Construction → dev/test; per KB §4).
+
+6. **Sketch the candidate work items** — one per activity needed to meet the
+   objectives — deciding each one's planned `touches` and `depends-on` (you must
+   know these to author its spec anyway). Give each a neutral placeholder id for
+   now (`wi-1`, `wi-2`, …); the real cluster-prefixed id is assigned in step 6b
+   once the partition is known.
+
+6a. **Partition the candidates into non-colliding clusters (T-079).** Feed the
+   sketched items to the partitioner — it returns the **connected components** of
+   the `touches`-overlap ∪ `depends-on` graph, so distinct clusters are disjoint
+   in `touches` and dependency-free across clusters, hence safe to run as
+   **concurrent iterations**:
+   ```bash
+   echo '[{"id":"wi-1","touches":["scripts/x.py"],"depends-on":[]}, …]' \
+     | python3 scripts/openup-board.py partition --stdin
+   # → [["wi-1","wi-2"],["wi-3"]]   (one inner list per cluster)
+   ```
+   A **single** returned cluster is the common case (the `quick` archetype's
+   single work item is always one cluster) — it degenerates to exactly T-077's
+   one-iteration behavior. Parallelism appears **only** when the work is genuinely
+   disjoint; it is discovered from the structure of the work, never forced.
+
+6b. **Mint one named iteration per cluster and author its lanes.** The base
+   `mint-iteration-id` result (`$ITER`, e.g. `C3`) is the **first** cluster's id;
+   derive each subsequent cluster's id by **offsetting the ordinal by the cluster
+   index** (`C3`, `C4`, `C5`, …) — a deterministic rule that needs no lane
+   persisted between mints. For each cluster, in the base checkout (so the board
+   sees the lanes, like the promote path):
+   - reserve each member's id **under that cluster's prefix**:
+     `python3 scripts/openup-claims.py reserve-id --prefix "${CLUSTER_ITER}-" --pad 3 --session-id "$CLUSTER_ITER"` → `C3-001…`, `C4-001…`
+   - author its change-folder spec through the activity's own skill
+     (`/openup-create-task-spec` for change tasks; the activity `skills:` — e.g.
+     `/openup-create-use-case`, `/openup-create-architecture-notebook` — for
+     requirements/architecture work), with the activity `role` recorded as the
+     lane's **hat** in `## Operations`.
+   - add its roadmap row (on the base, committed with the spec folder — same
+     rule as step 6c: spec folder only, never the derived views).
+
+7. **Author one iteration-plan instance per cluster** —
+   `/openup-create-iteration-plan` — each recording its **minted iteration id**,
+   the objectives it serves, its committed work-item ids (`C3-001…` / `C4-001…`),
+   and its **evaluation criteria**. Each instance is the loop contract (§3.5) for
+   its iteration; the iteration id lives here (state carries only the *active*
+   lane's `iteration_id`, schema 2 — T-078).
+
+8. **Start the first lane of the first cluster** through the single-lane flow: set
+   `task_id` to that cluster's first committed work item and continue at **step 3**
+   (track select) → §5 (branch/worktree) → §6 (begin). Every other lane — in this
+   cluster and the others — is a READY change folder the board picks next.
+   - **Within** one active iteration the board's **iteration-scoped `pick`** works
+     only that iteration's lanes.
+   - **Across** clusters, the moment a second cluster's lane also holds a live
+     lease the board **un-scopes** (`_active_iteration_prefix` → `None`) and picks
+     the top collision-free lane across both — so disjoint clusters run
+     **concurrently**, each lane in its **own worktree** (branch-per-lane =
+     worktree-per-lane isolation, live-run F5; see
+     [parallel-lanes.md](../parallel-lanes.md)). An outer `/loop` or a second
+     agent begins the other cluster's first lane to actually parallelize.
+
+> **Concurrency is opt-in-by-structure.** With one cluster this is exactly T-077
+> (one iteration, one prefix, sequential). N iterations appear only when the
+> committed work items partition into ≥2 non-colliding clusters — no human
+> hand-wires the parallelism, and cross-iteration task ids never collide because
+> each carries its own iteration prefix.
+
 ### 0. Pre-resolved lane? Skip the re-read (T-065)
 
 When `/openup-next` calls this skill it has **already** resolved the lane in one

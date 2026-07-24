@@ -1,0 +1,40 @@
+# T-072 Handoff — Reference OpenAI-compatible driver (`openup-agent run`)
+
+**Status:** ready-for-review · **Branch:** feat/T-072-reference-driver · **For:** owner / reviewer
+**Last commit:** 10e23da — feat(T-072): reference OpenAI-compatible driver (openup-agent run) [T-072]
+**PR:** https://github.com/GermanDZ/open-up-for-ai-agents/pull/76 (base `harness-optional`)
+
+## 1. Acceptance criteria
+> From plan.md Requirements. All implemented + tested; the live-model run is the owner step.
+- [x] AC1 — `scripts/openup-agent.py run --dir --procedure` reads `LLM_API_URL`/`LLM_API_KEY`; fails fast (exit 2, no network) when `LLM_API_URL` is unset.
+- [x] AC2 — six-tool surface (`read_file`, `write_file`, `edit_file`, `glob`, `grep`, `exec`) advertised as OpenAI function defs and dispatched against `--dir`.
+- [x] AC3 — `exec` refuses anything outside the `git` / `python3 scripts/*.py` allowlist without spawning a process.
+- [x] AC4 — model resolved from the procedure `tier:` via `tier-map.yaml` **driver** column, `${ENV:-default}` expanded; unknown tier is a hard error.
+- [x] AC5 — driver runs `openup-fence.py check` + `check-docs.py` itself and re-injects failures; the sentinel is honored only when gates are clean.
+- [x] AC6 — loop terminates on sentinel, `--max-iterations` cap, or endpoint error — never unbounded.
+- [x] **AC-program (owner) — MET 2026-07-13 (T-086).** The driver drove a real
+  procedure cycle (`openup-create-vision`) end-to-end on a **non-Anthropic/local
+  model** (`qwen/qwen3.6-35b-a3b`, LM Studio), **3/3 fence-clean + validator-clean**,
+  producing genuine `docs/vision.md` docs — batch `.openup/bench/20260713-160244`.
+  **Scope:** proven on the create-vision authoring cycle; the `next` continue-loop is
+  heavier/inconsistent on this local model (model+ceremony weight, not a driver
+  defect — tracked separately). Full record in `design.md` §Live-model acceptance.
+
+## 2. How to exercise it (test cases)
+1. `python3 -m unittest scripts.tests.test_openup_agent scripts.tests.test_openup_agent_tools` → **38/38 pass**, hermetic (no network).
+2. CLI end-to-end (mock endpoint) → exit 0, prints `OPENUP-NEXT: DONE — …` to stdout, tool dispatched, gates clean. (A scripted `http.server` fixture drives it; see `test_openup_agent.py::HttpClientTest` for the real-urllib path.)
+3. `python3 scripts/openup-fence.py check --base harness-optional` → clean (12 files in lane).
+4. `python3 scripts/check-docs.py` → OK (8 instances).
+5. **Live acceptance (owner):** start LM Studio; `export LLM_API_URL=…/v1 LLM_API_KEY=… OPENUP_MODEL_MAIN=<model>`; `python3 scripts/openup-agent.py run --dir . --procedure next`. Expect an `OPENUP-NEXT: ADVANCED|DONE` sentinel with gates clean.
+
+## 3. Troubleshooting
+- **Pre-push fence blocked the push** → the `.githooks/pre-push` fence defaults its base to `origin/main`, which flags the entire T-071 program (procedures, pre-commit) as out-of-lane. The lane's real base is `harness-optional`; `openup-fence.py check --base harness-optional` is clean. Resolved by `SKIP_OPENUP_FENCE=1` for this push **after** verifying the correct-base fence. This is the recurring main-vs-`harness-optional` friction — the completion/pre-push tooling is not yet wired for the program's non-`main` integration branch.
+- **`validate-commit` rejected the subject** → the `[T-072]` tag must be in the commit **subject line**, not only the body. Fixed by appending `[T-072]` to the subject.
+- **5 failing tests in the full suite** (`check-model-tiers` ×4, `docs-index` ×1) → **pre-existing**, reproduced identically on a clean `harness-optional` worktree with no T-072 code (macOS `/private/var` symlink + a check-model-tiers fixture-isolation issue). Out of this lane's `touches`; not a regression. Detail in `design.md`.
+
+## 4. Open questions
+- **NEW follow-on (owner input) — human-answerable questions.** The driver needs tool support for questions a human must answer (blocking `request-input`, plan-gate approvals); T-072 scoped this out (auto-proceeds, DD6). Recommend the **product-manager** promote a roadmap entry (candidate **T-074 — human-in-the-loop input handling in the reference driver**), value-ordered vs T-073. Proposed shape (reuse the existing async input-request machinery) is in `design.md` §Follow-on.
+- **Interactive plan gate** — same family as the item above: the driver auto-proceeds today; a `--interactive` mode would govern both plan-gate approval and human questions.
+- **Merge mechanics** — PR #76 targets `harness-optional`. Merging into the integration branch is the owner's call (I did not auto-merge). The lane keeps its lease + state so `/openup-next` will not re-promote T-072; the open `origin` PR also trips the T-066 delivered-but-unmerged guard.
+- **T-073 precondition** — the FastAPI service stays gated on a *named consumer* (exploration Pushback 1). Not promotable until one exists.
+- Otherwise: none — spec assumptions (procedure-agnostic, one-model-per-run, stdlib-only, exec allowlist) are recorded as vetoable in `plan.md` / `design.md`.

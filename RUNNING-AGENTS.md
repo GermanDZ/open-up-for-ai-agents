@@ -373,6 +373,43 @@ You MUST follow [docs-eng-process/agent-workflow.md](docs-eng-process/agent-work
 PROMPT
 ```
 
+## Running with the harness-free reference driver (`openup-agent`)
+
+The two options above drive OpenUP through a **harness** (Cursor CLI or Claude Code).
+You can also run a delivery cycle with **no harness at all** — a plain Python loop
+against any **OpenAI-compatible** endpoint, including a local model in LM Studio,
+Ollama, or vLLM. This is the reference driver; it reads the neutral procedure pack
+directly and runs the deterministic OpenUP scripts itself.
+
+Use this when you want to run OpenUP on a non-Anthropic / local model, in CI, or
+anywhere Claude Code / Cursor isn't available.
+
+### Requirements
+
+Just `python3` (3.8+) and `git` — the driver is **stdlib-only** (no `pip install`).
+
+### One-shot run
+
+```bash
+# Point at any OpenAI-compatible endpoint (local example: LM Studio)
+export LLM_API_URL=http://localhost:1234/v1
+export LLM_API_KEY=lm-studio                 # any non-empty string for local servers
+export OPENUP_MODEL_MAIN=your-loaded-model   # a model the endpoint actually serves
+
+# Drive one procedure to completion (equivalent to /openup-next)
+python3 scripts/openup-agent.py run --dir . --procedure next
+```
+
+On success the driver prints the procedure's sentinel (e.g.
+`OPENUP-NEXT: ADVANCED — T-074`) to stdout and exits 0 — the same sentinel an outer
+loop reads from `/openup-next`. Model selection is by **tier** (no hardcoded model);
+enforcement (write-fence, doc validation) is run by the driver itself, so it does not
+depend on the model remembering to check.
+
+**Full guide** — configuration, per-endpoint recipes (LM Studio / Ollama / vLLM /
+OpenAI), the six-tool surface, exit codes, and troubleshooting:
+[docs-eng-process/reference-driver.md](docs-eng-process/reference-driver.md).
+
 ## Customizing the Prompt
 
 You can customize the prompt for specific tasks. For example, to grant permission to update state documents:
@@ -393,6 +430,7 @@ Focus on the task: "[Task ID or description from roadmap]"
 
 ## Additional Resources
 
+- [Reference driver (`openup-agent`)](docs-eng-process/reference-driver.md) - Run OpenUP harness-free on any OpenAI-compatible / local model
 - [Agent Workflow](docs-eng-process/agent-workflow.md) - Complete operating procedures
 - [Project Initialization](docs-eng-process/init-prompts.md) - Prompts for initializing new projects
 - [Getting Started](docs-eng-process/getting-started.md) - Manual project setup guide

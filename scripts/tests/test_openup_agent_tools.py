@@ -1,0 +1,219 @@
+#!/usr/bin/env python3
+"""Unit tests for the reference-driver six-tool surface (T-072).
+
+Run with either:
+    python3 -m unittest scripts.tests.test_openup_agent_tools
+    python3 scripts/tests/test_openup_agent_tools.py
+
+Hermetic: each test builds an isolated tmp working root; no network, no repo
+dependency. Exercises tools.Tools exactly as loop._dispatch_tool_calls would.
+"""
+
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from openup_agent import tools  # noqa: E402
+
+
+class ToolsTest(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp.name)
+        self.t = tools.Tools(self.root)
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def _write(self, rel, content):
+        p = self.root / rel
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(content, encoding="utf-8")
+        return p
+
+    # -- read_file --------------------------------------------------------
+    def test_read_file_full(self):
+        self._write("a.txt", "hello\nworld\n")
+        self.assertEqual(self.t.read_file("a.txt"), "hello\nworld\n")
+
+    def test_read_file_offset_limit(self):
+        self._write("a.txt", "l0\nl1\nl2\nl3\n")
+        self.assertEqual(self.t.read_file("a.txt", offset=1, limit=2), "l1\nl2")
+
+    def test_read_file_missing(self):
+        self.assertTrue(self.t.read_file("nope.txt").startswith("ERROR: no such file"))
+
+    def test_read_file_directory(self):
+        (self.root / "sub").mkdir()
+        self.assertIn("is a directory", self.t.read_file("sub"))
+
+    def test_read_file_traversal_refused(self):
+        self.assertIn("escapes the working root", self.t.read_file("../secret"))
+
+    # -- write_file -------------------------------------------------------
+    def test_write_file_creates_parents(self):
+        msg = self.t.write_file("deep/nested/f.txt", "x")
+        self.assertIn("wrote", msg)
+        self.assertEqual((self.root / "deep/nested/f.txt").read_text(), "x")
+
+    def test_write_file_traversal_refused(self):
+        self.assertIn("escapes the working root", self.t.write_file("../evil", "x"))
+
+    # -- edit_file --------------------------------------------------------
+    def test_edit_file_unique(self):
+        self._write("p.md", "- [ ] step one\n- [ ] step two\n")
+        msg = self.t.edit_file("p.md", "- [ ] step one", "- [x] step one")
+        self.assertIn("1 replacement", msg)
+        self.assertIn("- [x] step one", (self.root / "p.md").read_text())
+
+    def test_edit_file_absent_old_str(self):
+        self._write("p.md", "content\n")
+        self.assertIn("not found", self.t.edit_file("p.md", "ZZZ", "y"))
+
+    def test_edit_file_non_unique(self):
+        self._write("p.md", "dup\ndup\n")
+        out = self.t.edit_file("p.md", "dup", "x")
+        self.assertIn("not unique", out)
+        # file unchanged after a non-unique edit
+        self.assertEqual((self.root / "p.md").read_text(), "dup\ndup\n")
+
+    def test_edit_file_missing(self):
+        self.assertIn("no such file", self.t.edit_file("nope", "a", "b"))
+
+    # -- glob -------------------------------------------------------------
+    def test_glob_matches(self):
+        self._write("docs/changes/T-1/plan.md", "")
+        self._write("docs/changes/T-2/plan.md", "")
+        out = self.t.glob("docs/changes/*/plan.md")
+        self.assertIn("docs/changes/T-1/plan.md", out)
+        self.assertIn("docs/changes/T-2/plan.md", out)
+
+    def test_glob_no_matches(self):
+        self.assertIn("no matches", self.t.glob("nothing/*.zzz"))
+
+    def test_glob_empty_pattern_is_error_not_crash(self):
+        # T-119: pathlib.glob("") raises IndexError — a weak model's bad arg must
+        # NOT crash the driver; the tool returns an ERROR string it can recover from.
+        for bad in ("", "   ", None):
+            out = self.t.glob(bad)
+            self.assertTrue(out.startswith("ERROR:"), "expected ERROR for %r, got %r" % (bad, out))
+
+    # -- grep -------------------------------------------------------------
+    def test_grep_finds_line(self):
+        self._write("r.md", "alpha\nid: T-072\nbeta\n")
+        out = self.t.grep(r"T-\d+", "r.md")
+        self.assertIn("r.md:2:id: T-072", out)
+
+    def test_grep_no_match(self):
+        self._write("r.md", "nothing here\n")
+        self.assertEqual(self.t.grep("ZZZ", "r.md"), "(no matches)")
+
+    def test_grep_invalid_regex(self):
+        self.assertIn("invalid regex", self.t.grep("(", "."))
+
+    # -- B1: grep ignores VCS/vendor noise + skips oversized files ----------
+    def test_grep_default_ignores_git_and_vendor(self):
+        self._write("src/app.py", "MATCHME here\n")
+        self._write(".git/config", "MATCHME in git\n")
+        self._write("node_modules/pkg/index.js", "MATCHME in vendor\n")
+        out = self.t.grep("MATCHME")            # default path="."
+        self.assertIn("src/app.py:1:MATCHME here", out)
+        self.assertNotIn(".git/", out)
+        self.assertNotIn("node_modules/", out)
+
+    def test_grep_explicit_path_into_ignored_dir_still_works(self):
+        # The ignore set only prunes the default tree walk; an explicit request
+        # into .git is honored.
+        self._write(".git/notes.txt", "MATCHME explicit\n")
+        out = self.t.grep("MATCHME", ".git")
+        self.assertIn("MATCHME explicit", out)
+
+    def test_grep_skips_oversized_file(self):
+        self._write("big.log", "MATCHME\n" + ("x" * (tools._GREP_MAX_FILE_BYTES + 10)))
+        self._write("small.txt", "MATCHME small\n")
+        out = self.t.grep("MATCHME")
+        self.assertIn("small.txt:1:MATCHME small", out)
+        self.assertNotIn("big.log", out)
+
+    # -- B6: read_file truncation marker -----------------------------------
+    def test_read_file_truncation_marks_and_names_path(self):
+        self._write("huge.md", "y" * (tools._MAX_READ_BYTES + 5000))
+        out = self.t.read_file("huge.md")
+        self.assertIn("truncated", out)
+        self.assertIn("huge.md", out)          # names the path for a follow-up read
+        self.assertLess(len(out), tools._MAX_READ_BYTES + 200)
+
+    def test_read_file_under_cap_unmarked(self):
+        self._write("ok.md", "z" * 100)
+        out = self.t.read_file("ok.md")
+        self.assertNotIn("truncated", out)
+        self.assertEqual(out, "z" * 100)
+
+    # -- exec allowlist ---------------------------------------------------
+    def test_exec_refuses_non_allowlisted(self):
+        out = self.t.exec("rm -rf /")
+        self.assertTrue(out.startswith("REFUSED"))
+        self.assertIn("allowlist", out)
+
+    def test_exec_refuses_arbitrary_python(self):
+        # python3 is only allowed against scripts/*.py
+        self.assertTrue(self.t.exec("python3 -c \"print(1)\"").startswith("REFUSED"))
+
+    def test_exec_refuses_empty(self):
+        self.assertIn("empty command", self.t.exec("   "))
+
+    def test_exec_allows_git(self):
+        out = self.t.exec("git --version")
+        self.assertIn("exit=0", out)
+        self.assertIn("git version", out)
+
+    def test_exec_allows_scripts_python(self):
+        self._write("scripts/hi.py", "print('hi from script')\n")
+        out = self.t.exec("python3 scripts/hi.py")
+        self.assertIn("exit=0", out)
+        self.assertIn("hi from script", out)
+
+    # -- B2: exec cwd escaping the root returns an error, never crashes ------
+    def test_exec_cwd_escape_returns_error_not_crash(self):
+        out = self.t.exec("git status", cwd="..")
+        self.assertTrue(out.startswith("ERROR"))
+        self.assertIn("escapes the working root", out)
+
+    def test_dispatch_exec_cwd_escape_is_string(self):
+        # Through dispatch (the loop's path) an escaping cwd is a string, not a raise.
+        out = self.t.dispatch("exec", {"command": "git status", "cwd": ".."})
+        self.assertTrue(out.startswith("ERROR"))
+
+    # -- B7: exec output is capped with a marker; exit= line preserved -------
+    def test_exec_output_capped_with_marker(self):
+        big = tools._EXEC_MAX_OUTPUT + 5000
+        self._write("scripts/spew.py", "print('Q' * %d)\n" % big)
+        out = self.t.exec("python3 scripts/spew.py")
+        self.assertIn("exit=0", out)           # the exit line survives
+        self.assertIn("truncated", out)
+        self.assertLess(len(out), tools._EXEC_MAX_OUTPUT + 500)
+
+    # -- dispatch ---------------------------------------------------------
+    def test_dispatch_unknown_tool(self):
+        self.assertIn("unknown tool", self.t.dispatch("frobnicate", {}))
+
+    def test_dispatch_bad_arguments(self):
+        self.assertIn("bad arguments", self.t.dispatch("read_file", {"wrong": 1}))
+
+    def test_tool_defs_cover_named_surface(self):
+        names = {d["function"]["name"] for d in tools.TOOL_DEFS}
+        self.assertEqual(names, set(tools.TOOL_NAMES))
+        self.assertEqual(len(tools.TOOL_DEFS), 7)  # six + ask_user (T-074)
+
+    def test_ask_user_advertised_but_not_dispatched(self):
+        # ask_user is a 7th advertised tool intercepted by the loop, not Tools.
+        self.assertIn("ask_user", tools.TOOL_NAMES)
+        self.assertNotIn("ask_user", tools.DISPATCH_TOOL_NAMES)
+        self.assertEqual(len(tools.DISPATCH_TOOL_NAMES), 6)
+        self.assertIn("unknown tool", self.t.dispatch("ask_user", {"question": "?"}))
+
+
+if __name__ == "__main__":
+    unittest.main()

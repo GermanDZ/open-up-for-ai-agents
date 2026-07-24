@@ -1,0 +1,21 @@
+{
+  "schema": 2,
+  "task_id": "T-126-sync-from-framework-detection",
+  "iteration": 0,
+  "iteration_id": null,
+  "cycle": 1,
+  "phase": "construction",
+  "track": "quick",
+  "branch": "bugfix/sync-from-framework-detection",
+  "worktree": "/Users/germandz/personal-code/ai-dev-framework/open-up-for-ai-agents",
+  "session_id": null,
+  "started_at": "2026-07-24T09:44:14Z",
+  "gates": {
+    "team_deployed": false,
+    "plan_persisted": true,
+    "log_written": true,
+    "roadmap_synced": true,
+    "retro_due": false
+  },
+  "iterations_since_retro": 0
+}

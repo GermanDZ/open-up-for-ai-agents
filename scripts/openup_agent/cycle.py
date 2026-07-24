@@ -1,0 +1,1581 @@
+"""Deterministic cycle engine — pick/resume + Operations-step executor (T-089).
+
+Inverts the reference driver's control (exploration 2026-07-13): one
+``run_cycle()`` call runs ONE delivery cycle as a deterministic state machine
+over the *existing* scripts — ``openup-board.py resolve`` → ``openup-session.py
+begin`` → per-Operations-box executor → gates → deterministic completion —
+dropping to the LLM only at genuine judgment points, each as a fresh, bounded,
+step-scoped ``loop.run()`` sub-run. Ceremony is code; the LLM only authors.
+
+The engine COMPOSES the process scripts as subprocesses under ``--dir`` and
+never reimplements their logic (board decisions, claims, state, views, gates
+all stay single-sourced). All inter-step state lives in the repo (Operations
+checkboxes, ``.openup/state.json``, the lease), so a killed cycle resumes at
+the first unchecked box for free.
+
+Step classification (spec assumption, T-089 plan.md):
+  * an explicit ``(auto)`` marker forces script execution; ``(judgment)``
+    forces an LLM sub-run;
+  * otherwise a box that carries an extractable ``git …`` / ``python3 …``
+    command (backtick-quoted, or from the first such token to end of line) is
+    a script-step; a bare ``scripts/<name>.py`` backtick span is run via
+    ``python3``;
+  * everything else is a judgment sub-run.
+Keep script-step boxes command-only — trailing prose after an unquoted command
+becomes part of the command line.
+
+Exit codes (superset of loop.run's, so an outer harness can type them):
+    0  cycle completed; sentinel on stdout (OPENUP-NEXT: ADVANCED/DONE)
+    2  configuration error (no board decision, missing plan, env/tier)
+    3  endpoint/transport error inside a judgment sub-run
+    4  a judgment sub-run hit its iteration cap with no clean sentinel
+    5  suspended awaiting a human answer (sub-run ask_user); sentinel on stdout
+    6  a deterministic gate (fence / check-docs) failed after a step
+    7  decision path not supported by this engine slice (T-090/T-091)
+    8  a script-step / session-ceremony command failed
+
+Recovery mode (T-092, default on; ``--no-recover`` opts out): when the engine
+cannot proceed deterministically it rebuilds the repo state that blocks it,
+then continues the SAME cycle —
+  * **unclosed-lane reconcile** (zero LLM): on a ``plan-iteration``/``noop``
+    decision, an *active* ``docs/changes/<id>/`` whose plan status is already
+    satisfied (``done``/``verified``) is closed first — archived, committed,
+    views resynced (fail-open), and merged to the trunk when the work sits on
+    a side branch — so the loop never plans new work atop an unfinished
+    delivery;
+  * **missing-spec recovery** (one bounded sub-run): a persisting
+    ``plan-iteration`` decision already names the next work item, so an
+    ``analyst``-hat sub-run authors its ``plan.md`` (spec contract in the
+    instruction), the spec is gated (``check-docs`` + ``openup-spec-scenarios``
+    when present) and committed, and the re-resolved ``pick`` runs in the same
+    invocation;
+  * **consent-gated replenishment** (T-094): when nothing is promotable at all
+    (roadmap present but exhausted/blocked mid-phase), the engine ASKS first —
+    a TTY prompt under ``--interactive``, else an input-request + suspend
+    (exit 5). An answered ``yes`` runs ONE ``product-manager``-hat sub-run
+    that appends 1-5 pending roadmap entries (accepted only if
+    ``openup-roadmap.py next`` then finds one promotable), committed
+    ``[openup-skip]``, and the same invocation continues; ``no`` is remembered
+    and ends the cycle cleanly. The LLM proposes, the human consents — scope
+    is never invented silently.
+    One round per case; a decision that does not advance exits 7 as before.
+
+Stdlib-only.
+"""
+
+import contextlib
+import io
+import json
+import re
+import shlex
+import subprocess
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+from . import assess, loop, plan_iteration, stamping, tiers
+
+EXIT_OK = 0
+EXIT_CONFIG = 2
+EXIT_ENDPOINT = 3
+EXIT_MAX_ITERATIONS = 4
+EXIT_SUSPEND = 5
+EXIT_GATE = 6
+EXIT_UNSUPPORTED = 7
+EXIT_STEP = 8
+
+DEFAULT_STEP_MAX_ITERATIONS = 10
+DEFAULT_STEP_TIER = "authoring"
+
+# Decision paths this slice does NOT run, and the roadmap task that will.
+# Decision paths the engine still cannot advance on its own. assess-iteration and
+# milestone-review are handled (T-091); plan-iteration is handled under recovery
+# (T-090/T-092), so it only lands here under --no-recover.
+UNSUPPORTED_PATHS = {
+    "plan-iteration": "T-090 (only reachable here under --no-recover)",
+}
+
+BOX_RE = re.compile(r"^- \[( |x)\] (.*\S)\s*$")
+HAT_RE = re.compile(r"^\(([a-z][a-z-]*)\)\s+")
+MARKER_RE = re.compile(r"^\((auto|judgment)\)\s+")
+CMD_START_RE = re.compile(r"(?:python3|git)\s\S.*$")
+BACKTICK_RE = re.compile(r"`([^`]+)`")
+OPERATIONS_HEADING_RE = re.compile(r"^##\s+Operations\s*$")
+HEADING_RE = re.compile(r"^##\s+")
+
+STEP_SENTINEL_HINT = "OPENUP-STEP: DONE"
+
+STEP_SYSTEM_PROMPT = """\
+You are an OpenUP delivery agent completing ONE step of one task. Use ONLY the
+provided tools (read_file, write_file, edit_file, glob, grep, exec). exec runs
+`git ...` and `python3 scripts/*.py ...` only.
+Working directory (all paths are relative to it): %(root)s
+
+The deterministic ceremony around you — picking the lane, session state,
+ticking Operations checkboxes, gates, completion, commits — is run by the cycle
+engine, NOT by you. Do not tick checkboxes, do not run session/completion
+scripts, do not start any other step. Do exactly the one step you are given and
+persist its output to files in the repository.
+
+When the step's work is saved, reply with NO tool calls and put this sentinel
+line last: `%(sentinel)s — <one-line summary>`.
+"""
+
+
+class CycleError(Exception):
+    """Unrecoverable engine-side failure (configuration / composition)."""
+
+
+def _log(msg):
+    sys.stderr.write("[openup-cycle] %s\n" % msg)
+    sys.stderr.flush()
+
+
+def _utc_today():
+    return datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+
+def _run(argv, root, check=False):
+    """Run one composed command under root; return CompletedProcess."""
+    proc = subprocess.run(argv, cwd=str(root), text=True, capture_output=True)
+    if check and proc.returncode != 0:
+        raise CycleError(
+            "command failed (exit %d): %s\n%s"
+            % (proc.returncode, " ".join(argv),
+               (proc.stdout + proc.stderr).strip()[:2000])
+        )
+    return proc
+
+
+def _git(args, root, check=False):
+    return _run(["git"] + args, root, check=check)
+
+
+# --------------------------------------------------------------------------
+# Dirty-aware gating (T-123): a signature of the *check-docs-relevant* docs delta
+# vs HEAD. check-docs' verdict depends on the typed instance docs + the .md link
+# graph under docs/ + the schema / trace-model — NOT on the active change folder
+# (plan.md ticks, design.md notes), the derived views, or the lane-owned audit
+# trees. A box (or the completion ceremony) that changed none of the former
+# cannot change the verdict, so its per-box check-docs run is redundant.
+#   returns: a stable signature of the surviving changed paths ("" = no relevant
+#   delta); or None when git is unavailable (fail-open → the caller runs the full
+#   gate). The fence runs every box regardless — only check-docs is skipped.
+# --------------------------------------------------------------------------
+_SIG_RELEVANT_CONFIG = ("docs-meta.schema.json", "trace-model.json")
+
+
+def _relevant_docs_sig(root, task_id):
+    # Whole tree (schema/model live outside docs/); --untracked-files=all so a
+    # brand-new docs subtree lists its individual .md files instead of collapsing
+    # to a single "?? docs/product/" directory entry (which the .md filter misses).
+    proc = _git(["status", "--porcelain", "--untracked-files=all"], root)
+    if proc.returncode != 0:
+        return None
+    excluded = (
+        "docs/changes/%s/" % task_id,
+        "docs/changes/archive/%s/" % task_id,
+        "docs/roadmap.md", "docs/project-status.md", "docs/INDEX.md",
+        "docs/status-notes/", "docs/agent-logs/", "docs/explorations/",
+    )
+    relevant = []
+    for line in proc.stdout.splitlines():
+        if len(line) < 4:
+            continue
+        status, path = line[:2], line[3:].strip()
+        if " -> " in path:                       # rename: score the destination
+            path = path.split(" -> ", 1)[1]
+        path = path.strip().strip('"')
+        if path.rsplit("/", 1)[-1] in _SIG_RELEVANT_CONFIG:
+            relevant.append("%s:%s" % (status, path))
+            continue
+        if not path.endswith(".md") or not path.startswith("docs/"):
+            continue
+        if any(path.startswith(p) for p in excluded):
+            continue
+        relevant.append("%s:%s" % (status, path))
+    return "\n".join(sorted(relevant))
+
+
+# --------------------------------------------------------------------------
+# Repo readers (deliberately tiny — the scripts stay the source of truth)
+# --------------------------------------------------------------------------
+def read_frontmatter(path):
+    """Minimal single-level frontmatter reader (id/title/status/track/...).
+
+    Only scalar ``key: value`` lines are read — enough for the engine's needs
+    (id, title, status, track). Lists and nesting are the scripts' business.
+    """
+    fm = {}
+    try:
+        text = Path(path).read_text(encoding="utf-8")
+    except OSError:
+        return fm
+    if not text.startswith("---"):
+        return fm
+    for line in text.splitlines()[1:]:
+        if line.strip() == "---":
+            break
+        m = re.match(r"^([A-Za-z][A-Za-z0-9_-]*)\s*:\s*(.*)$", line)
+        if m and m.group(2).strip():
+            fm[m.group(1)] = m.group(2).split("#", 1)[0].strip().strip("\"'")
+    return fm
+
+
+def read_state(root):
+    p = Path(root) / ".openup" / "state.json"
+    if not p.exists():
+        return None
+    try:
+        return json.loads(p.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+
+
+def _read_iteration_number(root):
+    """Next iteration ordinal from docs/project-status.md (fallback 1)."""
+    p = Path(root) / "docs" / "project-status.md"
+    try:
+        m = re.search(r"^\*\*Iteration\*\*:\s*(\d+)", p.read_text(encoding="utf-8"), re.M)
+        return int(m.group(1)) + 1 if m else 1
+    except OSError:
+        return 1
+
+
+# --------------------------------------------------------------------------
+# Decision (openup-board.py resolve — composed, never reimplemented)
+# --------------------------------------------------------------------------
+def resolve_decision(root):
+    proc = _run(["python3", "scripts/openup-board.py", "resolve"], root)
+    if proc.returncode != 0:
+        raise CycleError("openup-board.py resolve failed: %s"
+                         % (proc.stdout + proc.stderr).strip()[:1000])
+    try:
+        return json.loads(proc.stdout)
+    except json.JSONDecodeError as e:
+        raise CycleError("unparseable resolve output: %s" % e)
+
+
+# --------------------------------------------------------------------------
+# Operations boxes — parse / classify / tick
+# --------------------------------------------------------------------------
+def parse_boxes(plan_text):
+    """All Operations checkboxes, in order.
+
+    Returns a list of ``{raw, checked, hat, marker, body}`` where ``raw`` is
+    the exact line (for ticking), ``hat`` the ``(role)`` tag (default
+    ``developer``), ``marker`` an explicit ``(auto)``/``(judgment)`` override
+    or None, and ``body`` the step text with hat + marker stripped.
+    """
+    boxes, in_ops = [], False
+    for line in plan_text.splitlines():
+        if OPERATIONS_HEADING_RE.match(line):
+            in_ops = True
+            continue
+        if in_ops and HEADING_RE.match(line):
+            break
+        if not in_ops:
+            continue
+        m = BOX_RE.match(line)
+        if not m:
+            # T-121/B4 — a wrapped box's continuation line is retained on the
+            # current box's body (was dropped, losing everything after line 1).
+            # Classification still reads only the first line (extract_command), so
+            # a continuation cannot flip a judgment box to a script step.
+            if boxes and line.strip():
+                boxes[-1]["body"] += "\n" + line.strip()
+            continue
+        checked, text = m.group(1) == "x", m.group(2)
+        hat = "developer"
+        marker = None
+        hm = HAT_RE.match(text)
+        if hm and hm.group(1) in ("auto", "judgment"):
+            marker, text = hm.group(1), text[hm.end():]
+        elif hm:
+            hat, text = hm.group(1), text[hm.end():]
+        if marker is None:
+            mm = MARKER_RE.match(text)
+            if mm:
+                marker, text = mm.group(1), text[mm.end():]
+        boxes.append({"raw": line, "checked": checked, "hat": hat,
+                      "marker": marker, "body": text.strip()})
+    return boxes
+
+
+def extract_command(body):
+    """The script command a box carries, or None (⇒ judgment step).
+
+    T-121/B4 — reads only the box's FIRST line: a command box is command-only on
+    one line (the authoring contract), and a wrapped judgment box's continuation
+    (now retained in body) must not contribute a spurious command. Single-line
+    boxes are unaffected — the classification contract is unchanged."""
+    first = (body.splitlines() or [""])[0]
+    for span in BACKTICK_RE.findall(first):
+        span = span.strip()
+        if span.startswith(("python3 ", "git ")):
+            return span
+        if re.match(r"^scripts/[\w./-]+\.py(\s|$)", span):
+            return "python3 " + span
+    m = CMD_START_RE.search(first)
+    if m:
+        return m.group(0).rstrip(" .`")
+    return None
+
+
+def classify_box(box):
+    """Return ('script', command) or ('judgment', None) for one parsed box."""
+    if box["marker"] == "judgment":
+        return "judgment", None
+    cmd = extract_command(box["body"])
+    if box["marker"] == "auto":
+        if cmd is None:
+            raise CycleError("(auto) box has no extractable command: %s" % box["body"])
+        return "script", cmd
+    if cmd is not None:
+        return "script", cmd
+    return "judgment", None
+
+
+def tick_box(plan_path, raw_line):
+    """Flip one exact ``- [ ]`` line to ``- [x]`` (the sanctioned progress edit)."""
+    plan_path = Path(plan_path)
+    text = plan_path.read_text(encoding="utf-8")
+    if raw_line not in text.splitlines():
+        raise CycleError("box line no longer present in %s: %s" % (plan_path, raw_line))
+    ticked = raw_line.replace("- [ ]", "- [x]", 1)
+    plan_path.write_text(
+        "\n".join(ticked if l == raw_line else l for l in text.splitlines())
+        + ("\n" if text.endswith("\n") else ""),
+        encoding="utf-8",
+    )
+
+
+# --------------------------------------------------------------------------
+# Acquire (branch + openup-session.py begin — composed)
+# --------------------------------------------------------------------------
+def _cycle_meta_path(root):
+    return Path(root) / ".openup" / "cycle.json"
+
+
+def _write_cycle_meta(root, data):
+    p = _cycle_meta_path(root)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps(data, indent=1), encoding="utf-8")
+
+
+def read_cycle_meta(root):
+    p = _cycle_meta_path(root)
+    if not p.exists():
+        return {}
+    try:
+        return json.loads(p.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+
+def _checkout_task_branch(root, branch):
+    current = _git(["rev-parse", "--abbrev-ref", "HEAD"], root).stdout.strip()
+    if current == branch:
+        return current
+    if _git(["rev-parse", "--verify", "--quiet", branch], root).returncode == 0:
+        _git(["checkout", branch], root, check=True)
+    else:
+        _git(["checkout", "-b", branch], root, check=True)
+    return current
+
+
+def acquire(root, task, decision, env):
+    """In-place task branch + one atomic session begin. Returns state dict."""
+    plan = Path(root) / "docs" / "changes" / task / "plan.md"
+    if not plan.exists():
+        raise CycleError("no spec for %s at %s" % (task, plan))
+    fm = read_frontmatter(plan)
+    track = (decision.get("lane") or {}).get("track") or fm.get("track") or "standard"
+    phase = decision.get("phase") or "construction"
+    branch = "task/%s-cycle" % task
+    base_branch = _checkout_task_branch(root, branch)
+    _write_cycle_meta(root, {"task": task, "branch": branch,
+                             "base_branch": base_branch})
+    argv = [
+        "python3", "scripts/openup-session.py", "begin",
+        "--task-id", task,
+        "--iteration", str(_read_iteration_number(root)),
+        "--phase", str(phase),
+        "--track", str(track),
+        "--branch", branch,
+        "--worktree", str(root),
+        "--session-id", branch,
+        "--goal", fm.get("title") or ("cycle-driven delivery of %s" % task),
+        "--run-id", "cycle-%s" % _utc_today(),
+    ]
+    proc = _run(argv, root)
+    if proc.returncode != 0:
+        raise CycleError(
+            "session begin refused (exit %d) for %s — resolve the "
+            "dependency/collision/duplicate above.\n%s"
+            % (proc.returncode, task, (proc.stdout + proc.stderr).strip()[:2000])
+        )
+    # the plan gate: the spec IS the persisted plan for a change-folder lane.
+    _run(["python3", "scripts/openup-state.py", "set-gate", "plan_persisted",
+          "docs/changes/%s/plan.md" % task], root)
+    _log("acquired %s (track=%s, branch=%s)" % (task, track, branch))
+    state = read_state(root)
+    if state is None:
+        raise CycleError("begin succeeded but .openup/state.json is unreadable")
+    return state
+
+
+# --------------------------------------------------------------------------
+# Judgment sub-run (fresh, bounded loop.run — the measured cheap shape)
+# --------------------------------------------------------------------------
+def build_step_instruction(task, hat, body, resumable_input=None, root=None,
+                           plan_text=None):
+    """The one-step briefing for a judgment sub-run.
+
+    T-120: when ``root`` is given, inline the change-folder context the engine
+    already holds (``plan_text``, read once for box parsing) or can read once
+    (design.md, the answered input) instead of handing paths the sub-run must
+    re-read (2-4 wasted turns per box). Any absent file degrades to naming its
+    path — the pre-T-120 behavior — so the sub-run always launches (Req 6)."""
+    lines = [
+        "Task: %s. Role hat for this step: %s." % (task, hat),
+        "",
+        "THE ONE STEP TO COMPLETE NOW:",
+        body,
+        "",
+    ]
+    plan_rel = "docs/changes/%s/plan.md" % task
+    design_rel = "docs/changes/%s/design.md" % task
+    briefed = []
+    if root is not None:
+        briefed.append(plan_iteration.inline_file(
+            root, plan_rel, "The task spec (requirements, safeguards)",
+            text=plan_text))
+        briefed.append(plan_iteration.inline_file(
+            root, design_rel, "In-flight design decisions"))
+        if resumable_input:
+            briefed.append(plan_iteration.inline_file(
+                root, resumable_input,
+                "The answered human input that resumed this lane"))
+    briefed = [b for b in briefed if b]
+    if briefed:
+        lines.append("Context (already loaded for you — do not re-read these "
+                     "files):")
+        lines.append("")
+        lines.append("\n\n".join(briefed))
+        lines.append("")
+        lines.append("Ring-1 product docs under docs/product/ — consult if the "
+                     "step needs them.")
+    else:
+        lines.append("Briefing (read before acting):")
+        lines.append("- %s — the task spec (requirements, safeguards)" % plan_rel)
+        lines.append("- %s — in-flight decisions (if present)" % design_rel)
+        lines.append("- Ring-1 product docs under docs/product/ — consult what "
+                     "the step needs")
+        if resumable_input:
+            lines.append("- %s — the answered human input that resumed this lane"
+                         % resumable_input)
+    lines += [
+        "",
+        "Persist your output to files. Then emit `%s — <summary>`." % STEP_SENTINEL_HINT,
+    ]
+    return "\n".join(lines)
+
+
+def run_judgment_step(root, task, box, env, step_tier, max_iterations,
+                      interactive=False, resumable_input=None, _completion=None,
+                      instruction=None, plan_text=None):
+    """One fresh, bounded sub-run for one judgment box. Returns loop exit code.
+
+    ``instruction`` (T-094) overrides the default change-folder briefing — used
+    by steps that belong to no lane (the replenishment pass). ``plan_text``
+    (T-120) is the already-read spec, inlined into the default briefing."""
+    model = tiers.resolve_tier_model(root, step_tier, target="driver", env=env)
+    instruction = instruction or build_step_instruction(
+        task, box["hat"], box["body"], resumable_input=resumable_input,
+        root=root, plan_text=plan_text)
+    # T-109: narrate the step in one line — the box's first line says what it
+    # does; the full instruction is verbose-only detail.
+    summary = " ".join((box["body"].strip().splitlines() or [""])[0].split())
+    _log("judgment step — %s hat, model %s, up to %d turns: %s"
+         % (box["hat"], model, max_iterations,
+            summary[:100] + ("..." if len(summary) > 100 else "")))
+    if loop._verbose():
+        _log("full instruction:\n%s" % instruction)
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        rc = loop.run(
+            dir=str(root),
+            procedure="cycle-step",
+            max_iterations=max_iterations,
+            env=env,
+            interactive=interactive,
+            instruction=instruction,
+            system_prompt=STEP_SYSTEM_PROMPT % {"root": root,
+                                                "sentinel": STEP_SENTINEL_HINT},
+            model=model,
+            _completion=_completion,
+        )
+    out = buf.getvalue().strip()
+    if out:
+        _log("sub-run stdout: %s" % out[:200])
+    if rc == EXIT_SUSPEND:
+        # relay the sub-run's suspend sentinel on the ENGINE's stdout
+        print(out.splitlines()[-1] if out else loop.SUSPEND_SENTINEL)
+    return rc
+
+
+def _dispatch_judgment(root, task, box, env, step_tier, cap, interactive,
+                       resumable_input, _completion, _subrun, instruction=None,
+                       plan_text=None):
+    """One judgment step through the seam or the live sub-run (shared by the
+    executor and recovery). Returns the loop exit code; raises TierError.
+    ``instruction`` overrides the default change-folder briefing (T-094);
+    ``plan_text`` (T-120) is the already-read spec inlined into that briefing."""
+    if _subrun is not None:
+        instruction = instruction or build_step_instruction(
+            task, box["hat"], box["body"], resumable_input=resumable_input,
+            root=root, plan_text=plan_text)
+        return _subrun(task, box, instruction)
+    return run_judgment_step(root, task, box, env, step_tier, cap,
+                             interactive=interactive,
+                             resumable_input=resumable_input,
+                             _completion=_completion, instruction=instruction,
+                             plan_text=plan_text)
+
+
+# --------------------------------------------------------------------------
+# Recovery (T-092): rebuild the repo state that blocks the loop, then continue
+# --------------------------------------------------------------------------
+SATISFIED_STATUSES = {"done", "verified"}
+
+SPEC_CONTRACT = """\
+Author the task spec at docs/changes/%(task)s/plan.md for the roadmap work \
+item %(task)s%(title)s. Read its docs/roadmap.md entry and the Ring-1 product \
+docs (docs/vision.md, docs/product/) first. The spec file MUST carry:
+- YAML frontmatter: id: %(task)s, title, status: ready, priority, \
+track (quick|standard), touches (the file paths the task will change), \
+depends-on
+- ## Requirements — numbered assertions, each with at least one acceptance \
+scenario using the bold markers **Given** / **When** / **Then**
+- ## Operations — 1-8 unchecked checkbox steps (`- [ ] ...`), ordered. A step \
+that is a command must be command-only (e.g. `- [ ] python3 scripts/x.py ...`); \
+prose steps are judgment work; tag a step `(role)` only when it changes hats.
+Author ONLY the spec file — do not begin the work itself."""
+
+
+def _detect_trunk(root):
+    p = _git(["symbolic-ref", "refs/remotes/origin/HEAD"], root)
+    if p.returncode == 0 and p.stdout.strip():
+        return p.stdout.strip().rsplit("/", 1)[-1]
+    for cand in ("main", "master"):
+        if _git(["rev-parse", "--verify", "--quiet", cand], root).returncode == 0:
+            return cand
+    return None
+
+
+def unclosed_lanes(root):
+    """Active docs/changes/<id>/ folders whose plan status is already
+    satisfied — delivered work whose closure ceremony never ran."""
+    changes = Path(root) / "docs" / "changes"
+    out = []
+    for plan in sorted(changes.glob("*/plan.md")):
+        if plan.parent.name == "archive":
+            continue
+        fm = read_frontmatter(plan)
+        if (fm.get("status") or "").lower() in SATISFIED_STATUSES:
+            out.append(plan.parent.name)
+    return out
+
+
+def reconcile_unclosed_lanes(root):
+    """Case B: close every done-but-unclosed lane deterministically (zero LLM).
+
+    Archive each folder, commit, resync views (fail-open), and merge the
+    current branch into the trunk when the delivered work sits on a side
+    branch. Returns True when anything was closed (caller re-resolves).
+    Raises CycleError on a failed ceremony command (incl. a merge conflict).
+    """
+    root = Path(root)
+    lanes = unclosed_lanes(root)
+    if not lanes:
+        return False
+    if _git(["status", "--porcelain"], root).stdout.strip():
+        _log("recovery: %d done-but-unclosed lane(s) found but the working "
+             "tree is dirty — skipping closure (commit or stash first)"
+             % len(lanes))
+        return False
+    _log("recovery: closing done-but-unclosed lane(s): %s" % ", ".join(lanes))
+    (root / "docs" / "changes" / "archive").mkdir(parents=True, exist_ok=True)
+    for task in lanes:
+        _git(["mv", "docs/changes/%s" % task, "docs/changes/archive/%s" % task],
+             root, check=True)
+    sync = _run(["python3", "scripts/sync-status.py"], root)
+    if sync.returncode != 0:
+        _log("sync-status.py failed (exit %d) — views not regenerated:\n%s"
+             % (sync.returncode, (sync.stdout + sync.stderr).strip()[:800]))
+    _git(["add", "-A"], root, check=True)
+    _git(["commit", "-m",
+          "chore(%s): recovery — close done-but-unclosed lane(s) %s [%s]"
+          % (lanes[0], ", ".join(lanes), lanes[0])], root, check=True)
+    trunk = _detect_trunk(root)
+    current = _git(["rev-parse", "--abbrev-ref", "HEAD"], root).stdout.strip()
+    if trunk and current != trunk:
+        _git(["checkout", trunk], root, check=True)
+        merge = _git(["merge", "--no-ff", current, "-m",
+                      "chore(%s): recovery — merge unfinished delivery from "
+                      "%s [%s]" % (lanes[0], current, lanes[0])], root)
+        if merge.returncode != 0:
+            raise CycleError(
+                "recovery merge of %s into %s failed — resolve it by hand "
+                "(branch left intact):\n%s"
+                % (current, trunk, (merge.stdout + merge.stderr).strip()[:1000]))
+    return True
+
+
+def recover_missing_spec(root, decision, env, step_tier, cap, interactive,
+                         _completion, _subrun):
+    """Case A: author the plan-iteration decision's named work item's spec via
+    ONE bounded analyst sub-run, gate it, commit it. Returns EXIT_OK when the
+    spec landed (caller re-resolves once); any other code aborts the cycle."""
+    root = Path(root)
+    lane = decision.get("lane") or {}
+    task = lane.get("task")
+    if not task:
+        _log("recovery: plan-iteration decision carries no work item — "
+             "nothing to author")
+        return EXIT_UNSUPPORTED
+    plan = root / "docs" / "changes" / task / "plan.md"
+    if plan.exists():
+        _log("recovery: %s already has a spec but is not pickable "
+             "(dependency/collision/suspension?) — not re-authoring" % task)
+        return EXIT_UNSUPPORTED
+    title = lane.get("title")
+    box = {"hat": "analyst", "marker": None,
+           "body": SPEC_CONTRACT % {"task": task,
+                                    "title": (" — %s" % title) if title else ""}}
+    _log("recovery: authoring missing spec for %s via one bounded sub-run" % task)
+    try:
+        rc = _dispatch_judgment(root, task, box, env, step_tier, cap,
+                                interactive, None, _completion, _subrun)
+    except tiers.TierError as e:
+        _log("FATAL: %s" % e)
+        return EXIT_CONFIG
+    if rc == EXIT_SUSPEND:
+        _log("recovery: spec authoring suspended awaiting human input")
+        return EXIT_SUSPEND
+    if rc != 0:
+        _log("recovery: spec-authoring sub-run failed (exit %d)" % rc)
+        return rc if rc in (EXIT_CONFIG, EXIT_ENDPOINT,
+                            EXIT_MAX_ITERATIONS) else EXIT_STEP
+    if not plan.exists():
+        _log("recovery: sub-run finished but produced no %s" % plan)
+        return EXIT_STEP
+    scenarios = root / "scripts" / "openup-spec-scenarios.py"
+    if scenarios.exists():
+        check = _run(["python3", "scripts/openup-spec-scenarios.py", "check",
+                      "docs/changes/%s/plan.md" % task], root)
+        if check.returncode != 0:
+            _log("recovery: authored spec fails scenario validation:\n%s"
+                 % (check.stdout + check.stderr).strip()[:800])
+            return EXIT_STEP
+    docs_gate = _run(["python3", "scripts/check-docs.py"], root) \
+        if (root / "scripts" / "check-docs.py").exists() else None
+    if docs_gate is not None and docs_gate.returncode != 0:
+        _log("recovery: authored spec fails check-docs:\n%s"
+             % (docs_gate.stdout + docs_gate.stderr).strip()[:800])
+        return EXIT_STEP
+    try:
+        _git(["add", "docs/changes/%s" % task], root, check=True)
+        _git(["commit", "-m",
+              "docs(%s): author spec via cycle recovery [%s]" % (task, task)],
+             root, check=True)
+    except CycleError as e:
+        _log("FATAL: %s" % e)
+        return EXIT_STEP
+    _log("recovery: spec for %s authored, gated, committed" % task)
+    return EXIT_OK
+
+
+# --------------------------------------------------------------------------
+# Consent-gated replenishment (T-094): ask the human, then let the PM propose
+# --------------------------------------------------------------------------
+REPLENISH_QUESTION = (
+    "The cycle loop is stuck: docs/roadmap.md has no promotable entry and the "
+    "phase is not complete. Approve ONE bounded LLM product-manager pass to "
+    "propose the next 1-5 roadmap entries (pending, human-editable)?")
+
+REPLENISH_CONTRACT = """\
+The delivery loop is stuck: docs/roadmap.md has no promotable entry, but the \
+phase is not complete. A human has APPROVED one product-manager planning pass.
+Act as the product manager. Read docs/vision.md, docs/roadmap.md, \
+docs/project-status.md, and the risk list (docs/risk-list.md or \
+docs/product/risk-list.md) if present.
+Append 1-5 NEW pending entries to docs/roadmap.md — the next most valuable \
+work toward the vision:
+- match the file's existing entry shape (table rows or `## T-NNN:` sections)
+- reserve each new id first: exec `python3 scripts/openup-claims.py \
+reserve-id --session-id replenish` and use the printed id
+- every entry carries status pending, a priority, its dependencies, and a \
+one-line **Value** rationale
+- do NOT modify, reorder, or restate existing entries or their Status cells
+Only edit docs/roadmap.md. Do not create change folders and do not start the \
+work itself."""
+
+
+def _ask_tty(question):
+    sys.stderr.write("\n[openup-cycle] %s\n" % question)
+    sys.stderr.flush()
+    try:
+        return input("approve? (yes/no)> ").strip()
+    except EOFError:
+        return ""
+
+
+def _update_replenish_meta(root, **fields):
+    meta = read_cycle_meta(root)
+    rep = dict(meta.get("replenish") or {})
+    rep.update(fields)
+    meta["replenish"] = rep
+    _write_cycle_meta(root, meta)
+
+
+def _request_answer(root, rel_path):
+    """(state, answer) for a recorded request: state ∈ {missing, pending,
+    answered}; answer is the normalized yes/no text when answered (or None
+    while unparseable — treated as still pending by the caller)."""
+    path = Path(root) / rel_path
+    if not path.exists():
+        return "missing", None
+    fm = read_frontmatter(path)
+    if (fm.get("status") or "").strip().lower() != "answered":
+        return "pending", None
+    text = path.read_text(encoding="utf-8")
+    m = re.search(r"^- \[x\] `([^`]+)`", text, re.M)          # ticked option
+    if not m:
+        m = re.search(r"\*\*Answer\*\*:\s*(?!_)`?([A-Za-z]+)`?", text)
+    if not m:
+        return "answered", None
+    ans = m.group(1).strip().lower()
+    if ans.startswith("y"):
+        return "answered", "yes"
+    if ans.startswith("n"):
+        return "answered", "no"
+    return "answered", None
+
+
+def _create_replenish_request(root):
+    proc = _run(["python3", "scripts/openup-input.py", "request",
+                 "--title", "Approve LLM roadmap replenishment",
+                 "--question", REPLENISH_QUESTION,
+                 "--option", "yes", "--option", "no", "--json"], root)
+    if proc.returncode != 0:
+        raise CycleError("could not create the replenishment input-request:\n%s"
+                         % (proc.stdout + proc.stderr).strip()[:800])
+    try:
+        return json.loads(proc.stdout)["request"]
+    except (json.JSONDecodeError, KeyError):
+        return proc.stdout.strip().splitlines()[-1]
+
+
+def _run_replenishment(root, env, step_tier, cap, interactive,
+                       _completion, _subrun):
+    """The approved PM pass + deterministic acceptance. EXIT_OK on success."""
+    box = {"hat": "product-manager", "marker": None, "body": REPLENISH_CONTRACT}
+    _log("recovery: running the approved product-manager replenishment pass")
+    try:
+        rc = _dispatch_judgment(root, "replenish", box, env, step_tier, cap,
+                                interactive, None, _completion, _subrun,
+                                instruction=REPLENISH_CONTRACT)
+    except tiers.TierError as e:
+        _log("FATAL: %s" % e)
+        return EXIT_CONFIG
+    if rc == EXIT_SUSPEND:
+        return EXIT_SUSPEND
+    if rc != 0:
+        _log("recovery: replenishment sub-run failed (exit %d)" % rc)
+        return rc if rc in (EXIT_CONFIG, EXIT_ENDPOINT,
+                            EXIT_MAX_ITERATIONS) else EXIT_STEP
+    # Deterministic acceptance: the roadmap must now be promotable.
+    nxt = _run(["python3", "scripts/openup-roadmap.py", "next",
+                "--no-remote-check"], root)
+    if nxt.returncode != 0:
+        _log("recovery: replenishment did not produce a promotable roadmap "
+             "entry (openup-roadmap.py next exit %d) — nothing committed:\n%s"
+             % (nxt.returncode, (nxt.stdout + nxt.stderr).strip()[:400]))
+        return EXIT_STEP
+    if (root / "scripts" / "check-docs.py").exists():
+        docs = _run(["python3", "scripts/check-docs.py"], root)
+        if docs.returncode != 0:
+            _log("recovery: replenished roadmap fails check-docs — nothing "
+                 "committed:\n%s" % (docs.stdout + docs.stderr).strip()[:400])
+            return EXIT_STEP
+    _git(["add", "docs/roadmap.md", "docs/input-requests"], root, check=True)
+    _git(["commit", "-m",
+          "docs(roadmap): replenish backlog via cycle recovery "
+          "(human-approved) [openup-skip]"], root, check=True)
+    _log("recovery: roadmap replenished and committed")
+    return EXIT_OK
+
+
+def replenish_flow(root, env, step_tier, cap, interactive,
+                   _completion, _subrun, _ask):
+    """The consent state machine. Returns None to proceed (approved and
+    replenished — caller re-resolves), or a terminal exit code (sentinel
+    already printed where one applies)."""
+    root = Path(root)
+    rep = read_cycle_meta(root).get("replenish") or {}
+
+    if rep.get("consumed") and rep.get("answer") == "no":
+        print("OPENUP-NEXT: DONE — replenishment declined by human (%s); "
+              "nothing promotable" % rep.get("request", "earlier answer"))
+        return EXIT_OK
+
+    if rep.get("request") and not rep.get("consumed"):
+        state, answer = _request_answer(root, rep["request"])
+        if state == "pending" or (state == "answered" and answer is None):
+            if state == "answered":
+                _log("recovery: request answered but the answer is not a "
+                     "clear yes/no — treating as still pending")
+            print("%s — %s" % (loop.SUSPEND_SENTINEL, rep["request"]))
+            return EXIT_SUSPEND
+        if state == "answered" and answer == "no":
+            _update_replenish_meta(root, consumed=True, answer="no")
+            print("OPENUP-NEXT: DONE — replenishment declined by human (%s); "
+                  "nothing promotable" % rep["request"])
+            return EXIT_OK
+        if state == "answered" and answer == "yes":
+            _update_replenish_meta(root, consumed=True, answer="yes")
+            rc = _run_replenishment(root, env, step_tier, cap, interactive,
+                                    _completion, _subrun)
+            return None if rc == EXIT_OK else rc
+        # missing: the human removed the request — fall through and ask anew.
+        _log("recovery: recorded request %s is gone — asking again"
+             % rep["request"])
+
+    if interactive:
+        answer = (_ask or _ask_tty)(REPLENISH_QUESTION)
+        if (answer or "").strip().lower().startswith("y"):
+            rc = _run_replenishment(root, env, step_tier, cap, interactive,
+                                    _completion, _subrun)
+            return None if rc == EXIT_OK else rc
+        print("OPENUP-NEXT: DONE — replenishment declined by human (tty); "
+              "nothing promotable")
+        return EXIT_OK
+
+    try:
+        request = _create_replenish_request(root)
+    except CycleError as e:
+        _log("FATAL: %s" % e)
+        return EXIT_STEP
+    _update_replenish_meta(root, request=request, consumed=False, answer=None)
+    _log("recovery: loop stuck — awaiting human consent in %s" % request)
+    print("%s — %s" % (loop.SUSPEND_SENTINEL, request))
+    return EXIT_SUSPEND
+
+
+# --------------------------------------------------------------------------
+# Deterministic completion (mirrors /openup-complete-task's per-track ceremony)
+# --------------------------------------------------------------------------
+def _flip_plan_status(plan_path, new_status):
+    text = plan_path.read_text(encoding="utf-8")
+    flipped, done = [], False
+    for line in text.splitlines():
+        if not done and re.match(r"^status\s*:", line):
+            comment = ""
+            if "#" in line:
+                comment = "   #" + line.split("#", 1)[1]
+            flipped.append("status: %s%s" % (new_status, comment))
+            done = True
+        else:
+            flipped.append(line)
+    plan_path.write_text("\n".join(flipped) + ("\n" if text.endswith("\n") else ""),
+                         encoding="utf-8")
+
+
+def _write_status_note(root, task, fm, counts):
+    notes_dir = Path(root) / "docs" / "status-notes"
+    notes_dir.mkdir(parents=True, exist_ok=True)
+    note = notes_dir / ("%s-%s.md" % (_utc_today(), task))
+    note.write_text(
+        "**%s** (%s, %s): %s — delivered by the reference cycle engine "
+        "(`openup-agent.py cycle`): ceremony ran as code; %d script step(s) and "
+        "%d judgment sub-run(s) executed, gates green.\n"
+        % (task, _utc_today(), fm.get("track") or "standard",
+           fm.get("title") or task, counts["script"], counts["judgment"]),
+        encoding="utf-8",
+    )
+
+
+def complete(root, task, env, counts, last_docs_sig=None):
+    """All boxes ticked → close the lane deterministically, sentinel, exit 0."""
+    root = Path(root)
+    plan = root / "docs" / "changes" / task / "plan.md"
+    fm = read_frontmatter(plan)
+    # 1. spec status → done (dependency resolution reads this frontmatter);
+    #    `verified` stays reserved for rubric-graded full-track completions.
+    _flip_plan_status(plan, "done")
+    # 2. lane-owned completion shard (sync-status assembles the Notes view).
+    _write_status_note(root, task, fm, counts)
+    # 3. traceability log + the log_written gate sync-status requires.
+    _run(["python3", "scripts/openup-state.py", "log-event",
+          "--event", "task_completed", "--task-id", task], root)
+    _run(["python3", "scripts/openup-state.py", "set-gate",
+          "log_written", "true"], root, check=True)
+    # 4. regenerate the derived shared views (never hand-edited). Fail-open: a
+    #    freshly bootstrapped project may not carry the views yet (the driver's
+    #    absent-gate spirit); the hard gates below stay blocking.
+    sync = _run(["python3", "scripts/sync-status.py"], root)
+    if sync.returncode != 0:
+        _log("sync-status.py failed (exit %d) — views not regenerated:\n%s"
+             % (sync.returncode, (sync.stdout + sync.stderr).strip()[:800]))
+    # 5. final deterministic gates before anything irreversible. Dirty-aware
+    #    (T-123): the completion writes above (status flip, status-note,
+    #    regenerated views) are all check-docs-irrelevant, so skip the redundant
+    #    check-docs re-run when nothing relevant changed since the last box's
+    #    pass; the fence still runs. Any relevant delta (or git unavailable) →
+    #    the full gate runs.
+    if last_docs_sig is not None and _relevant_docs_sig(root, task) == last_docs_sig:
+        ok, report = loop.run_gates(root, skip={"check-docs"})
+    else:
+        ok, report = loop.run_gates(root)
+    if not ok:
+        _log("completion gates FAILED:\n%s" % report)
+        return EXIT_GATE
+    # 6. retro cadence counter (durable; fail-open like the skill).
+    _run(["python3", "scripts/openup-state.py", "retro", "increment"], root)
+    # 7. atomic teardown: archive state INTO the change folder, log, release.
+    _run(["python3", "scripts/openup-session.py", "end",
+          "--task-id", task,
+          "--archive-to", "docs/changes/%s/state.json" % task], root, check=True)
+    # 8. archive the change folder (Ring 2 → archive ring).
+    (root / "docs" / "changes" / "archive").mkdir(parents=True, exist_ok=True)
+    _git(["mv", "docs/changes/%s" % task, "docs/changes/archive/%s" % task],
+         root, check=True)
+    # 9. one completion commit carrying the lane's whole delivery.
+    _git(["add", "-A"], root, check=True)
+    _git(["commit", "-m",
+          "chore(%s): complete lane via cycle engine [%s]" % (task, task)],
+         root, check=True)
+    # 10. merge the task branch back where the cycle started (no-remote world;
+    #     PR ceremony belongs to harnesses that have one).
+    meta = read_cycle_meta(root)
+    base = meta.get("base_branch")
+    branch = meta.get("branch")
+    if base and branch and base != branch:
+        _git(["checkout", base], root, check=True)
+        merge = _git(["merge", "--no-ff", branch, "-m",
+                      "merge %s: %s [%s]" % (branch, fm.get("title") or task, task)],
+                     root)
+        if merge.returncode != 0:
+            # T-121/B5 — do not strand the completed lane. Abort the half-merge so
+            # base stays clean, return to the task branch (which holds the
+            # archived, done lane), and record a pending_merge marker so the next
+            # cycle's recovery pre-pass retries the merge instead of re-planning
+            # atop finished work (which the archived folder hides from resolve).
+            _git(["merge", "--abort"], root)
+            _git(["checkout", branch], root)
+            meta["pending_merge"] = branch
+            _write_cycle_meta(root, meta)
+            _log("merge back to %s failed — recorded pending_merge=%s; base left "
+                 "clean, a re-run will retry the merge:\n%s"
+                 % (base, branch, (merge.stdout + merge.stderr)[:1000]))
+            return EXIT_STEP
+    print("OPENUP-NEXT: ADVANCED — %s" % task)
+    return EXIT_OK
+
+
+def _retry_pending_merge(root):
+    """T-121/B5 — finish a prior cycle's stranded completion merge. When a
+    ``complete()`` merge-back fails, the done+archived lane lives on its task
+    branch with a ``pending_merge`` marker in ``.openup/cycle.json``. Retry the
+    merge into base; clear the marker on success, else abort cleanly and leave it
+    for a human. Returns True iff a retry was attempted."""
+    meta = read_cycle_meta(root)
+    branch = meta.get("pending_merge")
+    base = meta.get("base_branch")
+    if not branch or not base:
+        return False
+    _git(["checkout", base], root)
+    merge = _git(["merge", "--no-ff", branch, "-m",
+                  "merge %s (pending-merge retry)" % branch], root)
+    if merge.returncode == 0:
+        meta.pop("pending_merge", None)
+        _write_cycle_meta(root, meta)
+        _log("pending_merge: merged %s into %s on retry" % (branch, base))
+    else:
+        _git(["merge", "--abort"], root)
+        _git(["checkout", branch], root)
+        _log("pending_merge: retry of %s into %s still conflicts — human merge "
+             "needed; the completed lane remains on the branch" % (branch, base))
+    return True
+
+
+# --------------------------------------------------------------------------
+# The cycle
+# --------------------------------------------------------------------------
+
+def _load_task_defs(root):
+    """T-106: the committed task library ``{id: def}`` via openup-process-map.py
+    (single source of the parser). Empty dict if unavailable — the direct path
+    then aborts with a clear 'not in the task library' error."""
+    p = _run(["python3", "scripts/openup-process-map.py", "tasks", "--json"], root)
+    if p.returncode != 0:
+        return {}
+    try:
+        data = json.loads(p.stdout)
+        return data if isinstance(data, dict) else {}
+    except (json.JSONDecodeError, ValueError):
+        return {}
+
+
+def _task_system_prompt(task_def):
+    """The slim generic shell for a task-def authoring sub-run (T-106) — replaces
+    reading the full procedure file. The specifics (judgment, inputs, output
+    path) travel in the instruction; the shell frames the role + the sentinel."""
+    return (
+        "You are an OpenUP authoring agent performing a single task. Produce "
+        "exactly the one artifact the instruction names, writing the document "
+        "BODY only — the engine stamps the typed frontmatter and validates. Read "
+        "only the inputs the instruction lists; do not load procedures, rubrics, "
+        "or schemas.\n"
+        "Converge — do not loop (T-124): write the artifact with a SINGLE "
+        "write_file call. The tool result confirms the write succeeded, so do NOT "
+        "read the file back to verify it, and do NOT re-read any input you were "
+        "given or have already read. The moment the artifact is written, your "
+        "NEXT reply MUST be the line `OPENUP-TASK: DONE` with no tool calls."
+    )
+
+
+def _stamp_task_artifact(root, task_def):
+    """T-106: after a successful task-def authoring sub-run, stamp the typed
+    instance frontmatter on the artifact the def declares (``artifact`` +
+    ``output_path``) — the model authored the body only. Runs before the gates,
+    so check-docs (already in run_gates) validates the stamped result: the gate
+    is the critic. A plain-view def (e.g. author-initial-roadmap → docs/roadmap.md)
+    stamps nothing. Returns 0, or EXIT_STEP when stamping fails."""
+    try:
+        info = stamping.stamp_for_task(root, task_def)
+    except (ValueError, OSError) as e:
+        _log("stamping %s failed: %s" % (task_def.get("output_path"), e))
+        return EXIT_STEP
+    if info:
+        _log("stamped %s as %s (%s, status draft)"
+             % (task_def.get("output_path"), info["id"], info["type"]))
+    return EXIT_OK
+
+
+def _run_plan_iteration(root, phase, env, step_tier, cap, interactive,
+                        _completion, _subrun):
+    """Wire the real driver callables into plan_iteration.run_plan_iteration
+    (T-090): the objectives sub-run, the per-lane spec sub-run (reusing
+    _dispatch_judgment), gates, git-commit, and the deterministic script ops
+    (mint/activities/reserve/partition/roadmap/lifecycle). Kept thin — the
+    planning logic lives in plan_iteration.py."""
+    root = Path(root)
+    try:
+        model = tiers.resolve_tier_model(root, step_tier, target="driver", env=env)
+    except tiers.TierError as e:
+        _log("FATAL: %s" % e)
+        return EXIT_CONFIG
+    # T-106: authoring sub-runs use the `authoring` tier (what the create-*
+    # procedures declared); fall back to the step model if the tier is absent.
+    try:
+        authoring_model = tiers.resolve_tier_model(root, "authoring", target="driver", env=env)
+    except tiers.TierError:
+        authoring_model = model
+    # The committed task library, resolved once for the direct path (T-106).
+    task_defs = _load_task_defs(root)
+
+    def _runner(argv):
+        p = _run(argv, root)
+        return p.returncode, p.stdout
+
+    def dispatch_objectives(instruction, system_prompt):
+        _log("plan-iteration: objectives sub-run (tier=%s, model=%s)"
+             % (step_tier, model))
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            rc = loop.run(dir=str(root), procedure="plan-objectives",
+                          max_iterations=cap, env=env, interactive=interactive,
+                          instruction=instruction, system_prompt=system_prompt,
+                          model=model, _completion=_completion)
+        out = buf.getvalue().strip()
+        if rc == EXIT_SUSPEND and out:
+            print(out.splitlines()[-1])
+        return rc
+
+    def dispatch_spec(lane_id, instruction):
+        box = {"hat": "analyst", "marker": None, "body": instruction}
+        try:
+            return _dispatch_judgment(root, lane_id, box, env, step_tier, cap,
+                                      interactive, None, _completion, _subrun,
+                                      instruction=instruction)
+        except tiers.TierError as e:
+            _log("FATAL: %s" % e)
+            return EXIT_CONFIG
+
+    def git_commit(paths, message):
+        _git(["add"] + list(paths), root, check=True)
+        _git(["commit", "-m", message], root, check=True)
+
+    def mint_id(ph):
+        rc, out = _runner(["python3", "scripts/openup-process-map.py",
+                           "mint-iteration-id", ph])
+        return out.strip().splitlines()[-1] if rc == 0 and out.strip() else ""
+
+    def activities_for(ph):
+        rc, out = _runner(["python3", "scripts/openup-process-map.py",
+                           "activities-for", ph, "--json"])
+        if rc != 0:
+            return []
+        try:
+            return json.loads(out)
+        except json.JSONDecodeError:
+            return []
+
+    def reserve_id(prefix, session):
+        rc, out = _runner(["python3", "scripts/openup-claims.py", "reserve-id",
+                           "--prefix", prefix, "--pad", "3",
+                           "--session-id", session])
+        return out.strip().splitlines()[-1] if rc == 0 and out.strip() else ""
+
+    def partition(candidates):
+        p = subprocess.run(
+            [sys.executable, "scripts/openup-board.py", "partition", "--stdin"],
+            cwd=str(root), input=json.dumps(candidates),
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        if p.returncode != 0:
+            raise CycleError("partition failed: %s" % p.stderr.strip()[:200])
+        return json.loads(p.stdout)
+
+    def roadmap_pending():
+        rc, out = _runner(["python3", "scripts/openup-roadmap.py", "list",
+                           "--status", "pending"])
+        if rc != 0:
+            return []
+        try:
+            data = json.loads(out)
+            return [e.get("title", "") for e in data] if isinstance(data, list) else []
+        except json.JSONDecodeError:
+            return []
+
+    def lifecycle():
+        rc, out = _runner(["python3", "scripts/openup-lifecycle.py", "status",
+                           "--json"])
+        if rc != 0:
+            return {}
+        try:
+            return json.loads(out)
+        except json.JSONDecodeError:
+            return {}
+
+    def run_task(task_def, instruction):
+        # T-106: a task-def authoring sub-run. The system prompt is a slim
+        # generic shell built from the def — NO procedure file is read (the
+        # T-089 system_prompt seam); the model authors the body, the engine
+        # stamps + gates. Capture the sub-run's DONE sentinel; surface output
+        # on failure.
+        system_prompt = _task_system_prompt(task_def)
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            rc = loop.run(dir=str(root),
+                          procedure=task_def.get("id") or task_def.get("name") or "task",
+                          max_iterations=loop.DEFAULT_MAX_ITERATIONS, env=env,
+                          interactive=interactive, instruction=instruction,
+                          system_prompt=system_prompt, model=authoring_model,
+                          _completion=_completion)
+        out = buf.getvalue()
+        if rc != 0:
+            if out.strip():
+                sys.stdout.write(out)
+                sys.stdout.flush()
+            return rc
+        return _stamp_task_artifact(root, task_def)
+
+    return plan_iteration.run_plan_iteration(
+        root, phase, dispatch_objectives=dispatch_objectives,
+        dispatch_spec=dispatch_spec, run_gates=lambda: loop.run_gates(root),
+        git_commit=git_commit, mint_id=mint_id, activities_for=activities_for,
+        reserve_id=reserve_id, partition=partition,
+        roadmap_pending=roadmap_pending, lifecycle=lifecycle,
+        run_task=run_task, task_defs=task_defs, log=_log,
+        suspend_sentinel=loop.SUSPEND_SENTINEL)
+
+
+def _run_assess(root, decision, env, step_tier, cap, interactive, _completion,
+                _subrun):
+    """Wire the real callables into assess.run_assess (T-091): the grading
+    sub-run, gates, and git-commit. Kept thin — the assess logic lives in
+    assess.py."""
+    root = Path(root)
+    try:
+        model = tiers.resolve_tier_model(root, step_tier, target="driver", env=env)
+    except tiers.TierError as e:
+        _log("FATAL: %s" % e)
+        return EXIT_CONFIG
+
+    def dispatch(instruction, system_prompt):
+        _log("assess: grading sub-run (tier=%s, model=%s)" % (step_tier, model))
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            rc = loop.run(dir=str(root), procedure="assess-iteration",
+                          max_iterations=cap, env=env, interactive=interactive,
+                          instruction=instruction, system_prompt=system_prompt,
+                          model=model, _completion=_completion)
+        out = buf.getvalue().strip()
+        if rc == EXIT_SUSPEND and out:
+            print(out.splitlines()[-1])
+        return rc
+
+    def git_commit(paths, message):
+        _git(["add"] + list(paths), root, check=True)
+        _git(["commit", "-m", message], root, check=True)
+
+    return assess.run_assess(root, decision, dispatch=dispatch,
+                             run_gates=lambda: loop.run_gates(root),
+                             git_commit=git_commit, log=_log)
+
+
+def _sweep_run_logs(root):
+    """T-108: register the cycle — sweep new/changed ``docs/agent-logs/``
+    shards into a log-only ``[openup-skip]`` commit on the current branch, on
+    EVERY cycle exit path. A cycle that suspended or failed still leaves its
+    audit trail durable (observed stranded live on my-product). Never raises
+    and never changes the cycle's exit code; a non-repo root is a no-op."""
+    logs_rel = "docs/agent-logs"
+    root = Path(root)
+    if not (root / logs_rel).is_dir():
+        return
+    status = _git(["status", "--porcelain", "--", logs_rel], root)
+    if status.returncode != 0 or not status.stdout.strip():
+        return
+    if _git(["add", "--", logs_rel], root).returncode != 0:
+        _log("run-log sweep: git add failed; shards left uncommitted")
+        return
+    commit = _git(["commit", "-m",
+                   "chore(process): sweep run-log shards [openup-skip]",
+                   "--", logs_rel], root)
+    if commit.returncode != 0:
+        _log("run-log sweep: commit failed: %s"
+             % (commit.stdout + commit.stderr).strip()[:200])
+    else:
+        _log("run-log sweep: committed %d shard change(s)"
+             % len(status.stdout.strip().splitlines()))
+
+
+def run_cycle(dir, env=None, step_max_iterations=DEFAULT_STEP_MAX_ITERATIONS,
+              step_tier=DEFAULT_STEP_TIER, interactive=False, recover=True,
+              _completion=None, _subrun=None, _ask=None,
+              _plan_iteration=None, _assess=None, _milestone=None):
+    """Run ONE delivery cycle under ``dir``. Returns an int exit code. Thin
+    wrapper: on every exit path (advanced, done, suspend, typed failure) the
+    run-log shards this cycle wrote are swept into a log-only commit (T-108)
+    and a stderr summary narrates what the cycle produced (T-109). The full
+    contract is on ``_run_cycle_inner``."""
+    root = Path(dir).resolve()
+    head = _git(["rev-parse", "HEAD"], root)
+    head_before = head.stdout.strip() if head.returncode == 0 else None
+    rc = None
+    try:
+        rc = _run_cycle_inner(
+            dir, env=env, step_max_iterations=step_max_iterations,
+            step_tier=step_tier, interactive=interactive, recover=recover,
+            _completion=_completion, _subrun=_subrun, _ask=_ask,
+            _plan_iteration=_plan_iteration, _assess=_assess,
+            _milestone=_milestone)
+        return rc
+    finally:
+        _sweep_run_logs(root)
+        _cycle_summary(root, head_before, rc)
+
+
+# Plain-words meaning of each cycle exit, for the closing summary (T-109).
+_EXIT_MEANINGS = {
+    EXIT_OK: "finished cleanly — the sentinel line above says whether to re-run",
+    EXIT_CONFIG: "configuration problem (endpoint/model/tier)",
+    EXIT_ENDPOINT: "the LLM endpoint did not respond",
+    EXIT_MAX_ITERATIONS: "the model hit its turn cap without finishing",
+    EXIT_SUSPEND: "paused for a human — answer the named file, then re-run",
+    EXIT_GATE: "a deterministic gate failed — see the report above",
+    EXIT_UNSUPPORTED: "this decision path is not automated",
+    EXIT_STEP: "a step failed — the log above names it",
+}
+
+
+def _cycle_summary(root, head_before, rc):
+    """T-109: close every cycle with a stderr summary — the commits it made
+    (which name the artifacts) and what the exit means. Never raises."""
+    try:
+        lines = []
+        if head_before:
+            log = _git(["log", "--format=%s", "%s..HEAD" % head_before], root)
+            subjects = [s for s in log.stdout.strip().splitlines() if s] \
+                if log.returncode == 0 else []
+            if subjects:
+                lines.append("cycle summary — %d commit(s) this cycle:"
+                             % len(subjects))
+                lines.extend("  + %s" % s for s in reversed(subjects))
+            else:
+                lines.append("cycle summary — no commits this cycle")
+        if rc is not None:
+            lines.append("cycle summary — exit %d: %s"
+                         % (rc, _EXIT_MEANINGS.get(rc, "unexpected exit")))
+        for line in lines:
+            _log(line)
+    except Exception:  # presentation must never mask the cycle's outcome
+        pass
+
+
+def _run_cycle_inner(dir, env=None,
+                     step_max_iterations=DEFAULT_STEP_MAX_ITERATIONS,
+                     step_tier=DEFAULT_STEP_TIER, interactive=False,
+                     recover=True, _completion=None, _subrun=None, _ask=None,
+                     _plan_iteration=None, _assess=None, _milestone=None):
+    """Run ONE delivery cycle under ``dir``. Returns an int exit code.
+
+    ``recover`` (default True, T-092/T-094) lets the engine rebuild blocking
+    repo state — close done-but-unclosed lanes, author a plan-iteration
+    decision's missing spec, and (with the human's explicit consent) run one
+    product-manager replenishment pass when nothing is promotable — before
+    dispatching; ``recover=False`` is byte-equivalent to the T-089 behavior.
+
+    Navigation is deterministic (T-101): a fresh authoring phase resolves to
+    ``plan-iteration`` from the process map, so a ``noop`` is a drained/complete
+    state → ``DONE``. (The per-cycle LLM navigator was retired in T-103.)
+
+    ``_completion`` is loop.run's scripted-LLM test seam, passed through to
+    every judgment sub-run; ``_subrun`` replaces the whole judgment-step call
+    (signature: fn(task, box, instruction) -> int); ``_ask`` replaces the
+    interactive consent prompt (fn(question) -> str) for tests.
+    """
+    import os
+    env = os.environ if env is None else env
+    root = Path(dir).resolve()
+
+    # T-121/B5 — before anything else, finish a prior cycle's stranded completion
+    # merge (a done+archived lane left on its task branch by a failed merge-back).
+    if recover:
+        _retry_pending_merge(root)
+
+    try:
+        decision = resolve_decision(root)
+    except CycleError as e:
+        _log("FATAL: %s" % e)
+        return EXIT_CONFIG
+
+    path = decision.get("path")
+    reason = decision.get("reason") or ""
+    _log("decision: path=%s — %s" % (path, reason))
+
+    # Recovery (T-092/T-094) — bounded: Case B once, then up to two rounds of
+    # (Case A | consent-gated replenishment), each followed by one re-resolve.
+    if recover and path in ("plan-iteration", "noop"):
+        try:
+            closed = reconcile_unclosed_lanes(root)
+        except CycleError as e:
+            _log("FATAL: %s" % e)
+            return EXIT_STEP
+        if closed:
+            decision = resolve_decision(root)
+            path = decision.get("path")
+            _log("decision after lane closure: path=%s — %s"
+                 % (path, decision.get("reason") or ""))
+    replenished = False
+    while recover:
+        if path == "plan-iteration":
+            # T-090: for an authoring phase (inception/elaboration) plan a full
+            # phase-appropriate iteration; otherwise keep the T-092 single-row
+            # promote (construction/transition feature delivery, unchanged).
+            iter_phase = (decision.get("phase") or "").lower()
+            if iter_phase in plan_iteration.AUTHORING_PHASES:
+                if _plan_iteration is not None:
+                    rc = _plan_iteration(root, decision, iter_phase)
+                else:
+                    rc = _run_plan_iteration(
+                        root, iter_phase, env, step_tier, step_max_iterations,
+                        interactive, _completion, _subrun)
+                if rc == EXIT_SUSPEND:
+                    _log("plan-iteration suspended awaiting human input")
+                    return EXIT_SUSPEND
+                if rc != EXIT_OK:
+                    return rc if rc in (EXIT_CONFIG, EXIT_ENDPOINT,
+                                        EXIT_MAX_ITERATIONS) else EXIT_STEP
+                decision = resolve_decision(root)
+                path = decision.get("path")
+                _log("decision after plan-iteration: path=%s — %s"
+                     % (path, decision.get("reason") or ""))
+                if path in ("pick", "resume"):
+                    break
+                # planned but not advanced — fall through to the stuck check
+            else:
+                rc = recover_missing_spec(root, decision, env, step_tier,
+                                          step_max_iterations, interactive,
+                                          _completion, _subrun)
+                if rc == EXIT_OK:
+                    decision = resolve_decision(root)
+                    path = decision.get("path")
+                    _log("decision after spec recovery: path=%s — %s"
+                         % (path, decision.get("reason") or ""))
+                    if path in ("pick", "resume"):
+                        break
+                    # authored but not advanced — fall through to the stuck check
+                elif rc != EXIT_UNSUPPORTED:
+                    return rc
+                # rc == EXIT_UNSUPPORTED: blocked lane — a stuck state too (T2)
+        # Stuck (T-094): nothing deterministic left, roadmap present, one shot.
+        if (path in ("noop", "plan-iteration") and not replenished
+                and (root / "docs" / "roadmap.md").exists()):
+            out = replenish_flow(root, env, step_tier, step_max_iterations,
+                                 interactive, _completion, _subrun, _ask)
+            if out is not None:
+                return out
+            replenished = True
+            decision = resolve_decision(root)
+            path = decision.get("path")
+            _log("decision after replenishment: path=%s — %s"
+                 % (path, decision.get("reason") or ""))
+            continue  # one more round: the new decision may need Case A
+        if path == "plan-iteration":
+            _log("recovery did not advance the decision (path=%s) — stopping"
+                 % path)
+            return EXIT_UNSUPPORTED
+        break
+
+    if path == "noop":
+        # Nothing pickable and nothing to plan. Navigation is deterministic
+        # (T-101): a fresh authoring phase resolves to plan-iteration, not noop,
+        # so a genuine noop here is a drained/complete state — report DONE. (The
+        # per-cycle LLM navigator was retired in T-103.)
+        print("OPENUP-NEXT: DONE — %s"
+              % (decision.get("reason") or "nothing to do"))
+        return EXIT_OK
+    if path == "assess-iteration":
+        # T-091: grade the exhausted iteration and record ## Assessment.
+        if _assess is not None:
+            return _assess(root, decision)
+        return _run_assess(root, decision, env, step_tier,
+                           step_max_iterations, interactive, _completion, _subrun)
+    if path == "milestone-review":
+        # T-091: prepare evidence + pause for the human go/no-go (zero LLM).
+        if _milestone is not None:
+            return _milestone(root, decision)
+        return assess.run_milestone(
+            root, decision, runner=lambda r, argv: (lambda p: (p.returncode, p.stdout))(
+                _run(["python3"] + list(argv), r)),
+            log=_log, suspend_sentinel=loop.SUSPEND_SENTINEL)
+    if path in UNSUPPORTED_PATHS:
+        _log("FATAL: decision path '%s' is not supported by the cycle engine "
+             "core — it lands with %s. Use the `next` procedure (or the Claude "
+             "Code skills) for this path meanwhile." % (path, UNSUPPORTED_PATHS[path]))
+        return EXIT_UNSUPPORTED
+    if path not in ("pick", "resume"):
+        _log("FATAL: unknown decision path '%s'" % path)
+        return EXIT_CONFIG
+
+    task = (decision.get("lane") or {}).get("task")
+    if not task:
+        _log("FATAL: decision carried no lane task")
+        return EXIT_CONFIG
+    resumable_input = (decision.get("resumable_input") or {}).get("request")
+
+    state = read_state(root)
+    try:
+        if state and state.get("task_id") == task:
+            _log("resuming %s (state present)" % task)
+            meta = read_cycle_meta(root)
+            if meta.get("task") == task and meta.get("branch"):
+                _checkout_task_branch(root, meta["branch"])
+        else:
+            acquire(root, task, decision, env)
+    except CycleError as e:
+        _log("FATAL: %s" % e)
+        return EXIT_STEP
+
+    plan = root / "docs" / "changes" / task / "plan.md"
+    counts = {"script": 0, "judgment": 0}
+    # Dirty-aware gating (T-123): the relevant-docs signature at the last
+    # check-docs pass. None until the first box runs the full gate.
+    last_docs_sig = None
+
+    while True:
+        try:
+            plan_text = plan.read_text(encoding="utf-8")
+        except OSError as e:
+            _log("FATAL: cannot read %s: %s" % (plan, e))
+            return EXIT_CONFIG
+        boxes = parse_boxes(plan_text)
+        pending = [b for b in boxes if not b["checked"]]
+        if not boxes:
+            _log("FATAL: %s has no Operations checkboxes — nothing the engine "
+                 "can execute" % plan)
+            return EXIT_CONFIG
+        if not pending:
+            break
+        box = pending[0]
+
+        try:
+            kind, command = classify_box(box)
+        except CycleError as e:
+            _log("FATAL: %s" % e)
+            return EXIT_STEP
+
+        if kind == "script":
+            counts["script"] += 1
+            _log("script step: %s" % command)
+            try:
+                argv = shlex.split(command)
+            except ValueError as e:
+                _log("FATAL: unparseable command %r: %s" % (command, e))
+                return EXIT_STEP
+            proc = _run(argv, root)
+            if proc.returncode != 0:
+                _log("script step FAILED (exit %d): %s\n%s"
+                     % (proc.returncode, command,
+                        (proc.stdout + proc.stderr).strip()[:2000]))
+                return EXIT_STEP
+        else:
+            counts["judgment"] += 1
+            try:
+                rc = _dispatch_judgment(
+                    root, task, box, env, step_tier, step_max_iterations,
+                    interactive, resumable_input, _completion, _subrun,
+                    plan_text=plan_text)
+            except tiers.TierError as e:
+                _log("FATAL: %s" % e)
+                return EXIT_CONFIG
+            if rc == EXIT_SUSPEND:
+                _log("cycle suspended awaiting human input (box left unticked)")
+                return EXIT_SUSPEND
+            if rc != 0:
+                _log("judgment step failed (exit %d); box left unticked" % rc)
+                return rc if rc in (EXIT_CONFIG, EXIT_ENDPOINT,
+                                    EXIT_MAX_ITERATIONS) else EXIT_STEP
+
+        # gates BEFORE the tick: a failed gate leaves the box unchecked so a
+        # resumed cycle retries the step (spec Req 4). Dirty-aware (T-123): run
+        # check-docs only on the first box (baseline) or when a check-docs-relevant
+        # doc changed since the last pass; the fence runs every box regardless.
+        docs_sig = _relevant_docs_sig(root, task)
+        if last_docs_sig is not None and docs_sig is not None \
+                and docs_sig == last_docs_sig:
+            ok, report = loop.run_gates(root, skip={"check-docs"})
+        else:
+            ok, report = loop.run_gates(root)
+            if ok and docs_sig is not None:
+                last_docs_sig = docs_sig
+        if not ok:
+            _log("gates FAILED after step; box left unticked:\n%s" % report)
+            return EXIT_GATE
+        try:
+            tick_box(plan, box["raw"])
+        except CycleError as e:
+            _log("FATAL: %s" % e)
+            return EXIT_STEP
+        _log("ticked: %s" % box["body"][:80])
+
+    try:
+        return complete(root, task, env, counts, last_docs_sig=last_docs_sig)
+    except CycleError as e:
+        _log("FATAL: completion failed — %s" % e)
+        return EXIT_STEP

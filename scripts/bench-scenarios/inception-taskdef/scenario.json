@@ -1,0 +1,7 @@
+{
+  "name": "inception-taskdef",
+  "description": "A brand-new project in Inception driven through the T-106 task-def authoring path (`openup-agent.py cycle`). Plan Iteration runs initiate-project's ordered tasks — develop-technical-vision then author-initial-roadmap — each as a bounded sub-run driven by a lean task def (a generic system prompt, NO procedure file read), with engine-owned frontmatter stamping. Batched vs the `inception-vision` procedure-read scenario on the same weak model, OPENUP_AGENT_USAGE_LOG (prompt_tokens) + OPENUP_AGENT_DEBUG_LOG (restart = repeated opener) read the program's measure: zero mid-run restarts, <=6 iterations per sub-run, per-sub-run context <=1/3 of the 2026-07-14 baseline.",
+  "command": "cycle",
+  "deliverable_file": "docs/product/vision.md",
+  "required_markers": ["ShareShed", "vision"]
+}

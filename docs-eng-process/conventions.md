@@ -26,6 +26,29 @@ type(scope): brief description [T-XXX]
 - `docs(readme): update setup instructions [T-003]`
 - `refactor(db): extract query builder [T-008]`
 
+## Pre-Commit Housekeeping: Sweep Hook-Appended Log Deltas
+
+`auto-log-commit.py` (a `PostToolUse` hook) can only inspect a commit **after**
+it has already landed — it appends one JSONL line to a `docs/agent-logs/`
+run-log shard, leaving the tree dirty. Left unswept, this forces a
+noticed-then-recommitted follow-up commit every time (a real cost measured
+live: 6 avoidable round trips in one bootstrap lane).
+
+**Before staging any commit, check for this delta and fold it in**:
+
+```bash
+git status --porcelain -- docs/agent-logs/
+```
+
+If it shows a change, `git add -- docs/agent-logs/` alongside whatever else
+you're staging for this commit, rather than committing now and making a
+second commit later once you notice the dirt. This mirrors the pattern the
+headless reference engine already uses to solve the identical problem —
+`_sweep_run_logs` (`scripts/openup_agent/cycle.py:1060-1084`) folds the whole
+`docs/agent-logs/` delta into a log-only `[openup-skip]` commit on every exit
+path. Applying the same discipline by hand at every commit you make keeps a
+Claude-Code-driven lane's history free of avoidable follow-up commits.
+
 ## Branch Naming
 
 ```

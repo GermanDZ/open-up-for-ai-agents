@@ -1,0 +1,5 @@
+{"run_id": "T-112-20260714", "event": "session_begin", "task_id": "T-112", "goal": "New /openup-cycle skill: deterministic-first pick/resume entry point with script/judgment box classification", "branch": "feat/T-112-openup-cycle-skill", "phase": "construction", "ts": "2026-07-14T13:53:45Z"}
+{"run_id": "9cc8c75d40ec4195ae78c826aede0e5d", "event": "commit", "task_id": "T-112", "branch": "feat/T-112-openup-cycle-skill", "sha": "1e6ba8674421818d239ff8ecd997e571136c4d42", "model": null, "session_id": "feat/T-112-openup-cycle-skill", "ts": "2026-07-14T14:00:09Z"}
+{"event": "iteration_complete", "task_id": "T-112", "branch": "feat/T-112-openup-cycle-skill", "phase": "construction", "ts": "2026-07-14T14:01:49Z"}
+{"run_id": "efa341e969f44c21bd96d327d2a80b5f", "event": "commit", "task_id": "T-112", "branch": "feat/T-112-openup-cycle-skill", "sha": "1e6ba8674421818d239ff8ecd997e571136c4d42", "model": null, "session_id": "feat/T-112-openup-cycle-skill", "ts": "2026-07-14T14:02:10Z"}
+{"event": "session_end", "task_id": "T-112", "ts": "2026-07-14T14:02:34Z"}

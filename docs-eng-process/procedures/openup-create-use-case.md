@@ -1,0 +1,148 @@
+---
+name: openup-create-use-case
+description: Create a use case specification from template
+tier: authoring
+capabilities: {required: [read_write_files, exec], optional: []}
+arguments:
+  - name: use_case_name
+    description: Name of the use case
+    required: true
+  - name: primary_actor
+    description: The primary actor for this use case
+    required: true
+  - name: description
+    description: Brief description of what the use case accomplishes
+    required: true
+---
+
+# Create Use Case
+
+This skill creates a use case specification from the OpenUP template.
+
+## When to Use
+
+Use this skill when:
+- Need to document user interactions with the system
+- In Inception or Elaboration phase defining requirements
+- Capturing functional requirements from user perspective
+- Need to specify preconditions, flows, and postconditions
+- Creating test scenarios from requirements
+
+## When NOT to Use
+
+Do NOT use this skill when:
+- Need non-functional requirements (use architecture notebook)
+- Looking for technical specifications (use design documents)
+- Documenting internal system behavior (use technical design)
+- Use case already exists (update existing file)
+
+## Success Criteria
+
+After using this skill, verify:
+- [ ] Use case file exists in `docs/use-cases/`
+- [ ] Use case name and primary actor are defined
+- [ ] Basic flow is documented
+- [ ] Alternative flows are identified
+- [ ] Pre/postconditions are specified
+
+## Process
+
+### Load Project Config (context + rules — do this first)
+
+If `docs/project-config.yaml` exists, apply it before drafting (skip if
+absent): inject its `context:` as `<project-context>` and its `rules.use-case`
+as `<project-rules>`, then confirm every injected rule holds before marking
+the artifact complete. Rules are *additive* — they may add but never waive a
+framework criterion. Full mechanism + precedence (the single source):
+`docs-eng-process/project-config.md`.
+
+### 1. Create Use Cases Directory
+
+Ensure `docs/use-cases/` directory exists.
+
+### 2. Generate Filename
+
+Create filename from use case name: `docs/use-cases/<use-case-name>.md`
+
+### 3. Copy Template
+
+Copy `docs-eng-process/templates/use-case-specification.md` to the new file.
+
+### 4. Fill in Use Case
+
+Update the use case specification with:
+- **Use case name**: `$ARGUMENTS[use_case_name]`
+- **Primary actor**: `$ARGUMENTS[primary_actor]`
+- **Description**: `$ARGUMENTS[description]`
+- **Preconditions**: What must be true before starting
+- **Basic flow**: Step-by-step main interaction
+- **Alternative flows**: Alternative paths and edge cases
+- **Postconditions**: What is true after completion
+
+### 4a. Write Instance Frontmatter (T-038 — doc traceability)
+
+Replace the template's provenance frontmatter (`type: Template`,
+`source_url`) with an **instance** block declaring this file as a typed
+work-product instance. The use case must trace from at least one
+`requirement` instance per the v1 spine (`use-case → traces-from →
+requirement`). If no requirement instance exists yet, pause and run
+`/openup-create-task-spec` (or write a `requirement` instance under
+`docs/requirements/`) first — a use case without a governing requirement
+is a content-rubric gap *and* a `check-docs.py --coverage` finding. Grade
+against the cross-cutting
+[Doc Traceability Rubric](../../rubrics/doc-traceability-rubric.md).
+
+Example block:
+
+```yaml
+---
+type: use-case              # required — v1 spine
+id: UC-007                  # stable, project-unique
+title: <Use Case Name>
+status: approved
+traces-from: [REQ-014]      # governing requirement(s)
+owner-role: analyst
+---
+```
+
+Field reference: [`docs-eng-process/doc-frontmatter.md`](../../../docs-eng-process/doc-frontmatter.md).
+Validator: `python3 scripts/check-docs.py`.
+
+### 5. Self-Critique
+
+Apply the **Self-Critique SOP** (`docs-eng-process/sops/self-critique.md`) before
+validating: take a hostile-reviewer stance, surface every load-bearing
+assumption into the use case, and confirm each flow step is observable and the
+pre/postconditions are checkable — not narrative prose. List every weakness you find — including ones you are uncertain about — then fix or explicitly flag each one. Rank them and record the top one or two with their resolutions.
+
+### 6. Validate Completeness
+
+Re-check every item in **Success Criteria** (top of this skill) against the
+document you produced; fix any gap before returning.
+
+## Output
+
+Returns:
+- Path to created use case file
+- Use case ID (for tracking)
+- Sections filled in
+
+## Common Errors
+
+| Error | Cause | Solution |
+|-------|-------|----------|
+| Template not found | Template path incorrect | Verify `docs-eng-process/templates/use-case-specification.md` exists |
+| Invalid filename | Use case name has invalid characters | Sanitize filename, replace spaces with dashes |
+| Missing actors | Actors not identified | Identify primary and secondary actors from vision/requirements |
+
+## References
+
+- Use Case Template: `docs-eng-process/templates/use-case-specification.md`
+- Use Case Work Product: `docs-eng-process/openup-knowledge-base/core/common/workproducts/use_case.md`
+
+## See Also
+
+- [openup-create-vision](../create-vision/SKILL.md) - Define project vision first
+- [openup-detail-use-case](../detail-use-case/SKILL.md) - Transform high-level use case into detailed scenarios
+- [openup-create-test-plan](../create-test-plan/SKILL.md) - Generate tests from use cases
+- [openup-elaboration](../../openup-phases/elaboration/SKILL.md) - Elaboration phase use case detail

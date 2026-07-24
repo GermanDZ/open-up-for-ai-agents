@@ -332,5 +332,142 @@ class CoverageTests(_FixtureBase):
         self.assertIn("coverage-gap", found)
 
 
+class ChangeFolderRefTests(_FixtureBase):
+    """T-090: a change folder is the system's work-item instance, so a
+    work-product may traces-from a change-folder id even though its plan.md is a
+    task-spec (no typed frontmatter)."""
+
+    def _lane(self, lane_id):
+        # A plain task-spec (status ready) — NOT a typed maturity instance.
+        d = self.docs / "changes" / lane_id
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "plan.md").write_text(
+            "---\nid: %s\nstatus: ready\npriority: high\n---\n# %s\n"
+            "## Operations\n- [ ] do it\n" % (lane_id, lane_id), encoding="utf-8")
+
+    def _iteration_plan(self, traces):
+        write_instance(self.docs, "phases/inception/iteration-I1-plan.md",
+                       frontmatter=[
+                           "type: iteration-plan", "id: IP-I1",
+                           "title: Iteration I1", "status: approved",
+                           "traces-from: [%s]" % ", ".join(traces),
+                           "owner-role: project-manager", "iteration: inception-1"],
+                       body="## Evaluation Criteria\n- done")
+
+    def test_iteration_plan_tracing_change_folder_resolves(self):
+        self._lane("I1-001")
+        self._lane("I1-002")
+        self._iteration_plan(["I1-001", "I1-002"])
+        proc = run(self.docs, expect=OK)
+        data, found = codes(proc)
+        self.assertTrue(data["ok"])
+        self.assertNotIn("dangling-ref", found)
+
+    def test_ref_to_missing_change_folder_still_dangles(self):
+        self._iteration_plan(["I1-999"])  # no such change folder
+        proc = run(self.docs, expect=FAIL)
+        _, found = codes(proc)
+        self.assertIn("dangling-ref", found)
+
+
+class ArchetypeDefaultsCLITests(unittest.TestCase):
+    """T-115: --show-archetype-defaults answers "what applies when
+    docs/project-config.yaml is absent" in one call, no docs/ tree needed."""
+
+    @classmethod
+    def setUpClass(cls):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("check_docs", SCRIPT)
+        cls.mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(cls.mod)
+
+    def _run(self):
+        proc = subprocess.run(
+            [sys.executable, str(SCRIPT), "--show-archetype-defaults"],
+            capture_output=True, text=True)
+        self.assertEqual(proc.returncode, OK, proc.stderr)
+        return json.loads(proc.stdout)
+
+    def test_exits_ok_with_no_docs_dir(self):
+        # No --docs given, and no docs/ dir exists in cwd — must not try to
+        # load or validate anything.
+        proc = subprocess.run(
+            [sys.executable, str(SCRIPT), "--show-archetype-defaults"],
+            capture_output=True, text=True, cwd=tempfile.gettempdir())
+        self.assertEqual(proc.returncode, OK, proc.stderr)
+
+    def test_default_when_absent_names_both_axes(self):
+        data = self._run()
+        msg = data["default_when_absent"]
+        self.assertIn("No archetype tailoring", msg)
+        self.assertIn("tracks.md", msg)
+
+    def test_archetypes_match_the_real_dict(self):
+        data = self._run()
+        self.assertEqual(
+            set(data["archetypes"].keys()),
+            set(self.mod.PROCESS_ARCHETYPE_DEFAULTS.keys()))
+        for name, expected in self.mod.PROCESS_ARCHETYPE_DEFAULTS.items():
+            self.assertEqual(data["archetypes"][name], expected)
+
+
+class ChangedOnlyTests(_FixtureBase):
+    """T-123: --changed-only skips a full rescan when nothing changed since the
+    last successful pass; any delta (or a prior failure) re-runs."""
+
+    def _run_changed(self, *extra, expect=None):
+        cmd = [sys.executable, str(SCRIPT), "--docs", str(self.docs),
+               "--json", "--changed-only", *extra]
+        proc = subprocess.run(cmd, capture_output=True, text=True)
+        if expect is not None:
+            assert proc.returncode == expect, (
+                f"expected {expect}, got {proc.returncode}\n"
+                f"stdout={proc.stdout}\nstderr={proc.stderr}")
+        return proc
+
+    def _skipped(self, proc):
+        return json.loads(proc.stdout).get("skipped") is True
+
+    def test_skips_when_unchanged(self):
+        self.vision()
+        first = self._run_changed(expect=OK)
+        self.assertFalse(self._skipped(first))    # first run does the full check
+        second = self._run_changed(expect=OK)
+        self.assertTrue(self._skipped(second))     # unchanged → skip
+
+    def test_reruns_on_delta(self):
+        self.vision()
+        self._run_changed(expect=OK)               # cache the pass
+        self.make_test_case()                      # add a new instance file
+        again = self._run_changed(expect=OK)
+        self.assertFalse(self._skipped(again))     # a new doc → full check
+
+    def test_no_skip_after_failure(self):
+        # a dangling verified-by fails the check; an unchanged re-run must NOT
+        # skip (the failure has to resurface).
+        self.vision()
+        write_instance(self.docs, "changes/REQ-014.md", frontmatter=[
+            "type: requirement", "id: REQ-014", "status: approved",
+            "traces-from: [VIS-001]", "verified-by: [TC-999]"])
+        first = self._run_changed(expect=FAIL)
+        self.assertFalse(self._skipped(first))
+        second = self._run_changed(expect=FAIL)    # still fails; not skipped
+        self.assertFalse(self._skipped(second))
+
+    def test_coverage_keyed_separately(self):
+        self.vision()
+        self._run_changed(expect=OK)               # caches cov=false
+        cov = self._run_changed("--coverage", expect=OK)
+        self.assertFalse(self._skipped(cov))       # cov=true not cached → full run
+        cov2 = self._run_changed("--coverage", expect=OK)
+        self.assertTrue(self._skipped(cov2))       # now cov=true cached → skip
+
+    def test_default_path_never_caches(self):
+        self.vision()
+        run(self.docs, expect=OK)                   # no --changed-only
+        cache = self.root / ".openup" / "check-docs-cache.json"
+        self.assertFalse(cache.exists())            # default path is untouched
+
+
 if __name__ == "__main__":
     unittest.main()

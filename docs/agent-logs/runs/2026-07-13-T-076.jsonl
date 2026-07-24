@@ -1,0 +1,4 @@
+{"run_id": "run-T-076-c5e4a7a", "event": "session_begin", "task_id": "T-076", "goal": "T-076 \u2014 Development Case config (process: section + archetypes)", "branch": "feat/T-076-development-case-config", "phase": "construction", "ts": "2026-07-13T08:05:13Z"}
+{"run_id": "da67492d649a4d2699fc2088d112fb90", "event": "commit", "task_id": "T-076", "branch": "feat/T-076-development-case-config", "sha": "44c95e6eb4e7b3e8a03572a4ada199db8de012cb", "model": null, "session_id": "feat/T-076-development-case-config", "ts": "2026-07-13T08:18:33Z"}
+{"event": "iteration_complete", "task_id": "T-076", "branch": "feat/T-076-development-case-config", "phase": "construction", "ts": "2026-07-13T08:23:59Z"}
+{"event": "session_end", "task_id": "T-076", "ts": "2026-07-13T08:24:12Z"}

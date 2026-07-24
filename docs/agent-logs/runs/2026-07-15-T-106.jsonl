@@ -1,0 +1,6 @@
+{"run_id": "T-106-run1", "event": "session_begin", "task_id": "T-106", "goal": "Engine consumes task library: generic authoring sub-run + tasks map wiring", "branch": "feat/T-106-engine-consumes-library", "phase": "construction", "ts": "2026-07-15T10:12:09Z"}
+{"run_id": "8616bd4355c5473381f3c1f41b0e2a83", "event": "commit", "task_id": "T-106", "branch": "feat/T-106-engine-consumes-library", "sha": "753b3413a53db3075b0013a57861629f5fb54d0e", "model": null, "session_id": "feat/T-106-engine-consumes-library", "ts": "2026-07-15T10:30:24Z"}
+{"run_id": "426b75be7185434880b5564be1f7f2fd", "event": "commit", "task_id": "T-106", "branch": "feat/T-106-engine-consumes-library", "sha": "7069df5e00b94ba718eaf6c050381b080a324d90", "model": null, "session_id": "feat/T-106-engine-consumes-library", "ts": "2026-07-15T10:31:37Z"}
+{"event": "iteration_complete", "task_id": "T-106", "branch": "feat/T-106-engine-consumes-library", "phase": "construction", "ts": "2026-07-15T10:32:52Z"}
+{"run_id": "ccbc5926ce7541b5916cc6a6553e53b1", "event": "commit", "task_id": "T-106", "branch": "feat/T-106-engine-consumes-library", "sha": "0ecf1082043e3506b5a4c951f7d4ca5ce31d89d8", "model": null, "session_id": "feat/T-106-engine-consumes-library", "ts": "2026-07-15T10:32:52Z"}
+{"event": "session_end", "task_id": "T-106", "ts": "2026-07-15T10:33:04Z"}

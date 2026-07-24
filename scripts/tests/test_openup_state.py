@@ -55,7 +55,7 @@ class OpenupStateTests(unittest.TestCase):
     def test_init_creates_valid_file(self):
         run(INIT_BASE, self.state_dir, expect_code=0)
         data = self.state_json()
-        self.assertEqual(data["schema"], 1)
+        self.assertEqual(data["schema"], 2)
         self.assertEqual(data["task_id"], "T-005")
         self.assertEqual(data["iteration"], 5)
         self.assertEqual(data["phase"], "construction")

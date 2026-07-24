@@ -1,0 +1,21 @@
+{
+  "schema": 2,
+  "task_id": "T-081",
+  "iteration": 51,
+  "iteration_id": null,
+  "cycle": 1,
+  "phase": "construction",
+  "track": "quick",
+  "branch": "feat/T-081-bench-stderr-capture",
+  "worktree": "/Users/germandz/personal-code/ai-dev-framework/open-up-for-ai-agents-T-081",
+  "session_id": "feat/T-081-bench-stderr-capture",
+  "started_at": "2026-07-13T12:08:34Z",
+  "gates": {
+    "team_deployed": false,
+    "plan_persisted": "docs/changes/T-081/plan.md",
+    "log_written": true,
+    "roadmap_synced": true,
+    "retro_due": false
+  },
+  "iterations_since_retro": 0
+}

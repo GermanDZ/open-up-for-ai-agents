@@ -1,0 +1,5 @@
+{"run_id": "T-117-run1", "event": "session_begin", "task_id": "T-117", "goal": "openup-doctor --fix applies auto-heal-class findings via owning scripts", "branch": "feat/T-117-doctor-fix", "phase": "inception", "ts": "2026-07-15T06:42:39Z"}
+{"run_id": "3c5879182f5747dcaea81c1ded80b051", "event": "commit", "task_id": "T-117", "branch": "feat/T-117-doctor-fix", "sha": "476f729615589561c73c83a5bb36fc5af9c26227", "model": null, "session_id": "feat/T-117-doctor-fix", "ts": "2026-07-15T06:50:31Z"}
+{"run_id": "3a0c5b1ad498491899e9566a850134d3", "event": "commit", "task_id": "T-117", "branch": "feat/T-117-doctor-fix", "sha": "f798b615d85512e51cbdd5bac0ff82849694cd9a", "model": null, "session_id": "feat/T-117-doctor-fix", "ts": "2026-07-15T06:51:38Z"}
+{"event": "iteration_complete", "task_id": "T-117", "branch": "feat/T-117-doctor-fix", "phase": "construction", "ts": "2026-07-15T06:51:54Z"}
+{"event": "session_end", "task_id": "T-117", "ts": "2026-07-15T06:52:04Z"}

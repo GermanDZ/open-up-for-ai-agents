@@ -1,0 +1,21 @@
+{
+  "schema": 2,
+  "task_id": "T-094",
+  "iteration": 62,
+  "iteration_id": null,
+  "cycle": 1,
+  "phase": "construction",
+  "track": "standard",
+  "branch": "feature/T-094-consent-replenishment",
+  "worktree": "/Users/germandz/personal-code/ai-dev-framework/open-up-for-ai-agents-T-094",
+  "session_id": "feature/T-094-consent-replenishment",
+  "started_at": "2026-07-13T15:55:21Z",
+  "gates": {
+    "team_deployed": false,
+    "plan_persisted": "docs/changes/T-094/plan.md",
+    "log_written": true,
+    "roadmap_synced": true,
+    "retro_due": false
+  },
+  "iterations_since_retro": 0
+}

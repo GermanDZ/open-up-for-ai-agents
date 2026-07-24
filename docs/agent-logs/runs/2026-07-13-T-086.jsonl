@@ -1,0 +1,3 @@
+{"event": "session_begin", "task_id": "T-086", "goal": "Record T-072 AC-program live acceptance; mark T-072 verified", "branch": "feat/T-086-record-ac-program", "phase": "construction", "ts": "2026-07-13T14:09:10Z"}
+{"run_id": "0af58a8d57a7464c92a6c0313c30d0df", "event": "commit", "task_id": "T-086", "branch": "feat/T-086-record-ac-program", "sha": "7656feaacba62114bc93b9a3bb32c9b671e69a8d", "model": null, "session_id": "feat/T-086-record-ac-program", "ts": "2026-07-13T14:10:37Z"}
+{"event": "session_end", "task_id": "T-086", "ts": "2026-07-13T14:10:55Z"}

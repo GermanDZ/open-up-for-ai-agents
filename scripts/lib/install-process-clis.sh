@@ -74,10 +74,16 @@ install_process_clis() {
                 cp "$dest" "$dest.bak"
             fi
         fi
-        cp "$src" "$dest"
+        # Write via temp + atomic rename: the manifest ships
+        # sync-from-framework.sh itself (T-110), so a sync may replace the
+        # very script that is running. mv gives dest a NEW inode — the running
+        # bash keeps reading its old one — where a plain cp would rewrite the
+        # running script mid-execution.
+        cp "$src" "$dest.tmp.$$"
         case "$f" in
-            *.py|*.sh) chmod +x "$dest" 2>/dev/null || true ;;
+            *.py|*.sh) chmod +x "$dest.tmp.$$" 2>/dev/null || true ;;
         esac
+        mv "$dest.tmp.$$" "$dest"
         copied=$((copied + 1))
     done < <(_process_cli_manifest "$src_dir")
 

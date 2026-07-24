@@ -24,7 +24,8 @@ Subcommands:
   top       Regenerate, then print the single top pickable lane (or exit 3).
   top-n     Print up to N collision-free READY lanes (or exit 3).
   resolve   Read-only: the §0–§1 /openup-next decision as one JSON object
-            (path ∈ resume|pick|promote|noop). Writes nothing (T-065).
+            (path ∈ resume|pick|assess-iteration|milestone-review|plan-iteration|noop).
+            Writes nothing (T-065).
   status    Read-only superset diagnostic (active iteration + leases +
             pickable lanes + promotable next) (T-065).
 
@@ -454,6 +455,127 @@ def cmd_top_n(args):
 
 
 # --------------------------------------------------------------------------
+# partition — cluster work items into non-colliding iteration groups (T-079)
+#
+# Lifts the lane-collision machinery one level: given a set of committed work
+# items, group them into the coarsest clusters such that any two items that
+# `touches`-overlap OR stand in a `depends-on` relation land in the SAME cluster.
+# The clusters are the connected components of that undirected graph — so distinct
+# clusters are, by construction, mutually disjoint in `touches` AND dependency-free
+# across clusters. That is exactly the property that makes them safe to run as
+# CONCURRENT iterations (Plan Iteration mints one iteration per cluster; the board
+# already un-scopes `pick` when several iteration prefixes are live — see
+# _active_iteration_prefix). A single cluster is the common case and degenerates
+# to today's one-iteration behavior — parallelism is discovered from the structure
+# of the work, never forced. Pure + read-only (no write_board, no reap).
+# --------------------------------------------------------------------------
+def _natural_key(s):
+    """Deterministic natural-ish sort key: split embedded digit runs so ``C3``
+    sorts before ``C10`` and ``C3-002`` before ``C3-010``. Order-independent."""
+    return [(1, int(t)) if t.isdigit() else (0, t)
+            for t in re.split(r"(\d+)", str(s)) if t != ""]
+
+
+def _read_workitem(root: Path, wid: str):
+    """``(touches, depends-on)`` for a work item from its change-folder plan
+    (``docs/changes/<id>/plan.md``). Missing folder → empty lists (an item with
+    no declared surface collides with nothing and depends on nothing)."""
+    plan = root / "docs" / "changes" / wid / "plan.md"
+    if not plan.exists():
+        return [], []
+    fm = claims.parse_frontmatter(plan)
+    touches = [claims._norm(t) for t in fm.get("touches", [])]
+    deps = [str(d).strip() for d in fm.get("depends-on", [])]
+    return touches, deps
+
+
+def partition_items(items):
+    """Connected-component clustering of work items over the
+    ``touches``-overlap ∪ ``depends-on`` graph.
+
+    ``items`` is an ordered list of ``{"id", "touches", "depends-on"}`` dicts.
+    Two items share a cluster iff their ``touches`` prefix-overlap
+    (``claims.touches_overlap`` — the SAME rule the write-fence enforces) or
+    either lists the other in ``depends-on``. Returns a list of clusters, each a
+    list of ids; members are sorted naturally and clusters are ordered by their
+    lowest member — so the output is deterministic and independent of input
+    ordering (Requirement 2)."""
+    ids = []
+    info = {}
+    for it in items:
+        wid = str(it.get("id", "")).strip()
+        if not wid or wid in info:
+            continue
+        ids.append(wid)
+        info[wid] = (
+            [claims._norm(t) for t in (it.get("touches") or [])],
+            [str(d).strip() for d in (it.get("depends-on") or [])],
+        )
+
+    # Union-find; keep the naturally-smallest id as each set's root so the
+    # partition is stable regardless of the order items are presented in.
+    parent = {wid: wid for wid in ids}
+
+    def find(x):
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    def union(a, b):
+        ra, rb = find(a), find(b)
+        if ra == rb:
+            return
+        keep, drop = sorted((ra, rb), key=_natural_key)
+        parent[drop] = keep
+
+    for i, a in enumerate(ids):
+        ta, da = info[a]
+        for b in ids[i + 1:]:
+            tb, db = info[b]
+            if claims.touches_overlap(ta, tb) or b in da or a in db:
+                union(a, b)
+
+    clusters = {}
+    for wid in ids:
+        clusters.setdefault(find(wid), []).append(wid)
+    out = [sorted(members, key=_natural_key) for members in clusters.values()]
+    out.sort(key=lambda c: _natural_key(c[0]))
+    return out
+
+
+def cmd_partition(args):
+    """Cluster work items into non-colliding iteration groups (read-only).
+
+    Two input modes:
+      * positional ids  → read ``touches``/``depends-on`` from each
+        ``docs/changes/<id>/plan.md`` (cluster existing change folders).
+      * ``--stdin``     → read a JSON array of ``{id, touches, depends-on}``
+        (Plan Iteration partitions *planned* work items before assigning
+        cluster-prefixed ids, so no change folder needs renaming).
+    Prints a JSON array of clusters (each a list of ids) and exits 0.
+    """
+    if args.stdin:
+        try:
+            items = json.load(sys.stdin)
+        except (json.JSONDecodeError, ValueError) as exc:
+            sys.stderr.write(f"partition: invalid JSON on stdin: {exc}\n")
+            return EXIT_USAGE
+        if not isinstance(items, list):
+            sys.stderr.write("partition: --stdin expects a JSON array of items.\n")
+            return EXIT_USAGE
+    else:
+        root = resolve_root(args)
+        items = [
+            {"id": wid, "touches": t, "depends-on": d}
+            for wid in args.ids
+            for (t, d) in [_read_workitem(root, wid)]
+        ]
+    print(json.dumps(partition_items(items), indent=2, ensure_ascii=False))
+    return EXIT_OK
+
+
+# --------------------------------------------------------------------------
 # resolve / status — the §0–§1 precedence, computed once as read-only data (T-065)
 #
 # `resolve` folds the four inputs the model chains by hand every /openup-next
@@ -522,46 +644,273 @@ def _promote_next(root: Path, cdir: Path):
     return None, err.getvalue().strip() or "no promotable roadmap task."
 
 
-def _decision(path, reason, lane=None, resumable_input=None, active_iteration=None):
+# Iteration-prefixed lane ids (T-077): <PhaseLetter><ordinal>-<seq>, e.g. C3-001.
+# A legacy task id (T-077) has no digit between the letter and the dash, so it
+# does NOT match — its iteration prefix is None (unscoped, backward-compatible).
+_ITER_PREFIX_RE = re.compile(r"^([A-Z]\d+)-\d+$")
+
+
+def iteration_prefix(task_id):
+    """The iteration id a lane belongs to (``C3`` for ``C3-001``), or None for a
+    legacy/unprefixed task (``T-077``). Derived purely from the id — no state."""
+    if not task_id:
+        return None
+    m = _ITER_PREFIX_RE.match(task_id)
+    return m.group(1) if m else None
+
+
+def _lifecycle_status(root: Path):
+    """The full derived lifecycle status via openup-lifecycle.py (read-only,
+    fail-open): ``{phase, cycle, criteria:[{id,desc,state}], …}`` or None if it
+    cannot be computed — the resolver stays functional without it."""
+    try:
+        life = _load_sibling("openup_lifecycle", "openup-lifecycle.py")
+        return life.compute_status(root, life.state_dir(root, None))
+    except Exception:
+        return None
+
+
+def _current_phase(root: Path):
+    """Derived current phase (or None). Thin front over _lifecycle_status."""
+    status = _lifecycle_status(root)
+    return status.get("phase") if status else None
+
+
+def _milestone_exists(root: Path, phase, cycle) -> bool:
+    """True if a milestone decision record already exists for ``phase``+``cycle``
+    (any decision). Reuses lifecycle's record reader; fail-open to False."""
+    if not phase:
+        return False
+    try:
+        life = _load_sibling("openup_lifecycle", "openup-lifecycle.py")
+        for rec in life.read_milestone_records(root):
+            if rec.get("phase") == phase and rec.get("cycle") == cycle:
+                return True
+    except Exception:
+        return False
+    return False
+
+
+# Phases whose activities compose create-* authoring work (P1, T-101) — the ones
+# a fresh project can plan directly from the process map. Construction/transition
+# deliver features via the roadmap, so their drained-roadmap case stays noop→T-094.
+_AUTHORING_PHASES = frozenset({"inception", "elaboration"})
+
+
+def _phase_has_activities(root: Path, phase) -> bool:
+    """True if the process map defines a non-empty activity composition for the
+    phase (so Plan Iteration has something to run). Fail-open to False."""
+    if not phase:
+        return False
+    try:
+        pm = _load_sibling("openup_process_map", "openup-process-map.py")
+        return bool(pm.activities_for(pm.load_map(root), phase))
+    except Exception:
+        return False
+
+
+def _phase_exit_ready(status) -> bool:
+    """The phase is ready for a milestone go/no-go when no machine-checkable
+    criterion is ``unmet`` (the ``human-judgment`` criteria are exactly what the
+    milestone review resolves, so they do not block reaching it). A phase with
+    no criteria (e.g. ``released``) is never 'ready' — nothing left to gate."""
+    crits = (status or {}).get("criteria") or []
+    if not crits:
+        return False
+    return all(c.get("state") != "unmet" for c in crits)
+
+
+# --- Iteration-plan instance = the loop contract (T-077/T-078) ---------------
+def _iteration_plan_instances(root: Path):
+    """Every ``type: iteration-plan`` work-product instance under the two
+    authoring locations (``docs/iteration-plans/`` and ``docs/phases/``).
+    Returns ``(path, frontmatter)`` pairs. Read-only."""
+    out = []
+    for d in (root / "docs" / "iteration-plans", root / "docs" / "phases"):
+        if not d.exists():
+            continue
+        for p in sorted(d.rglob("*.md")):
+            fm = claims.parse_frontmatter(p)
+            if str(fm.get("type", "")).strip().lower() == "iteration-plan":
+                out.append((p, fm))
+    return out
+
+
+def _work_item_done(root: Path, wid: str) -> bool:
+    """A committed work item is delivered iff its change folder is archived, or
+    its active plan carries a done/verified status. Unknown → not done."""
+    if (root / "docs" / "changes" / "archive" / wid).is_dir():
+        return True
+    plan = root / "docs" / "changes" / wid / "plan.md"
+    if plan.exists():
+        fm = claims.parse_frontmatter(plan)
+        return str(fm.get("status", "")).strip().lower() in DONE_STATUSES
+    return False
+
+
+def _has_assessment(plan_path: Path) -> bool:
+    """True if the iteration-plan body carries an ``## Assessment`` section
+    (written by /openup-assess-iteration) — the assessed marker."""
+    try:
+        for line in plan_path.read_text(encoding="utf-8").splitlines():
+            if line.strip().lower() == "## assessment":
+                return True
+    except OSError:
+        return False
+    return False
+
+
+def _active_iteration_plan(root: Path):
+    """The minted phase-aware iteration currently in flight, if any.
+
+    Identified by an iteration-plan instance whose committed work items
+    (``traces-from``) include at least one **iteration-prefixed** lane id
+    (``C3-001``) — legacy per-task plans trace to ``T-NNN`` / requirement ids and
+    never match, so they cannot false-trigger. A ``verified``/``obsolete``
+    instance is a closed iteration and is skipped. Returns
+    ``{iteration, committed, all_done, assessed, plan}`` or None."""
+    for p, fm in _iteration_plan_instances(root):
+        if str(fm.get("status", "")).strip().lower() in {"verified", "obsolete"}:
+            continue
+        traces = fm.get("traces-from") or []
+        if isinstance(traces, str):
+            traces = [traces]
+        committed = [str(t).strip() for t in traces
+                     if _ITER_PREFIX_RE.match(str(t).strip())]
+        if not committed:
+            continue
+        return {
+            "iteration": iteration_prefix(committed[0]),
+            "committed": committed,
+            "all_done": all(_work_item_done(root, w) for w in committed),
+            "assessed": _has_assessment(p),
+            "plan": p.relative_to(root).as_posix(),
+        }
+    return None
+
+
+def _active_iteration_prefix(cdir: Path):
+    """The iteration whose lanes are currently being worked, derived from live
+    leases. If exactly one iteration prefix is live, picks are scoped to it; if
+    none (all legacy) or several (parallel iterations — T-079), no scoping."""
+    prefixes = {
+        iteration_prefix(c.get("task_id"))
+        for c in claims.live_claims(cdir)
+    }
+    prefixes.discard(None)
+    return next(iter(prefixes)) if len(prefixes) == 1 else None
+
+
+def _decision(path, reason, lane=None, resumable_input=None,
+              active_iteration=None, phase=None, cycle=None, legacy_path=None):
     return {
         "path": path,
         "lane": lane,
         "resumable_input": resumable_input,
         "active_iteration": active_iteration,
+        "phase": phase,
+        "cycle": cycle,
+        # Back-compat alias during the T-077→T-078 transition: consumers still
+        # keying on the old ``promote`` name find it here until openup-next is
+        # rewired (T-078). None on every other path.
+        "legacy_path": legacy_path,
         "reason": reason,
     }
 
 
 def resolve_decision(root: Path, cdir: Path):
-    """The §0–§1 precedence as one object (pure; no I/O side effects)."""
+    """The §0–§1 precedence as one object (pure; no I/O side effects).
+
+    Lifecycle-aware (carries the derived ``phase``) and iteration-scoped (T-077):
+    while an iteration is active, §1b picks only lanes belonging to it, and the
+    former §1c ``promote`` path is emitted as ``plan-iteration`` (carrying the
+    phase) — Plan Iteration supersedes one-row-at-a-time promotion."""
+    status = _lifecycle_status(root)
+    phase = status.get("phase") if status else None
+    cycle = status.get("cycle") if status else None
     # §0 — an answered input-request resumes its lane before any new claim.
     ri = _resumable_input(root)
     if ri:
         return _decision(
             "resume", f"answered input for {ri['task']} — resume it first.",
-            lane={"task": ri["task"]}, resumable_input=ri)
+            lane={"task": ri["task"]}, resumable_input=ri, phase=phase, cycle=cycle)
     # §1a — an already-active iteration continues from its next unchecked box.
     ai = _active_iteration(root)
     if ai:
         return _decision(
             "resume", f"active iteration {ai['task']} — continue it.",
-            lane={"task": ai["task"]}, active_iteration=ai)
-    # §1b — the top pickable change-folder lane.
+            lane={"task": ai["task"]}, active_iteration=ai, phase=phase, cycle=cycle)
+    # §1b — the top pickable change-folder lane, iteration-scoped: while an
+    # iteration is active, only its own lanes are pickable (a ready lane from a
+    # different iteration waits its turn). Unscoped when no iteration is active.
     board = build_board(root, cdir)  # read-only: no write_board, no reap
+    active_iter = _active_iteration_prefix(cdir)
     for lane in board["lanes"]:
-        if is_pickable(lane):
-            return _decision(
-                "pick", f"top pickable lane {lane['task']}.", lane=lane)
-    # §1c — promote the next pending roadmap task.
+        if not is_pickable(lane):
+            continue
+        if active_iter and iteration_prefix(lane["task"]) != active_iter:
+            continue
+        return _decision(
+            "pick", f"top pickable lane {lane['task']}.", lane=lane,
+            phase=phase, cycle=cycle)
+    # §1c-assess (T-078) — a minted iteration whose committed work items are all
+    # done but whose iteration plan has no assessment yet → run Assess Results.
+    # Only fires for real phase-aware iterations (iteration-prefixed lanes); a
+    # single-lane/promote flow has no such instance, so behavior is unchanged.
+    iplan = _active_iteration_plan(root)
+    if iplan and iplan["all_done"] and not iplan["assessed"]:
+        return _decision(
+            "assess-iteration",
+            f"iteration {iplan['iteration']} exhausted — run Assess Results.",
+            lane={"task": iplan["iteration"], "plan": iplan["plan"],
+                  "next_action": "assess iteration"},
+            phase=phase, cycle=cycle)
+    # The next promotable roadmap task (needed by both §1c-milestone and §1d).
     entry, promote_reason = _promote_next(root, cdir)
+    # §1c-milestone (T-078) — the roadmap is drained (nothing promotable), the
+    # phase's exit criteria are met (no unmet machine criteria), and no milestone
+    # record exists yet for this phase+cycle → pause for the human go/no-go.
+    # Gating on "nothing promotable" (the same check §1d uses) keeps the loop
+    # from reviewing a milestone while deliverable work still remains, and avoids
+    # any disagreement between lifecycle's roadmap-clear and roadmap.py's next.
+    # Records nothing itself — the loop delegates to /openup-phase-review.
+    if (entry is None and _phase_exit_ready(status)
+            and not _milestone_exists(root, phase, cycle)):
+        return _decision(
+            "milestone-review",
+            f"{phase} phase exit criteria met (cycle {cycle}) — human go/no-go "
+            f"needed before advancing; run /openup-phase-review.",
+            lane={"task": phase, "next_action": "milestone review"},
+            phase=phase, cycle=cycle)
+    # §1c-plan-fresh (T-101, P1) — a fresh AUTHORING phase (inception/elaboration)
+    # whose machine criteria are not yet met, with nothing promotable and no
+    # active iteration: plan the phase iteration from the process map
+    # (activities-for), no roadmap entry required. This is what lets a fresh
+    # project reach its work products deterministically — replacing the per-cycle
+    # navigator/bootstrap (deleted in T-103). Construction/transition are excluded,
+    # so their drained-roadmap case still falls through to noop→T-094 replenish.
+    if (entry is None and phase in _AUTHORING_PHASES
+            and not _phase_exit_ready(status)
+            and _phase_has_activities(root, phase)):
+        return _decision(
+            "plan-iteration",
+            f"plan a fresh {phase}-phase iteration from the process map "
+            f"(no roadmap yet; phase criteria unmet).",
+            phase=phase, cycle=cycle, legacy_path="plan-fresh")
+    # §1d — no active iteration: plan the next iteration for the current phase
+    # (the former single-row promote is its degenerate, single-work-item case).
     if entry:
         return _decision(
-            "promote", f"promote roadmap task {entry['id']}.",
+            "plan-iteration",
+            f"plan a {phase or 'new'}-phase iteration "
+            f"(next work item {entry['id']}).",
             lane={"task": entry["id"], "title": entry.get("title"),
-                  "track": None, "next_action": "author spec + start"})
-    # §-noop — nothing pickable and nothing to promote.
+                  "track": None, "next_action": "plan iteration + start"},
+            phase=phase, cycle=cycle, legacy_path="promote")
+    # §-noop — nothing pickable and nothing to plan.
     return _decision(
-        "noop", f"{none_pickable_reason(board)} {promote_reason}".strip())
+        "noop", f"{none_pickable_reason(board)} {promote_reason}".strip(),
+        phase=phase, cycle=cycle)
 
 
 def cmd_resolve(args):
@@ -640,10 +989,29 @@ def build_parser():
     add_common(p_top_n)
     p_top_n.set_defaults(func=cmd_top_n)
 
+    p_partition = sub.add_parser(
+        "partition",
+        help="Cluster work items into non-colliding iteration groups (T-079): "
+             "connected components over touches-overlap ∪ depends-on. Read-only; "
+             "prints a JSON array of clusters (each a list of ids).",
+    )
+    p_partition.add_argument(
+        "ids", nargs="*", metavar="ID",
+        help="Work-item ids; touches/depends-on read from docs/changes/<id>/plan.md.",
+    )
+    p_partition.add_argument(
+        "--stdin", action="store_true",
+        help="Read a JSON array of {id, touches, depends-on} from stdin instead "
+             "(partition planned items before assigning cluster-prefixed ids).",
+    )
+    add_common(p_partition)
+    p_partition.set_defaults(func=cmd_partition)
+
     p_resolve = sub.add_parser(
         "resolve",
         help="Print the §0–§1 /openup-next decision as one read-only JSON object "
-             "(path ∈ resume|pick|promote|noop). Writes nothing.",
+             "(path ∈ resume|pick|assess-iteration|milestone-review|plan-iteration|"
+             "noop). Writes nothing.",
     )
     add_common(p_resolve)
     p_resolve.set_defaults(func=cmd_resolve)
@@ -672,7 +1040,7 @@ def main(argv=None):
 
     raw = list(sys.argv[1:] if argv is None else argv)
     # Default subcommand is `refresh` when the first token isn't a known command.
-    if not raw or raw[0] not in {"refresh", "top", "top-n", "resolve", "status"}:
+    if not raw or raw[0] not in {"refresh", "top", "top-n", "partition", "resolve", "status"}:
         raw = ["refresh"] + raw
     args = build_parser().parse_args(raw)
     return args.func(args)

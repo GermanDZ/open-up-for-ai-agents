@@ -9,6 +9,13 @@ because the only sanctioned path was too heavy.)
 The track is selected once, at iteration start, and recorded in `.openup/state.json` under
 `track`. Hooks and skills read it from there.
 
+**This `quick` is a different axis from the Development Case `archetype`
+(`quick`/`mvp`/`product`, `docs/project-config.yaml`'s `process:` block —
+see `project-config.md`).** The track sets one task's ceremony; the
+archetype tailors an entire phase's iteration budget/artifacts. Don't
+conflate them just because both have a `quick` value — a project can run
+`quick`-archetype phases with `full`-track tasks inside them, or vice versa.
+
 ## The three tracks
 
 | Track | When to use | Ceremony applied |

@@ -1,0 +1,4 @@
+{"run_id": "session-01NW19iVaj5r1Wco2hMjPUCU", "event": "session_begin", "task_id": "T-075", "goal": "T-075 \u2014 openup-lifecycle.py status + milestone decision records (derived phase view)", "branch": "feature/T-075-openup-lifecycle-status", "phase": "construction", "ts": "2026-07-13T07:31:56Z"}
+{"run_id": "4d897b88642343dca3851e05bce9b904", "event": "commit", "task_id": "T-075", "branch": "feature/T-075-openup-lifecycle-status", "sha": "7e03b4df0833b0cf6496e78bf3233b09b3748f0b", "model": null, "session_id": "feature/T-075-openup-lifecycle-status", "ts": "2026-07-13T07:46:01Z"}
+{"run_id": "c4620389f0d74ad29501cf1998500d85", "event": "commit", "task_id": "T-075", "branch": "feature/T-075-openup-lifecycle-status", "sha": "b1e29e2b047ce765cf107b5b55aa792dd3063579", "model": null, "session_id": "feature/T-075-openup-lifecycle-status", "ts": "2026-07-13T07:47:11Z"}
+{"event": "session_end", "task_id": "T-075", "ts": "2026-07-13T07:48:38Z"}

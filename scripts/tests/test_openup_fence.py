@@ -155,6 +155,32 @@ class FenceCheckTests(unittest.TestCase):
         proc = self.repo.fence("--task-id", TASK, "--allow-views")
         self.assertEqual(proc.returncode, OK, proc.stderr)
 
+    def test_index_view_with_fresh_base_passes(self):
+        # T-122/B8: docs/INDEX.md is a fenced derived view — a fresh-base
+        # regeneration must NOT be flagged OUT OF LANE (the T-003 revert).
+        self.repo.commit("docs/INDEX.md", "# Index v2\n")
+        proc = self.repo.fence("--task-id", TASK)
+        self.assertEqual(proc.returncode, OK, proc.stderr)
+        self.assertNotIn("OUT OF LANE", proc.stderr)
+
+    def test_index_view_with_stale_base_is_stale_view_not_out_of_lane(self):
+        # T-122/B8: on a stale base INDEX.md is a STALE VIEW (like the other
+        # views), never OUT OF LANE.
+        self.repo.commit("docs/INDEX.md", "# Index v2\n")
+        self.repo.advance_main()
+        proc = self.repo.fence("--task-id", TASK)
+        self.assertEqual(proc.returncode, VIOLATION)
+        self.assertIn("STALE VIEW", proc.stderr)
+        self.assertIn("docs/INDEX.md", proc.stderr)
+        self.assertNotIn("OUT OF LANE", proc.stderr)
+
+    def test_index_view_allow_views_overrides_stale_base(self):
+        # T-122/B8: --allow-views frees INDEX.md exactly as for the other views.
+        self.repo.commit("docs/INDEX.md", "# Index v2\n")
+        self.repo.advance_main()
+        proc = self.repo.fence("--task-id", TASK, "--allow-views")
+        self.assertEqual(proc.returncode, OK, proc.stderr)
+
     def test_stale_base_does_not_excuse_out_of_lane(self):
         self.repo.commit("src/other.py")
         self.repo.advance_main()
@@ -214,6 +240,7 @@ class FenceAllowedTests(unittest.TestCase):
         self.assertIn(f"docs/changes/{TASK}/", payload["allowed"])
         self.assertIn("docs/status-notes/", payload["allowed"])
         self.assertIn("docs/roadmap.md", payload["views"])
+        self.assertIn("docs/INDEX.md", payload["views"])  # T-122/B8
 
 
 class FenceQuickTrackTests(unittest.TestCase):
