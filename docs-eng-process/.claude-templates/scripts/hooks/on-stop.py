@@ -32,6 +32,7 @@ Hook event: Stop
 import json
 import os
 import re
+import shlex
 import subprocess
 import sys
 from pathlib import Path
@@ -220,9 +221,15 @@ def main() -> None:
                     porcelain_path(line) for line in dirty.splitlines()
                     if is_exempt_dirty(porcelain_path(line))
                 ]
-                add_cmd = " ".join(f'"{p}"' for p in exempt_paths)
+                # Shell-quote each path and prefix the list with `--`: a git
+                # porcelain path can carry arbitrary bytes (the exempt prefix
+                # only constrains the head), so naive f'"{p}"' interpolation
+                # would let a crafted filename break out of the string. shlex
+                # neutralizes metacharacters; `--` stops a leading `-` from
+                # being read as a flag.
+                add_cmd = " ".join(shlex.quote(p) for p in exempt_paths)
                 code, _ = run(
-                    f"git add {add_cmd} && "
+                    f"git add -- {add_cmd} && "
                     'git commit -m "chore(process): sweep hook-managed logs '
                     '[openup-skip]"',
                     cwd,
