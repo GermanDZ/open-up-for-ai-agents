@@ -189,9 +189,15 @@ if [ -z "$FRAMEWORK_PATH" ]; then
   log_info "Auto-detecting framework repository..."
 
   # Check if we're in the framework repository itself.
-  # The definitive marker is docs-eng-process/.claude-templates/ — only the
-  # framework has the template source tree; consuming projects never do.
-  if [ -d "$PROJECT_ROOT/docs-eng-process/.claude-templates" ]; then
+  # The definitive marker is scripts/sync-templates-to-claude.sh — that script
+  # exists ONLY in the framework (it renders the pack and populates the
+  # template mirror) and is never distributed to consuming projects. The
+  # previous marker, docs-eng-process/.claude-templates/, was NOT definitive:
+  # older syncs / manual setups copied that tree into consuming projects too,
+  # so it produced a false positive that refused to run in a legitimate
+  # consumer. Using the exact script this error tells you to run also keeps
+  # the check and its remedy pointed at the same file.
+  if [ -f "$PROJECT_ROOT/scripts/sync-templates-to-claude.sh" ]; then
     log_error "You appear to be in the framework repository itself."
     log_error "This script is meant to be run from projects that USE the framework."
     log_error "Use ./scripts/sync-templates-to-claude.sh instead."
@@ -208,7 +214,11 @@ if [ -z "$FRAMEWORK_PATH" ]; then
   )
 
   for path in "${POSSIBLE_PATHS[@]}"; do
-    if [ -f "$path/docs-eng-process/.claude-templates/CLAUDE.md" ]; then
+    # Same definitive marker as the self-check above: a real framework has
+    # scripts/sync-templates-to-claude.sh. Matching on the template tree alone
+    # could pick a stray consumer copy that carries a .claude-templates/ dir.
+    if [ -f "$path/scripts/sync-templates-to-claude.sh" ] \
+       && [ -d "$path/docs-eng-process/.claude-templates" ]; then
       FRAMEWORK_PATH="$path"
       log_success "Found framework at: $FRAMEWORK_PATH"
       break
