@@ -1,0 +1,313 @@
+#!/usr/bin/env python3
+"""Unit tests for scripts/openup-entropy.py (T-127).
+
+Run with either:
+    python3 -m unittest scripts.tests.test_openup_entropy
+    python3 scripts/tests/test_openup_entropy.py
+
+Hermetic: every test builds a throwaway git repo under a temp dir with its own
+change folders, run-log shards, and commit history, so nothing depends on the
+live repo's telemetry. The analyzer is exercised through its CLI (the way a
+maintainer runs it) and through its importable functions (for the metric math).
+"""
+
+import json
+import shutil
+import subprocess
+import sys
+import tempfile
+import unittest
+import importlib.util
+from pathlib import Path
+
+SCRIPT = Path(__file__).resolve().parents[1] / "openup-entropy.py"
+
+OK, USAGE, NO_DATA = 0, 2, 3
+
+_spec = importlib.util.spec_from_file_location("openup_entropy", SCRIPT)
+entropy = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(entropy)
+
+
+def git(cwd, *args):
+    return subprocess.run(
+        ["git", *args], cwd=cwd, capture_output=True, text=True,
+        env={"GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@x",
+             "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@x",
+             "GIT_CONFIG_GLOBAL": "/dev/null", "GIT_CONFIG_SYSTEM": "/dev/null",
+             "PATH": "/usr/bin:/bin:/usr/local/bin", "HOME": str(cwd)},
+    )
+
+
+class Fixture:
+    """Throwaway repo with change folders, run logs, and task-tagged commits."""
+
+    def __init__(self):
+        self.dir = Path(tempfile.mkdtemp())
+        git(self.dir, "init", "-q", "-b", "main")
+
+    def declare(self, task, touches, folder=None):
+        d = self.dir / "docs" / "changes" / (folder or task)
+        d.mkdir(parents=True, exist_ok=True)
+        body = "".join(f"  - {t}\n" for t in touches)
+        (d / "plan.md").write_text(
+            f"---\nid: {task}\ntitle: \"x\"\nstatus: done\ntouches:\n{body}---\n\n# {task}\n",
+            encoding="utf-8",
+        )
+
+    def log(self, task, records):
+        d = self.dir / "docs" / "agent-logs" / "runs"
+        d.mkdir(parents=True, exist_ok=True)
+        lines = [json.dumps({"task_id": task, **r}) for r in records]
+        (d / f"2026-06-01-{task}.jsonl").write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+    def commit(self, task, files, subject=None, date="2026-06-01T10:00:00+00:00"):
+        for rel in files:
+            p = self.dir / rel
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_text((p.read_text() if p.exists() else "") + "x\n", encoding="utf-8")
+        git(self.dir, "add", "-A")
+        msg = subject or f"feat({task}): work [{task}]"
+        res = subprocess.run(
+            ["git", "commit", "-q", "-m", msg], cwd=self.dir,
+            capture_output=True, text=True,
+            env={"GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@x",
+                 "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@x",
+                 "GIT_AUTHOR_DATE": date, "GIT_COMMITTER_DATE": date,
+                 "GIT_CONFIG_GLOBAL": "/dev/null", "GIT_CONFIG_SYSTEM": "/dev/null",
+                 "PATH": "/usr/bin:/bin:/usr/local/bin", "HOME": str(self.dir)},
+        )
+        assert res.returncode == 0, res.stderr
+
+    def run(self, *args):
+        return subprocess.run(
+            [sys.executable, str(SCRIPT), "--repo", str(self.dir), *args],
+            capture_output=True, text=True,
+        )
+
+    def payload(self, *args):
+        res = self.run("--json", *args)
+        assert res.returncode == OK, res.stderr
+        return json.loads(res.stdout)
+
+    def cleanup(self):
+        shutil.rmtree(self.dir, ignore_errors=True)
+
+
+class FrontmatterTests(unittest.TestCase):
+    """The declared surface is parsed the way lanes actually write it."""
+
+    def test_inline_comment_is_stripped(self):
+        text = ('---\nid: T-009\ntouches:\n'
+                '  - scripts/            # claims + tests\n'
+                '  - docs-eng-process/\n---\n')
+        task, touches = entropy._frontmatter_touches(text)
+        self.assertEqual(task, "T-009")
+        self.assertEqual(touches, ["scripts/", "docs-eng-process/"])
+
+    def test_list_ends_at_next_key(self):
+        text = '---\nid: T-002\ntouches:\n  - a.py\ndefer-until: "later"\n---\n'
+        _, touches = entropy._frontmatter_touches(text)
+        self.assertEqual(touches, ["a.py"])
+
+    def test_no_frontmatter_is_empty(self):
+        self.assertEqual(entropy._frontmatter_touches("# just a heading\n"), (None, []))
+
+
+class DriftMathTests(unittest.TestCase):
+    """Requirement 3 — prefix semantics, not string equality."""
+
+    def test_partial_overlap_scenario(self):
+        # Spec scenario: declared [a.py, b.py], actual [a.py, c.py].
+        d = entropy.drift_for({"a.py", "b.py"}, {"a.py", "c.py"})
+        self.assertEqual(d["jaccard"], 0.3333)
+        self.assertEqual(d["coverage"], 0.5)
+        self.assertEqual(d["precision"], 0.5)
+        self.assertEqual(d["undeclared_files"], ["c.py"])
+
+    def test_directory_declaration_covers_children(self):
+        # Spec scenario: declaring `src/` covers src/a.py and src/b.py.
+        d = entropy.drift_for({"src/"}, {"src/a.py", "src/b.py"})
+        self.assertEqual(d["coverage"], 1.0)
+        self.assertEqual(d["undeclared_files"], [])
+        self.assertEqual(d["precision"], 1.0)
+
+    def test_sibling_directory_does_not_match(self):
+        # seg_prefix_collide must not treat `src` as a prefix of `srcgen/`.
+        d = entropy.drift_for({"src/"}, {"srcgen/a.py"})
+        self.assertEqual(d["coverage"], 0.0)
+        self.assertEqual(d["undeclared_files"], ["srcgen/a.py"])
+
+    def test_unused_declaration_lowers_precision_and_jaccard(self):
+        d = entropy.drift_for({"a.py", "never.py"}, {"a.py"})
+        self.assertEqual(d["coverage"], 1.0)
+        self.assertEqual(d["precision"], 0.5)
+        self.assertEqual(d["jaccard"], 0.5)  # 1 covered / (1 actual + 1 unused)
+        self.assertEqual(d["unused_declarations"], ["never.py"])
+
+
+class CouplingMathTests(unittest.TestCase):
+    """Requirement 4 — support / Jaccard / lift and the cross-module flag."""
+
+    def test_pair_metrics_and_cross_module_flag(self):
+        # Spec scenario: two files co-occur in 5 of 10 tasks, each only in those 5.
+        graph = {}
+        for i in range(5):
+            graph[f"T-{i:03d}"] = {"scripts/a.py", "docs/b.md"}
+        for i in range(5, 10):
+            graph[f"T-{i:03d}"] = {"other/c.py", "other/d.py"}
+        cp = entropy.compute_coupling(graph, min_support=3, top=20, depth=1, max_files=60)
+        pair = next(p for p in cp["top"] if p["a"] == "docs/b.md")
+        self.assertEqual(pair["support"], 5)
+        self.assertEqual(pair["jaccard"], 1.0)
+        self.assertEqual(pair["lift"], 2.0)
+        self.assertTrue(pair["cross_module"])
+
+    def test_min_support_filters_noise(self):
+        graph = {"T-001": {"a.py", "b.py"}, "T-002": {"a.py", "b.py"}}
+        self.assertEqual(entropy.compute_coupling(graph, 3, 20, 1, 60)["top"], [])
+        self.assertEqual(len(entropy.compute_coupling(graph, 2, 20, 1, 60)["top"]), 1)
+
+    def test_oversized_task_is_skipped_and_reported(self):
+        graph = {"T-001": {f"f{i}.py" for i in range(10)}}
+        cp = entropy.compute_coupling(graph, 1, 20, 1, max_files=5)
+        self.assertEqual(cp["skipped_tasks"], ["T-001"])
+        self.assertEqual(cp["tasks"], 0)
+
+
+class ReportTests(unittest.TestCase):
+    """End-to-end over a hermetic git fixture."""
+
+    def setUp(self):
+        self.fx = Fixture()
+
+    def tearDown(self):
+        self.fx.cleanup()
+
+    def test_cost_series_joins_three_sources(self):
+        # Requirement 1 — one record per task, absent fields null (not 0).
+        self.fx.declare("T-001", ["src/a.py", "src/b.py"])
+        self.fx.log("T-001", [
+            {"event": "session_begin", "ts": "2026-06-01T10:00:00Z"},
+            {"event": "session_end", "ts": "2026-06-01T10:30:00Z"},
+        ])
+        self.fx.commit("T-001", ["src/a.py"])
+        row = next(t for t in self.fx.payload()["tasks"] if t["task"] == "T-001")
+        self.assertEqual(row["declared_touches"], 2)
+        self.assertEqual(row["actual_files"], 1)
+        self.assertEqual(row["duration_minutes"], 30.0)
+        self.assertEqual(row["commits"], 1)
+
+    def test_absent_metric_is_null_not_zero(self):
+        # A task with only a declared surface must not report 0 commits.
+        self.fx.declare("T-002", ["src/a.py"])
+        self.fx.commit("T-999", ["seed.txt"], subject="chore: seed")
+        row = next(t for t in self.fx.payload()["tasks"] if t["task"] == "T-002")
+        self.assertIsNone(row["actual_files"])
+        self.assertIsNone(row["commits"])
+        self.assertIsNone(row["duration_minutes"])
+
+    def test_buckets_by_index_and_month(self):
+        # Requirement 2 — both bucketings, medians over present values only.
+        for i in range(1, 13):
+            month = f"2026-0{4 + (i - 1) // 4}"
+            self.fx.declare(f"T-{i:03d}", [f"src/f{i}.py"])
+            self.fx.commit(f"T-{i:03d}", [f"src/f{i}.py"], date=f"{month}-02T10:00:00+00:00")
+        cost = self.fx.payload("--buckets", "4")["cost"]
+        self.assertEqual(len(cost["by_index"]), 4)
+        self.assertEqual([b["bucket"] for b in cost["by_month"]], ["2026-04", "2026-05", "2026-06"])
+        self.assertTrue(all(b["n"] == 3 for b in cost["by_index"]))
+
+    def test_drift_is_bucketed_alongside_cost(self):
+        # Requirement 3a — buckets carry median coverage / jaccard.
+        self.fx.declare("T-001", ["src/a.py"])
+        self.fx.commit("T-001", ["src/a.py"])
+        bucket = self.fx.payload("--buckets", "1")["cost"]["by_index"][0]
+        self.assertEqual(bucket["coverage"], 1.0)
+        self.assertEqual(bucket["drift_jaccard"], 1.0)
+
+    def test_directory_declaration_scores_full_coverage_end_to_end(self):
+        self.fx.declare("T-001", ["src/"])
+        self.fx.commit("T-001", ["src/a.py", "src/b.py"])
+        drift = self.fx.payload()["drift"]
+        self.assertEqual(drift["median_coverage"], 1.0)
+        self.assertEqual(drift["median_undeclared"], 0)
+
+    def test_default_excludes_drop_process_noise(self):
+        self.fx.declare("T-001", ["src/a.py"])
+        self.fx.commit("T-001", ["src/a.py", "docs/roadmap.md"])
+        # By default only src/a.py survives: the derived view docs/roadmap.md and
+        # the lane's own docs/changes/T-001/plan.md are process noise every lane
+        # touches by construction.
+        row = next(t for t in self.fx.payload()["tasks"] if t["task"] == "T-001")
+        self.assertEqual(row["actual_files"], 1)
+        # Opting out restores them, so the exclusion is what removed them.
+        row = next(t for t in self.fx.payload("--no-default-excludes")["tasks"]
+                   if t["task"] == "T-001")
+        self.assertEqual(row["actual_files"], 3)
+
+    def test_conventional_scope_fallback_when_no_bracket_tag(self):
+        self.fx.commit("T-001", ["src/a.py"], subject="feat(T-001): no trailer here")
+        payload = self.fx.payload()
+        self.assertEqual(payload["sources"]["git_id_pattern"], "scope")
+        self.assertEqual(payload["sources"]["git_tasks"], 1)
+
+    def test_degrades_to_git_only(self):
+        # Requirement 5 — no change folders: exit 0, declared sections empty.
+        self.fx.commit("T-001", ["src/a.py", "src/b.py"])
+        res = self.fx.run()
+        self.assertEqual(res.returncode, OK)
+        payload = self.fx.payload()
+        self.assertEqual(payload["sources"]["declared_tasks"], 0)
+        self.assertEqual(payload["sources"]["git_tasks"], 1)
+        self.assertEqual(payload["drift"]["tasks_with_both"], 0)
+        self.assertIn("no data", res.stdout)
+
+    def test_degrades_to_declared_only(self):
+        self.fx.declare("T-001", ["src/a.py", "src/b.py"])
+        payload = self.fx.payload()
+        self.assertEqual(payload["sources"]["git_tasks"], 0)
+        self.assertIsNone(payload["sources"]["git_id_pattern"])
+        self.assertEqual(payload["coupling"]["actual"]["tasks"], 0)
+        self.assertEqual(payload["coupling"]["declared"]["tasks"], 1)
+
+    def test_empty_repo_exits_no_data(self):
+        res = self.fx.run()
+        self.assertEqual(res.returncode, NO_DATA)
+        self.assertIn("no telemetry", res.stderr)
+
+    def test_json_output_is_byte_identical_across_runs(self):
+        # Requirement 6 — determinism.
+        self.fx.declare("T-001", ["src/a.py"])
+        self.fx.commit("T-001", ["src/a.py"])
+        first = self.fx.run("--json").stdout
+        second = self.fx.run("--json").stdout
+        self.assertEqual(first, second)
+
+    def test_report_writes_nothing_to_the_analyzed_repo(self):
+        # Requirement 7 — report-only invariant.
+        self.fx.declare("T-001", ["src/a.py"])
+        self.fx.commit("T-001", ["src/a.py"])
+        before = git(self.fx.dir, "status", "--porcelain", "--untracked-files=all").stdout
+        self.fx.run()
+        self.fx.run("--json")
+        after = git(self.fx.dir, "status", "--porcelain", "--untracked-files=all").stdout
+        self.assertEqual(before, after)
+        self.assertFalse((self.fx.dir / ".openup").exists())
+
+    def test_paired_sessions_sum_worked_time(self):
+        # Two sessions on separate days sum to 45 min, not a 24h wall-clock span.
+        self.fx.declare("T-001", ["src/a.py"])
+        self.fx.log("T-001", [
+            {"event": "session_begin", "ts": "2026-06-01T10:00:00Z"},
+            {"event": "session_end", "ts": "2026-06-01T10:30:00Z"},
+            {"event": "session_begin", "ts": "2026-06-02T10:00:00Z"},
+            {"event": "session_end", "ts": "2026-06-02T10:15:00Z"},
+        ])
+        row = next(t for t in self.fx.payload()["tasks"] if t["task"] == "T-001")
+        self.assertEqual(row["duration_minutes"], 45.0)
+        self.assertEqual(row["index"], 1)
+
+
+if __name__ == "__main__":
+    unittest.main()

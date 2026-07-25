@@ -50,8 +50,11 @@ stdlib) · ✅ Testable (pure functions over fixtures + a hermetic git fixture)
   (P3), mutation testing (V1), refactor emission (R1), or the regression gate
   (D1) — every one of those is explicitly gated on evidence this task produces.
 - **Definition of done.** `python3 scripts/openup-entropy.py --repo <path>` prints
-  a cost/drift/coupling report for this repo and for `kaze-app/kaze-webapp`, both
-  captured in a dated exploration note, with the tests green.
+  a cost/drift/coupling report, this repo's baseline is captured in a dated
+  exploration note, and the tests are green. The `kaze-webapp` baseline is carried
+  as an explicitly-blocked Operations step (see below) rather than counted as done
+  — the analyzer's foreign-repo paths are covered by hermetic tests but have not
+  been exercised against that repo's real history.
 
 > **Assumption:** `kaze-webapp` may not carry OpenUP change folders or `[T-NNN]`
 > commit tags. Rather than guess its layout, every input degrades independently —
@@ -74,6 +77,13 @@ stdlib) · ✅ Testable (pure functions over fixtures + a hermetic git fixture)
 > this session (`list_repos` returns no match). The brief's third baseline is
 > deferred, not silently dropped. *(Vetoable at review.)*
 
+> **Discovered mid-lane (2026-07-25):** `kaze-app/kaze-webapp` is likewise not
+> attachable from this session — `list_repos` sees it, but `add_repo` refuses
+> cross-owner adds against this session's `germandz` sources. Both application
+> baselines are therefore deferred to a session scoped to those repos. The
+> analyzer is repo-agnostic by construction and its degrade paths are tested, but
+> "tested hermetically" is not "run against that history" and the note says so.
+
 ## Requirements
 
 1. `scripts/openup-entropy.py` computes a **per-task cost series** — declared
@@ -93,13 +103,30 @@ stdlib) · ✅ Testable (pure functions over fixtures + a hermetic git fixture)
      **Then** the output contains 4 index buckets and 3 month buckets, each with a
      median for every metric computed over only the tasks having that metric.
 
-3. The tool reports **declared-vs-actual drift** per task: the declared set, the
-   actual set, their Jaccard similarity, and the count of files changed but never
-   declared.
+3. The tool reports **declared-vs-actual drift** per task: coverage (fraction of
+   actually-changed files the lane declared), precision (fraction of declarations
+   that matched a real change), Jaccard, and the files changed but never declared.
+   A declared entry matches an actual path by **segment-prefix**, not string
+   equality — `touches:` legitimately carries directory entries
+   (`docs-eng-process/templates/`), and the matching semantics must be the fence's,
+   not a re-implementation.
    - **Given** a task declaring `[a.py, b.py]` whose commits actually touch
      `[a.py, c.py]`
      **When** the drift section renders
-     **Then** that task shows `jaccard 0.333` and `undeclared 1` naming `c.py`.
+     **Then** that task shows `jaccard 0.333`, `coverage 0.5`, `precision 0.5`,
+     and `undeclared 1` naming `c.py`.
+   - **Given** a task declaring the directory `src/` whose commits touch
+     `src/a.py` and `src/b.py`
+     **When** the drift section renders
+     **Then** coverage is `1.0` and `undeclared` is `0` — the directory entry
+     covers both files rather than matching neither.
+
+3a. Drift is **bucketed on the same windows as cost**, so a rise in
+   declared-vs-actual divergence is readable as a trend rather than a single
+   pooled number.
+   - **Given** tasks spanning four index buckets **When** the report runs
+     **Then** each cost bucket also carries a median coverage and median Jaccard
+     computed over the tasks in that bucket that have both signals.
 
 4. The tool computes **co-change coupling** over file pairs — support, Jaccard,
    and lift — from the declared graph and the actual graph independently, listing
@@ -187,23 +214,29 @@ phase: the script has no write path at all.
 
 ## Operations
 
-- [ ] Write `scripts/openup-entropy.py`: the three loaders (change-folder
+- [x] Write `scripts/openup-entropy.py`: the three loaders (change-folder
       `touches`, run-log JSONL, git `--numstat` joined on `[T-NNN]`), each
       returning empty on absence.
-- [ ] Add the metric layer — cost series, index/month bucketing with medians,
+- [x] Add the metric layer — cost series, index/month bucketing with medians,
       declared-vs-actual drift, and co-change coupling (support/Jaccard/lift) over
       both graphs, with the default exclusion list applied and printed.
-- [ ] Add the text and `--json` renderers; verify byte-identical output across two
+- [x] Add the text and `--json` renderers; verify byte-identical output across two
       consecutive `--json` runs on this repo.
-- [ ] Write `scripts/tests/test_openup_entropy.py` covering each requirement's
+- [x] Write `scripts/tests/test_openup_entropy.py` covering each requirement's
       scenario, including the hermetic git fixture and the degrade-to-empty path.
-- [ ] Run the full suite (`python3 -m pytest scripts/tests/ -q`) and confirm no
+- [x] Run the full suite (`python3 -m pytest scripts/tests/ -q`) and confirm no
       pre-existing test regressed.
-- [ ] Run the analyzer against this repo and against a fresh clone of
-      `kaze-app/kaze-webapp`; record both reports plus the interpretation in
+- [x] Run the analyzer against this repo; record the report, the interpretation,
+      and the kaze-webapp blocker in
       `docs/explorations/2026-07-25-maintainability-baselines.md`.
-- [ ] Add the CLI signature block to `docs-eng-process/script-cli-reference.md`.
-- [ ] (tester) Verify the report-only invariant: analyzed repos show no working-tree
+- [ ] **BLOCKED** — run the analyzer against `kaze-app/kaze-webapp` and append its
+      baseline. Blocked on session repo scope, not on the tooling: this session's
+      sources belong to owner `germandz`, and `add_repo` refuses cross-owner adds
+      (`cross-tier adds are not supported in v1`). Unblock by starting a session
+      with `kaze-app/kaze-webapp` as an initial source; the command is recorded in
+      the baseline note §7.
+- [x] Add the CLI signature block to `docs-eng-process/script-cli-reference.md`.
+- [x] (tester) Verify the report-only invariant: analyzed repos show no working-tree
       change and no `.openup/` write after a full run.
 
 ## Norms
@@ -230,8 +263,9 @@ Inherits from:
 
 ## Success Measures
 
-We expect **median declared-vs-actual Jaccard across tasks with both signals** to
-be **≥ 0.5** on this repo. Instrumentation: the `drift.median_jaccard` field of
+We expect **median declared-vs-actual coverage across tasks with both signals** to
+be **≥ 0.5** on this repo — i.e. a lane declares at least half of what it actually
+changes. Instrumentation: the `drift.median_coverage` field of
 `openup-entropy.py --json`. Read-back: **immediately, in this task's baseline
 note.** This is the falsifiable premise of the whole measurement programme — the
 declared `touches` graph is only usable as a coupling proxy (M1's claim, and the
