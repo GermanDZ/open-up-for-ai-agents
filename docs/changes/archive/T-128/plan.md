@@ -1,7 +1,7 @@
 ---
 id: T-128
 title: "Entropy analyzer: unit-of-work fallback (task | commit | pr) for repos without task ids"
-status: ready
+status: done
 priority: medium
 estimate: 0.5 session
 plan: docs/roadmap.md
