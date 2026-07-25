@@ -270,6 +270,21 @@ def _git(root, args):
     return proc.stdout if proc.returncode == 0 else None
 
 
+def is_shallow_repo(root):
+    """``True``/``False`` if git can answer; ``None`` if ``root`` isn't a git repo.
+
+    A shallow checkout (``git clone --depth N``, the default on most CI
+    ``actions/checkout``) attributes the whole pre-boundary tree to the boundary
+    commit — T1 in the T-127 baseline corrupted 34/126 tasks this way. The
+    analyzer still runs (report-only, degrades independently), but the result
+    must be flagged so a downstream consumer can refuse it.
+    """
+    out = _git(root, ["rev-parse", "--is-shallow-repository"])
+    if out is None:
+        return None
+    return out.strip() == "true"
+
+
 def load_git(root, task_re=None, unit="task"):
     """{unit_key: {files, commits, first_ts, last_ts}} from ``git log --numstat``.
 
@@ -565,6 +580,7 @@ def build_report(root, args):
             "excludes": excludes,
             "module_depth": args.module_depth,
             "min_support": args.min_support,
+            "shallow": is_shallow_repo(root),
         },
         "tasks": [{k: v for k, v in r.items() if not k.startswith("_")} for r in rows],
         "cost": {
@@ -709,6 +725,15 @@ def main(argv=None):
         print(f"error: no telemetry found in {root} "
               "(no change folders, no run logs, no task-tagged commits)", file=sys.stderr)
         return EXIT_NO_DATA
+
+    if src["shallow"]:
+        print(
+            "*** WARNING: shallow clone detected — history is truncated, so the "
+            "boundary commit's diff attributes the ENTIRE pre-boundary tree to "
+            "itself (falsely inflating that task's cost/coupling numbers). "
+            "Run `git fetch --unshallow` and re-run for a reliable report. ***",
+            file=sys.stderr,
+        )
 
     if args.json:
         print(json.dumps(report, indent=2, sort_keys=True))
