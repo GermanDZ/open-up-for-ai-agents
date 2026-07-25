@@ -309,6 +309,68 @@ class ReportTests(unittest.TestCase):
         self.assertEqual(row["index"], 1)
 
 
+class ShallowCloneTests(unittest.TestCase):
+    """F5 — a truncated history is flagged, never silently trusted."""
+
+    def setUp(self):
+        self.fx = Fixture()
+        self.fx.declare("T-001", ["src/a.py"])
+        self.fx.commit("T-001", ["src/a.py"])
+        self.fx.declare("T-002", ["src/b.py"])
+        self.fx.commit("T-002", ["src/b.py"])
+
+    def tearDown(self):
+        self.fx.cleanup()
+
+    def test_full_clone_reports_not_shallow(self):
+        self.assertFalse(self.fx.payload()["sources"]["shallow"])
+
+    def test_non_git_dir_reports_shallow_as_null(self):
+        plain = Path(tempfile.mkdtemp())
+        try:
+            self.assertIsNone(entropy.is_shallow_repo(plain))
+        finally:
+            shutil.rmtree(plain, ignore_errors=True)
+
+    def test_shallow_clone_is_flagged_and_warns(self):
+        shallow_dir = Path(tempfile.mkdtemp())
+        try:
+            cloned = subprocess.run(
+                ["git", "clone", "-q", "--depth", "1", f"file://{self.fx.dir}", str(shallow_dir)],
+                capture_output=True, text=True,
+            )
+            assert cloned.returncode == 0, cloned.stderr
+            res = subprocess.run(
+                [sys.executable, str(SCRIPT), "--repo", str(shallow_dir), "--json"],
+                capture_output=True, text=True,
+            )
+            self.assertEqual(res.returncode, OK)
+            payload = json.loads(res.stdout)
+            self.assertTrue(payload["sources"]["shallow"])
+            self.assertIn("shallow clone detected", res.stderr)
+            self.assertIn("git fetch --unshallow", res.stderr)
+        finally:
+            shutil.rmtree(shallow_dir, ignore_errors=True)
+
+    def test_text_mode_also_warns_on_stderr(self):
+        shallow_dir = Path(tempfile.mkdtemp())
+        try:
+            cloned = subprocess.run(
+                ["git", "clone", "-q", "--depth", "1", f"file://{self.fx.dir}", str(shallow_dir)],
+                capture_output=True, text=True,
+            )
+            assert cloned.returncode == 0, cloned.stderr
+            res = subprocess.run(
+                [sys.executable, str(SCRIPT), "--repo", str(shallow_dir)],
+                capture_output=True, text=True,
+            )
+            self.assertEqual(res.returncode, OK)
+            self.assertIn("shallow clone detected", res.stderr)
+            self.assertNotIn("shallow clone detected", res.stdout)
+        finally:
+            shutil.rmtree(shallow_dir, ignore_errors=True)
+
+
 class UnitOfWorkTests(unittest.TestCase):
     """T-128 — a task is one unit of work; commits and PRs are others."""
 
