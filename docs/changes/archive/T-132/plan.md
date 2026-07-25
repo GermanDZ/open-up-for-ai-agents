@@ -1,7 +1,7 @@
 ---
 id: T-132
 title: "openup-entropy.py --include allowlist + --snapshots + --by-era coupling + manifest registration (F1 + F6)"
-status: ready
+status: done
 priority: high
 estimate: 1-2 sessions
 plan: docs/iteration-plans/t-132-entropy-include-snapshots-era-manifest.md
