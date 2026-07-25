@@ -13,6 +13,7 @@ touches:
   - scripts/openup-fence.py
   - scripts/openup-session.py
   - scripts/openup-state.py
+  - scripts/openup-state.schema.json
   - scripts/tests/test_openup_claims.py
   - scripts/tests/test_openup_fence.py
   - scripts/tests/test_openup_session.py
@@ -230,7 +231,7 @@ locking/claiming protocol itself or the fence's allowlist-matching logic.
       live-shape T-128-vs-T-127 sequential-lane regression (Requirement 5)
 - [x] Document the new `--base-sha` flags in
       `docs-eng-process/script-cli-reference.md`
-- [ ] Run the full test suite + `check-docs.py --changed-only` +
+- [x] Run the full test suite + `check-docs.py --changed-only` +
       `openup-fence.py check` and confirm all green
 
 ## Norms
