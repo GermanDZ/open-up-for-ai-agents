@@ -12,7 +12,7 @@ All scripts are stdlib-only, deterministic, and never invoke a model.
 init         --task-id --iteration --phase {inception|elaboration|construction|transition}
              --track {quick|standard|full} --branch --worktree
              [--session-id] [--iteration-id C3] [--cycle N] [--plan PATH]
-             [--iterations-since-retro N] [--force]
+             [--base-sha SHA] [--iterations-since-retro N] [--force]
 get          [KEY]                       # dotted path, e.g. gates.plan_persisted; whole state if omitted
 set          KEY VALUE                   # typed coercion (true/false/int/null/string)
 set-gate     NAME VALUE                  # gates.<name>
@@ -45,13 +45,20 @@ runs         build [--log-dir]            # derive agent-runs.jsonl from shards 
   backfills `iteration_id: null`, `cycle: 1`, bumps `schema`) and persisted in
   place — no manual re-init. Set them post-init with `set iteration_id C3` /
   `set cycle N`.
+- **`base_sha` (T-131 / F3).** The commit the lane's branch started from,
+  stamped by `openup-session.py begin` (`git rev-parse HEAD` at call time) —
+  `null` on a pre-existing state file written before this field existed.
+  `openup-fence.py`'s `resolve_base` reads it and prefers it over
+  `origin/main`/`main` (an explicit `--base` still wins), so a second lane
+  landing on a shared branch right after a first lane merged isn't falsely
+  flagged `OUT OF LANE` for the first lane's already-merged files.
 
 ## openup-claims.py — live leases for parallel work
 
 ```
 preflight    --task-id            # deps + collision check, writes nothing (exit 3 dep, 4 collision)
 remote-check --task-id [--remote origin] [--no-fetch] [--self-branch B]  # cross-machine (exit 9 dup; 0 clear/skip)
-claim        --task-id --session-id --branch --worktree
+claim        --task-id --session-id --branch --worktree [--base-sha SHA]
 release      --task-id            # idempotent
 list | dir
 get          --task-id
@@ -76,6 +83,8 @@ begin  --task-id --iteration N --phase P --track T [--branch B] [--worktree W]
        [--depends-on ...] [--iterations-since-retro N] [--reap] [--stale-after S]
        [--no-push] [--force]              # acquire: reap-warn→remote-check→claim→
                                           #   heartbeat→state-init→session_begin log
+                                          # stamps base_sha = `git rev-parse HEAD`
+                                          # in --worktree into both claim + state (T-131)
 end    --task-id --archive-to PATH [--status done] [--branch B] [--no-push]
                                           # teardown: archive state→session_end log→release
 ```

@@ -90,6 +90,27 @@ class TestBeginEnd(unittest.TestCase):
             self.assertIn("session_end",
                           (tmp / "logs" / "runs").glob("*.jsonl").__next__().read_text())
 
+    def test_begin_stamps_base_sha_into_claim_and_state(self):
+        # T-131 / F3: base_sha = git rev-parse HEAD in --worktree at begin time.
+        # Point --worktree at the real repo checkout (this test file's own
+        # ancestor dir) so the git call actually resolves.
+        real_head = subprocess.run(
+            ["git", "rev-parse", "HEAD"], cwd=str(SCRIPTS.parent),
+            capture_output=True, text=True, check=True,
+        ).stdout.strip()
+        with tempfile.TemporaryDirectory() as d:
+            tmp = Path(d)
+            args = begin_args(tmp, task="TEST-3", touches="scripts/baz.py",
+                               extra=["--worktree", str(SCRIPTS.parent)])
+            # begin_args always inserts its own --worktree /tmp/wt before ours;
+            # argparse keeps the LAST value for a repeated flag, so ours wins.
+            proc = run(SESSION, args, expect=0)
+            self.assertTrue(json.loads(proc.stdout.strip())["claimed"])
+            claim = json.loads((tmp / "claims" / "TEST-3.json").read_text())
+            state = json.loads((tmp / "state" / "state.json").read_text())
+            self.assertEqual(claim["base_sha"], real_head)
+            self.assertEqual(state["base_sha"], real_head)
+
     def test_begin_rolls_back_claim_on_post_claim_failure(self):
         # Pre-create a state.json so state-init fails AFTER the claim is written.
         with tempfile.TemporaryDirectory() as d:
