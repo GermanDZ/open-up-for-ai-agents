@@ -1,16 +1,18 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 89
-**Iteration Goal**: T-131 — Lane-hygiene fixes: `used_seqs_in_repo()` scans `docs/agent-logs/runs/*.jsonl` task_ids + `docs/status-notes/*.md` filenames so a quick-track task's id can no longer be silently re-issued (F2 — reconfirmed live 2026-07-25, twice, after T-129/T-130); `openup-session.py begin` stamps `base_sha` into the claim + state file, and `openup-fence.py resolve_base` prefers it over `origin/main`/`main`, so a second lane landing on the same branch right after a first lane merged doesn't get false `OUT OF LANE` violations for the first lane's already-merged files (F3)
+**Iteration**: 90
+**Iteration Goal**: T-132 — `openup-entropy.py` — `--include` allowlist scoping, `--snapshots`, `--by-era` coupling + manifest registration (F1 + F6)
 **Status**: completed
-**Current Task**: T-131
+**Current Task**: T-132
 **Iteration Started**: 2026-06-18
 **Last Updated**: 2026-07-25
 **Updated By**: sync-status.py
 **Retrospective**: [iteration-86-retrospective.md](iteration-retrospectives/iteration-86-retrospective.md) — covers iterations 78–86 (2026-07-15 → 2026-07-24), incl. quick fixes T-125/T-126; prev [iteration-77-retrospective.md](iteration-retrospectives/iteration-77-retrospective.md) (iterations 21–77)
 
 ## Notes
+
+- **Iteration 90** (2026-07-25): T-132 — `openup-entropy.py` gains `--include` (repeatable allowlist, applied before excludes — reverses the Project A conclusion caused by vendored-scripts scoping), `--snapshots` (month-end structural series), and `--by-era N` (coupling sliced into N equal-commit eras); registered in `scripts/process-manifest.txt` (F6) so both application repos, which already vendor `scripts/`, receive it. Ported from the sibling exploration's throwaway `method/` reference scripts. 9 new tests (42/42 green). F1+F6 feature lane from the 2026-07-25 measurement-tooling exploration; sibling to T-131 (F2+F3).
 
 - **Iteration 89** (2026-07-25): T-131 (standard) — **lane-hygiene fixes: id-allocator audit-tree scan (F2) + fence base_sha (F3)**. Correctness lane from docs/explorations/2026-07-25-measurement-tooling-and-lane-hygiene.md, promoted after F4/F5 (T-129/T-130) landed. **F2**: `used_seqs_in_repo()` (scripts/openup-claims.py) only scanned `docs/changes/**/plan.md` frontmatter and `docs/roadmap.md` text — a quick-track task (no change folder, no roadmap row) was invisible, so its id could be re-issued; reconfirmed live twice this session (`next-id`/`reserve-id` re-offered T-129 after it was already committed and merged, twice). Fix: two new scan sources — `docs/agent-logs/runs/*.jsonl` `task_id` fields and `docs/status-notes/YYYY-MM-DD-<id>.md` filenames, the two footprints every lane on every track writes. **F3**: `openup-fence.py`'s `resolve_base` only tried `--base`/`origin/main`/`main`, with no notion of where the current lane's branch started, so two sequential lanes on one shared branch (this session's own in-place-branch pattern) produced false `OUT OF LANE` violations for the prior lane's already-merged files. Fix: `openup-session.py begin` stamps `base_sha` (`git rev-parse HEAD` at call time) into the claim file and `.openup/state.json` (new optional `--base-sha` on `openup-claims.py claim` / `openup-state.py init`; schema updated); `resolve_base` prefers it over `origin/main`/`main` when no explicit `--base` is given (an explicit `--base` still wins, no fallback — preserves the pre-existing contract). +9 tests across `test_openup_claims.py`/`test_openup_fence.py`/`test_openup_session.py`; full suite green; fence + check-docs clean. Solo, standard, in-place branch.
 

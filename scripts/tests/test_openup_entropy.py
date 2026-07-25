@@ -441,5 +441,135 @@ class UnitOfWorkTests(unittest.TestCase):
         self.assertTrue(all(b["n"] == 2 for b in payload["cost"]["by_index"]))
 
 
+class AllowlistTests(unittest.TestCase):
+    """T-132 Requirement 1 — --include is an allowlist applied before --exclude."""
+
+    def test_excluded_precedence(self):
+        # includes present + no match -> excluded even with an empty blocklist.
+        self.assertTrue(entropy.excluded("scripts/x.py", [], includes=["app/*"]))
+        # includes present + match -> not excluded (blocklist still applies too).
+        self.assertFalse(entropy.excluded("app/x.py", [], includes=["app/*"]))
+        # includes absent -> unchanged blocklist-only behavior (pre-T-132 contract).
+        self.assertFalse(entropy.excluded("scripts/x.py", []))
+        self.assertTrue(entropy.excluded("scripts/x.py", ["scripts/*"]))
+
+
+class AllowlistReportTests(unittest.TestCase):
+    def setUp(self):
+        self.fx = Fixture()
+
+    def tearDown(self):
+        self.fx.cleanup()
+
+    def test_include_scopes_out_vendored_framework_code(self):
+        # Exploration trap T4: 100% of scripts/ is vendored framework code in
+        # the app repos; --include 'app/*' must exclude it from every metric —
+        # the fix that reversed the Project A conclusion.
+        self.fx.declare("T-001", ["app/real.py", "scripts/vendored.py"])
+        self.fx.commit("T-001", ["app/real.py", "scripts/vendored.py"])
+        payload = self.fx.payload("--include", "app/*", "--no-default-excludes")
+        self.assertEqual(payload["sources"]["includes"], ["app/*"])
+        row = next(t for t in payload["tasks"] if t["task"] == "T-001")
+        self.assertEqual(row["declared_touches"], 1)
+        self.assertEqual(row["actual_files"], 1)
+
+    def test_include_absent_preserves_pre_t132_default(self):
+        self.fx.declare("T-001", ["src/a.py"])
+        self.fx.commit("T-001", ["src/a.py"])
+        payload = self.fx.payload()
+        self.assertEqual(payload["sources"]["includes"], [])
+        self.assertEqual(payload["sources"]["declared_tasks"], 1)
+
+
+class SnapshotsTests(unittest.TestCase):
+    """T-132 Requirement 2 — month-end structural series, off by default."""
+
+    def setUp(self):
+        self.fx = Fixture()
+
+    def tearDown(self):
+        self.fx.cleanup()
+
+    def test_snapshots_absent_by_default(self):
+        self.fx.commit("T-001", ["src/a.py"])
+        self.assertNotIn("snapshots", self.fx.payload())
+
+    def test_month_end_series_and_size_threshold(self):
+        # 12 one-line files (p90 needs >10) plus one 410-line file, committed
+        # in June — the tree at month-end reflects everything by then.
+        files = [f"src/f{i}.py" for i in range(12)]
+        self.fx.commit("T-006", files, date="2026-06-05T10:00:00+00:00")
+        big = self.fx.dir / "src" / "big.py"
+        big.write_text("x\n" * 410, encoding="utf-8")
+        git(self.fx.dir, "add", "-A")
+        subprocess.run(
+            ["git", "commit", "-q", "-m", "feat(T-006): add a large file [T-006]"],
+            cwd=self.fx.dir, capture_output=True, text=True,
+            env={"GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@x",
+                 "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@x",
+                 "GIT_AUTHOR_DATE": "2026-06-06T10:00:00+00:00",
+                 "GIT_COMMITTER_DATE": "2026-06-06T10:00:00+00:00",
+                 "GIT_CONFIG_GLOBAL": "/dev/null", "GIT_CONFIG_SYSTEM": "/dev/null",
+                 "PATH": "/usr/bin:/bin:/usr/local/bin", "HOME": str(self.fx.dir)},
+        )
+        rows = self.fx.payload("--snapshots")["snapshots"]
+        self.assertEqual(len(rows), 1)
+        row = rows[0]
+        self.assertEqual(row["month"], "2026-06")
+        self.assertEqual(row["code_files"], 13)
+        self.assertIsNotNone(row["p90_file_lines"])
+        self.assertEqual(row["max_file_lines"], 410)
+        self.assertEqual(row["files_over_threshold"], 1)
+
+    def test_default_excludes_apply_to_snapshots(self):
+        self.fx.commit("T-001", ["src/a.py", ".openup/cache.py"], date="2026-06-01T10:00:00+00:00")
+        row = self.fx.payload("--snapshots")["snapshots"][0]
+        self.assertEqual(row["code_files"], 1)
+
+
+class ByEraTests(unittest.TestCase):
+    """T-132 Requirement 3 — coupling sliced into N equal-commit-count eras."""
+
+    def setUp(self):
+        self.fx = Fixture()
+
+    def tearDown(self):
+        self.fx.cleanup()
+
+    def test_by_era_absent_by_default(self):
+        self.fx.commit("x", ["a.py", "b.py"], subject="c0")
+        self.assertNotIn("by_era", self.fx.payload("--unit", "commit")["coupling"])
+
+    def test_two_equal_eras_isolate_coupling(self):
+        # First 4 commits co-change a.py/b.py; next 4 co-change c.py/d.py —
+        # pooled coupling would show both pairs, but each era must see only
+        # its own chunk's commits.
+        for i in range(4):
+            self.fx.commit("x", ["a.py", "b.py"], subject=f"era1-{i}",
+                            date=f"2026-06-0{i + 1}T10:00:00+00:00")
+        for i in range(4):
+            self.fx.commit("x", ["c.py", "d.py"], subject=f"era2-{i}",
+                            date=f"2026-07-0{i + 1}T10:00:00+00:00")
+        eras = self.fx.payload("--unit", "commit", "--by-era", "2",
+                               "--min-support", "3")["coupling"]["by_era"]
+        self.assertEqual(len(eras), 2)
+        pair1 = eras[0]["top"][0]
+        self.assertEqual({pair1["a"], pair1["b"]}, {"a.py", "b.py"})
+        pair2 = eras[1]["top"][0]
+        self.assertEqual({pair2["a"], pair2["b"]}, {"c.py", "d.py"})
+
+    def test_uneven_split_gets_an_extra_remainder_chunk(self):
+        # 7 commits / N=3 -> size = 7//3 = 2 -> chunks of 2,2,2,1 (4 chunks,
+        # not 3) — the same ceil(len/size) shape as the ported reference
+        # implementation (method/coupling_trend.py), not "N chunks with the
+        # last absorbing the remainder".
+        for i in range(7):
+            self.fx.commit("x", [f"f{i}.py", f"g{i}.py"], subject=f"c{i}",
+                            date=f"2026-06-{i + 1:02d}T10:00:00+00:00")
+        eras = self.fx.payload("--unit", "commit", "--by-era", "3")["coupling"]["by_era"]
+        self.assertEqual(len(eras), 4)
+        self.assertEqual(eras[-1]["tasks"], 1)
+
+
 if __name__ == "__main__":
     unittest.main()

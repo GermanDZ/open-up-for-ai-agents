@@ -189,6 +189,23 @@ any claim or fence runs).
 T-002 (`/openup-sync-spec`) completed 2026-06-11 once T-008's readiness DAG un-blocked it.
 
 
+## T-132: `openup-entropy.py` — `--include` allowlist scoping, `--snapshots`, `--by-era` coupling + manifest registration (F1 + F6)
+**Status**: completed (2026-07-25)
+**Priority**: high
+**Value**: Turns a defect that already changed a real conclusion (blocklist-only scoping made Project A's 168 vendored-framework sync commits, 19.5% of its history, look like large human commits) into a shipped, tested capability — and via F6, gets it into every project that already vendors this framework's `scripts/`, not just this repo. The next codebase-decay measurement stops needing hundreds of lines of throwaway one-off analysis.
+**Description**: Extend `scripts/openup-entropy.py` with `--include GLOB` (repeatable allowlist, applied before excludes — the fix that reverses the Project A conclusion), `--snapshots` (month-end structural series: file-length percentiles, share >400 lines, test/src ratio), and `--by-era N` (coupling co-change sliced into N equal-commit eras); register the script in `scripts/process-manifest.txt` (F6) so both application repos, which already vendor `scripts/`, receive it via the manifest sync instead of writing their own throwaway analysers. Acceptance: `--include` + `--snapshots` on a repo vendoring this framework reproduces the published Project B p90 trend (382 → 315) to the line, per the numbers recorded in `docs/explorations/2026-07-25-agent-built-repo-decay.md`.
+- `--include GLOB` (repeatable, allowlist applied before `--exclude`)
+- `--snapshots` (month-end structural series)
+- `--by-era N` (coupling sliced into N equal-commit eras)
+- `scripts/process-manifest.txt` registration (F6)
+- Hermetic tests + `docs-eng-process/script-cli-reference.md` update
+
+**Dependencies**: T-127, T-128 (both completed)
+
+**See**: `docs/iteration-plans/t-132-entropy-include-snapshots-era-manifest.md`; `docs/explorations/2026-07-25-measurement-tooling-and-lane-hygiene.md` (F1, F6); disposition follow-up to T-131 (F2+F3, the sibling correctness lane from the same exploration)
+
+---
+
 ## T-059: Loop Support for /openup-next
 **Status**: completed (2026-06-20)
 **Priority**: high
