@@ -100,10 +100,10 @@ into this diff. Needs its own lane (or a `--fix` pass by whoever owns the view).
 
 ## Blocked scope (carried, not dropped)
 
-The `kaze-webapp` baseline — the interesting half of §5 — did not run.
-`list_repos` sees `kaze-app/kaze-webapp`, but `add_repo` refuses it: this session's
+The Project A baseline — the interesting half of §5 — did not run.
+`list_repos` sees Project A, but `add_repo` refuses it: this session's
 sources belong to owner `germandz` and cross-owner adds are unsupported. The
-Operations box is deliberately left **unticked**. FacturaSimple is not reachable at
+Operations box is deliberately left **unticked**. Project D is not reachable at
 all. The analyzer's foreign-repo paths are covered hermetically
 (`test_degrades_to_git_only`, `test_conventional_scope_fallback_when_no_bracket_tag`)
 but have never met either repo's real history, and the baseline note says so rather

@@ -7,10 +7,10 @@ justified.
 
 Reproduce with:
 
-```bash
+``bash
 python3 scripts/openup-entropy.py --repo .            # text
 python3 scripts/openup-entropy.py --repo . --json     # machine-readable
-```
+``
 
 Measured at `4713e58` + this lane's working tree, on **full** history (820
 commits) — see "Measurement traps" below, this detail is load-bearing.
@@ -167,12 +167,12 @@ human-only teams also degrade codebases, and the claim needing support is a *rat
 comparison*, which none of the cited evidence provides. T-128's `--unit commit`
 makes any repo measurable, so here is one.
 
-**What this repo is — read before using the number.** `TallyFoxAI/ruby_llm` is a
-**fork** of Carmine Paolino's `ruby_llm` gem: 601 of its 672 commits are by the
+**What this repo is — read before using the number.** Project C is a
+**fork** of the upstream maintainer's Project C gem: 601 of its 672 commits are by the
 upstream maintainer, and the history runs 2025-01 → 2025-09. It is **not**
-TallyFox's own application, and nothing here measures TallyFox's engineering. It
+Project B's own application, and nothing here measures Project B's engineering. It
 is useful for exactly one thing: a **human-authored, non-agent, open-source**
-comparison point. (The other reachable TallyFox repo, `usage-guides`, is an empty
+comparison point. (The other reachable Project B repo, `usage-guides`, is an empty
 repository — nothing to measure.)
 
 Median files changed per **commit**, nine months, 672 commits:
@@ -195,9 +195,9 @@ module↔test below:
 | sup | jaccard | lift | pair |
 |---|---|---|---|
 | 36 | 0.53 | 5.3 | `README.md` ↔ `docs/index.md` |
-| 32 | 0.40 | 4.1 | `docs/guides/available-models.md` ↔ `lib/ruby_llm/models.json` |
+| 32 | 0.40 | 4.1 | `docs/guides/available-models.md` ↔ `lib/Project C/models.json` |
 | 26 | 1.00 | 14.7 | `gemfiles/rails_7.2.gemfile.lock` ↔ `gemfiles/rails_8.0.gemfile.lock` |
-| 20 | 0.38 | 6.1 | `lib/ruby_llm/active_record/acts_as.rb` ↔ `spec/…/acts_as_spec.rb` |
+| 20 | 0.38 | 6.1 | `lib/Project C/active_record/acts_as.rb` ↔ `spec/…/acts_as_spec.rb` |
 
 The strongest pairs are mechanical (lockfiles regenerated together by Appraisal),
 documentation duplication (`README.md` ↔ `docs/index.md`), and module↔its-spec.
@@ -225,31 +225,31 @@ is not obviously an artifact of the instrument being blind.
 
 ## 7. Blocked: the interesting repos
 
-`kaze-webapp` and FacturaSimple are the cases that would actually test the thesis
+Project A and Project D are the cases that would actually test the thesis
 — real applications, one of them entering the 3–6 month window. Neither was
 measurable from this session:
 
-- **`kaze-app/kaze-webapp`** — visible via `list_repos` but unreachable by **all
+- **Project A** — visible via `list_repos` but unreachable by **all
   three** access paths, re-verified 2026-07-25: `add_repo` refuses the cross-owner
   add (this session's sources are `germandz`); the GitHub MCP tools refuse it
   (`not configured for this session`); and a direct `git clone` fails auth because
-  the repo is private. Unblock by starting a session with `kaze-app/kaze-webapp`
+  the repo is private. Unblock by starting a session with Project A
   as the initial source, then:
 
-  ```bash
-  git clone <kaze-webapp> /tmp/kaze && git -C /tmp/kaze fetch --unshallow   # trap T1
-  python3 scripts/openup-entropy.py --repo /tmp/kaze --json > kaze-baseline.json
-  ```
+  ``bash
+  git clone <Project A> /tmp/Project A && git -C /tmp/Project A fetch --unshallow   # trap T1
+  python3 scripts/openup-entropy.py --repo /tmp/Project A --json > Project A-baseline.json
+  ``
 
   The analyzer needs nothing from the OpenUP layout: with no `docs/changes/` tree
   it degrades to git-only (actual-diff cost + coupling), and it falls back from
   `[T-NNN]` trailers to conventional-commit scopes automatically. Both paths are
   covered by hermetic tests (`test_degrades_to_git_only`,
   `test_conventional_scope_fallback_when_no_bracket_tag`) — but neither has been
-  exercised against kaze-webapp's real history, so treat the tool as *untested on
+  exercised against Project A's real history, so treat the tool as *untested on
   that repo* until it runs there.
 
-- **FacturaSimple** — not reachable at all; `list_repos` returns no match.
+- **Project D** — not reachable at all; `list_repos` returns no match.
 
 Until at least one of those runs, the standing note in the brief — "the strongest
 position is having the number" — is only half-satisfied: there is now a number,

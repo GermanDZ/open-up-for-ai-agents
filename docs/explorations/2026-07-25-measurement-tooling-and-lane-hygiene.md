@@ -11,7 +11,7 @@ Three runs happened in sequence:
    baseline: [2026-07-25-maintainability-baselines.md](2026-07-25-maintainability-baselines.md).
 2. **T-128** — added `--unit {task,commit,pr}` after the analyzer exited `3` on a
    repo with no task ids.
-3. **The application run** — measured `kaze-webapp` and `tallyfox-app`:
+3. **The application run** — measured Project A and Project B:
    [2026-07-25-agent-built-repo-decay.md](2026-07-25-agent-built-repo-decay.md).
    Its verdict on the decay thesis is settled there and is **not** re-litigated
    here.
@@ -34,8 +34,8 @@ fine and produced **nothing** usable on the two application repos.
 
 | gap | evidence | consequence |
 |---|---|---|
-| no allowlist scoping — `--exclude` only, no `--include` (verified: `--include` → `unrecognized arguments`) | trap T4: 100% of `scripts/` in both app repos is a vendored copy of *this* framework, and kaze's 168 `chore(process): sync OpenUP framework` commits are 19.5% of its history | blocklist scoping "kept admitting them"; they were counted as large high-survival human commits. **The tool would have reported the opposite conclusion on kaze.** |
-| no structural snapshots | `snapshots.py` (118 lines) rebuilds the tree at each month end — p90 file length, share >400 lines, test/src ratio | the single most direct test of "god objects accumulate" is absent; it is what showed tallyfox's fat tail *thinning* across 14× growth |
+| no allowlist scoping — `--exclude` only, no `--include` (verified: `--include` → `unrecognized arguments`) | trap T4: 100% of `scripts/` in both app repos is a vendored copy of *this* framework, and Project A's 168 `chore(process): sync OpenUP framework` commits are 19.5% of its history | blocklist scoping "kept admitting them"; they were counted as large high-survival human commits. **The tool would have reported the opposite conclusion on Project A.** |
+| no structural snapshots | `snapshots.py` (118 lines) rebuilds the tree at each month end — p90 file length, share >400 lines, test/src ratio | the single most direct test of "god objects accumulate" is absent; it is what showed Project B's fat tail *thinning* across 14× growth |
 | no era slicing on coupling | `coupling_trend.py` (104 lines) | coupling is reported pooled over all history, so "agent era vs human era" is uncomputable |
 | task-id keying | only **54/181** app-repo commits carry an OpenUP id | T-128's `--unit commit` mitigates this but does not fix scoping |
 
@@ -166,8 +166,8 @@ there on effectively that basis).
   analyzer is commit-history-shaped; snapshots are tree-shaped and need a
   checkout per sample point. Folding them in may be the wrong seam.
 - What is the acceptance test for F1 — is "reproduces `method/`'s published
-  kaze/tallyfox numbers" checkable without those repos in the session? (Neither
-  is reachable from every machine; this session could not reach kaze at all.)
+  Project A/Project B numbers" checkable without those repos in the session? (Neither
+  is reachable from every machine; this session could not reach Project A at all.)
 - Does F2 warrant a validator (`openup-doctor.py` check for ids present in run
   logs but absent from the allocator's sources) rather than only widening the
   scan?
@@ -201,7 +201,7 @@ there on effectively that basis).
   with `method/`".** The version this can be held to: *`openup-entropy.py
   --include 'app/*' …` on a repo that vendors this framework must exclude the
   vendored `scripts/` tree from every metric, and its structural series must
-  reproduce the published tallyfox p90 trend (382 → 315) to the line.* That is
+  reproduce the published Project B p90 trend (382 → 315) to the line.* That is
   checkable from the numbers already recorded in the sibling exploration, without
   needing the private repos in-session. *Disposition: accepted — recorded as
   F1's acceptance criterion and as the answer to the third open question.*
@@ -224,5 +224,5 @@ lane-owned audit trees for used task ids (F2) and stamp the lane's `base_sha` at
 guard) and F4 (regenerate `docs/INDEX.md`) taken first as `/openup-quick-task`
 items**, and the analyzer feature work (F1 `--include` → `--snapshots` →
 `--by-era`, shipped together with F6 manifest registration) queued behind them as
-a second entry whose acceptance criterion is the tallyfox p90 reproduction named
+a second entry whose acceptance criterion is the Project B p90 reproduction named
 above; line survival is explicitly **not** productized.

@@ -51,12 +51,12 @@ stdlib) · ✅ Testable (pure functions over fixtures + a hermetic git fixture)
   (D1) — every one of those is explicitly gated on evidence this task produces.
 - **Definition of done.** `python3 scripts/openup-entropy.py --repo <path>` prints
   a cost/drift/coupling report, this repo's baseline is captured in a dated
-  exploration note, and the tests are green. The `kaze-webapp` baseline is carried
+  exploration note, and the tests are green. The Project A baseline is carried
   as an explicitly-blocked Operations step (see below) rather than counted as done
   — the analyzer's foreign-repo paths are covered by hermetic tests but have not
   been exercised against that repo's real history.
 
-> **Assumption:** `kaze-webapp` may not carry OpenUP change folders or `[T-NNN]`
+> **Assumption:** Project A may not carry OpenUP change folders or `[T-NNN]`
 > commit tags. Rather than guess its layout, every input degrades independently —
 > a repo with only git history still yields actual-diff cost and coupling; the
 > declared-`touches` sections render as "no data". *(Vetoable at review.)*
@@ -73,11 +73,11 @@ stdlib) · ✅ Testable (pure functions over fixtures + a hermetic git fixture)
 > every file pair look coupled. The default list is printed in the report and is
 > overridable. *(Vetoable at review.)*
 
-> **Assumption:** FacturaSimple is **out of scope** — it is not reachable from
+> **Assumption:** Project D is **out of scope** — it is not reachable from
 > this session (`list_repos` returns no match). The brief's third baseline is
 > deferred, not silently dropped. *(Vetoable at review.)*
 
-> **Discovered mid-lane (2026-07-25):** `kaze-app/kaze-webapp` is likewise not
+> **Discovered mid-lane (2026-07-25):** Project A is likewise not
 > attachable from this session — `list_repos` sees it, but `add_repo` refuses
 > cross-owner adds against this session's `germandz` sources. Both application
 > baselines are therefore deferred to a session scoped to those repos. The
@@ -165,7 +165,7 @@ describing measurement, and no existing script, gate, hook, or skill is modified
 
 **Added**
 - A maintainability/entropy report derivable from existing telemetry.
-- A dated baseline record for this repo and for `kaze-webapp`.
+- A dated baseline record for this repo and for Project A.
 
 ## Entities
 
@@ -227,13 +227,13 @@ phase: the script has no write path at all.
 - [x] Run the full suite (`python3 -m pytest scripts/tests/ -q`) and confirm no
       pre-existing test regressed.
 - [x] Run the analyzer against this repo; record the report, the interpretation,
-      and the kaze-webapp blocker in
+      and the Project A blocker in
       `docs/explorations/2026-07-25-maintainability-baselines.md`.
-- [ ] **BLOCKED** — run the analyzer against `kaze-app/kaze-webapp` and append its
+- [ ] **BLOCKED** — run the analyzer against Project A and append its
       baseline. Blocked on session repo scope, not on the tooling: this session's
       sources belong to owner `germandz`, and `add_repo` refuses cross-owner adds
       (`cross-tier adds are not supported in v1`). Unblock by starting a session
-      with `kaze-app/kaze-webapp` as an initial source; the command is recorded in
+      with Project A as an initial source; the command is recorded in
       the baseline note §7.
 - [x] Add the CLI signature block to `docs-eng-process/script-cli-reference.md`.
 - [x] (tester) Verify the report-only invariant: analyzed repos show no working-tree
@@ -259,7 +259,7 @@ Inherits from:
 - **No-go zones.** No change to fence, board, `check-docs.py`, `loop.py` `GATES`,
   hooks, or any skill. No network calls. No model invocation.
 - **Foreign-repo safety.** Only read-only git commands (`git log`) run against an
-  analyzed repo; `kaze-webapp` is analyzed in a throwaway clone outside this repo.
+  analyzed repo; Project A is analyzed in a throwaway clone outside this repo.
 
 ## Success Measures
 

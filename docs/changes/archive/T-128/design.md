@@ -26,7 +26,7 @@
 
 - ✅ **Instrumentation** — `sources.git_tasks` and `coupling.actual.top` in the
   `--json` payload.
-- **Read-back: done.** Against the `TallyFoxAI/ruby_llm` clone, which previously
+- **Read-back: done.** Against the Project C clone, which previously
   exited `3 — no telemetry`: `--unit commit` now reports **672 units, 1262 coupled
   pairs at support ≥3**. The expectation was binary and is **met**.
 
@@ -44,7 +44,7 @@ corrupt every median. Dropping is the honest choice; the count of retained units
 visible as `sources.git_tasks`.
 
 **DD3 — Ordinal is computed for the task unit only.** Found by running the fixed
-build against ruby_llm: a commit sha that happens to be all digits (e.g.
+build against Project C: a commit sha that happens to be all digits (e.g.
 `073790706116`) parses as a task ordinal — an enormous one — and
 `bucket_by_index`'s `index is not None` filter then kept only those few commits,
 collapsing 672 units into 3 buckets of 1. `index_of()` now returns `None` unless the
@@ -62,9 +62,9 @@ cross-repo comparison is a **trend-shape** comparison, never a level comparison.
 
 ## What the second baseline is, and is not
 
-`TallyFoxAI/ruby_llm` is a **fork** — 601 of 672 commits are by the upstream gem's
-maintainer. It measures the upstream open-source project, **not** TallyFox's own
-engineering, and the note says so plainly. The other reachable TallyFox repo,
-`usage-guides`, is an empty repository. `kaze-app/kaze-webapp` remains unreachable
+Project C is a **fork** — 601 of 672 commits are by the upstream gem's
+maintainer. It measures the upstream open-source project, **not** Project B's own
+engineering, and the note says so plainly. The other reachable Project B repo,
+`usage-guides`, is an empty repository. Project A remains unreachable
 by all three access paths (re-verified: `add_repo` cross-owner refusal, GitHub MCP
 "not configured for this session", and a private-repo clone auth failure).

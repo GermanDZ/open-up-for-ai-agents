@@ -36,7 +36,7 @@ grouping function) · ✅ Testable
   scope). Cost, drift, and coupling are all projections of a **unit-of-work × file**
   graph; "task" is simply one choice of unit.
 - **Why now — a measured blocker.** Running T-127's analyzer against
-  `TallyFoxAI/ruby_llm` (672 commits, Jan–Sep 2025) exits `3 — no telemetry`:
+  Project C (672 commits, Jan–Sep 2025) exits `3 — no telemetry`:
   its subjects are plain prose (`Bump to 1.8.2`, `Display tool calls in message
   template (#416)`). The tool cannot measure any repo that does not adopt OpenUP's
   commit convention, which is most repos, including the two the brief actually
@@ -151,7 +151,7 @@ exists per task.
       and in `sources.unit`.
 - [x] Add tests for each requirement, including the byte-identical default.
 - [x] Run the full suite and confirm no pre-existing test regressed.
-- [x] Run `--unit commit` against the `TallyFoxAI/ruby_llm` clone and record the
+- [x] Run `--unit commit` against the Project C clone and record the
       human-authored comparison baseline in the T-127 exploration note.
 - [x] Update the `openup-entropy.py` block in `script-cli-reference.md`.
 
@@ -178,7 +178,7 @@ Inherits from:
 
 We expect the analyzer to **produce a populated cost + coupling report on a repo
 with zero task ids**, where it currently exits `3`. Instrumentation: running
-`openup-entropy.py --repo <ruby_llm clone> --unit commit --json` and reading
+`openup-entropy.py --repo <Project C clone> --unit commit --json` and reading
 `sources.git_tasks > 0` plus a non-empty `coupling.actual.top`. Read-back:
 **immediately, in this task's Operations step 5.** This is binary and falsifiable:
 either the human-authored baseline becomes computable or the change failed.
@@ -194,7 +194,7 @@ nothing to kill-switch.
 - `python3 -m unittest scripts.tests.test_openup_entropy` passes; full suite shows
   no regression against the 702 baseline.
 - Default equivalence: `--json` and `--unit task --json` diff clean on this repo.
-- `openup-entropy.py --repo <ruby_llm> --unit commit` exits 0 with a populated
+- `openup-entropy.py --repo <Project C> --unit commit` exits 0 with a populated
   coupling section.
 - `python3 scripts/openup-spec-scenarios.py check docs/changes/T-128/plan.md` exits 0.
 - `check-docs.py` and `openup-fence.py check` clean.
