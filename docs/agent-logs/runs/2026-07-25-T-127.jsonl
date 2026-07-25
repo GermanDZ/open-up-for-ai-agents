@@ -1,0 +1,5 @@
+{"event": "session_begin", "task_id": "T-127", "goal": "T-127 \u2014 maintainability entropy measurement (M1) + first baselines (M3)", "branch": "claude/agent-maintainability-measurement-vtjw1e", "phase": "construction", "ts": "2026-07-25T11:50:38Z"}
+{"run_id": "f2a73c254f2643519260dabed89ba78e", "event": "commit", "task_id": "T-127", "branch": "claude/agent-maintainability-measurement-vtjw1e", "sha": "0ab15adb7830c0fb187fbad42b709c9170a5362f", "model": null, "session_id": "claude/agent-maintainability-measurement-vtjw1e", "ts": "2026-07-25T12:04:07Z"}
+{"run_id": "48b323e365a544fdb68c116261985c04", "event": "commit", "task_id": "T-127", "branch": "claude/agent-maintainability-measurement-vtjw1e", "sha": "7ca3d836fbc94b1a7e07d055dbbf27ab0e833e57", "model": null, "session_id": "claude/agent-maintainability-measurement-vtjw1e", "ts": "2026-07-25T12:05:15Z"}
+{"event": "iteration_complete", "task_id": "T-127", "branch": "claude/agent-maintainability-measurement-vtjw1e", "phase": "construction", "ts": "2026-07-25T12:06:35Z"}
+{"event": "session_end", "task_id": "T-127", "ts": "2026-07-25T12:06:43Z"}

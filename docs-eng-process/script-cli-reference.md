@@ -213,6 +213,45 @@ check-docs.py --show-archetype-defaults
   to run with no project docs at all. A different axis from the ceremony
   track (`tracks.md`); don't conflate the two.
 
+## openup-entropy.py — read-only codebase-entropy report (T-127)
+
+```
+openup-entropy.py [--repo DIR] [--unit {task,commit,pr}] [--json]
+                  [--buckets N] [--top N] [--min-support N] [--module-depth N]
+                  [--max-files N] [--exclude GLOB ...] [--no-default-excludes]
+                  [--changes-dir DIR] [--log-dir DIR] [--task-pattern RE]
+```
+- **`--unit` (T-128) selects the unit of work every metric is keyed on.** `task`
+  (default) needs task-tagged commits; `commit` measures a repo with **no task-id
+  convention at all**; `pr` groups by a trailing `(#N)` and drops untagged commits.
+  Never inferred — the unit is printed in the header and carried as
+  `sources.unit`, because two reports on different units are **not comparable**
+  (a task spans many commits). Drift is task-only: under another unit it reports
+  no data rather than inventing a declared surface.
+- **Report-only** — no gate, no threshold, no state, no write path of any kind.
+  It exists to decide whether an anti-decay gate is justified, not to be one.
+  Deterministic and stdlib-only (identical inputs → byte-identical `--json`).
+- Joins three sources, each degrading independently: `docs/changes/**/plan.md`
+  `touches:`, run-log shards (`docs/agent-logs/runs/*.jsonl`), and `git log
+  --numstat` matched on a `[T-NNN]` commit subject (falling back to a
+  conventional-commit scope, `feat(T-NNN):`). A foreign repo with only git
+  history still reports actual-diff cost + coupling.
+- Three sections: **cost** (declared/actual file counts, duration, commits,
+  module spread — bucketed by task-index window and by month, medians),
+  **drift** (declared vs actual: coverage, precision, Jaccard, undeclared
+  files), **coupling** (file-pair support/Jaccard/lift over the declared and
+  actual graphs, cross-module flagged).
+- Declared entries match actual paths by **segment-prefix**, importing
+  `seg_prefix_collide` from `openup-claims.py` — `touches:` legitimately carries
+  directory entries and inline YAML comments, and string equality understates
+  agreement by ~13× (see `docs/explorations/2026-07-25-maintainability-baselines.md`).
+- **Run it on full history.** On a shallow clone the boundary commit attributes
+  the whole tree to one task; `git fetch --unshallow` first.
+- Process-noise paths (derived views, lane audit trees, each task's own change
+  folder) are excluded by default — every lane touches them, so including them
+  makes all file pairs look coupled. The active list is printed in the report.
+- Exit codes: `0` ok · `2` usage · `3` no telemetry found (or unreadable repo).
+
 ## openup-doctor.py — read-only project health diagnostic
 
 ```
