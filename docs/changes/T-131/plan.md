@@ -213,7 +213,7 @@ locking/claiming protocol itself or the fence's allowlist-matching logic.
 
 ## Operations
 
-- [ ] Add `used_seqs_in_repo()` scan sources — `docs/agent-logs/runs/*.jsonl`
+- [x] Add `used_seqs_in_repo()` scan sources — `docs/agent-logs/runs/*.jsonl`
       `task_id` fields and `docs/status-notes/YYYY-MM-DD-<id>.md` filenames,
       degrading silently on malformed input — with hermetic tests for both new
       sources, the malformed-input degrade case, and the live-shape

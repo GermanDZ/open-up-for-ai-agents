@@ -479,6 +479,11 @@ def used_seqs_in_repo(root: Path, prefix: str):
     Sources (union — an ID seen anywhere is taken):
       * ``docs/changes/*/plan.md`` + ``docs/changes/archive/*/plan.md``
         frontmatter ``id`` (the canonical spec location);
+      * ``docs/agent-logs/runs/*.jsonl`` ``task_id`` fields (T-131 — every
+        lane on every track writes at least one shard here, including a
+        quick-track task with no change folder and no roadmap row);
+      * ``docs/status-notes/YYYY-MM-DD-<id>.md`` filenames (T-131 — sharded
+        completion notes, same coverage guarantee as the run-log shards);
       * ``docs/roadmap.md`` full text (IDs exist there before any spec
         folder does — maintenance rows, backlog mentions);
       * ``origin/main:docs/roadmap.md`` when that ref exists locally
@@ -493,6 +498,34 @@ def used_seqs_in_repo(root: Path, prefix: str):
             m = pat.fullmatch(parse_frontmatter(plan).get("id") or "")
             if m:
                 seqs.add(int(m.group(1)))
+
+    runs = root / "docs" / "agent-logs" / "runs"
+    if runs.exists():
+        for shard in runs.glob("*.jsonl"):
+            try:
+                lines = shard.read_text(encoding="utf-8").splitlines()
+            except OSError:
+                continue
+            for line in lines:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    rec = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                m = pat.fullmatch(rec.get("task_id") or "")
+                if m:
+                    seqs.add(int(m.group(1)))
+
+    notes = root / "docs" / "status-notes"
+    if notes.exists():
+        note_pat = re.compile(r"^\d{4}-\d{2}-\d{2}-(" + re.escape(prefix) + r"\d+)\.md$")
+        for note in notes.glob("*.md"):
+            m = note_pat.match(note.name)
+            if m:
+                seqs.add(int(m.group(1)[len(prefix):]))
+
     texts = []
     rm = root / "docs" / "roadmap.md"
     if rm.exists():

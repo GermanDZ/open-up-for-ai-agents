@@ -245,6 +245,46 @@ class IdReservationTests(unittest.TestCase):
         self.reserve(expect=OK)
         self.assertEqual(list((self.cdir / "ids").glob(".*.tmp")), [])
 
+    # --- lane-owned audit trees (T-131 / F2) -------------------------------
+    def test_next_id_scans_runlog_shard_task_ids(self):
+        # T-010 exists only as a run-log shard's task_id field — no change
+        # folder, no roadmap row (the exact quick-track shape T-129/T-130
+        # reproduced live).
+        runs = self.root / "docs" / "agent-logs" / "runs"
+        runs.mkdir(parents=True)
+        (runs / "2026-07-25-T-010.jsonl").write_text(
+            json.dumps({"task_id": "T-010", "event": "commit"}) + "\n",
+            encoding="utf-8",
+        )
+        p = self._run(["next-id"], expect=OK)
+        self.assertEqual(p.stdout.strip(), "T-011")
+
+    def test_next_id_scans_status_note_filenames(self):
+        # T-012 exists only as a sharded completion-note filename.
+        notes = self.root / "docs" / "status-notes"
+        notes.mkdir(parents=True)
+        (notes / "2026-07-25-T-012.md").write_text("x\n", encoding="utf-8")
+        p = self._run(["next-id"], expect=OK)
+        self.assertEqual(p.stdout.strip(), "T-013")
+
+    def test_used_seqs_skips_malformed_shard_line_and_nonmatching_note(self):
+        # Unit-level: a malformed run-log line and a non-matching status-note
+        # filename must not raise, and the valid lines/files around them still
+        # count. Exercised directly (not via CLI) to assert no exception.
+        runs = self.root / "docs" / "agent-logs" / "runs"
+        runs.mkdir(parents=True)
+        (runs / "2026-07-25-mixed.jsonl").write_text(
+            "not json\n" + json.dumps({"task_id": "T-020"}) + "\n",
+            encoding="utf-8",
+        )
+        notes = self.root / "docs" / "status-notes"
+        notes.mkdir(parents=True)
+        (notes / "not-a-task-note.md").write_text("x\n", encoding="utf-8")
+        (notes / "2026-07-25-T-021.md").write_text("x\n", encoding="utf-8")
+        seqs = claims_mod.used_seqs_in_repo(self.root, "T-")
+        self.assertIn(20, seqs)
+        self.assertIn(21, seqs)
+
     # --- explicit ID ------------------------------------------------------
     def test_explicit_id_used_in_repo_refused(self):
         p = self.reserve(extra=["--task-id", "T-007"], expect=OWNER)
