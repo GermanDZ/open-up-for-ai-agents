@@ -1,7 +1,7 @@
 ---
 id: T-127
 title: "Maintainability entropy measurement (M1) + first baselines (M3)"
-status: ready
+status: done
 priority: medium
 estimate: 1 session
 plan: docs/roadmap.md
