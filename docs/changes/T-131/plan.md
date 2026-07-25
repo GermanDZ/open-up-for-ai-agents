@@ -8,6 +8,16 @@ plan: docs/iteration-plans/t-131-lane-hygiene-id-scan-fence-base-sha.md
 depends-on: []
 blocks: []
 last-synced: ""
+touches:
+  - scripts/openup-claims.py
+  - scripts/openup-fence.py
+  - scripts/openup-session.py
+  - scripts/openup-state.py
+  - scripts/tests/test_openup_claims.py
+  - scripts/tests/test_openup_fence.py
+  - scripts/tests/test_openup_session.py
+  - docs-eng-process/script-cli-reference.md
+  - docs/iteration-plans/t-131-lane-hygiene-id-scan-fence-base-sha.md
 ---
 
 # T-131 — Lane-hygiene fixes: id-allocator audit-tree scan (F2) + fence base_sha (F3)
