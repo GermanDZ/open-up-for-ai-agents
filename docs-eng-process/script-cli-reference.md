@@ -227,9 +227,29 @@ check-docs.py --show-archetype-defaults
 ```
 openup-entropy.py [--repo DIR] [--unit {task,commit,pr}] [--json]
                   [--buckets N] [--top N] [--min-support N] [--module-depth N]
-                  [--max-files N] [--exclude GLOB ...] [--no-default-excludes]
+                  [--max-files N] [--include GLOB ...] [--exclude GLOB ...]
+                  [--no-default-excludes] [--snapshots] [--by-era N]
                   [--changes-dir DIR] [--log-dir DIR] [--task-pattern RE]
 ```
+- **`--include GLOB` (repeatable, T-132) is an allowlist applied BEFORE
+  `--exclude`** — default is everything in scope. The fix for a repo that
+  vendors this framework's own `scripts/` tree wholesale: without it, the
+  vendored copy is admitted into every metric as if it were application code
+  (`--include 'app/*'` scopes it out). `sources.includes` records what was
+  used; omitting it is byte-identical to pre-T-132 output.
+- **`--snapshots` (T-132) adds a month-end structural series** — one row per
+  calendar month with file/line counts, median/p90/max file length, share of
+  files over 400 lines, module spread, and test/src line ratio, measured on
+  the tree as it stood at each month's last commit (`git ls-tree` +
+  `git cat-file --batch`, extension-filtered to source files). Off by default
+  (extra `git` subprocess calls per month); ported from the reference
+  implementation in
+  `docs/explorations/2026-07-25-agent-built-repo-decay/method/snapshots.py`.
+- **`--by-era N` (T-132) slices the actual-graph coupling into N
+  equal-commit-count chronological eras**, reported in `coupling.by_era`
+  alongside the existing pooled whole-history coupling. Independent of
+  `--unit` (always per-commit). Ported from
+  `docs/explorations/2026-07-25-agent-built-repo-decay/method/coupling_trend.py`.
 - **`--unit` (T-128) selects the unit of work every metric is keyed on.** `task`
   (default) needs task-tagged commits; `commit` measures a repo with **no task-id
   convention at all**; `pr` groups by a trailing `(#N)` and drops untagged commits.

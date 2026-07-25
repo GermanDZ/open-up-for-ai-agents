@@ -121,7 +121,16 @@ def module_of(path, depth):
     return "/".join(parts[:depth]) if parts else path
 
 
-def excluded(path, patterns):
+def excluded(path, patterns, includes=()):
+    """True if ``path`` is out of scope: outside the allowlist, or blocklisted.
+
+    ``includes`` is an allowlist applied FIRST: when non-empty, any path that
+    matches none of its patterns is excluded regardless of ``patterns``. An
+    empty (default) allowlist means "everything is in scope", so existing
+    blocklist-only behavior is unchanged when ``--include`` is never passed.
+    """
+    if includes and not any(fnmatch(path, inc) for inc in includes):
+        return True
     return any(fnmatch(path, pat) for pat in patterns)
 
 
@@ -361,10 +370,100 @@ def load_git(root, task_re=None, unit="task"):
     return acc, (matched if acc else None)
 
 
+# Structural snapshots (``--snapshots``) measure *code* shape, so — unlike the
+# rest of this module, which is extension-agnostic — they filter to source
+# file extensions and flag tests separately. Ported from the reference
+# implementation (docs/explorations/2026-07-25-agent-built-repo-decay/method/
+# decay.py + snapshots.py) so a snapshot run reproduces its published numbers.
+SNAPSHOT_CODE_EXT = (".rb", ".py", ".js", ".ts", ".jsx", ".tsx", ".erb", ".go",
+                     ".java", ".rs", ".c", ".cc", ".cpp", ".h", ".css", ".scss",
+                     ".sh", ".sql")
+SNAPSHOT_TEST_RE = re.compile(r"(^|/)(test|tests|spec|specs)/|_test\.|_spec\.|\.test\.|\.spec\.")
+
+
+def month_ends(root):
+    """Last commit sha of each calendar month, oldest first."""
+    out = _git(root, ["log", "--reverse", "--format=%H %aI"])
+    if out is None:
+        return []
+    last = {}
+    for line in out.splitlines():
+        sha, _, iso = line.partition(" ")
+        if sha and iso:
+            last[iso[:7]] = sha
+    return sorted(last.items())
+
+
+def tree_sizes(root, sha, excludes, includes):
+    """path -> line count for every in-scope, in-extension file at ``sha``."""
+    listing = _git(root, ["ls-tree", "-r", "--name-only", sha])
+    if listing is None:
+        return {}
+    paths = [p for p in listing.splitlines()
+             if p.endswith(SNAPSHOT_CODE_EXT) and not excluded(p, excludes, includes)]
+    if not paths:
+        return {}
+    proc = subprocess.run(
+        ["git", "-C", str(root), "cat-file", "--batch"],
+        input="".join(f"{sha}:{p}\n" for p in paths).encode(),
+        capture_output=True,
+    )
+    stream, pos, sizes, i = proc.stdout, 0, {}, 0
+    while pos < len(stream) and i < len(paths):
+        nl = stream.find(b"\n", pos)
+        if nl < 0:
+            break
+        header = stream[pos:nl].split()
+        if len(header) != 3:  # "missing" line — skip this path
+            pos = nl + 1
+            i += 1
+            continue
+        n = int(header[2])
+        blob = stream[nl + 1:nl + 1 + n]
+        sizes[paths[i]] = blob.count(b"\n") + (0 if blob.endswith(b"\n") or not blob else 1)
+        pos = nl + 1 + n + 1
+        i += 1
+    return sizes
+
+
+def build_snapshots(root, excludes, includes, depth, threshold=400):
+    """One row per calendar month: file/line counts, size percentiles, module
+    spread, and test/src line ratio, measured on the tree as it stood then."""
+    rows = []
+    for month, sha in month_ends(root):
+        sizes = tree_sizes(root, sha, excludes, includes)
+        if not sizes:
+            continue
+        vals = sorted(sizes.values())
+        test_files = [p for p in sizes if SNAPSHOT_TEST_RE.search(p)]
+        src_lines = sum(v for p, v in sizes.items() if not SNAPSHOT_TEST_RE.search(p))
+        test_lines = sum(v for p, v in sizes.items() if SNAPSHOT_TEST_RE.search(p))
+        mods = {}
+        for p in sizes:
+            mods[module_of(p, depth)] = mods.get(module_of(p, depth), 0) + 1
+        rows.append({
+            "month": month,
+            "code_files": len(vals),
+            "code_lines": sum(vals),
+            "med_file_lines": median(vals),
+            "p90_file_lines": (round(statistics.quantiles(vals, n=10)[-1], 1)
+                               if len(vals) > 10 else None),
+            "max_file_lines": vals[-1],
+            "files_over_threshold": sum(1 for v in vals if v > threshold),
+            "share_over_threshold": round(sum(1 for v in vals if v > threshold) / len(vals), 4),
+            "modules": len(mods),
+            "files_per_module": round(len(vals) / len(mods), 2) if mods else None,
+            "largest_module_files": max(mods.values()) if mods else None,
+            "test_files": len(test_files),
+            "test_to_src_lines": round(test_lines / src_lines, 3) if src_lines else None,
+        })
+    return rows
+
+
 # ---------------------------------------------------------------------------
 # metrics
 # ---------------------------------------------------------------------------
-def build_tasks(declared, runlogs, gitdata, excludes, depth, unit="task"):
+def build_tasks(declared, runlogs, gitdata, excludes, depth, unit="task", includes=()):
     """Join the three sources into one ordered per-unit series."""
     # Only TASK keys carry an ordinal. A commit sha of all digits would otherwise
     # parse as one (and an enormous one), scattering the series — so the ordinal
@@ -380,9 +479,9 @@ def build_tasks(declared, runlogs, gitdata, excludes, depth, unit="task"):
     ids = sorted(set(declared) | set(runlogs) | set(gitdata), key=order_key)
     rows = []
     for task_id in ids:
-        dec = {p for p in declared.get(task_id, set()) if not excluded(p, excludes)}
+        dec = {p for p in declared.get(task_id, set()) if not excluded(p, excludes, includes)}
         git_rec = gitdata.get(task_id, {})
-        act = {p for p in git_rec.get("files", set()) if not excluded(p, excludes)}
+        act = {p for p in git_rec.get("files", set()) if not excluded(p, excludes, includes)}
         log_rec = runlogs.get(task_id, {})
         first_ts = git_rec.get("first_ts") or log_rec.get("first_ts")
         # Drift is only defined when both signals exist for this lane.
@@ -550,11 +649,52 @@ def compute_coupling(graph, min_support, top, depth, max_files):
     }
 
 
+def bucket_commits_by_era(root, excludes, includes, n):
+    """N equal-commit-count chronological eras, each a {commit: files} graph
+    ready for ``compute_coupling()``. Independent of ``--unit`` — era slicing
+    is always per-commit, the same reference-implementation shape as
+    ``docs/explorations/2026-07-25-agent-built-repo-decay/method/coupling_trend.py``.
+    """
+    fmt = f"{_REC_SEP}%H{_FLD_SEP}%aI{_FLD_SEP}%s"
+    out = _git(root, ["log", "--reverse", "--no-merges", "--no-renames", "--numstat", f"--format={fmt}"])
+    if out is None or n < 1:
+        return []
+
+    commits, cur = [], None
+    for line in out.splitlines():
+        if line.startswith(_REC_SEP):
+            parts = line[1:].split(_FLD_SEP)
+            if len(parts) >= 2:
+                cur = {"sha": parts[0], "date": parts[1], "files": []}
+                commits.append(cur)
+            continue
+        if cur is None or not line.strip():
+            continue
+        cols = line.split("\t")
+        if len(cols) == 3 and cols[2] and not excluded(cols[2], excludes, includes):
+            cur["files"].append(cols[2])
+    commits = [c for c in commits if c["files"]]
+    if not commits:
+        return []
+
+    size = max(1, len(commits) // n)
+    eras = []
+    for i in range(0, len(commits), size):
+        chunk = commits[i:i + size]
+        if not chunk:
+            continue
+        label = f"{chunk[0]['date'][:10]}..{chunk[-1]['date'][:10]}"
+        graph = {c["sha"][:12]: set(c["files"]) for c in chunk}
+        eras.append((label, graph))
+    return eras
+
+
 # ---------------------------------------------------------------------------
 # report
 # ---------------------------------------------------------------------------
 def build_report(root, args):
     excludes = list(args.exclude) if args.no_default_excludes else list(DEFAULT_EXCLUDES) + list(args.exclude)
+    includes = list(args.include)
     task_re = re.compile(args.task_pattern) if args.task_pattern else None
 
     unit = getattr(args, "unit", "task")
@@ -565,7 +705,7 @@ def build_report(root, args):
     # rather than inventing one.
     declared = load_declared(root, args.changes_dir) if unit == "task" else {}
 
-    rows = build_tasks(declared, runlogs, gitdata, excludes, args.module_depth, unit)
+    rows = build_tasks(declared, runlogs, gitdata, excludes, args.module_depth, unit, includes)
 
     declared_graph = {r["task"]: r["_declared"] for r in rows if r["declared_touches"] is not None}
     actual_graph = {r["task"]: r["_actual"] for r in rows if r["actual_files"] is not None}
@@ -578,6 +718,7 @@ def build_report(root, args):
             "git_tasks": len(gitdata),
             "git_id_pattern": matched_by,
             "excludes": excludes,
+            "includes": includes,
             "module_depth": args.module_depth,
             "min_support": args.min_support,
             "shallow": is_shallow_repo(root),
@@ -595,6 +736,19 @@ def build_report(root, args):
                 actual_graph, args.min_support, args.top, args.module_depth, args.max_files),
         },
     }
+
+    if args.snapshots:
+        report["snapshots"] = build_snapshots(root, excludes, includes, args.module_depth)
+
+    if args.by_era:
+        report["coupling"]["by_era"] = [
+            {
+                "era": label,
+                **compute_coupling(graph, args.min_support, args.top, args.module_depth, args.max_files),
+            }
+            for label, graph in bucket_commits_by_era(root, excludes, includes, args.by_era)
+        ]
+
     return report
 
 
@@ -615,6 +769,7 @@ def render_text(report, root):
                                      "not comparable with a task-unit report)"))
     add(f"sources: declared={src['declared_tasks']} tasks · runlogs={src['runlog_tasks']} tasks "
         f"· git={src['git_tasks']} {unit}s (id pattern: {_fmt(src['git_id_pattern'])})")
+    add(f"includes: {', '.join(src['includes']) if src.get('includes') else '(everything)'}")
     add(f"excludes: {', '.join(src['excludes']) if src['excludes'] else '(none)'}")
     add(f"module depth: {src['module_depth']} · min support: {src['min_support']}")
     add("")
@@ -680,6 +835,34 @@ def render_text(report, root):
             add(f"  skipped (over --max-files): {', '.join(cp['skipped_tasks'])}")
         add("")
 
+    if "snapshots" in report:
+        add("Structural snapshots (month-end)")
+        add("-" * 72)
+        rows = report["snapshots"]
+        if not rows:
+            add("  no data")
+        else:
+            add(f"  {'month':<9}{'files':>7}{'lines':>9}{'med':>7}{'p90':>7}{'max':>7}"
+                f"{'share>400':>11}{'mods':>6}{'test/src':>10}")
+            for r in rows:
+                add(f"  {r['month']:<9}{r['code_files']:>7}{r['code_lines']:>9}"
+                    f"{_fmt(r['med_file_lines']):>7}{_fmt(r['p90_file_lines']):>7}"
+                    f"{r['max_file_lines']:>7}{_fmt(r['share_over_threshold']):>11}"
+                    f"{r['modules']:>6}{_fmt(r['test_to_src_lines']):>10}")
+        add("")
+
+    if "by_era" in report["coupling"]:
+        add("Co-change coupling by era — actual graph")
+        add("-" * 72)
+        eras = report["coupling"]["by_era"]
+        if not eras:
+            add("  no data")
+        else:
+            add(f"  {'era':<24}{'commits':>8}{'pairs':>7}{'x-module':>9}")
+            for e in eras:
+                add(f"  {e['era']:<24}{e['tasks']:>8}{e['pairs']:>7}{e['cross_module_pairs']:>9}")
+        add("")
+
     return "\n".join(out)
 
 
@@ -703,10 +886,24 @@ def main(argv=None):
     parser.add_argument("--max-files", type=int, default=60,
                         help="skip tasks touching more files than this in the coupling graph "
                              "(default: 60; skipped tasks are reported)")
+    parser.add_argument("--include", action="append", default=[],
+                        help="allowlist fnmatch pattern (repeatable); when given, only "
+                             "matching paths are in scope, applied BEFORE --exclude "
+                             "(default: everything is in scope). The fix for repos that "
+                             "vendor this framework's own scripts/ tree wholesale — "
+                             "e.g. --include 'app/*' to keep vendored code out of every metric.")
     parser.add_argument("--exclude", action="append", default=[],
                         help="extra fnmatch pattern to exclude (repeatable)")
     parser.add_argument("--no-default-excludes", action="store_true",
                         help="drop the built-in process-noise exclusions")
+    parser.add_argument("--snapshots", action="store_true",
+                        help="add a month-end structural series: file-count/line-count "
+                             "percentiles, share of files over 400 lines, module spread, "
+                             "test/src ratio, measured on the tree as it stood each month-end")
+    parser.add_argument("--by-era", type=int, default=None, metavar="N",
+                        help="slice actual-graph coupling into N equal-commit-count "
+                             "chronological eras, reported alongside the pooled "
+                             "whole-history coupling (default: off)")
     parser.add_argument("--changes-dir", default="docs/changes", help="change-folder root")
     parser.add_argument("--log-dir", default="docs/agent-logs/runs", help="run-log shard dir")
     parser.add_argument("--task-pattern", default=None,

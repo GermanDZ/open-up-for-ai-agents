@@ -36,6 +36,11 @@ openup-doctor.py
 # T-058 — periodic framework version staleness check (6-hour cooldown,
 # wired into openup-board.py and openup-state.py init).
 openup-version-check.py
+# T-132 (F6) — read-only codebase-entropy report. Not invoked by any workflow
+# skill, but both application repos that adopt this framework already vendor
+# scripts/ wholesale, so the manifest is the distribution channel that gets
+# the analyzer to the repos it measures — same basis as openup-doctor.py above.
+openup-entropy.py
 # T-056 — web session bootstrap (auto-regenerate .claude/ on session start).
 # These shell scripts are shipped alongside the Python CLIs so a consuming
 # project gets the full bootstrap out of the box on every install/update.

@@ -235,31 +235,31 @@ changes. Register the script in the manifest as a one-line addition.
 
 ## Operations
 
-- [ ] Port `excluded()`'s allowlist parameter + thread `args.include` through
+- [x] Port `excluded()`'s allowlist parameter + thread `args.include` through
       every existing `excluded(p, excludes)` call site in `build_tasks()` and
       the coupling-graph construction in `build_report()`; add
       `report["sources"]["includes"]`
-- [ ] Add `month_ends()`, `tree_sizes()`, `build_snapshots()` (ported from
+- [x] Add `month_ends()`, `tree_sizes()`, `build_snapshots()` (ported from
       `method/snapshots.py`, adapted to `_git()`/`excluded()`); wire behind
       `--snapshots` in `build_report()`; add the "Structural snapshots"
       section to `render_text()`
-- [ ] Add `bucket_commits_by_era()` (ported from `method/coupling_trend.py`'s
+- [x] Add `bucket_commits_by_era()` (ported from `method/coupling_trend.py`'s
       equal-commit-chunk logic) + wire `report["coupling"]["by_era"]` behind
       `--by-era N` in `build_report()`; add the by-era section to
       `render_text()`
-- [ ] Add `--include`, `--snapshots`, `--by-era` argparse entries to `main()`
+- [x] Add `--include`, `--snapshots`, `--by-era` argparse entries to `main()`
       with help text matching the existing flag style
-- [ ] Add `openup-entropy.py` to `scripts/process-manifest.txt` with an F6
+- [x] Add `openup-entropy.py` to `scripts/process-manifest.txt` with an F6
       comment; document all three new flags in
       `docs-eng-process/script-cli-reference.md`
-- [ ] (tester) Unit tests: allowlist precedence (include+no-match excludes
+- [x] (tester) Unit tests: allowlist precedence (include+no-match excludes
       even with empty blocklist; include-absent unchanged), `build_snapshots()`
       against a multi-month git fixture (month boundaries, p90 guard,
       share-over-threshold math), `bucket_commits_by_era()` against a
       non-multiple-of-N commit fixture (remainder in the last chunk);
       confirm full `scripts/tests/test_openup_entropy.py` stays green and
       flag-absent output is byte-identical to pre-T-132
-- [ ] Record the F1 acceptance check (numeric comparison of computed p90
+- [x] Record the F1 acceptance check (numeric comparison of computed p90
       series shape against the recorded Project B table in
       `docs/explorations/2026-07-25-agent-built-repo-decay.md`) in this
       folder's `design.md`
