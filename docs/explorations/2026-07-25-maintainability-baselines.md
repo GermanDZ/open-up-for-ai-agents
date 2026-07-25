@@ -160,16 +160,81 @@ gates only for failure modes the data shows.** This repo's data shows none. The
 honest output of this task is a working measurement plus a "no" to four of the
 queue's ten items, for now.
 
+## 6b. Second baseline: a human-authored codebase (added by T-128)
+
+The brief's sharpest criticism of the decay thesis is the **missing baseline** —
+human-only teams also degrade codebases, and the claim needing support is a *rate
+comparison*, which none of the cited evidence provides. T-128's `--unit commit`
+makes any repo measurable, so here is one.
+
+**What this repo is — read before using the number.** `TallyFoxAI/ruby_llm` is a
+**fork** of Carmine Paolino's `ruby_llm` gem: 601 of its 672 commits are by the
+upstream maintainer, and the history runs 2025-01 → 2025-09. It is **not**
+TallyFox's own application, and nothing here measures TallyFox's engineering. It
+is useful for exactly one thing: a **human-authored, non-agent, open-source**
+comparison point. (The other reachable TallyFox repo, `usage-guides`, is an empty
+repository — nothing to measure.)
+
+Median files changed per **commit**, nine months, 672 commits:
+
+| Window (168 commits each) | actual files | modules (depth 2) |
+|---|---|---|
+| 1st quarter | 2.0 | 1.0 |
+| 2nd quarter | 2.0 | 1.0 |
+| 3rd quarter | 2.0 | 2.0 |
+| 4th quarter | 2.0 | 2.0 |
+
+By month: 2 · 2 · 1 · 2 · 2 · 2 · 2 · 2 · 3 (Jan→Sep 2025).
+
+**Flat**, across a window that fully contains the 3–6 month mark. Module spread
+drifts 1 → 2 at depth 2; files per commit does not move at all.
+
+Its coupling profile is also *shaped* like this repo's — docs and config on top,
+module↔test below:
+
+| sup | jaccard | lift | pair |
+|---|---|---|---|
+| 36 | 0.53 | 5.3 | `README.md` ↔ `docs/index.md` |
+| 32 | 0.40 | 4.1 | `docs/guides/available-models.md` ↔ `lib/ruby_llm/models.json` |
+| 26 | 1.00 | 14.7 | `gemfiles/rails_7.2.gemfile.lock` ↔ `gemfiles/rails_8.0.gemfile.lock` |
+| 20 | 0.38 | 6.1 | `lib/ruby_llm/active_record/acts_as.rb` ↔ `spec/…/acts_as_spec.rb` |
+
+The strongest pairs are mechanical (lockfiles regenerated together by Appraisal),
+documentation duplication (`README.md` ↔ `docs/index.md`), and module↔its-spec.
+Same three classes this repo shows. 24 commits exceeded `--max-files` and were
+reported as skipped rather than silently dropped.
+
+**The comparison, stated carefully.** Two codebases, one agent-driven and one
+human-driven, over 4 and 9 months: **neither shows a rising per-change footprint.**
+That is a trend comparison, not a level comparison — and levels here are *not*
+comparable, for a reason worth recording:
+
+> Running this repo with `--unit commit` gives a median of **0 files** per commit
+> in three of four windows. That is not a bug: after process-noise exclusions, a
+> large share of this repo's commits are housekeeping (`chore(process): sweep
+> run-log shard`) touching only excluded paths. The task unit is the right unit
+> here; the commit unit is the right unit for a repo with no task ids. Comparing
+> their *levels* would be meaningless, so only the **shape of the trend** is
+> compared above.
+
+**What this does and does not support.** It is one human-authored repo, in a
+different language, by a different team size, measured on a different unit. It
+does not establish a rate. It does establish that "flat" is what the instrument
+reports for a healthy human codebase too — i.e. the flat reading on this framework
+is not obviously an artifact of the instrument being blind.
+
 ## 7. Blocked: the interesting repos
 
 `kaze-webapp` and FacturaSimple are the cases that would actually test the thesis
 — real applications, one of them entering the 3–6 month window. Neither was
 measurable from this session:
 
-- **`kaze-app/kaze-webapp`** — visible via `list_repos` but **cannot be attached**:
-  this session's sources belong to owner `germandz`, and cross-owner adds are
-  refused (`add_repo: cross-tier adds are not supported in v1`). Unblock by
-  starting a session with `kaze-app/kaze-webapp` as the initial source, then:
+- **`kaze-app/kaze-webapp`** — visible via `list_repos` but unreachable by **all
+  three** access paths, re-verified 2026-07-25: `add_repo` refuses the cross-owner
+  add (this session's sources are `germandz`); the GitHub MCP tools refuse it
+  (`not configured for this session`); and a direct `git clone` fails auth because
+  the repo is private. Unblock by starting a session with `kaze-app/kaze-webapp`
+  as the initial source, then:
 
   ```bash
   git clone <kaze-webapp> /tmp/kaze && git -C /tmp/kaze fetch --unshallow   # trap T1

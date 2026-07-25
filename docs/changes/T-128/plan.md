@@ -66,10 +66,15 @@ grouping function) · ✅ Testable
 ## Requirements
 
 1. A `--unit {task,commit,pr}` flag selects the unit of work; `task` is the
-   default and reproduces T-127's output byte-for-byte.
+   default and leaves **every computed metric** identical to T-127. The payload
+   gains exactly one field (`sources.unit`, required by R4) and nothing else —
+   generalizing the graph's *key* must not perturb the math.
    - **Given** a repo with `[T-NNN]` commits **When** the report runs with no
      `--unit` flag and again with `--unit task` **Then** both `--json` payloads are
      byte-identical.
+   - **Given** the pre-change (T-127) analyzer **When** both versions run on this
+     repo and `sources.unit` is removed from the new payload **Then** the two
+     payloads are equal object-for-object.
 
 2. Under `--unit commit`, every non-merge commit is its own unit, so cost and
    coupling are computed on repos with no task ids at all.
@@ -140,15 +145,15 @@ exists per task.
 
 ## Operations
 
-- [ ] Add `--unit {task,commit,pr}` and thread a `unit_key` selector through
+- [x] Add `--unit {task,commit,pr}` and thread a `unit_key` selector through
       `load_git`, keeping `task` the default.
-- [ ] Short-circuit drift for non-task units; surface the unit in the text header
+- [x] Short-circuit drift for non-task units; surface the unit in the text header
       and in `sources.unit`.
-- [ ] Add tests for each requirement, including the byte-identical default.
-- [ ] Run the full suite and confirm no pre-existing test regressed.
-- [ ] Run `--unit commit` against the `TallyFoxAI/ruby_llm` clone and record the
+- [x] Add tests for each requirement, including the byte-identical default.
+- [x] Run the full suite and confirm no pre-existing test regressed.
+- [x] Run `--unit commit` against the `TallyFoxAI/ruby_llm` clone and record the
       human-authored comparison baseline in the T-127 exploration note.
-- [ ] Update the `openup-entropy.py` block in `script-cli-reference.md`.
+- [x] Update the `openup-entropy.py` block in `script-cli-reference.md`.
 
 ## Norms
 

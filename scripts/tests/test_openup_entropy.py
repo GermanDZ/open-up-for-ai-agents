@@ -309,5 +309,75 @@ class ReportTests(unittest.TestCase):
         self.assertEqual(row["index"], 1)
 
 
+class UnitOfWorkTests(unittest.TestCase):
+    """T-128 — a task is one unit of work; commits and PRs are others."""
+
+    def setUp(self):
+        self.fx = Fixture()
+
+    def tearDown(self):
+        self.fx.cleanup()
+
+    def test_default_unit_matches_explicit_task(self):
+        # R1 — the default must not drift from `--unit task`.
+        self.fx.declare("T-001", ["src/a.py"])
+        self.fx.commit("T-001", ["src/a.py"])
+        self.assertEqual(self.fx.run("--json").stdout,
+                         self.fx.run("--unit", "task", "--json").stdout)
+        self.assertEqual(self.fx.payload()["sources"]["unit"], "task")
+
+    def test_commit_unit_measures_a_repo_with_no_task_ids(self):
+        # R2 — the case that exits 3 under the task unit.
+        # src/a.py and src/b.py change together 4 times (real co-change); each
+        # commit also touches a unique file, so the graph isn't degenerate.
+        for i in range(4):
+            self.fx.commit("x", ["src/a.py", "src/b.py", f"src/only{i}.py"],
+                           subject=f"Bump to 1.{i}")
+        self.assertEqual(self.fx.run().returncode, NO_DATA)  # task unit: nothing
+        payload = self.fx.payload("--unit", "commit", "--min-support", "3")
+        self.assertEqual(payload["sources"]["unit"], "commit")
+        self.assertEqual(payload["sources"]["git_tasks"], 4)
+        top = payload["coupling"]["actual"]["top"]
+        self.assertEqual([(p["a"], p["b"], p["support"]) for p in top],
+                         [("src/a.py", "src/b.py", 4)])
+
+    def test_pr_unit_groups_by_number_and_drops_untagged(self):
+        # R3 — two commits share #7; the untagged one is not its own unit.
+        self.fx.commit("x", ["src/a.py"], subject="Add a thing (#7)")
+        self.fx.commit("x", ["src/b.py"], subject="Fix that thing (#7)")
+        self.fx.commit("x", ["src/c.py"], subject="Untagged work")
+        payload = self.fx.payload("--unit", "pr")
+        self.assertEqual(payload["sources"]["git_tasks"], 1)
+        row = payload["tasks"][0]
+        self.assertEqual(row["task"], "#7")
+        self.assertEqual(row["actual_files"], 2)
+
+    def test_unit_is_named_in_header_and_payload(self):
+        # R4 — reports of different units must never look silently comparable.
+        self.fx.commit("x", ["src/a.py"], subject="Plain subject")
+        res = self.fx.run("--unit", "commit")
+        self.assertIn("unit of work: commit", res.stdout)
+        self.assertEqual(self.fx.payload("--unit", "commit")["sources"]["unit"], "commit")
+
+    def test_drift_is_task_only(self):
+        # R5 — a commit has no declared surface; don't invent one.
+        self.fx.declare("T-001", ["src/a.py"])
+        self.fx.commit("T-001", ["src/a.py"])
+        payload = self.fx.payload("--unit", "commit")
+        self.assertEqual(payload["drift"]["tasks_with_both"], 0)
+        self.assertEqual(payload["sources"]["declared_tasks"], 0)
+        self.assertIn("no data", self.fx.run("--unit", "commit").stdout)
+
+    def test_all_digit_sha_does_not_parse_as_a_task_ordinal(self):
+        # Regression: an all-digit sha parsed as an enormous ordinal, which
+        # collapsed the index buckets to the handful of such commits.
+        for i in range(6):
+            self.fx.commit("x", [f"src/f{i}.py"], subject=f"Commit {i}")
+        payload = self.fx.payload("--unit", "commit", "--buckets", "3")
+        self.assertTrue(all(r["index"] is None for r in payload["tasks"]))
+        self.assertEqual(len(payload["cost"]["by_index"]), 3)
+        self.assertTrue(all(b["n"] == 2 for b in payload["cost"]["by_index"]))
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -216,11 +216,18 @@ check-docs.py --show-archetype-defaults
 ## openup-entropy.py — read-only codebase-entropy report (T-127)
 
 ```
-openup-entropy.py [--repo DIR] [--json] [--buckets N] [--top N]
-                  [--min-support N] [--module-depth N] [--max-files N]
-                  [--exclude GLOB ...] [--no-default-excludes]
+openup-entropy.py [--repo DIR] [--unit {task,commit,pr}] [--json]
+                  [--buckets N] [--top N] [--min-support N] [--module-depth N]
+                  [--max-files N] [--exclude GLOB ...] [--no-default-excludes]
                   [--changes-dir DIR] [--log-dir DIR] [--task-pattern RE]
 ```
+- **`--unit` (T-128) selects the unit of work every metric is keyed on.** `task`
+  (default) needs task-tagged commits; `commit` measures a repo with **no task-id
+  convention at all**; `pr` groups by a trailing `(#N)` and drops untagged commits.
+  Never inferred — the unit is printed in the header and carried as
+  `sources.unit`, because two reports on different units are **not comparable**
+  (a task spans many commits). Drift is task-only: under another unit it reports
+  no data rather than inventing a declared surface.
 - **Report-only** — no gate, no threshold, no state, no write path of any kind.
   It exists to decide whether an anti-decay gate is justified, not to be one.
   Deterministic and stdlib-only (identical inputs → byte-identical `--json`).

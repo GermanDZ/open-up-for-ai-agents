@@ -1,0 +1,2 @@
+{"event": "session_begin", "task_id": "T-128", "goal": "T-128 \u2014 unit-of-work fallback (task|commit|pr) for the entropy analyzer", "branch": "claude/agent-maintainability-measurement-vtjw1e", "phase": "construction", "ts": "2026-07-25T12:10:52Z"}
+{"run_id": "137be7153ff34b519e6ca557b88893a9", "event": "commit", "task_id": "T-128", "branch": "claude/agent-maintainability-measurement-vtjw1e", "sha": "4a73e9a5841a11e704f08283e9b253ac9f3c892a", "model": null, "session_id": "claude/agent-maintainability-measurement-vtjw1e", "ts": "2026-07-25T12:10:52Z"}

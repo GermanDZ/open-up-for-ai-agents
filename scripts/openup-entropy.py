@@ -9,9 +9,11 @@ a thesis. Three independent inputs, none of them authored by a model:
   * lane run logs      ``docs/agent-logs/runs/*.jsonl`` (session_begin/_end, commit)
   * actual diffs       ``git log --numstat``, joined on a ``[T-NNN]`` commit subject
 
-Everything is a projection of one **task x file** bipartite graph, built twice —
-once from what a lane *declared* it would touch, once from what its commits
-*actually* touched. Reported:
+Everything is a projection of one **unit-of-work x file** bipartite graph, built
+twice — once from what a lane *declared* it would touch, once from what its
+commits *actually* touched. The unit is a **task** by default; ``--unit commit``
+or ``--unit pr`` (T-128) make a repo with no task-id convention measurable, which
+is what any comparison against a non-OpenUP codebase requires. Reported:
 
   cost      per-task declared/actual file counts, duration, commits, module spread,
             bucketed by task-index window and by calendar month (medians)
@@ -84,6 +86,14 @@ DEFAULT_EXCLUDES = (
 TASK_RE_BRACKET = re.compile(r"\[([A-Za-z]{1,6}-\d{1,6})\]")
 TASK_RE_SCOPE = re.compile(r"^\w+\(([A-Za-z]{1,6}-\d{1,6})\)")
 TASK_ID_RE = re.compile(r"^[A-Za-z]{1,6}-\d{1,6}$")
+# GitHub's squash-merge convention: "Display tool calls in message template (#416)".
+PR_RE = re.compile(r"\(#(\d{1,7})\)")
+
+# The unit of work every metric is keyed on. "task" is one choice, not the only
+# one — a repo that never adopted a task-id convention is still measurable per
+# commit or per merged PR. Never inferred: switching units silently would make
+# two reports look comparable when their rows count different things.
+UNITS = ("task", "commit", "pr")
 
 BEGIN_EVENTS = {"session_begin", "iteration_start"}
 END_EVENTS = {"session_end", "iteration_complete"}
@@ -260,54 +270,74 @@ def _git(root, args):
     return proc.stdout if proc.returncode == 0 else None
 
 
-def load_git(root, task_re=None):
-    """{task_id: {files, commits, first_ts, last_ts}} from ``git log --numstat``.
+def load_git(root, task_re=None, unit="task"):
+    """{unit_key: {files, commits, first_ts, last_ts}} from ``git log --numstat``.
 
     ``--no-merges`` avoids double-counting a merge alongside the commits it
     carries; ``--no-renames`` keeps numstat paths plain (a rename reads as a
     delete plus an add, which is the honest signal for co-change anyway).
+
+    Only the **key** varies by unit — every downstream metric is unchanged, which
+    is what keeps ``--unit task`` byte-identical to the pre-T-128 output.
     """
     fmt = f"{_REC_SEP}%H{_FLD_SEP}%aI{_FLD_SEP}%s"
     out = _git(root, ["log", "--no-merges", "--no-renames", "--numstat", f"--format={fmt}"])
     if out is None:
         return {}, None
 
-    commits = []  # (subject, iso_date, [paths])
+    commits = []  # (sha, subject, iso_date, [paths])
     cur = None
     for line in out.splitlines():
         if line.startswith(_REC_SEP):
             parts = line[1:].split(_FLD_SEP)
             if len(parts) >= 3:
-                cur = (parts[2], parts[1], [])
+                cur = (parts[0], parts[2], parts[1], [])
                 commits.append(cur)
             continue
         if cur is None or not line.strip():
             continue
         cols = line.split("\t")
         if len(cols) == 3 and cols[2]:
-            cur[2].append(cols[2])
+            cur[3].append(cols[2])
 
-    def collect(pattern):
+    def collect(key_of):
         acc = {}
-        for subject, date, paths in commits:
-            m = pattern.search(subject)
-            if not m:
+        for sha, subject, date, paths in commits:
+            key = key_of(sha, subject)
+            if key is None:
                 continue
-            task_id = m.group(1)
-            if not is_task_id(task_id):
-                continue
-            rec = acc.setdefault(task_id, {"files": set(), "commits": 0, "dates": []})
+            rec = acc.setdefault(key, {"files": set(), "commits": 0, "dates": []})
             rec["files"].update(paths)
             rec["commits"] += 1
             rec["dates"].append(date)
         return acc
 
-    if task_re is not None:
-        acc, matched = collect(task_re), "custom"
+    if unit == "commit":
+        # Every non-merge commit is its own unit — the fallback that makes a repo
+        # with no task-id convention measurable at all.
+        acc, matched = collect(lambda sha, subj: sha[:12]), "commit"
+    elif unit == "pr":
+        # Commits with no (#N) are dropped rather than each becoming a unit;
+        # mixing PR-sized and commit-sized rows would corrupt every median.
+        def pr_key(sha, subject):
+            m = PR_RE.search(subject)
+            return f"#{m.group(1)}" if m else None
+        acc, matched = collect(pr_key), "pr"
     else:
-        acc, matched = collect(TASK_RE_BRACKET), "bracket"
-        if not acc:
-            acc, matched = collect(TASK_RE_SCOPE), "scope"
+        def task_key(pattern):
+            def keyer(sha, subject):
+                m = pattern.search(subject)
+                if not m:
+                    return None
+                return m.group(1) if is_task_id(m.group(1)) else None
+            return keyer
+
+        if task_re is not None:
+            acc, matched = collect(task_key(task_re)), "custom"
+        else:
+            acc, matched = collect(task_key(TASK_RE_BRACKET)), "bracket"
+            if not acc:
+                acc, matched = collect(task_key(TASK_RE_SCOPE)), "scope"
 
     for rec in acc.values():
         dates = sorted(rec.pop("dates"))
@@ -319,12 +349,20 @@ def load_git(root, task_re=None):
 # ---------------------------------------------------------------------------
 # metrics
 # ---------------------------------------------------------------------------
-def build_tasks(declared, runlogs, gitdata, excludes, depth):
-    """Join the three sources into one ordered per-task series."""
-    ids = sorted(
-        set(declared) | set(runlogs) | set(gitdata),
-        key=lambda t: (task_index(t) if task_index(t) is not None else 1 << 30, t),
-    )
+def build_tasks(declared, runlogs, gitdata, excludes, depth, unit="task"):
+    """Join the three sources into one ordered per-unit series."""
+    # Only TASK keys carry an ordinal. A commit sha of all digits would otherwise
+    # parse as one (and an enormous one), scattering the series — so the ordinal
+    # is computed for the task unit alone; other units order by date.
+    def index_of(t):
+        return task_index(t) if unit == "task" else None
+
+    def order_key(t):
+        idx = index_of(t)
+        date = (gitdata.get(t) or {}).get("first_ts") or (runlogs.get(t) or {}).get("first_ts") or ""
+        return (idx if idx is not None else 1 << 30, date, t)
+
+    ids = sorted(set(declared) | set(runlogs) | set(gitdata), key=order_key)
     rows = []
     for task_id in ids:
         dec = {p for p in declared.get(task_id, set()) if not excluded(p, excludes)}
@@ -336,7 +374,7 @@ def build_tasks(declared, runlogs, gitdata, excludes, depth):
         d = drift_for(dec, act) if (task_id in declared and task_id in gitdata) else {}
         rows.append({
             "task": task_id,
-            "index": task_index(task_id),
+            "index": index_of(task_id),
             "date": first_ts,
             "month": month_of(first_ts),
             "declared_touches": len(dec) if task_id in declared else None,
@@ -369,7 +407,10 @@ def _bucket_summary(label, rows):
 
 
 def bucket_by_index(rows, buckets):
-    ordered = [r for r in rows if r["index"] is not None]
+    # `rows` arrives already ordered (task ordinal, else date). Units other than
+    # `task` have no ordinal, so bucket on position in that series rather than on
+    # a parsed index.
+    ordered = [r for r in rows if r["index"] is not None] or list(rows)
     if not ordered or buckets < 1:
         return []
     size = max(1, len(ordered) // buckets)
@@ -501,17 +542,22 @@ def build_report(root, args):
     excludes = list(args.exclude) if args.no_default_excludes else list(DEFAULT_EXCLUDES) + list(args.exclude)
     task_re = re.compile(args.task_pattern) if args.task_pattern else None
 
-    declared = load_declared(root, args.changes_dir)
+    unit = getattr(args, "unit", "task")
     runlogs = load_runlogs(root, args.log_dir)
-    gitdata, matched_by = load_git(root, task_re)
+    gitdata, matched_by = load_git(root, task_re, unit)
+    # A declared surface exists per TASK only. Under another unit there is nothing
+    # legitimate to compare a commit's diff against, so drift reports no data
+    # rather than inventing one.
+    declared = load_declared(root, args.changes_dir) if unit == "task" else {}
 
-    rows = build_tasks(declared, runlogs, gitdata, excludes, args.module_depth)
+    rows = build_tasks(declared, runlogs, gitdata, excludes, args.module_depth, unit)
 
     declared_graph = {r["task"]: r["_declared"] for r in rows if r["declared_touches"] is not None}
     actual_graph = {r["task"]: r["_actual"] for r in rows if r["actual_files"] is not None}
 
     report = {
         "sources": {
+            "unit": unit,
             "declared_tasks": len(declared),
             "runlog_tasks": len(runlogs),
             "git_tasks": len(gitdata),
@@ -545,10 +591,14 @@ def render_text(report, root):
     out = []
     add = out.append
 
+    unit = src.get("unit", "task")
     add(f"OpenUP entropy report — {root}")
     add("=" * 72)
+    add(f"unit of work: {unit}"
+        + ("" if unit == "task" else "   (declared-surface drift is task-only; "
+                                     "not comparable with a task-unit report)"))
     add(f"sources: declared={src['declared_tasks']} tasks · runlogs={src['runlog_tasks']} tasks "
-        f"· git={src['git_tasks']} tasks (id pattern: {_fmt(src['git_id_pattern'])})")
+        f"· git={src['git_tasks']} {unit}s (id pattern: {_fmt(src['git_id_pattern'])})")
     add(f"excludes: {', '.join(src['excludes']) if src['excludes'] else '(none)'}")
     add(f"module depth: {src['module_depth']} · min support: {src['min_support']}")
     add("")
@@ -622,6 +672,11 @@ def main(argv=None):
         description="Report-only codebase-entropy metrics from OpenUP telemetry + git history.",
     )
     parser.add_argument("--repo", default=".", help="repository to analyze (default: cwd)")
+    parser.add_argument("--unit", choices=UNITS, default="task",
+                        help="unit of work every metric is keyed on (default: task). "
+                             "'commit' measures repos with no task-id convention; "
+                             "'pr' groups by a trailing (#N). Never inferred — a report "
+                             "is only comparable with another of the same unit.")
     parser.add_argument("--json", action="store_true", help="emit the JSON payload instead of text")
     parser.add_argument("--buckets", type=int, default=4, help="task-index buckets (default: 4)")
     parser.add_argument("--top", type=int, default=20, help="coupling pairs to list (default: 20)")
