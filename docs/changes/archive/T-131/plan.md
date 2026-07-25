@@ -1,7 +1,7 @@
 ---
 id: T-131
 title: "Lane-hygiene fixes: id-allocator audit-tree scan (F2) + fence base_sha (F3)"
-status: ready
+status: done
 priority: high
 estimate: 1 session
 plan: docs/iteration-plans/t-131-lane-hygiene-id-scan-fence-base-sha.md
