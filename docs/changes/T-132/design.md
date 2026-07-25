@@ -1,5 +1,32 @@
 # T-132 — design notes
 
+## Completion verification (step 1a/1b)
+
+Requirements graded against the actual diff (`git diff origin/main...HEAD`):
+
+- ✅ **Req 1 (`--include`)** — `excluded()` (`scripts/openup-entropy.py`) gains
+  `includes=()`, threaded through `build_tasks()`/`build_report()`;
+  `sources.includes` recorded; `AllowlistTests`/`AllowlistReportTests` green,
+  including the flag-absent-unchanged scenario.
+- ✅ **Req 2 (`--snapshots`)** — `month_ends()`/`tree_sizes()`/`build_snapshots()`
+  added, wired behind the flag in `build_report()`, rendered in `render_text()`;
+  `SnapshotsTests` green (month boundary, p90 guard, threshold count, default
+  excludes applied).
+- ✅ **Req 3 (`--by-era`)** — `bucket_commits_by_era()` added, wired behind the
+  flag; `ByEraTests` green, including era isolation and the uneven-split
+  remainder-chunk case.
+- ✅ **Req 4 (manifest)** — `openup-entropy.py` line added to
+  `scripts/process-manifest.txt` with an F6 comment.
+- ✅ **Req 5 (F1 acceptance)** — see below; recorded as a formula-parity check,
+  per the spec's own Assumption (no live repo access in this environment).
+
+**Success Measures instrumentation (step 1b):** the named instrumentation is
+procedural (a manual check at the next repo-decay-style exploration), not a
+code-emitted metric — the same non-code, trigger-based read-back convention
+already used in this repo (e.g. T-080's "the owner's next live batch"). There
+is nothing further to add to the diff for this to be checkable at read-back
+time; ✅.
+
 ## F1 acceptance check (Requirement 5) — recorded, not a live rerun
 
 Neither Project A nor Project B (the sibling exploration's application repos)
