@@ -337,6 +337,7 @@ def cmd_init(args):
         "track": args.track,
         "branch": args.branch,
         "worktree": args.worktree,
+        "base_sha": getattr(args, "base_sha", None),
         "session_id": args.session_id,  # may be None
         "started_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "gates": {
@@ -604,6 +605,12 @@ def build_parser():
     p_init.add_argument("--branch", required=True)
     p_init.add_argument("--worktree", required=True, help="Absolute path")
     p_init.add_argument("--session-id", default=None)
+    p_init.add_argument(
+        "--base-sha",
+        default=None,
+        help="Commit the lane's branch started from (T-131); "
+             "openup-fence.py's resolve_base prefers this over origin/main/main.",
+    )
     p_init.add_argument(
         "--iteration-id",
         default=None,

@@ -1,2 +1,3 @@
 {"event": "session_begin", "task_id": "T-131", "goal": "Lane-hygiene fixes: id-allocator audit-tree scan (F2) + fence base_sha (F3)", "branch": "fix/T-131-lane-hygiene-fixes", "phase": "construction", "ts": "2026-07-25T16:49:08Z"}
 {"run_id": "f63f48bab27649c8b3713db64e94205f", "event": "commit", "task_id": "T-131", "branch": "fix/T-131-lane-hygiene-fixes", "sha": "460269e33b00a86f2065a2f20a992e6c33f23a32", "model": null, "session_id": "fix/T-131-lane-hygiene-fixes", "ts": "2026-07-25T16:50:01Z"}
+{"run_id": "ad2803996791466baba13c7c4c380419", "event": "commit", "task_id": "T-131", "branch": "fix/T-131-lane-hygiene-fixes", "sha": "34be0c7b28d46a8aefd565f7e5cea8fb8161c159", "model": null, "session_id": "fix/T-131-lane-hygiene-fixes", "ts": "2026-07-25T16:51:46Z"}

@@ -95,9 +95,22 @@ def _git(args, cwd=None):
         return None
 
 
-def resolve_base(explicit, cwd=None):
-    """First ref that resolves among: --base, origin/main, main."""
-    candidates = [explicit] if explicit else ["origin/main", "main"]
+def resolve_base(explicit, cwd=None, stamped=None):
+    """First ref that resolves among: --base, the lane's stamped base_sha, origin/main, main.
+
+    An explicit ``--base`` is tried **alone** — no fallback — exactly as
+    before this ref gained a ``stamped`` alternative: a caller who names a
+    base wants that ref or nothing (manual override / existing callers'
+    unresolvable-``--base``-is-inapplicable contract is preserved).
+
+    ``stamped`` (T-131 / F3) is the lane's own ``base_sha`` — the commit its
+    branch actually started from, recorded at ``openup-session.py begin`` time
+    — tried only when no explicit ``--base`` was given. Without it, two
+    sequential lanes on one shared branch see the fence diff against
+    *current* ``origin/main``/``main``, which by then includes the first
+    lane's already-merged files — a false ``OUT OF LANE`` accusation.
+    """
+    candidates = [explicit] if explicit else [stamped, "origin/main", "main"]
     for ref in candidates:
         if ref and _git(["rev-parse", "--verify", "--quiet", ref], cwd) is not None:
             return ref
@@ -153,6 +166,23 @@ def resolve_track(args, root: Path):
     return None
 
 
+def resolve_base_sha(args, root: Path):
+    """Read the lane's stamped base_sha from .openup/state.json (or None).
+
+    T-131 / F3: absent on a pre-existing state file written before this
+    change — resolve_base falls through to origin/main/main exactly as before.
+    """
+    sdir = Path(args.state_dir).expanduser().resolve() if args.state_dir \
+        else root / ".openup"
+    state = sdir / "state.json"
+    if state.exists():
+        try:
+            return json.loads(state.read_text(encoding="utf-8")).get("base_sha")
+        except (OSError, json.JSONDecodeError):
+            return None
+    return None
+
+
 def task_touches(task_id: str, root: Path, cdir: Path):
     """The task's touches — live claim first (D7), then plan frontmatter."""
     claim = claims.read_claim(claims.claim_file(task_id, cdir))
@@ -198,7 +228,7 @@ def cmd_check(args) -> int:
         )
         return EXIT_NO_TASK
 
-    base = resolve_base(args.base)
+    base = resolve_base(args.base, stamped=resolve_base_sha(args, root))
     if base is None:
         sys.stderr.write(
             "openup-fence: no base ref resolvable (tried "

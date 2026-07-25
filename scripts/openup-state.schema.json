@@ -60,6 +60,10 @@
       "type": "string",
       "description": "Absolute path to the working tree."
     },
+    "base_sha": {
+      "type": ["string", "null"],
+      "description": "Commit the lane's branch started from, stamped by openup-session.py begin (T-131); null for a state file written before this field existed. openup-fence.py's resolve_base prefers this over origin/main/main so a second lane landing on the same branch right after a first lane merged doesn't get falsely flagged OUT OF LANE for the first lane's already-merged files."
+    },
     "session_id": {
       "type": ["string", "null"],
       "description": "Claude Code session id, or null if unknown."

@@ -218,17 +218,17 @@ locking/claiming protocol itself or the fence's allowlist-matching logic.
       degrading silently on malformed input — with hermetic tests for both new
       sources, the malformed-input degrade case, and the live-shape
       T-129-replay regression (Requirements 1–3)
-- [ ] Add optional `--base-sha` to `openup-claims.py claim` (stored in the
+- [x] Add optional `--base-sha` to `openup-claims.py claim` (stored in the
       claim payload) and to `openup-state.py init` (stored in `state.json`);
       wire `openup-session.py cmd_begin` to compute `base_sha = git rev-parse
       HEAD` and pass it to both calls, with a test asserting it lands in both
       files after `begin` (Requirement 4)
-- [ ] Add the `stamped` parameter to `openup-fence.py`'s `resolve_base`
+- [x] Add the `stamped` parameter to `openup-fence.py`'s `resolve_base`
       (precedence: explicit `--base` > stamped > `origin/main` > `main`), wire
       `cmd_check` to read `.openup/state.json`'s `base_sha`, and add tests for
       the precedence order, the no-`base_sha` fallback (Requirement 6), and the
       live-shape T-128-vs-T-127 sequential-lane regression (Requirement 5)
-- [ ] Document the new `--base-sha` flags in
+- [x] Document the new `--base-sha` flags in
       `docs-eng-process/script-cli-reference.md`
 - [ ] Run the full test suite + `check-docs.py --changed-only` +
       `openup-fence.py check` and confirm all green

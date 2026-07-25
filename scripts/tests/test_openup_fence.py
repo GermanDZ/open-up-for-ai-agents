@@ -12,6 +12,7 @@ the live trunk. The fence is exercised through its CLI exactly as the
 pre-push hook and /openup-complete-task do.
 """
 
+import importlib.util
 import json
 import shutil
 import subprocess
@@ -21,6 +22,10 @@ import unittest
 from pathlib import Path
 
 SCRIPT = Path(__file__).resolve().parents[1] / "openup-fence.py"
+
+_spec = importlib.util.spec_from_file_location("openup_fence_under_test", SCRIPT)
+fence_mod = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(fence_mod)
 
 OK, USAGE, NO_TASK, VIOLATION = 0, 2, 3, 8
 
@@ -77,10 +82,13 @@ class FenceRepo:
         git(self.dir, "commit", "-q", "-m", "trunk moves")
         git(self.dir, "checkout", "-q", f"lane/{TASK}")
 
-    def write_state(self, task_id=TASK):
+    def write_state(self, task_id=TASK, base_sha=None):
         self.state.mkdir(parents=True, exist_ok=True)
+        payload = {"task_id": task_id}
+        if base_sha is not None:
+            payload["base_sha"] = base_sha
         (self.state / "state.json").write_text(
-            json.dumps({"task_id": task_id}), encoding="utf-8"
+            json.dumps(payload), encoding="utf-8"
         )
 
     def write_claim(self, touches, task_id=TASK):
@@ -91,8 +99,9 @@ class FenceRepo:
             encoding="utf-8",
         )
 
-    def fence(self, *args, sub="check"):
-        cmd = [sys.executable, str(SCRIPT), sub, "--base", "main",
+    def fence(self, *args, sub="check", base="main"):
+        base_flags = ["--base", base] if base is not None else []
+        cmd = [sys.executable, str(SCRIPT), sub, *base_flags,
                "--claims-dir", str(self.claims),
                "--state-dir", str(self.state), *args]
         return subprocess.run(cmd, cwd=self.dir, capture_output=True, text=True)
@@ -296,6 +305,77 @@ class FenceQuickTrackTests(unittest.TestCase):
         proc = self.repo.fence("--task-id", "T-101")
         self.assertEqual(proc.returncode, VIOLATION)
         self.assertIn("OUT OF LANE", proc.stderr)
+
+
+class ResolveBaseTests(unittest.TestCase):
+    """T-131 / F3 — resolve_base precedence, unit-level (no CLI round-trip)."""
+
+    def setUp(self):
+        self.repo = FenceRepo()
+
+    def tearDown(self):
+        self.repo.cleanup()
+
+    def test_explicit_wins_over_stamped(self):
+        base = fence_mod.resolve_base("main", cwd=self.repo.dir, stamped="lane/" + TASK)
+        self.assertEqual(base, "main")
+
+    def test_stamped_wins_when_no_explicit(self):
+        base = fence_mod.resolve_base(None, cwd=self.repo.dir, stamped="main")
+        self.assertEqual(base, "main")
+
+    def test_falls_through_to_origin_main_then_main_when_no_stamped(self):
+        base = fence_mod.resolve_base(None, cwd=self.repo.dir, stamped=None)
+        self.assertEqual(base, "main")
+
+    def test_explicit_unresolvable_does_not_fall_back(self):
+        # Preserves the pre-existing contract: an explicit-but-invalid --base
+        # is inapplicable, never silently substituted.
+        base = fence_mod.resolve_base("no-such-ref", cwd=self.repo.dir, stamped="main")
+        self.assertIsNone(base)
+
+
+class FenceBaseShaTests(unittest.TestCase):
+    """T-131 / F3 — the sequential-lane-on-one-branch live scenario (T-128-vs-T-127)."""
+
+    def setUp(self):
+        self.repo = FenceRepo()
+        # Move everything onto `main` itself — the shape that actually broke
+        # live: two lanes landing sequentially on one shared branch, not two
+        # separate worktree branches.
+        git(self.repo.dir, "checkout", "-q", "main")
+
+    def tearDown(self):
+        self.repo.cleanup()
+
+    def _land_prior_lane(self):
+        """Simulate lane-1's already-merged commit directly on `main`."""
+        self.repo.commit("docs/changes/T-127/plan.md", "lane-1 spec\n", msg="lane-1 work")
+        return git(self.repo.dir, "rev-parse", "HEAD").stdout.strip()
+
+    def test_stamped_base_sha_excuses_a_prior_already_merged_lane(self):
+        base_sha = self._land_prior_lane()
+        self.repo.commit("src/widget.py", msg="lane-2 in-lane work")  # TASK's own touches
+        self.repo.write_state(base_sha=base_sha)
+        proc = self.repo.fence("--task-id", TASK, base=None)
+        self.assertEqual(proc.returncode, OK, proc.stderr)
+
+    def test_stamped_base_sha_still_catches_a_genuine_out_of_lane_file(self):
+        base_sha = self._land_prior_lane()
+        self.repo.commit("src/other.py", msg="lane-2 out-of-lane work")  # NOT in TASK's touches
+        self.repo.write_state(base_sha=base_sha)
+        proc = self.repo.fence("--task-id", TASK, base=None)
+        self.assertEqual(proc.returncode, VIOLATION)
+        self.assertIn("src/other.py", proc.stderr)
+
+    def test_no_base_sha_falls_back_to_origin_main_chain(self):
+        # A pre-existing state.json (no base_sha key) must degrade to today's
+        # resolution, not error — Requirement 6.
+        self._land_prior_lane()
+        self.repo.commit("src/widget.py", msg="lane-2 in-lane work")
+        self.repo.write_state()  # no base_sha
+        proc = self.repo.fence("--task-id", TASK, base=None)
+        self.assertEqual(proc.returncode, OK, proc.stderr)
 
 
 if __name__ == "__main__":

@@ -946,6 +946,7 @@ def cmd_claim(args):
         "session_id": args.session_id,
         "branch": args.branch,
         "worktree": args.worktree,
+        "base_sha": getattr(args, "base_sha", None),
         "claimed_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "touches": touches,
     }
@@ -1308,6 +1309,11 @@ def build_parser():
     p_cl.add_argument("--session-id", required=True)
     p_cl.add_argument("--branch", required=True)
     p_cl.add_argument("--worktree", required=True)
+    p_cl.add_argument(
+        "--base-sha", default=None,
+        help="Commit the lane's branch started from (T-131); "
+             "openup-fence.py's resolve_base prefers this over origin/main/main.",
+    )
     add_task_inputs(p_cl)
     p_cl.add_argument(
         "--force", action="store_true",

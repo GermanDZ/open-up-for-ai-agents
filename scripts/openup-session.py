@@ -28,6 +28,7 @@ import contextlib
 import importlib.util
 import io
 import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -84,6 +85,24 @@ def _run(module, argv, echo=True):
     return code, buf.getvalue()
 
 
+def _current_head_sha(cwd=None):
+    """``git rev-parse HEAD`` in ``cwd``; ``None`` on any failure (non-repo, detached edge case).
+
+    Called at the exact moment ``begin`` acquires the lane — the skill/caller
+    creates the branch/worktree first, so HEAD here **is** the lane's base
+    commit (T-131 / F3), whether that's a fresh branch point or an in-place
+    start on the trunk branch.
+    """
+    try:
+        proc = subprocess.run(
+            ["git", "rev-parse", "HEAD"], cwd=cwd,
+            capture_output=True, text=True, check=True,
+        )
+        return proc.stdout.strip()
+    except (subprocess.CalledProcessError, FileNotFoundError, OSError):
+        return None
+
+
 # --------------------------------------------------------------------------
 # begin
 # --------------------------------------------------------------------------
@@ -93,6 +112,7 @@ def cmd_begin(args):
     if args.claims_dir:
         claims_flags += ["--claims-dir", args.claims_dir]
     push_flags = ["--no-push"] if args.no_push else []
+    base_sha = _current_head_sha(cwd=args.worktree)
 
     # 1. Stale-lease reap — DEFAULT is dry-run + warn (does not change begin's
     #    blast radius; DD4). --reap opts into a live sweep. The live self-heal
@@ -131,6 +151,8 @@ def cmd_begin(args):
         claim_argv += ["--touches", args.touches]
     if args.depends_on:
         claim_argv += ["--depends-on", args.depends_on]
+    if base_sha:
+        claim_argv += ["--base-sha", base_sha]
     claim_argv += push_flags + claims_flags
     code, _ = _run(claims, claim_argv)
     if code != claims.EXIT_OK:
@@ -170,6 +192,8 @@ def cmd_begin(args):
         init_argv += ["--branch", args.branch]
     if args.worktree:
         init_argv += ["--worktree", args.worktree]
+    if base_sha:
+        init_argv += ["--base-sha", base_sha]
     if args.session_id:
         init_argv += ["--session-id", args.session_id]
     if args.plan:
