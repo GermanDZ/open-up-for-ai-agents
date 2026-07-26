@@ -11,6 +11,7 @@ last-synced: ""
 touches:
   - docs-eng-process/.claude-templates/scripts/hooks/on-task-request.py
   - scripts/tests/test_on_task_request_hook.py
+  - scripts/tests/test_t010_tracks.py
   - docs/iteration-plans/t-135-sharpen-task-request-classifier-and-block.md
 ---
 
