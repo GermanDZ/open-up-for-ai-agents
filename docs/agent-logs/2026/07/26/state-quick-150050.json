@@ -1,0 +1,22 @@
+{
+  "schema": 2,
+  "task_id": "T-133",
+  "iteration": 0,
+  "iteration_id": null,
+  "cycle": 1,
+  "phase": "construction",
+  "track": "quick",
+  "branch": "quick/20260726-145846-gitignore-env",
+  "worktree": "/Users/germandz/personal-code/ai-dev-framework/open-up-for-ai-agents",
+  "base_sha": null,
+  "session_id": null,
+  "started_at": "2026-07-26T14:59:01Z",
+  "gates": {
+    "team_deployed": false,
+    "plan_persisted": false,
+    "log_written": true,
+    "roadmap_synced": true,
+    "retro_due": false
+  },
+  "iterations_since_retro": 0
+}
