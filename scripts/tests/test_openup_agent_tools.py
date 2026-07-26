@@ -175,6 +175,27 @@ class ToolsTest(unittest.TestCase):
         self.assertIn("exit=0", out)
         self.assertIn("hi from script", out)
 
+    # -- T-134: `ruby <path>.rb` exec allowlist entry ----------------------
+    def test_allowed_accepts_ruby_rb_path(self):
+        self.assertTrue(tools.Tools._allowed(["ruby", "probe/hello.rb"]))
+
+    def test_allowed_refuses_ruby_no_argument(self):
+        self.assertFalse(tools.Tools._allowed(["ruby"]))
+
+    def test_allowed_refuses_ruby_non_rb_path(self):
+        self.assertFalse(tools.Tools._allowed(["ruby", "probe/hello.txt"]))
+
+    def test_exec_allows_ruby_rb(self):
+        self._write("probe/hello.rb", "puts 'OPENUP-CODE-PROBE-OK'\n")
+        out = self.t.exec("ruby probe/hello.rb")
+        self.assertIn("exit=0", out)
+        self.assertIn("OPENUP-CODE-PROBE-OK", out)
+
+    def test_exec_refuses_ruby_non_rb_path(self):
+        self._write("probe/hello.txt", "puts 1\n")
+        out = self.t.exec("ruby probe/hello.txt")
+        self.assertTrue(out.startswith("REFUSED"))
+
     # -- B2: exec cwd escaping the root returns an error, never crashes ------
     def test_exec_cwd_escape_returns_error_not_crash(self):
         out = self.t.exec("git status", cwd="..")

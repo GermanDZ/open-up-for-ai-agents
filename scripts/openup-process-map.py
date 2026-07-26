@@ -59,6 +59,11 @@ SPINE_TYPES = (
     "vision", "requirement", "work-item", "iteration-plan",
     "use-case", "test-case", "decision",
 )
+# T-134 — deliberately NOT part of the doc-traceability spine: a task def whose
+# output is a real, runnable file rather than a Ring-1 typed document. Never
+# stamped (stamping.stamp_for_task() already no-ops for any artifact not in
+# ID_PREFIXES) and never subject to the spine's `.md`-only output_path rule.
+NON_SPINE_ARTIFACT_TYPES = ("code",)
 _TASK_CANDIDATES = (
     "docs-eng-process/task-library.yaml",  # canonical (framework repo)
     "scripts/task-library.yaml",           # shipped-into-a-project fallback
@@ -397,11 +402,17 @@ def validate_tasks(tasks: dict) -> list:
         if role and role not in KNOWN_ROLES:
             problems.append(f"task {tid!r} unknown role {role!r}")
         artifact = d.get("artifact")
-        if artifact and artifact not in SPINE_TYPES:
+        if artifact and artifact not in SPINE_TYPES and artifact not in NON_SPINE_ARTIFACT_TYPES:
             problems.append(f"task {tid!r} artifact {artifact!r} not a spine type "
-                            f"({', '.join(SPINE_TYPES)})")
+                            f"({', '.join(SPINE_TYPES)}) or non-spine type "
+                            f"({', '.join(NON_SPINE_ARTIFACT_TYPES)})")
         out = str(d.get("output_path", ""))
-        if out and (out.startswith("/") or not out.endswith(".md")):
+        if out.startswith("/"):
+            problems.append(f"task {tid!r} output_path {out!r} must be relative")
+        elif artifact in NON_SPINE_ARTIFACT_TYPES:
+            if out.endswith(".md"):
+                problems.append(f"task {tid!r} artifact {artifact!r} must not target a .md path")
+        elif out and not out.endswith(".md"):
             problems.append(f"task {tid!r} output_path {out!r} must be a relative .md path")
         judgment = d.get("judgment") or []
         if not (3 <= len(judgment) <= 8):

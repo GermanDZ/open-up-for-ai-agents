@@ -253,26 +253,26 @@ invoked standalone with a purpose-built system prompt that explicitly permits
 
 ## Operations
 
-- [ ] Add `probe-code-artifact` to `docs-eng-process/task-library.yaml`; run
+- [x] Add `probe-code-artifact` to `docs-eng-process/task-library.yaml`; run
       `python3 scripts/openup-process-map.py tasks --validate` and confirm
       it exits 0
-- [ ] Add `NON_SPINE_ARTIFACT_TYPES = ("code",)` and the `validate_tasks()`
+- [x] Add `NON_SPINE_ARTIFACT_TYPES = ("code",)` and the `validate_tasks()`
       branch in `scripts/openup-process-map.py`; add unit tests (accept
       `code`+non-`.md`, reject `code`+`.md`, existing spine defs unchanged)
-- [ ] Add the `ruby <path>.rb` case to `Tools._allowed()` +
+- [x] Add the `ruby <path>.rb` case to `Tools._allowed()` +
       `_ALLOWED_EXEC` in `scripts/openup_agent/tools.py`; add unit tests
       (accept/reject cases from Requirement 3, full existing
       `test_openup_agent_tools.py` suite green)
-- [ ] Add `scripts/openup_agent/probe_task.py` (two-tool-call system prompt +
+- [x] Add `scripts/openup_agent/probe_task.py` (two-tool-call system prompt +
       `run_probe_task()`) and `scripts/bench-scenarios/code-probe/scenario.json`;
       add a unit test using a fixed `_completion` seam confirming the
       system prompt and instruction reach `loop.run()` unchanged
-- [ ] Add `scripts/probe-code-artifact.py` (build a disposable fixture via
+- [x] Add `scripts/probe-code-artifact.py` (build a disposable fixture via
       `openup-agent-bench.build_fixture`, run the probe, independently
       re-run the produced file and diff its stdout against the expected
       marker); confirm `git diff origin/main -- docs-eng-process/process-map.yaml`
       is empty
-- [ ] (tester) Run the full existing test suite green
+- [x] (tester) Run the full existing test suite green
       (`scripts/tests/test_openup_process_map.py`,
       `test_openup_agent_tools.py`, and the new test files); confirm no
       regression in any currently-passing test
