@@ -206,6 +206,23 @@ T-002 (`/openup-sync-spec`) completed 2026-06-11 once T-008's readiness DAG un-b
 
 ---
 
+## T-135: Sharpen on-task-request.py's classifier, then block at prompt time
+**Status**: pending
+**Priority**: medium
+**Value**: Closes the "no prompt-time gate" finding from this session's own process-introspection discussion without breaking the "explore freely" design (T-057) — a genuine question or discussion message stops being misclassified as a delivery-work directive, so the hook can safely switch from advisory-only to a real block (matching the working `sys.exit(2)` precedent already used by the sibling `check-unfinished-tasks.py` hook) instead of a warning that's easy to ignore.
+**Description**: Sharpens `on-task-request.py`'s classifier (exclude messages ending in `?`; require task-language verbs near the message start, imperative-mood; require a bare task-id mention to be a short message) verified against real false-positive/true-positive quotes from this session's transcript, then switches the no-active-iteration branch from `sys.exit(0)` to `sys.exit(2)`.
+- Question-exclusion (`_QUESTION_RE`)
+- Position-bounded task-language matching (leading words only)
+- Bare task-id mentions require a short message
+- No-active-iteration branch blocks (`sys.exit(2)`); active-iteration reminder branch stays advisory
+- Regression test suite using real session transcript quotes as fixtures
+
+**Dependencies**: —
+
+**See**: `docs/iteration-plans/t-135-sharpen-task-request-classifier-and-block.md`
+
+---
+
 ## T-134: Code-artifact task-def probe (Option D) — can the driver write AND run real code?
 **Status**: completed (2026-07-26)
 **Priority**: medium
