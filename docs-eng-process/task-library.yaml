@@ -150,3 +150,24 @@ tasks:
       - Covers the main success flow and the significant alternate/exception flows.
       - Each test case has a clear pass/fail condition — no subjective outcome.
       - Names any preconditions or test data the case depends on.
+
+  # T-134 — a deliberately non-spine probe task, NOT wired into process-map.yaml's
+  # live activities. artifact: code is a documentation-only exemption (see
+  # scripts/openup-process-map.py's NON_SPINE_ARTIFACT_TYPES) — it produces a
+  # real, runnable file rather than a Ring-1 traceability document, so it is
+  # never stamped (stamp_for_task() already no-ops for any artifact not in
+  # ID_PREFIXES). Run only via scripts/probe-code-artifact.py's standalone
+  # runner, inside a disposable bench fixture — never through cycle.py.
+  probe-code-artifact:
+    name: Probe Code Artifact
+    role: developer
+    artifact: code
+    output_path: probe/hello.rb
+    source: driver
+    inputs: []
+    judgment:
+      - Writes a small, self-contained Ruby script with no external dependencies.
+      - The script prints the exact line `OPENUP-CODE-PROBE-OK` to stdout when run.
+      - After writing the file, runs it with exec as `ruby probe/hello.rb` and confirms the marker line appears in stdout.
+      - If the run fails or the marker is missing, fixes the script and re-runs it before finishing.
+      - Emits `OPENUP-TASK: DONE` only after a confirmed successful run.

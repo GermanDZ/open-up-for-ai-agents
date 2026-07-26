@@ -1,0 +1,6 @@
+{
+  "name": "code-probe",
+  "description": "T-134 Option D probe: does the driver's probe-code-artifact task-def write a small Ruby script AND execute it via the exec tool, confirming a marker string, at the same reliability bar (zero restarts, <=6 turns) T-106/T-107 measured for markdown authoring? Not run through the full cycle engine or any phase/activity — driven standalone by scripts/probe-code-artifact.py.",
+  "deliverable_file": "probe/hello.rb",
+  "required_markers": ["OPENUP-CODE-PROBE-OK"]
+}

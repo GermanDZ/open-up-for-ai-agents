@@ -18,7 +18,13 @@ import subprocess
 from pathlib import Path
 
 # Commands `exec` will run. Anything else is refused without spawning a process.
-_ALLOWED_EXEC = "git <subcmd>  |  python3 scripts/<script>.py [args]"
+# T-134 — `ruby <path>.rb` is a narrow addition for the code-artifact probe task
+# (see docs-eng-process/task-library.yaml's probe-code-artifact). NOTE: as with
+# the python3 case below, `argv[1]` is checked by prefix/suffix only, never
+# through `_resolve()`'s root-escape guard — a pre-existing gap this entry
+# inherits, not one it introduces. Blast radius is bounded by running the
+# probe only inside disposable bench fixtures (never a persistent repo).
+_ALLOWED_EXEC = "git <subcmd>  |  python3 scripts/<script>.py [args]  |  ruby <path>.rb"
 _MAX_READ_BYTES = 400_000
 
 # T-121/B1 — a default-tree `grep` must not read VCS/vendor/build noise or
@@ -201,6 +207,8 @@ class Tools:
             return True
         if argv[0] in ("python3", "python"):
             return len(argv) >= 2 and argv[1].startswith("scripts/") and argv[1].endswith(".py")
+        if argv[0] == "ruby":
+            return len(argv) >= 2 and argv[1].endswith(".rb")
         return False
 
     # -- dispatch ---------------------------------------------------------

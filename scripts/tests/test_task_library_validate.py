@@ -93,6 +93,23 @@ class ValidateTests(unittest.TestCase):
     def test_empty_library(self):
         self.assertTrue(any("no tasks" in p for p in pm.validate_tasks({})))
 
+    # -- T-134: artifact: code is a deliberate non-spine exemption ---------
+    def test_code_artifact_with_rb_path_passes(self):
+        text = _GOOD.replace("artifact: vision", "artifact: code")
+        text = text.replace("docs/product/vision.md", "probe/hello.rb")
+        self.assertEqual(pm.validate_tasks(_load(text)), [])
+
+    def test_code_artifact_with_md_path_fails(self):
+        text = _GOOD.replace("artifact: vision", "artifact: code")
+        problems = pm.validate_tasks(_load(text))
+        self.assertTrue(any("must not target a .md path" in p for p in problems))
+
+    def test_code_artifact_absolute_path_fails(self):
+        text = _GOOD.replace("artifact: vision", "artifact: code")
+        text = text.replace("docs/product/vision.md", "/abs/hello.rb")
+        problems = pm.validate_tasks(_load(text))
+        self.assertTrue(any("must be relative" in p for p in problems))
+
 
 class ShippedLibraryTest(unittest.TestCase):
     def test_committed_library_valid(self):
