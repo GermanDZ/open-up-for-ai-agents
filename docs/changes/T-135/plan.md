@@ -199,23 +199,25 @@ already-working blocking convention rather than inventing a new one.
 
 ## Operations
 
-- [ ] Add `_QUESTION_RE` and the question-exclusion check to
+- [x] Add `_QUESTION_RE` and the question-exclusion check to
       `on-task-request.py`; confirm `"What do you need for T-107?"` no
       longer matches
-- [ ] Add `_leading_words()` and bound `TASK_LANG_RE`'s check to it; add
+- [x] Add `_leading_words()` and bound `TASK_LANG_RE`'s check to it; add
       `_BARE_ID_MAX_WORDS` and the short-message requirement for bare
       task-id classification
-- [ ] Flip the no-active-iteration branch's `sys.exit(0)` to `sys.exit(2)`;
+- [x] Flip the no-active-iteration branch's `sys.exit(0)` to `sys.exit(2)`;
       leave the active-iteration branch's `sys.exit(0)` untouched
-- [ ] Write `scripts/tests/test_on_task_request_hook.py` using the
+- [x] Write `scripts/tests/test_on_task_request_hook.py` using the
       `test_t006_hooks.py` subprocess-driven convention, with every fixture
       from the plan's Testing Strategy (real transcript quotes)
-- [ ] Run `bash scripts/sync-templates-to-claude.sh` and confirm
+- [x] Run `bash scripts/sync-templates-to-claude.sh` and confirm
       `.claude/scripts/hooks/on-task-request.py` picks up the change
       (gitignored — not committed, but must match for this session's own
       live hook to reflect the fix)
-- [ ] (tester) Run the new test file plus the full existing suite; confirm
-      no regression anywhere
+- [x] (tester) Run the new test file plus the full existing suite; confirm
+      no regression anywhere (739/739 green; one pre-existing intermittent
+      flake in test_openup_agent_cycle unrelated to this change, confirmed
+      by re-running clean twice)
 
 ## Norms
 

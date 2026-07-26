@@ -6,22 +6,37 @@ Detects when the user submits a task request in an OpenUP project and
 injects a PM-intake instruction BEFORE Claude does any exploration or
 implementation work.
 
-A "task request" is any message that:
-  - References a task ID (T-001, T-010b, T-12, etc.)
-  - OR contains task-start language ("continue with", "work on", "implement",
-    "start", "fix", "build", "add", "create feature", etc.)
+A "task request" is a message that either:
+  - Contains task-start language ("continue with", "work on", "implement",
+    "fix", "build", "add", "create feature", etc.) in its leading words
+    (imperative mood — "Let's implement T-107" — not a verb used in passing
+    partway through a longer message)
+  - OR is a SHORT message (<= 8 words) that references a task ID (T-001,
+    T-010b, T-12, etc.) — "T-107", "continue T-107" — not a task id mentioned
+    once inside a longer analytical or discussion message
+
+A message ending in `?` is never classified as a request (T-135) — a
+question is discussion, not a delivery directive, even when it names a task
+id or uses a task-language word ("What do you need for T-107?" must not
+block).
 
 If the project is OpenUP-managed and no iteration is currently in-progress,
 the hook tells Claude to run /openup-start-iteration first, then work the
-task sequentially (one agent, assuming roles as needed).
+task sequentially (one agent, assuming roles as needed) — and BLOCKS the
+prompt (T-135) until that happens, since this precondition is genuinely
+missing and worth stopping for.
 
 If an iteration IS already in-progress, the hook reminds Claude to continue
-the work from the repo state. Teams are opt-in (full / multi-role work or
-explicit request), not the default — solo sequential work is expected.
+the work from the repo state, but does NOT block — there is no missing
+precondition on this branch, just a continuation nudge. Teams are opt-in
+(full / multi-role work or explicit request), not the default — solo
+sequential work is expected.
 
 Exit codes:
-  0 — not an OpenUP project, OR not a task request
-  2 — task request detected — inject PM-intake instruction via stderr
+  0 — not an OpenUP project, OR not a task request, OR an iteration is
+      already active (advisory reminder only)
+  2 — task request detected with NO active iteration — blocks the prompt;
+      stderr carries the PM-intake instruction as the block reason
 
 Hook event: UserPromptSubmit
 """
@@ -47,6 +62,27 @@ TASK_LANG_RE = re.compile(
     r")\b",
     re.IGNORECASE,
 )
+
+# T-135 — a message ending in `?` is discussion/inquiry, never a directive to
+# start delivery work, even when it names a task id or uses a task-language
+# word. Verified false positive this session: "What do you need for T-107?".
+QUESTION_RE = re.compile(r"\?\s*$")
+
+# T-135 — task-language verbs must appear in the message's LEADING words
+# (imperative mood: "Implement X", "Let's fix Y") rather than anywhere in a
+# longer message that happens to use the word in passing.
+LEAD_WORDS = 8
+
+# T-135 — a bare task-id mention (no task-language verb nearby) only counts
+# as a directive when the whole message is short — "T-107", "continue
+# T-107" — not when the id appears once inside a longer discussion message.
+BARE_ID_MAX_WORDS = 8
+
+
+def leading_words(prompt: str, n: int = LEAD_WORDS) -> str:
+    """The first ``n`` whitespace-separated words of ``prompt``, rejoined."""
+    return " ".join(prompt.split()[:n])
+
 
 # Skip if this is already an OpenUP skill invocation. ANY /openup-* skill has
 # its own flow (start-iteration, next, create-task-spec, create-vision, explore,
@@ -134,11 +170,19 @@ def main() -> None:
     if OPENUP_SKILL_RE.search(prompt):
         sys.exit(0)
 
-    # Is this a task request?
-    task_id_match = TASK_ID_RE.search(prompt)
-    has_task_lang = bool(TASK_LANG_RE.search(prompt))
+    # T-135 — a question is discussion, never a directive, regardless of what
+    # else it contains.
+    if QUESTION_RE.search(prompt.strip()):
+        sys.exit(0)
 
-    if not task_id_match and not has_task_lang:
+    # Is this a task request? Task-language verbs must lead the message
+    # (imperative mood); a bare task-id mention only counts when the whole
+    # message is short (T-135 — precision fix ahead of blocking).
+    task_id_match = TASK_ID_RE.search(prompt)
+    has_task_lang = bool(TASK_LANG_RE.search(leading_words(prompt)))
+    bare_id_is_short = bool(task_id_match) and len(prompt.split()) <= BARE_ID_MAX_WORDS
+
+    if not (has_task_lang or bare_id_is_short):
         sys.exit(0)
 
     cwd = payload.get("cwd", os.getcwd())
@@ -182,7 +226,7 @@ def main() -> None:
             f"Project phase: {phase} | No active iteration",
             file=sys.stderr,
         )
-        sys.exit(0)  # advisory only — never block the user's prompt
+        sys.exit(2)  # T-135 — genuinely blocks: the precondition is missing
 
     else:
         # Iteration is active — remind Claude to continue from repo state, solo by default
