@@ -1,16 +1,18 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 90
-**Iteration Goal**: T-132 — `openup-entropy.py` — `--include` allowlist scoping, `--snapshots`, `--by-era` coupling + manifest registration (F1 + F6)
+**Iteration**: 91
+**Iteration Goal**: T-134 — Code-artifact task-def probe (Option D) — can the driver write AND run real code?
 **Status**: completed
-**Current Task**: T-132
+**Current Task**: T-134
 **Iteration Started**: 2026-06-18
-**Last Updated**: 2026-07-25
+**Last Updated**: 2026-07-26
 **Updated By**: sync-status.py
 **Retrospective**: [iteration-86-retrospective.md](iteration-retrospectives/iteration-86-retrospective.md) — covers iterations 78–86 (2026-07-15 → 2026-07-24), incl. quick fixes T-125/T-126; prev [iteration-77-retrospective.md](iteration-retrospectives/iteration-77-retrospective.md) (iterations 21–77)
 
 ## Notes
+
+- **Iteration 91** (2026-07-26): T-134 — code-artifact task-def probe (Option D): `probe-code-artifact` task-def (new non-spine `artifact: code` type) writes a small Ruby script and runs it via a narrowly-widened `exec` allowlist entry (`ruby <path>.rb`); a standalone runner drives it in isolation, zero diff to `docs-eng-process/process-map.yaml`. Live probe against `gpt-5.4-nano`: clean pass, 3 turns, zero restarts, marker confirmed independently. 742 tests green. Answers the falsifiable question from the 2026-07-26 exploration before any larger Rails+Postgres investment.
 
 - **Iteration 90** (2026-07-25): T-132 — `openup-entropy.py` gains `--include` (repeatable allowlist, applied before excludes — reverses the Project A conclusion caused by vendored-scripts scoping), `--snapshots` (month-end structural series), and `--by-era N` (coupling sliced into N equal-commit eras); registered in `scripts/process-manifest.txt` (F6) so both application repos, which already vendor `scripts/`, receive it. Ported from the sibling exploration's throwaway `method/` reference scripts. 9 new tests (42/42 green). F1+F6 feature lane from the 2026-07-25 measurement-tooling exploration; sibling to T-131 (F2+F3).
 

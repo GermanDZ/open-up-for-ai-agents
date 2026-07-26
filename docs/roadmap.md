@@ -207,7 +207,7 @@ T-002 (`/openup-sync-spec`) completed 2026-06-11 once T-008's readiness DAG un-b
 ---
 
 ## T-134: Code-artifact task-def probe (Option D) — can the driver write AND run real code?
-**Status**: pending
+**Status**: completed (2026-07-26)
 **Priority**: medium
 **Value**: Answers, cheaply and falsifiably, whether a cheap hosted model can reliably write *and execute* real code through the reference driver's existing tool surface — the one real data point needed before committing to the much larger Rails 8 + Postgres Construction build the owner actually wants, instead of discovering the answer only after that full investment.
 **Description**: Adds one new task-def (`probe-code-artifact`, a new non-spine `artifact: code` type) that writes a small self-contained Ruby script and runs it via the driver's `exec` tool; widens `scripts/openup_agent/tools.py`'s exec allowlist by exactly one entry (`ruby <path>.rb`); adds a standalone runner (`scripts/openup_agent/probe_task.py` + `scripts/probe-code-artifact.py`) that drives this one task-def in isolation, with zero changes to `docs-eng-process/process-map.yaml`'s live phase/activity wiring — so no real Construction/Elaboration behavior changes. Tested only inside disposable bench-fixture temp directories, never a persistent repo.
