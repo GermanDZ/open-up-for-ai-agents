@@ -276,7 +276,7 @@ invoked standalone with a purpose-built system prompt that explicitly permits
       (`scripts/tests/test_openup_process_map.py`,
       `test_openup_agent_tools.py`, and the new test files); confirm no
       regression in any currently-passing test
-- [ ] Run the live probe once (owner-run, real endpoint) and record the
+- [x] Run the live probe once (owner-run, real endpoint) and record the
       result — pass or fail — with iteration/restart counts in
       `docs/changes/T-134/design.md`
 
