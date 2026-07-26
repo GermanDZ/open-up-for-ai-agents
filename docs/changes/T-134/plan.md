@@ -15,8 +15,9 @@ touches:
   - scripts/openup_agent/probe_task.py
   - scripts/probe-code-artifact.py
   - scripts/bench-scenarios/code-probe/
-  - scripts/tests/test_openup_process_map.py
+  - scripts/tests/test_task_library_validate.py
   - scripts/tests/test_openup_agent_tools.py
+  - scripts/tests/test_openup_agent_probe_task.py
   - docs/iteration-plans/t-134-code-artifact-task-def-probe.md
 ---
 
