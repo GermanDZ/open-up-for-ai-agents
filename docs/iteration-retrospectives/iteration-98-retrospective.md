@@ -63,12 +63,14 @@ merging T-140; **any** future hook addition reproduces it.
 
 **The retro cadence counter is not trustworthy**
 Three findings, all surfaced during T-140's completion:
-1. `openup-session.py end` increments the counter *and* `/openup-complete-task` step 7a
-   increments it again — double-count per completion.
-2. `retro.json` stores disagree and `reset` only reaches one of them — confirmed live at the
-   end of this retrospective: `retro reset` zeroed `.git/openup/retro.json` while `.openup/retro.json`
-   (the store `retro get` and `retro check` actually read) stayed at 4. The reset was therefore a
-   no-op for the gate until corrected by hand.
+1. ~~`openup-session.py end` increments the counter *and* `/openup-complete-task` step 7a
+   increments it again — double-count per completion.~~ **Obsolete 2026-07-27 (T-151)** —
+   fixed by T-142 (`177ee42`) before this was written; the lane that observed it was running
+   a pre-merge skill mirror.
+2. ~~`retro.json` stores disagree and `reset` only reaches one of them.~~ **Retracted
+   2026-07-27 (T-151) — this was wrong.** `reset` writes the same store `get` reads; the
+   legacy file is a one-time migration seed that is ignored once the authoritative file
+   exists. See the A3 row for the measurement.
 3. This makes carried items 9.1 and 77.2 (both about cadence-gate semantics) materially
    harder to answer — they have been open since iteration 9 and 77 respectively.
 
@@ -131,8 +133,8 @@ as new action items A2 and A3.
 | # | Action | Owner | Priority | Due |
 |---|---|---|---|---|
 | A1 | **Fix the hook deployment deadlock**: make a missing hook script a no-op (warn, exit 0) rather than an error, **or** track hook scripts alongside the `settings.json` that references them. Today a merged settings change can lock both Bash and Write simultaneously | framework maintainer | **critical** | before the next hook is added |
-| A2 | **Fix the retro-counter double-increment**: `openup-session.py end` and `/openup-complete-task` step 7a both increment. Pick one owner and add a regression test | framework maintainer | high | next iteration |
-| A3 | **Reconcile the `retro.json` stores** — main `.openup/` and shared `.git/openup/` are independent. **Demonstrated live while closing this retrospective**: `openup-state.py retro reset` zeroed `.git/openup/retro.json` but left `.openup/retro.json` at 4 — and `retro get`/`retro check` read the *latter*, so the reset would not have reached the gate. Zeroed by hand to close this cycle. Decide which store is authoritative and make the rest derived or removed; add a regression test that `reset` is observable through `get` | framework maintainer | **high** | next iteration |
+| A2 | ~~**Fix the retro-counter double-increment**: `openup-session.py end` and `/openup-complete-task` step 7a both increment. Pick one owner and add a regression test~~ | ~~framework maintainer~~ | ~~high~~ | **obsolete 2026-07-27 (T-151)** — already fixed by **T-142, commit `177ee42`**, which merged as PR #93 *during* iteration 98. The pack's step 7a now reads *"Do **not** issue a separate `retro increment` here"*, and T-142 already ships `test_archive_advances_cadence` + `test_failed_archive_does_not_advance_cadence`. The double-increment observed while closing T-140 was real **for that lane** — it was executing a `.claude/skills/` mirror rendered before #93 merged. Accurate observation, wrong diagnosis |
+| A3 | ~~**Reconcile the `retro.json` stores** — main `.openup/` and shared `.git/openup/` are independent; `reset` appeared not to reach the store `get` reads~~ | ~~framework maintainer~~ | ~~high~~ | **WRONG — retracted 2026-07-27 (T-151)**. Measured in an isolated fixture: after `retro reset`, the authoritative store **and** `get` both read 0 — `reset` writes exactly the store `get` reads. The legacy `.openup/retro.json` is a deliberate one-time migration seed (T-143), read **only** when the authoritative file is absent; rewriting it to 4 left `get` still reporting 100. The original claim was inferred from two direct file reads, never from `get`'s behaviour, and the hand-zeroing of `.openup/retro.json` was unnecessary (harmless). Retained struck-through, not deleted, so the error stays auditable |
 | A4 | **Require every success measure to name instrumentation that provably exists at completion time** — T-052 was specified against a `bypass-log.md` that does not exist downstream, making its read-back unanswerable. Tighten `/openup-complete-task` step 1b to reject an instrument that cannot be demonstrated in the *target* environment, not just the framework repo | framework maintainer | medium | next architecture pass |
 | A5 | **Force a disposition on the six "decide X" carried items** (9.1, 9.3, 20.2, 77.2, 77.5, plus 77.3's retire-or-exercise). Each has no greppable completion condition, which is why none has closed in up to 89 iterations. Convert each to a concrete artifact or retire it as obsolete | owner | medium | next retrospective |
 

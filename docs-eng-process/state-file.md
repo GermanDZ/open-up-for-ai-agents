@@ -161,3 +161,41 @@ retrospective due sooner, where under-counting silently disables the gate.
 starts proceed with a non-blocking reminder. The hard block targets only the heavy track
 (WS6b) so the cadence trigger never re-imposes the friction T-010 removed. See
 `docs/changes/T-011/design.md` (DD1/DD2).
+
+### Recorded decisions (T-151)
+
+Two questions about this gate sat open as retrospective action items for 89 and 21
+iterations respectively, purely because a decision has no artifact to grep for. Both are
+answered here so they stop recurring.
+
+**Boundary — the gate fires at `count >= 5`** (carried item 9.1, open since iteration 9).
+The counter counts *completions since the last retrospective*. Reaching 5 therefore means
+five tasks have completed, and the sixth `full` start is gated. That is the plain reading
+of "a retrospective every 5 tasks", and `read_retro_count(...) >= threshold` implements it
+exactly. **No change.** Revisit only if the threshold itself is retuned.
+
+**Track scope — the hard block stays on `full` starts only** (carried item 77.2, open since
+iteration 77). Evidence runs both ways: a long solo `standard` streak *did* outrun the
+cadence (iterations 87–98 reached the threshold before anyone ran a retrospective), but
+hard-blocking `standard` would stop ordinary delivery on a bookkeeping gate. The choice is
+to keep the block where it is and rely on the non-blocking reminder for the lighter tracks.
+**Revisit condition:** if the cadence is outrun again *now that the counter is known
+trustworthy*, escalate the reminder — a second occurrence is evidence the advisory path is
+too weak, where the first was confounded by a miscounted number.
+
+> Recording "we chose the status quo, and why" is what closes an item. An unrecorded
+> decision is indistinguishable from an unmade one — which is precisely why these two
+> survived so long.
+
+### Diagnosing this counter — beware the pre-sync skill mirror
+
+A skill or hook change is only live once `scripts/sync-templates-to-claude.sh` has run, and
+`.claude/` is gitignored. So a merge that lands **mid-session** leaves the running agent
+executing the *old* mirror. This produced a real false finding: during iteration 98 an agent
+observed a genuine double-increment and diagnosed "the framework double-counts", when in
+fact T-142 (commit `177ee42`) had already fixed it and the lane was running a stale copy of
+`/openup-complete-task` that still said to run `retro increment`.
+
+**Before concluding the counter is broken, check that the procedure you executed matches
+the pack** (`python3 scripts/render-skills-mirror.py --check`, and re-run
+`sync-templates-to-claude.sh`). Same class of trap as T-140's and T-150's root causes.

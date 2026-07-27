@@ -368,18 +368,19 @@ T-002 (`/openup-sync-spec`) completed 2026-06-11 once T-008's readiness DAG un-b
 
 ---
 
-## T-151: The retro-cadence counter double-increments and `reset` reaches only one of its two stores
+## T-151: Retro-cadence — record the two open gate decisions, and correct two false findings
 **Status**: pending
-**Priority**: high
-**Value**: Makes the one durable signal governing retrospective cadence trustworthy. Today it is wrong in two independent ways at once, and the two long-open decisions about the gate's semantics (open since iterations 9 and 77) cannot be answered while the number they are about is unreliable.
-**Description**: Three findings, all observed live on 2026-07-27 while completing T-140 and running the iteration-98 retrospective. **(1) Double-increment**: `openup-session.py end` increments the counter *and* `/openup-complete-task` step 7a increments it again — one completion moved it 4 → 7. **(2) Split stores**: main `.openup/retro.json` and shared `.git/openup/retro.json` are independent; `openup-state.py retro reset` zeroed the shared one while `retro get` / `retro check` read the *other*, so the reset was a silent no-op for the gate until corrected by hand. **(3) Semantics undecided**: carried items 9.1 (should the gate fire on 4→5 or 5→6?) and 77.2 (should `retro_due` apply outside `full`-track starts, so a long solo `quick`/`standard` streak cannot outrun the cadence) are folded in here — they are the same decision and both are blocked on a counter that means something.
-- Single owner for the increment; regression test that one completion moves the counter by exactly 1
-- Decide the authoritative store, make the other derived or delete it; test that `reset` is observable through `get`
-- Record the gate-boundary decision (9.1) and the track-scope decision (77.2) as explicit, citable choices
+**Priority**: medium
+**Value**: Stops rework on a defect that no longer exists and closes two decisions that have blocked the cadence gate's semantics for 89 and 21 iterations. Both original premises were measured false, so the honest value here is corrective: a roadmap that keeps asserting a fixed bug costs the next reader a full investigation to rediscover that.
+**Description**: **Re-scoped after measurement — the two premises this entry was filed on are both retracted.** (1) *"The counter double-increments"* — **obsolete**: T-142 (commit `177ee42`, merged as PR #93 mid-iteration-98) already removed the duplicate; the pack's step 7a now explicitly forbids `retro increment`, and T-142 ships the regression tests. The double-increment genuinely observed while closing T-140 came from executing a `.claude/skills/` mirror rendered *before* #93 merged — an accurate observation with a wrong diagnosis. (2) *"The two `retro.json` stores disagree and `reset` reaches only one"* — **wrong**: in an isolated fixture, after `reset` the authoritative store and `get` both read 0, and the legacy `.openup/retro.json` is a one-time migration seed ignored once the authoritative file exists. **What genuinely remains is documentation**: record carried decision 9.1 (gate fires at `count >= 5` — no change, semantics written down) and carried decision 77.2 (hard block stays `full`-only, with a revisit condition), plus a warning that a mid-session merge leaves an agent on a pre-sync skill mirror, so an apparent framework bug may be a stale copy.
+- Decisions 9.1 and 77.2 recorded in `docs-eng-process/state-file.md` with revisit conditions
+- A2 struck through as **obsolete** and A3 as **wrong** in the iteration-98 retrospective, evidence inline, never deleted
+- No live document still asserts either retracted claim
+- **No code changes** — the counter, its store, its migration branch and its single increment site were all measured correct
 
 **Dependencies**: —
 
-**See**: Iteration-98 retrospective action items A2 + A3, and carried items 9.1 (iteration 9) / 77.2 (iteration 77)
+**See**: Iteration-98 retrospective action items A2 + A3 (both struck through there); carried items 9.1 (iteration 9) / 77.2 (iteration 77); T-142 commit `177ee42`
 
 ---
 
