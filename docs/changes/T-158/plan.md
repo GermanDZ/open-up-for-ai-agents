@@ -103,7 +103,7 @@ Mirror step 5b rather than invent a new idiom: it is already a BLOCKING pass ove
 
 **Add:**
 - `docs/risk-list.md` — via `/openup-create-risk-list`.
-- A `### 6a. Verify New Action Items' Premises — BLOCKING` step in the retrospective pack.
+- A `### 5c. Verify New Action Items' Premises — BLOCKING` step in the retrospective pack. *(Numbered 5c, not 6a as first drafted: it must sit beside 5b and physically ahead of step 6 — 5b's own rationale is that "a reminder inside the authoring step is exactly the failure mode being fixed", and a `6a` label would contradict that.)*
 
 **Modify:**
 - `docs-eng-process/procedures/openup-retrospective.md` — the new step + the `## Action Items` bullet in §Create Retrospective Document.
@@ -122,14 +122,14 @@ Mirror step 5b rather than invent a new idiom: it is already a BLOCKING pass ove
 
 ## Operations
 
-- [ ] Add the `### 6a. Verify New Action Items' Premises — BLOCKING` step to the retrospective **pack**, mirroring step 5b's idiom, naming the three observed failure modes with citations; confirm it grades only the new-only `## Action Items` table (req. 3).
-- [ ] Update the `## Action Items` bullet in the pack's §Create Retrospective Document so the required element is visible where the table is described.
-- [ ] Re-render the mirror (`render-skills-mirror.py --write`) and sync (`sync-templates-to-claude.sh`); confirm `check-claude-sync` exits 0 and the new step is present in `.claude/skills/` (req. 8).
-- [ ] Strike `20.2` in place in `iteration-20-retrospective.md` as **obsolete**, citing preflight exit 3, board `depends_ok`, the T-079 partitioner and `/openup-explore`; add the pointer in the iteration-103 carried table (req. 4).
-- [ ] (analyst) Author `docs/risk-list.md` through `/openup-create-risk-list` so its rubric is applied; confirm `check-docs.py` exits 0 over it (req. 5).
-- [ ] Strike `77.5` in place in `iteration-77-retrospective.md` as **satisfied**, citing the new file; then verify every live reference to `docs/risk-list.md` resolves by path check, not assertion (reqs. 5, 6).
-- [ ] Update `## Open Action Items` in `docs/project-status.md` with the B1/B2/B3 + `20.2`/`77.5` disposition, leaving the external items and the rider untouched (req. 7).
-- [ ] (tester) Run the full `scripts/tests/` suite and confirm the pre-existing count still passes — this lane changes no script, so any delta is a real regression.
+- [x] Add the `### 5c. Verify New Action Items' Premises — BLOCKING` step to the retrospective **pack**, mirroring step 5b's idiom, naming the three observed failure modes with citations; confirm it grades only the new-only `## Action Items` table (req. 3).
+- [x] Update the `## Action Items` bullet in the pack's §Create Retrospective Document so the required element is visible where the table is described.
+- [x] Re-render the mirror (`render-skills-mirror.py --write`) and sync (`sync-templates-to-claude.sh`); confirm `check-claude-sync` exits 0 and the new step is present in `.claude/skills/` (req. 8).
+- [x] Strike `20.2` in place in `iteration-20-retrospective.md` as **obsolete**, citing preflight exit 3, board `depends_ok`, the T-079 partitioner and `/openup-explore`; add the pointer in the iteration-103 carried table (req. 4).
+- [x] (analyst) Author `docs/risk-list.md` through `/openup-create-risk-list` so its rubric is applied; confirm `check-docs.py` exits 0 over it (req. 5).
+- [x] Strike `77.5` in place in `iteration-77-retrospective.md` as **satisfied**, citing the new file; then verify every live reference to `docs/risk-list.md` resolves by path check, not assertion (reqs. 5, 6).
+- [x] Update `## Open Action Items` in `docs/project-status.md` with the B1/B2/B3 + `20.2`/`77.5` disposition, leaving the external items and the rider untouched (req. 7).
+- [x] (tester) Run the full `scripts/tests/` suite and confirm the pre-existing count still passes — this lane changes no script, so any delta is a real regression.
 
 ## Norms
 

@@ -13,17 +13,15 @@
 
 ## Open Action Items
 
-Disposition pass run 2026-07-27 (iteration-103). Retired items keep their evidence in the
-retrospective that authored them.
+Disposition pass run 2026-07-27 (iteration-103); **closures applied 2026-07-27 by T-157 and
+T-158**. Retired items keep their evidence in the retrospective that authored them.
 
-**New this cycle**
-- **B1 — high**: give `sync-status.py` a no-lane path (`--views-only`). The documented "rebase and re-run" conflict fix is impossible after `openup-session.py end` archives the state — the recovery tool needs a precondition the situation destroyed.
-- **B2 — high**: verify a retrospective action item's premise **before** promoting it to a roadmap task. Two of five filed that way were false; two more had shrunk.
-- **B3 — medium**: decide `20.2` and `77.5` — the two items T-154's cancellation wrongly dropped.
-
-**Open — genuinely actionable here (2)**
-- `20.2` (83 it.) Dependency-ordering convention for `/openup-start-iteration`. **Was mis-recorded as handled by T-154**; still open.
-- `77.5` (26 it.) Instantiate `docs/risk-list.md` or treat its absence as `n/a`. Same wrongly-dropped pair.
+**Closed this cycle (5)**
+- ~~**B1 — high**: give `sync-status.py` a no-lane path (`--views-only`).~~ **done** — T-157. `--views-only` returns before `read_state()`, reassembling `## Notes` from the shards and reconciling roadmap sections; header fields and table-row cells deliberately excluded (they need a live lane). Verified live on trunk: plain run exits `3`, `--views-only` exits `0`.
+- ~~**B2 — high**: verify a retrospective action item's premise before promoting it.~~ **done** — T-158. `/openup-retrospective` gains **step 5c** (BLOCKING): every newly-authored item must carry an **Evidence** element naming what was checked, *where*, and what it showed. Names the three observed failure modes — already-fixed (`A2`), disproved-on-inspection (`A3`), shrunk-on-measurement (`T-153`, `T-147`).
+- ~~**B3 — medium**: decide `20.2` and `77.5`.~~ **done** — T-158; both decided below, neither carried again.
+- ~~`20.2` (83 it.) Dependency-ordering convention for `/openup-start-iteration`.~~ **retired obsolete** — owner decision. It asked for a *convention* because no mechanism existed; both halves are now *enforcement* (`openup-claims.py preflight` exit 3, board `depends_ok`, the T-079 partitioner's `depends-on` clustering, and `/openup-explore` for the explorations half). Struck in place in `iteration-20-retrospective.md` with that evidence.
+- ~~`77.5` (26 it.) Instantiate `docs/risk-list.md` or treat its absence as `n/a`.~~ **satisfied** — owner decision: instantiate. [`docs/risk-list.md`](risk-list.md) now exists (7 ranked risks, each citing its evidence). The deciding argument was a dangling promise, not scale: five live docs already referenced the path as though the file existed.
 
 **Open — external, not closable here (3)**
 - `10.1` — es-invoices has exactly one stale archived plan (`T-009: in-progress → done`); tallyfox-app clean. Fix: `python3 scripts/openup-claims.py migrate-archived-status` there.
@@ -33,7 +31,13 @@ retrospective that authored them.
 **Open — opportunistic rider (1)**
 - `9.2` — first real `/openup-sync-spec` use; needs a genuine refactor diff, so it rides with the next lane that produces one.
 
-**Retired to date**: 12 of the original 17, plus A2/A3 retracted as misdiagnoses.
+**Retired to date**: 14 of the original 17 (`20.2` and `77.5` closed 2026-07-27), plus A2/A3
+retracted as misdiagnoses. All three of iteration-103's own items (B1–B3) are closed in the
+same cycle they were authored — the first time that has happened, and the thing step 5c
+exists to keep true.
+
+**Still open: 4** — three external (`10.1`, `86.3`, `86.4`) and one opportunistic rider (`9.2`).
+Nothing actionable here remains carried.
 
 ## Notes
 
