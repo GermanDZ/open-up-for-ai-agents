@@ -312,7 +312,7 @@ T-002 (`/openup-sync-spec`) completed 2026-06-11 once T-008's readiness DAG un-b
 ---
 
 ## T-146: Quick-task's hardcoded `--iteration 0` can clobber `project-status.md`'s real header on sync
-**Status**: pending
+**Status**: completed (2026-07-27)
 **Priority**: medium
 **Value**: Prevents a quick task from silently rewriting the project-wide `**Iteration**` (and, less fixably, `**Status**`) header to values describing the quick lane instead of the actual last completed iteration — observed downstream rewriting `**Iteration**: 64` to `0` and a completed iteration's status to `in-progress`. This repo's own `/openup-quick-task` skill steps avoid the full `sync-status.py` run today (they set gates directly), so the bug is latent rather than triggered here — but latent is not the same as fixed, and any future skill revision or manual `sync-status.py` run with an active quick-task state would hit it exactly as downstream did.
 **Description**: `sync-status.py`'s `update_project_status()` writes the active lane's `state["iteration"]` (initialized to the literal `0` by `/openup-quick-task` step 2) directly into the shared header, with no guard for "this lane doesn't have a real iteration number." Skip the `Iteration` field when `state["iteration"]` is falsy (`0`/absent) — `0` is already the quick-track sentinel for "no iteration," so this is a small, backward-compatible guard. `Status` needs a real design decision (the header field currently means both "status of the last completed iteration" and "status of the active lane," which is the deeper source of the clobber) — recorded as an open question, not resolved by the `Iteration` fix alone.

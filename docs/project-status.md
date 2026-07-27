@@ -1,16 +1,18 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 95
-**Iteration Goal**: T-145 — `sync-status.py` derives `completed` from bookkeeping gates alone, no delivery evidence
+**Iteration**: 96
+**Iteration Goal**: T-146 — Quick-task's hardcoded `--iteration 0` can clobber `project-status.md`'s real header on sync
 **Status**: completed
-**Current Task**: T-145
+**Current Task**: T-146
 **Iteration Started**: 2026-06-18
 **Last Updated**: 2026-07-27
 **Updated By**: sync-status.py
 **Retrospective**: [iteration-86-retrospective.md](iteration-retrospectives/iteration-86-retrospective.md) — covers iterations 78–86 (2026-07-15 → 2026-07-24), incl. quick fixes T-125/T-126; prev [iteration-77-retrospective.md](iteration-retrospectives/iteration-77-retrospective.md) (iterations 21–77)
 
 ## Notes
+
+- **Iteration 96** (2026-07-27): T-146 (standard) — **a quick lane can no longer clobber the project-wide `**Iteration**` header**. `sync-status.py`'s `update_project_status()` wrote `state["iteration"]` unconditionally, and `/openup-quick-task` initializes state with the literal `--iteration 0` sentinel — so a sync run with a quick lane live rewrote the real counter to `0` (observed downstream: `**Iteration**: 64` → `0`). Latent in this repo only because `/openup-quick-task`'s steps set gates directly instead of invoking `sync-status.py`; the guard makes it unreachable either way. Tested as falsiness rather than `== 0`, so an absent/None key behaves identically, and the old `state.get("iteration", "")` default — the one path that could have blanked the field — is gone. **`Status` deliberately not fixed**: the field genuinely means two things (last completed iteration vs active lane), so there is no sentinel to test for; carried as roadmap entry T-149 with both candidate resolutions written down. +4 tests; full suite 777 green.
 
 - **Iteration 95** (2026-07-27): T-145 (standard) — **completion now requires delivery evidence, not bookkeeping alone**. Every gate in `sync-status.py`'s `TRACK_REQUIRED` was bookkeeping: `roadmap_synced` is set by `sync-status.py` itself, `log_written` by a log append, `team_deployed` by spawning a team — none observes the diff, so a lane carrying only a spec and a run log satisfied the whole set and was stamped `completed` on the roadmap (observed downstream, corrected by hand in `be2ee16`). New optional gate `gates.implementation_verified`, required on **every** track (quick relaxes ceremony, never evidence) and added to `openup-state.py`'s `DEFAULT_REQUIRED_GATES` so `check-gates` and the derived view can't disagree. Set from `/openup-complete-task` step 1a (which already graded every requirement against the actual diff but recorded the verdict nowhere machine-readable) and `/openup-quick-task` step 3 — deliberately at the point of verification, not alongside the bookkeeping gates. Schema-optional by design: a state file written before the gate existed still validates, and an absent key reads falsy = not verified. +6 tests; full suite 773 green.
 

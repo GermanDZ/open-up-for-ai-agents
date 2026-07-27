@@ -1,7 +1,7 @@
 ---
 id: T-146
 title: "Quick-task's hardcoded --iteration 0 must not clobber project-status.md's real Iteration header"
-status: ready
+status: done
 priority: medium
 estimate: 1 session
 plan: ""
