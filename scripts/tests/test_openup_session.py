@@ -127,6 +127,74 @@ class TestBeginEnd(unittest.TestCase):
             self.assertIn("other-session", preexisting.read_text())
 
 
+class TestPlanGateAutoResolve(unittest.TestCase):
+    """T-148: `begin` seeds gates.plan_persisted from the task's own spec.
+
+    Before this, `--plan` was optional prose in the start-iteration skill (and
+    pointed at the wrong `docs/plans/` convention), so every session hit
+    `gate-edits.py` on its first edit and recovered by hand with
+    `openup-state.py set-gate plan_persisted`. These pin the four branches of
+    `_resolve_plan_path`.
+    """
+
+    @staticmethod
+    def _worktree_with_spec(tmp, task):
+        """A fake worktree containing docs/changes/<task>/plan.md."""
+        wt = tmp / "wt"
+        spec = wt / "docs" / "changes" / task / "plan.md"
+        spec.parent.mkdir(parents=True, exist_ok=True)
+        spec.write_text(f"---\nid: {task}\n---\n\n# {task}\n")
+        return wt
+
+    @staticmethod
+    def _gate(tmp):
+        return json.loads((tmp / "state" / "state.json").read_text())["gates"]["plan_persisted"]
+
+    def test_standard_track_auto_resolves_task_spec(self):
+        with tempfile.TemporaryDirectory() as d:
+            tmp = Path(d)
+            wt = self._worktree_with_spec(tmp, "TEST-P1")
+            # No --plan passed at all — the whole point of the fix.
+            run(SESSION, begin_args(tmp, task="TEST-P1", touches="scripts/p1.py",
+                                    extra=["--worktree", str(wt)]), expect=0)
+            self.assertEqual(self._gate(tmp), "docs/changes/TEST-P1/plan.md")
+            # ...and the auto-resolution is durable in the run shard (the measure's
+            # instrument), not just in the state file.
+            shard = next((tmp / "logs" / "runs").glob("*.jsonl"))
+            events = [json.loads(l)["event"] for l in shard.read_text().splitlines() if l.strip()]
+            self.assertIn("plan_gate_autoresolved", events)
+
+    def test_explicit_plan_wins_over_auto_resolution(self):
+        with tempfile.TemporaryDirectory() as d:
+            tmp = Path(d)
+            wt = self._worktree_with_spec(tmp, "TEST-P2")
+            run(SESSION, begin_args(tmp, task="TEST-P2", touches="scripts/p2.py",
+                                    extra=["--worktree", str(wt),
+                                           "--plan", "docs/plans/legacy.md"]), expect=0)
+            self.assertEqual(self._gate(tmp), "docs/plans/legacy.md")
+            # An explicitly-passed plan was not auto-resolved, so no event.
+            shard = next((tmp / "logs" / "runs").glob("*.jsonl"))
+            self.assertNotIn("plan_gate_autoresolved", shard.read_text())
+
+    def test_missing_spec_is_fail_open(self):
+        with tempfile.TemporaryDirectory() as d:
+            tmp = Path(d)
+            wt = tmp / "wt"           # exists, but carries no docs/changes/<task>/plan.md
+            wt.mkdir(parents=True)
+            run(SESSION, begin_args(tmp, task="TEST-P3", touches="scripts/p3.py",
+                                    extra=["--worktree", str(wt)]), expect=0)
+            self.assertIs(self._gate(tmp), False)   # unchanged from pre-T-148 behavior
+
+    def test_quick_track_does_not_auto_resolve(self):
+        with tempfile.TemporaryDirectory() as d:
+            tmp = Path(d)
+            wt = self._worktree_with_spec(tmp, "TEST-P4")
+            # begin_args defaults to --track standard; the later value wins.
+            run(SESSION, begin_args(tmp, task="TEST-P4", touches="scripts/p4.py",
+                                    extra=["--worktree", str(wt), "--track", "quick"]), expect=0)
+            self.assertIs(self._gate(tmp), False)   # quick relaxes the plan gate
+
+
 class TestBoardReapWiring(unittest.TestCase):
     def _refresh(self, tmp, extra=None):
         return run(BOARD, [

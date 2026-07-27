@@ -66,7 +66,7 @@ Which skill flips which gate:
 
 | Gate | Set by | When |
 |------|--------|------|
-| `plan_persisted` | `openup-start-iteration` (`init --plan`) | At iteration start, if a plan was persisted. |
+| `plan_persisted` | `openup-session.py begin` — auto-resolved on `standard`/`full`, or an explicit `--plan` | At iteration start. On `standard`/`full`, `begin` seeds it from the task's own `docs/changes/<task_id>/plan.md` without being told the path (T-148), logging `plan_gate_autoresolved`; a manual `set-gate plan_persisted` should no longer be needed. Fail-open (no spec ⇒ stays `false`); `quick` never auto-resolves. |
 | `team_deployed` | `openup-start-iteration` | After the team is deployed (`set-gate team_deployed true`). |
 | `log_written` | `openup-log-run` | After the run log is written. |
 | `roadmap_synced` | `openup-complete-task` | After the roadmap is updated. |

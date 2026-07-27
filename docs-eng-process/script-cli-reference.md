@@ -85,6 +85,13 @@ begin  --task-id --iteration N --phase P --track T [--branch B] [--worktree W]
                                           #   heartbeat→state-init→session_begin log
                                           # stamps base_sha = `git rev-parse HEAD`
                                           # in --worktree into both claim + state (T-131)
+                                          # --plan is OPTIONAL and rarely needed: on
+                                          #   standard/full it auto-resolves to
+                                          #   docs/changes/<task>/plan.md under --worktree
+                                          #   when that file exists, logging
+                                          #   `plan_gate_autoresolved` (T-148). Explicit
+                                          #   wins; missing file = fail-open (gate false);
+                                          #   quick never auto-resolves.
 end    --task-id --archive-to PATH [--status done] [--branch B] [--no-push]
                                           # teardown: archive state→session_end log→release
 ```

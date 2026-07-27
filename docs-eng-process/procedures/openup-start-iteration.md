@@ -349,6 +349,16 @@ collision surface (`touches`) and `depends-on` are read from
 the **track selected in step 3** to `--track`. See
 [parallel-work.md](../../../../docs-eng-process/parallel-work.md).
 
+**The plan gate seeds itself (T-148).** Because that same spec is already a
+precondition of `begin`, on `standard`/`full` `begin` resolves
+`docs/changes/{task_id}/plan.md` on its own and seeds `gates.plan_persisted` with it —
+so **do not pass `--plan`, and never follow a `begin` with a manual
+`openup-state.py set-gate plan_persisted`**. Resolution is fail-open (a lane whose
+plan lives elsewhere just leaves the gate unset) and the `quick` track is skipped
+entirely, since it relaxes the gate. Pass `--plan` explicitly *only* to point at a
+non-conventional plan (a legacy `docs/plans/` or `docs/iteration-plans/` file); an
+explicit value always wins.
+
 ```bash
 BRANCH="$(git rev-parse --abbrev-ref HEAD)"
 python3 scripts/openup-session.py begin \
@@ -361,8 +371,10 @@ python3 scripts/openup-session.py begin \
   --session-id "$BRANCH" \
   --iterations-since-retro "$(python3 scripts/openup-state.py retro get)" \
   --goal "{goal}" \
-  --run-id "{run_id}" \
-  [--plan docs/plans/{plan}.md]    # standard/full only; the quick track has no plan gate
+  --run-id "{run_id}"
+  # NO --plan needed: on standard/full, begin auto-resolves the plan gate from
+  # docs/changes/{task_id}/plan.md (T-148). Pass --plan ONLY for a lane whose plan
+  # lives elsewhere (a legacy docs/plans/ or docs/iteration-plans/ file).
 rc=$?
 if [ "$rc" -eq 9 ]; then
   # Remote duplicate (T-044): another clone already owns this task on origin. Record the
