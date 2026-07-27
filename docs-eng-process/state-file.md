@@ -19,7 +19,7 @@ docs in `docs/`.
 |-------|------|-------|
 | `schema` | int | Always `1`. |
 | `task_id` | string | Roadmap task id, e.g. `"T-005"`. |
-| `iteration` | int | Iteration number. **`0` is the quick track's "no real iteration" sentinel** — `/openup-quick-task` initializes state with `--iteration 0`. A consumer must never write a falsy `iteration` into a project-wide view: `sync-status.py` skips the `**Iteration**` header entirely in that case rather than zeroing it (T-146). |
+| `iteration` | int | Iteration number. **`0` is the quick track's "no real iteration" sentinel** — `/openup-quick-task` initializes state with `--iteration 0`. A consumer must never write a falsy `iteration` into a project-wide view: `sync-status.py` skips the `**Iteration**` **and** `**Status**` headers entirely in that case rather than zeroing them (T-146, T-149 — see below). |
 | `phase` | string | `inception` \| `elaboration` \| `construction` \| `transition`. |
 | `track` | string | `quick` \| `standard` \| `full`. |
 | `branch` | string | Git branch for the iteration. |
@@ -40,6 +40,28 @@ deliberately optional so a state file written before the gate existed still
 validates (an absent key reads falsy — "not verified" — rather than raising).
 `additionalProperties` is forbidden at the top level and inside `gates`. The schema is JSON Schema draft 2020-12; the helper ships a
 small focused validator so no third-party libraries are needed.
+
+### How state reaches `docs/project-status.md`'s status fields (T-149)
+
+`sync-status.py` derives one value — `derive_status(state)`, the **active lane's**
+status — but the project-wide view has to answer two different questions, so it
+lands in two fields:
+
+| Header field | Means | Written when |
+|---|---|---|
+| `**Status**` | Status of the iteration named in `**Iteration**`. | Only when `iteration` is truthy — the *same* guard as `**Iteration**`, so the pair can never disagree. |
+| `**Lane Status**` | Status of the active lane, whatever track it is on. | Every sync, unconditionally. |
+
+Read `**Lane Status**` when you mean *"is a lane live right now?"* — that is what
+`on-task-request.py` asks. Read `**Status**` when you mean *"how did the recorded
+iteration end?"* — that is what `/openup-retrospective` asks. Before T-149 both
+consumers read `**Status**`, so a quick lane's `in-progress` could overwrite a
+completed iteration's recorded status.
+
+`**Lane Status**` is **upserted**: documents predating the field get it inserted
+after `**Status**`. A reader must still fall back to `**Status**` for a document
+that has not re-synced yet, and must tolerate the anchor being absent entirely
+(`upsert_field` refuses to restructure a header it does not recognize).
 
 ## Helper CLI
 

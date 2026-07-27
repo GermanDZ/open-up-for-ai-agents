@@ -211,14 +211,23 @@ class SyncStatusNotesTests(unittest.TestCase):
         self.assertIn("**Iteration**: 96", self.ps.read_text())
 
     def test_falsy_iteration_still_syncs_every_other_field(self):
-        """Skipping `Iteration` must not degrade into 'quick lanes don't sync'."""
+        """Skipping `Iteration` must not degrade into 'quick lanes don't sync'.
+
+        T-149 moved the lane's status out of `**Status**` and into
+        `**Lane Status**`: `**Status**` now sits behind the same guard as
+        `**Iteration**` (it describes that iteration, so the pair moves
+        together), while `**Lane Status**` carries the value this assertion
+        originally checked. The subject of the test is unchanged — a quick lane
+        still syncs everything that is not iteration-scoped.
+        """
         self._init_state("--iteration", "0", "--track", "quick")
         proc = self._run_sync()
         self.assertEqual(proc.returncode, 0, proc.stderr)
         ps = self.ps.read_text()
         self.assertIn("**Current Task**: T-200", ps)
         self.assertIn("**Phase**: construction", ps)
-        self.assertIn("**Status**: in-progress", ps)
+        self.assertIn("**Lane Status**: in-progress", ps)
+        self.assertIn("**Status**: planned", ps)   # the fixture's value, preserved
         self.assertIn("**Updated By**: sync-status.py", ps)
         self.assertNotIn("**Last Updated**: 2026-01-01", ps)
         self.assertIn("| in-progress |", self.roadmap.read_text())

@@ -194,7 +194,12 @@ def main() -> None:
 
     # Read current project state
     fields = parse_project_status(status_path)
-    status = fields.get("Status", "").lower()
+    # T-149: `Lane Status` is the field that answers "is a lane live right now?".
+    # `Status` describes the iteration named in `**Iteration**`, which is a
+    # different question — during a quick lane it legitimately still reads
+    # `completed`. Fall back to `Status` for documents written before the split:
+    # they carry the lane's value there, so the decision is unchanged for them.
+    status = (fields.get("Lane Status") or fields.get("Status", "")).lower()
     current_task = fields.get("Current Task", "None").strip()
     phase = fields.get("Phase", "construction").strip().lower()
 

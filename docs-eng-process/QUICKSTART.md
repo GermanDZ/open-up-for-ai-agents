@@ -62,6 +62,7 @@ cat > docs/project-status.md << 'EOF'
 **Iteration**: 0
 **Iteration Goal**: Project initialization
 **Status**: initialized
+**Lane Status**: initialized
 **Current Task**: None
 **Started**: [today's date]
 **Last Updated**: [today's date]

@@ -309,12 +309,40 @@ def reconcile_sections(text: str, root: Path,
 # project-status.md regeneration
 # --------------------------------------------------------------------------
 def set_field(text: str, field: str, value: str) -> str:
-    """Replace a **Field**: value line, preserving the rest of the doc."""
+    """Replace a **Field**: value line, preserving the rest of the doc.
+
+    Replace-only *by contract* (T-149): a field the document does not already
+    carry is NOT added. Making this insert-when-missing would materialize every
+    absent header field (`Iteration Goal`, `Retrospective`, …) in every
+    un-migrated project-status.md. Use ``upsert_field`` for the one field that
+    genuinely has to reach documents predating it.
+    """
     pat = re.compile(rf"^\*\*{re.escape(field)}\*\*:.*$", re.MULTILINE)
     repl = f"**{field}**: {value}"
     if pat.search(text):
         return pat.sub(lambda _m: repl, text, count=1)
     return text
+
+
+def upsert_field(text: str, field: str, value: str, after: str) -> str:
+    """Replace ``**field**:`` in place, or insert it after the ``after`` anchor.
+
+    T-149: `**Lane Status**` is a new header field, so documents written before
+    it exists must still receive it — but only by *extending* a header whose
+    shape we recognize. When the anchor line is absent (a hand-rolled or heavily
+    edited document), this is a no-op rather than an append: restructuring a
+    document we do not recognize is worse than leaving the reader to its
+    fallback.
+    """
+    pat = re.compile(rf"^\*\*{re.escape(field)}\*\*:.*$", re.MULTILINE)
+    repl = f"**{field}**: {value}"
+    if pat.search(text):
+        return pat.sub(lambda _m: repl, text, count=1)
+    anchor = re.compile(rf"^\*\*{re.escape(after)}\*\*:.*$", re.MULTILINE)
+    m = anchor.search(text)
+    if not m:
+        return text
+    return text[:m.end()] + "\n" + repl + text[m.end():]
 
 
 def update_project_status(text: str, state: dict, status: str,
@@ -328,15 +356,27 @@ def update_project_status(text: str, state: dict, status: str,
     # iteration number is falsy. Skipping means *not writing*: the existing value
     # survives byte-identical (blanking would be a worse version of the same bug).
     #
-    # `Status` below has the SAME root cause and is deliberately left alone: the
-    # field currently means both "status of the last completed iteration" and
-    # "status of the active lane", so guarding it needs the header split into two
-    # fields (or a decision to leave it untouched on `quick`) rather than another
-    # one-line condition. Carried as roadmap entry T-149, not resolved here.
+    # T-149 resolves the `Status` half of that same root cause by SPLITTING the
+    # field rather than guarding it twice. `**Status**` had two readers wanting
+    # opposite things — `/openup-retrospective` reads it as the status of the
+    # iteration named beside it, while `on-task-request.py` reads it as "is a
+    # lane live?". So:
+    #   * `**Status**` is written under the SAME truthy-iteration guard as
+    #     `**Iteration**`, which binds the pair — the recorded status always
+    #     describes the recorded iteration, and a quick lane can no longer
+    #     rewrite a completed iteration's status to `in-progress`.
+    #   * `**Lane Status**` is new, always written, and carries the active
+    #     lane's derived status for the hook. Upserted (not set) so documents
+    #     predating the field still receive it; readers fall back to `Status`
+    #     until they do.
+    # The rejected alternative was skipping `Status` on `quick` alone: cheaper,
+    # but it leaves the hook reading a stale `completed` mid-quick-lane and
+    # blocking legitimate task-requests. See docs/changes/T-149/plan.md.
     if state.get("iteration"):
         text = set_field(text, "Iteration", str(state["iteration"]))
+        text = set_field(text, "Status", status)
     text = set_field(text, "Current Task", state.get("task_id", ""))
-    text = set_field(text, "Status", status)
+    text = upsert_field(text, "Lane Status", status, after="Status")
     if goal:
         text = set_field(text, "Iteration Goal", goal)
     text = set_field(text, "Last Updated", today)

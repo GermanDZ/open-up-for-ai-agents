@@ -12,8 +12,10 @@ touches:
   - scripts/sync-status.py
   - scripts/tests/test_t149_status_split.py
   - scripts/tests/test_on_task_request_hook.py
+  - scripts/tests/test_sync_status_notes.py
   - docs-eng-process/templates/project-status.md
   - docs-eng-process/.claude-templates/scripts/hooks/on-task-request.py
+  - docs-eng-process/.claude-templates/skills/openup-retrospective/SKILL.md
   - docs-eng-process/state-file.md
   - docs-eng-process/QUICKSTART.md
   - docs-eng-process/procedures/openup-retrospective.md
@@ -220,6 +222,12 @@ that have not re-synced yet.
 - `docs-eng-process/procedures/openup-retrospective.md` — steps 1–2 name the
   field they mean.
 - `scripts/tests/test_on_task_request_hook.py` — requirements 5–6.
+- `scripts/tests/test_sync_status_notes.py` — T-146's
+  `test_falsy_iteration_still_syncs_every_other_field` asserts `**Status**:
+  in-progress` on a falsy-iteration quick lane, which is precisely the behavior
+  requirement 1 changes. Re-point that assertion at `**Lane Status**` and add
+  the `**Status**`-is-preserved assertion; the test's actual subject (a quick
+  lane still syncs everything else) is unchanged.
 - `docs/roadmap.md` — status cell (via `sync-status.py`, never by hand).
 
 **Do not touch:**
@@ -238,20 +246,20 @@ that have not re-synced yet.
 
 ## Operations
 
-- [ ] Add `upsert_field(text, field, value, after=…)` to `scripts/sync-status.py`
+- [x] Add `upsert_field(text, field, value, after=…)` to `scripts/sync-status.py`
       — replace in place when the field exists, insert on the line after the
       `after` anchor when it does not, leave `set_field()` untouched.
-- [ ] Move the `**Status**` write inside the existing truthy-`iteration` guard
+- [x] Move the `**Status**` write inside the existing truthy-`iteration` guard
       and add the unconditional `**Lane Status**` write, replacing the T-146
       comment's carried-question paragraph with the resolution and its rationale.
-- [ ] Add `**Lane Status**` to `docs-eng-process/templates/project-status.md`
+- [x] Add `**Lane Status**` to `docs-eng-process/templates/project-status.md`
       and mirror it in the `docs-eng-process/QUICKSTART.md` sample header.
-- [ ] Point the hook at `Lane Status` with a `Status` fallback in
+- [x] Point the hook at `Lane Status` with a `Status` fallback in
       `docs-eng-process/.claude-templates/scripts/hooks/on-task-request.py`, then
       run `scripts/sync-templates-to-claude.sh` to regenerate `.claude/`.
-- [ ] Record the two-field contract in `docs-eng-process/state-file.md` and fix
+- [x] Record the two-field contract in `docs-eng-process/state-file.md` and fix
       `/openup-retrospective` steps 1–2 to name `**Status**` as the iteration's.
-- [ ] (tester) Write `scripts/tests/test_t149_status_split.py` (requirements
+- [x] (tester) Write `scripts/tests/test_t149_status_split.py` (requirements
       1–4) and extend `scripts/tests/test_on_task_request_hook.py`
       (requirements 5–6); run both modules plus `test_sync_status_notes.py`,
       `test_sync_status_sections.py` and `test_t006_hooks.py` green.
