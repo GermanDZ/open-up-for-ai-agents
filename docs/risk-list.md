@@ -34,7 +34,7 @@ file existed.
 | R2 | **Framework-only-invisible defects reach downstream repos.** A change correct in this repo is broken in any consumer checkout until a sync runs. | medium | high | **high** | framework maintainer |
 | R3 | **Ceremony outgrows the value it protects.** Each defect adds a gate; gates are never removed, so per-lane overhead grows monotonically. | medium | high | **high** | product-manager |
 | R4 | **Debt items rot in bookkeeping rather than being decided.** Hand-written cross-references between items go stale within hours. | high | medium | **high** | framework maintainer |
-| R5 | **Stale leases block delivery.** A completed task's claim survives its branch and worktree and silently blocks every lane sharing its surface. | high | medium | **high** | framework maintainer |
+| R5 | **Stale leases block delivery.** A completed task's claim survives its branch and worktree and silently blocks every lane sharing its surface. | medium | medium | **medium** | framework maintainer |
 | R6 | **Measurement blocked on an unstable endpoint.** Several success measures need a reachable model endpoint the sandbox cannot always reach. | medium | medium | medium | owner |
 | R7 | **Parallel lanes conflict in the derived shared views.** Every lane writes `docs/roadmap.md` and `docs/project-status.md`. | medium | low | low | framework maintainer |
 
@@ -105,10 +105,45 @@ a repo-wide surface (`scripts/`, `docs-eng-process/`, `docs/changes/`, …) that
 blocked T-158. The same T-075 claim had already been released once during
 T-142/T-143.
 
-**Mitigation.** `openup-board.py refresh` reaps heartbeat-stale claims; `begin`
-warns on them. **Residual: high, and the mechanism is not understood** — a claim
-file being *rewritten* for a completed task is unexplained, and the reaper
-evidently did not catch it. This is the most concrete open defect on this list.
+**Root cause — found 2026-07-27 while clearing the backlog.** The persistence is
+**not** a bug in the reaper; it is the reaper's documented invariant meeting a
+population it was never meant to cover:
+
+> *No last_heartbeat → skip (legacy/interactive claim; never managed by a
+> background agent and therefore never reaped — backward-compat invariant).*
+> — `scripts/openup-claims.py:1146-1147`
+
+None of the stale claims had ever carried a `last_heartbeat` (verified on the
+five inspected in detail: T-072, T-074, T-097, T-099, T-101). Claims also never
+expire on their own. So the population **most** likely to go stale — older,
+pre-heartbeat, interactive claims — is exactly the population `reap` will never
+touch, and nothing else cleans it up. Modern lanes are not affected: `begin`
+stamps a heartbeat (observed for both T-157 and T-158), so the affected cohort is
+bounded and closed.
+
+A second contributor: **T-097 and T-101's own completion commits read *"release
+claim"*** yet their claims outlived them. Both predate the atomic
+`openup-session.py end` (T-063), when release was a separate step that could fail
+without failing the completion.
+
+**Still unexplained, deliberately not folded into the above.** T-075's mid-session
+*reappearance* — a fresh mtime with a preserved 2026-07-13 `claimed_at` — is not
+accounted for by either finding. It has not recurred since release. A claim file
+being **rewritten** for a completed task remains an open question.
+
+**Mitigation.** All 12 stale claims released 2026-07-27; the claims dir is empty
+and the board no longer surfaces phantom `elsewhere` lanes. **Residual: medium** —
+down from high because the legacy cohort is bounded, now empty, and cannot grow
+(every new claim gets a heartbeat). **Not lower**, because nothing yet *prevents*
+recurrence: `reap` still skips heartbeat-less claims by design, so any future
+claim written without one is permanently un-reapable, and one observation is
+still unexplained.
+
+**Candidate follow-up, not yet a task:** give `reap` an age-based fallback for
+heartbeat-less claims (reap when `claimed_at` exceeds some threshold **and** the
+task's branch and worktree are both gone), which would close the cohort
+structurally instead of by hand. That is a code change to `openup-claims.py` and
+needs its own lane.
 
 ### R6 — Measurement blocked on an unstable endpoint
 
