@@ -1,7 +1,7 @@
 ---
 id: T-155
 title: "merge=union for the two shared .claude/memory/ append-only files, delivered to existing consumers as well as new ones"
-status: ready
+status: done
 priority: low
 estimate: 1 session
 plan: ""
@@ -285,7 +285,9 @@ Inherits from:
 - `python3 -m unittest scripts.tests.test_t155_memory_merge_union` — green.
 - `pytest scripts/tests/test_consumer_smoke.py scripts/tests/test_sync_migration.py -q` — green.
 - Full suite green (`pytest scripts/tests -q`).
-- `grep -c 'merge=union' .gitattributes` returns 3 (run log + the two new entries).
+- `grep -c '^[^#].*merge=union' .gitattributes` returns 3 (run log + the two new
+  entries). The `^[^#]` guard is load-bearing: a bare `grep -c 'merge=union'`
+  returns 5, because the explanatory comment block names the attribute in prose.
 - `python3 scripts/check-docs.py` exits 0; `python3 scripts/openup-fence.py check` exits 0.
 - Grade the final artifact against `.claude/rubrics/task-spec-rubric.md`.
 

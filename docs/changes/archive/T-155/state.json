@@ -1,0 +1,23 @@
+{
+  "schema": 2,
+  "task_id": "T-155",
+  "iteration": 106,
+  "iteration_id": null,
+  "cycle": 1,
+  "phase": "construction",
+  "track": "standard",
+  "branch": "chore/T-155-memory-merge-union",
+  "worktree": "/Users/germandz/personal-code/ai-dev-framework/open-up-for-ai-agents-T-155",
+  "base_sha": "c0de5e98931f444ad20d1eba8045f1fd0cc5658c",
+  "session_id": "chore/T-155-memory-merge-union",
+  "started_at": "2026-07-27T14:36:30Z",
+  "gates": {
+    "team_deployed": false,
+    "plan_persisted": "docs/changes/T-155/plan.md",
+    "log_written": true,
+    "roadmap_synced": true,
+    "retro_due": false,
+    "implementation_verified": true
+  },
+  "iterations_since_retro": 3
+}

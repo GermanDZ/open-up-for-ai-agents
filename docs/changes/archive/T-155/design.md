@@ -30,7 +30,7 @@ Graded requirement by requirement against the diff vs `origin/main`.
    `docs-eng-process/parallel-lanes.md` class-2 row now states the decision, why
    sharding was rejected, the two delivery paths, and that PR conflicts remain.
 
-**No ❌.** Affected modules: **21 passed**
+**No ❌.** Full suite: **873 passed**, 1 skipped, 20 subtests passed. Affected modules: **21 passed**
 (`test_consumer_smoke.py`, `test_sync_migration.py`,
 `test_t155_memory_merge_union.py`). `gates.implementation_verified` set
 accordingly.
