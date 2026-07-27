@@ -1145,18 +1145,37 @@ authored when promoted.
 ---
 
 ## T-139: T-107 split — customized process sources
-**Status**: pending
+**Status**: completed (2026-07-27)
 **Priority**: medium
-**Value**: Lets a downstream project override the framework's default task library with its own process docs — the original P2 promise — instead of every project being locked to this framework's authoring definitions.
-**Description**: Generalize `build-task-library.py`'s input root to accept a project's own process-source directory, emitting a project-local `task-library.yaml` (+ map) the loader prefers via the existing `_TASK_CANDIDATES` fallback order; document the mechanism in `project-config.md`.
-- Compiler accepts a project-local input root
-- Project-local library/map override via the loader's candidate fallback
-- Documented in `project-config.md`
-- Tests: project-source compile emits a project-local override
+**Value**: Lets a downstream project override the framework's default task library and process map with its own — the original P2 promise — instead of every project being locked to this framework's authoring definitions.
+**Description**: *(Delivered scope, narrowed from the original after a premise check — see `docs/changes/T-139/design.md`.)* Add `docs/process/{process-map,task-library}.yaml` as the **project-owned** first candidate in the loader's resolution order, so a project overrides by creating a file it owns instead of editing the vendored `docs-eng-process/` tree; document the mechanism and its limits in `project-config.md`.
+- ~~Compiler accepts a project-local input root~~ — **already satisfied** before this task: `--repo-root` has done this since T-105 (verified, not assumed)
+- ~~Project-local library/map override via the loader's candidate fallback~~ — **already satisfied**: the vendored copy already won by first-match-wins, and `sync-from-framework.sh` never overwrites it (verified)
+- Project-**owned** override path (`docs/process/`) resolving ahead of the vendored copy — **delivered**
+- Candidate-order comments made honest (the `scripts/*.yaml` "shipped-into-a-project fallback" label was false — nothing ships it) — **delivered**
+- Documented in `project-config.md` § "Customized process sources" — **delivered**
+- Tests: override wins, no-override behavior unchanged, compiler `--check` honors it — **delivered** (8 tests)
+- **Not built, deliberately**: a compiler that *emits* a library from a project's own process docs. `build-task-library.py` writes no YAML for anyone, and Stage-1 extraction parses only UMA-shaped docs — an unverified premise. Filed as **T-156**, gated on settling that premise first.
 
 **Dependencies**: T-137 (confirms the library this extends)
 
-**See**: `docs/changes/archive/T-107/plan.md` (original spec — Requirement 4)
+**See**: `docs/changes/archive/T-107/plan.md` (original spec — Requirement 4); spec `docs/changes/T-139/plan.md`; premise check + scope decision in `docs/changes/T-139/design.md`
+
+---
+
+## T-156: Compile a project-local task library from a project's own process docs
+
+**Status**: pending
+**Priority**: low
+**Value**: The unbuilt half of T-107's P2 promise — but **the premise comes first, not the code**. T-139 delivered the override *seam* (`docs/process/task-library.yaml` resolves ahead of the vendored copy, documented and tested), so a project can already customize by authoring the library by hand. What does not exist is a compiler that *generates* one from a project's own process docs, and two things must be settled before it is worth building: (a) `build-task-library.py` writes **no YAML for anyone** today — the framework's own library is hand-assembled from `--offline` distillation prompts and human-reviewed — so this is a brand-new output path with no existing consumer; and (b) Stage-1 extraction (`extract_skeleton`) parses only **UMA/KB-shaped** documents — YAML frontmatter with `related.roles`, an `Inputs|` section of workproduct links — and whether any real project's process docs are in that shape is **unverified**. Settle (b) against an actual project's docs before writing a line of compiler.
+**Description**: Gated investigation, then (only if the gate clears) a `--source-root DIR` emit mode for `build-task-library.py` that reads a project's process-source directory and writes `docs/process/task-library.yaml`.
+- **Gate first**: find one real project whose process docs could feed Stage-1 extraction, or establish that none exist and the input needs a different (non-UMA) parser. Record the finding; if no consumer is found, **close this task as declined** rather than building speculatively — the T-137 disposition.
+- Only past the gate: emit mode + `--out` path, human-review step preserved (distillation stays advisory, never CI-automatic)
+- Tests: emit produces a library that `openup-process-map.py tasks --validate` accepts
+
+**Dependencies**: T-139 (delivered the override seam this would target)
+
+**See**: `docs/changes/T-139/design.md` § "Scope decision"; `docs-eng-process/project-config.md` § "Customized process sources" (states plainly that no such compiler exists); T-139's Success Measure — **if its read-back on 2026-10-25 finds 0 consumer repos carrying a `docs/process/` override, retire this task instead of scheduling it**, since that is direct evidence the P2 demand is not there
 
 ---
 

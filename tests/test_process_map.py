@@ -140,3 +140,119 @@ class TestMintIterationId:
         mp = _pm.load_map(_REPO)
         assert _pm.mint_iteration_id(tmp_path, mp, "construction") == "C6"
         assert _pm.mint_iteration_id(tmp_path, mp, "elaboration") == "E1"
+
+
+# ── T-139: project-owned process sources ────────────────────────────────────
+# A project overrides the framework's map/library by creating docs/process/*.yaml.
+# The pair of concerns these tests pin: the override WINS when present, and its
+# absence changes nothing (the "additive only" safeguard — these no-override
+# cases were written and passing BEFORE the candidate tuples gained the new
+# entry, so they are a real regression guard, not a description of new code).
+
+_MARKER_MAP = (
+    "phases:\n"
+    "  construction: [{activity}]\n"
+    "activities:\n"
+    "  {activity}: {{ role: developer, skills: [] }}\n"
+    "phase_letters:\n"
+    "  construction: C\n"
+)
+
+_MARKER_LIB = (
+    "tasks:\n"
+    "  {task_id}:\n"
+    "    name: Marker Task\n"
+    "    role: analyst\n"
+    "    artifact: vision\n"
+    "    output_path: docs/vision.md\n"
+    "    source: driver\n"
+    "    inputs:\n"
+    "      - Stakeholder Requests\n"
+    "    judgment:\n"
+    "      - First judgment bullet for the marker task.\n"
+    "      - Second judgment bullet for the marker task.\n"
+    "      - Third judgment bullet for the marker task.\n"
+)
+
+
+def _write_yaml(root: Path, rel: str, body: str) -> None:
+    dest = root / rel
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_text(body, encoding="utf-8")
+
+
+class TestNoOverrideIsUnchanged:
+    """R2 — a repo with no docs/process/ resolves the vendored copies, exactly
+    as it did before the project-owned candidate existed."""
+
+    def test_map_without_override_comes_from_vendored_copy(self, tmp_path):
+        _write_yaml(tmp_path, "docs-eng-process/process-map.yaml",
+                    _MARKER_MAP.format(activity="vendored-activity"))
+        mp = _pm.load_map(tmp_path)
+        assert [a["name"] for a in _pm.activities_for(mp, "construction")] == [
+            "vendored-activity"]
+
+    def test_library_without_override_comes_from_vendored_copy(self, tmp_path):
+        _write_yaml(tmp_path, "docs-eng-process/task-library.yaml",
+                    _MARKER_LIB.format(task_id="vendored-task"))
+        assert list(_pm.load_tasks(tmp_path)) == ["vendored-task"]
+
+    def test_this_repo_still_resolves_the_framework_library(self):
+        # This repo has no docs/process/ (and must not — see the spec's
+        # "must not shadow itself" safeguard), so the framework's own defs win.
+        tasks = _pm.load_tasks(_REPO)
+        assert "develop-technical-vision" in tasks
+        assert _pm.validate_tasks(tasks) == []
+
+    def test_this_repo_still_resolves_the_framework_map(self):
+        mp = _pm.load_map(_REPO)
+        assert _pm.validate(mp) == []
+        assert set(mp["phases"]) == {
+            "inception", "elaboration", "construction", "transition"}
+
+
+class TestProjectOwnedOverrideWins:
+    """R1 — docs/process/ resolves ahead of the vendored docs-eng-process/ copy."""
+
+    def test_project_map_shadows_vendored_map(self, tmp_path):
+        _write_yaml(tmp_path, "docs-eng-process/process-map.yaml",
+                    _MARKER_MAP.format(activity="vendored-activity"))
+        _write_yaml(tmp_path, "docs/process/process-map.yaml",
+                    _MARKER_MAP.format(activity="project-activity"))
+        mp = _pm.load_map(tmp_path)
+        assert [a["name"] for a in _pm.activities_for(mp, "construction")] == [
+            "project-activity"]
+
+    def test_project_library_shadows_vendored_library(self, tmp_path):
+        _write_yaml(tmp_path, "docs-eng-process/task-library.yaml",
+                    _MARKER_LIB.format(task_id="vendored-task"))
+        _write_yaml(tmp_path, "docs/process/task-library.yaml",
+                    _MARKER_LIB.format(task_id="project-task"))
+        tasks = _pm.load_tasks(tmp_path)
+        # Replace, not merge: the vendored def is gone, not shadowed per-key.
+        assert list(tasks) == ["project-task"]
+        assert _pm.validate_tasks(tasks) == []
+
+    def test_escape_hatch_loses_to_both(self, tmp_path):
+        _write_yaml(tmp_path, "scripts/task-library.yaml",
+                    _MARKER_LIB.format(task_id="escape-hatch-task"))
+        _write_yaml(tmp_path, "docs-eng-process/task-library.yaml",
+                    _MARKER_LIB.format(task_id="vendored-task"))
+        assert list(_pm.load_tasks(tmp_path)) == ["vendored-task"]
+
+
+class TestCompilerHonoursProjectOverride:
+    """R3 — build-task-library.py --check resolves the same project-owned library
+    (it shares load_tasks), so a project's own defs are checkable."""
+
+    def test_check_passes_against_project_owned_library(self, tmp_path):
+        import subprocess
+        import sys
+        _write_yaml(tmp_path, "docs/process/task-library.yaml",
+                    _MARKER_LIB.format(task_id="project-task"))
+        proc = subprocess.run(
+            [sys.executable, str(_REPO / "scripts" / "build-task-library.py"),
+             "--repo-root", str(tmp_path), "--check"],
+            capture_output=True, text=True)
+        assert proc.returncode == 0, proc.stderr
+        assert "in sync" in proc.stdout

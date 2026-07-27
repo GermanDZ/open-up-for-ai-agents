@@ -37,9 +37,21 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_ROOT = SCRIPT_DIR.parent
 
+# Resolution is first-match-wins, most-specific first. A project-owned file
+# REPLACES the framework's (no merging) — see docs-eng-process/project-config.md
+# § "Customized process sources" (T-139).
 _MAP_CANDIDATES = (
-    "docs-eng-process/process-map.yaml",  # canonical (framework repo)
-    "scripts/process-map.yaml",           # shipped-into-a-project fallback
+    # 1. Project-owned override. Authored by the consuming project, never written
+    #    or overwritten by the framework. Absent in the framework repo itself.
+    "docs/process/process-map.yaml",
+    # 2. Vendored framework copy. bootstrap-project.sh copies docs-eng-process/
+    #    wholesale at install; sync-from-framework.sh deliberately does not
+    #    overwrite it. This is the canonical path in the framework repo.
+    "docs-eng-process/process-map.yaml",
+    # 3. Escape hatch for a project that installed the CLIs without the docs
+    #    tree. Nothing in this repo ships this file — it is reachable only if a
+    #    project puts one here itself.
+    "scripts/process-map.yaml",
 )
 
 KNOWN_ROLES = {
@@ -64,9 +76,12 @@ SPINE_TYPES = (
 # stamped (stamping.stamp_for_task() already no-ops for any artifact not in
 # ID_PREFIXES) and never subject to the spine's `.md`-only output_path rule.
 NON_SPINE_ARTIFACT_TYPES = ("code",)
+# Same first-match-wins order as _MAP_CANDIDATES, for the same reasons; a
+# project-owned library REPLACES the framework's rather than extending it.
 _TASK_CANDIDATES = (
-    "docs-eng-process/task-library.yaml",  # canonical (framework repo)
-    "scripts/task-library.yaml",           # shipped-into-a-project fallback
+    "docs/process/task-library.yaml",      # 1. project-owned override
+    "docs-eng-process/task-library.yaml",  # 2. vendored framework copy
+    "scripts/task-library.yaml",           # 3. no-docs-tree escape hatch
 )
 # Fields on a task def: scalars first, then the two list fields.
 _TASK_SCALARS = ("name", "role", "artifact", "output_path", "source")
