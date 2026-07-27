@@ -93,3 +93,35 @@ this task was built from — including the iteration-103 finding that motivated 
 - **Live check.** Against a copy of the real repo docs with the state file absent and
   `## Notes` truncated to one stale line: plain run exits 3, `--views-only` exits 0 and
   restores 113/113 shards with the header diff empty.
+
+## Completion verification (complete-task steps 1a / 1b)
+
+### Step 1a — every requirement graded against the actual diff
+
+| # | Requirement | Verdict | Evidence in the diff |
+|---|---|---|---|
+| 1 | Runs with no state file, exit 0 not 3 | ✅ | `sync-status.py` `main()` returns `run_views_only(args)` *before* `read_state()`; `ViewsOnlyTests::test_runs_without_state_file` green, and `test_plain_sync_still_fails_without_state` proves the un-flagged path still exits 3 |
+| 2 | Reassembles `## Notes` newest-first from the shards | ✅ | `run_views_only()` calls `assemble_notes()` / `update_notes_section()`; `test_reassembles_notes_newest_first` asserts T-003 < T-002 < T-001 ordering |
+| 3 | Runs the state-free roadmap section reconcile | ✅ | `run_views_only()` calls `reconcile_sections()`; `test_reconciles_archived_section` asserts the `completed (YYYY-MM-DD)` stamp |
+| 4 | Writes no lane-derived header field | ✅ | `run_views_only()` never calls `update_project_status()`/`set_field()`; `test_header_is_byte_identical` asserts the whole region above `## Notes`, and the live run's `diff` was empty |
+| 5 | Sets no `gates.roadmap_synced` | ✅ | `set_gate_roadmap_synced()` is unreachable from this path; `test_does_not_write_gate_or_state` asserts a present state file is byte-unchanged |
+| 6 | `--dry-run` reports and writes nothing | ✅ | early `return EXIT_OK` in the `args.dry_run` branch; `test_dry_run_writes_nothing` asserts both files byte-identical + `DRIFT T-042` on stdout |
+| 7 | Every existing invocation unchanged | ✅ | Full suite **884 passed / 1 skipped / 20 subtests** = 873 baseline + 11 new; no pre-existing assertion edited (`git diff` on the test file is additive only) |
+| 8 | `parallel-lanes.md` recipe names the working command | ✅ | Recipe now branches lane-live vs completed; the completed branch's `sync-status.py --views-only` is the exact command exercised in the live check (exit 0). *Scope note: the `git fetch`/`rebase`/`push --force-with-lease` lines are unchanged from the original recipe and were not re-executed here* |
+| 9 | Live instructions updated, historical records left alone | ✅ | `docs-eng-process/.claude-templates/CLAUDE.md` updated (`check-claude-sync` green); `git diff --name-only main...HEAD` matches **no** file under `docs/status-notes/`, `docs/explorations/`, `docs/iteration-retrospectives/`, or `docs/changes/archive/` |
+
+**Result: 9/9 ✅** — `gates.implementation_verified` set.
+
+### Step 1b — success-measure instrumentation
+
+`✅ instrumentation` — the measure names the **Measure Read-Back table of this repo's
+iteration retrospectives**, cross-checked against `git log` on the two view paths.
+**Read-back environment: this repo**, and the instrument demonstrably pre-exists *there*:
+`## Measure Read-Back` tables are present in `iteration-77`, `iteration-86`,
+`iteration-98`, and `iteration-103` retrospectives — the last of which recorded this very
+incident in exactly the required form. No new instrumentation was needed.
+
+**Read-back date: the second retrospective after landing** (absolute backstop
+**2026-09-30**). Expectation: hand-repairs fall from 2-of-2 to **0 of the next 3**
+view-conflicting PRs. The spec states that fewer than 3 such PRs must be reported as
+*insufficient data*, not as the measure being met.
