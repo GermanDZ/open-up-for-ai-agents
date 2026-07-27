@@ -119,3 +119,41 @@ The two guard tests (`test_other_claude_file_is_still_out_of_lane`,
 `test_claude_memory_dir_is_not_blanket_exempt`) pass in the *removed* state by
 construction — that is expected, since they assert what stays fenced. Their value is
 in the widening direction, which is where they were shown to bite.
+
+## Completion grade (step 1a — requirements vs the actual diff)
+
+- ✅ **R1** — both paths in `ALWAYS_ALLOWED` for every task, no `touches` needed.
+  `scripts/openup-fence.py:98-105`; `build_allowlist()` seeds from the constant
+  (`:197`) so no logic change was required. Scenarios verified mechanically:
+  `test_claude_memory_files_pass_without_being_claimed` (fixture `touches` is
+  `src/widget.py` only → exit 0) and `test_allowed_lists_the_claude_memory_files`
+  (both paths in the `allowed` array) — both green, both proven to fail when the
+  constant entries are removed.
+- ✅ **R2** — exemption scoped to the two files. `test_other_claude_file_is_still_out_of_lane`
+  (`.claude/settings.json` → exit 8) and `test_claude_memory_dir_is_not_blanket_exempt`
+  (`.claude/memory/scratch-notes.md` → exit 8), both green, and the second proven to
+  fail when the constant is widened to the `.claude/memory/` prefix (DD6).
+- ✅ **R3** — existing contracts intact. All 29 pre-existing fence cases pass unchanged
+  (`git diff` shows no pre-existing assertion modified — the only edits to
+  `test_openup_fence.py` are additions). The removal bite check failed *only* the 2 new
+  positive tests, which is the direct evidence that the change is a pure widening.
+  Full suite: 848 passed, 1 skipped; `--collect-only` 845 on `main` → 849 here (DD5).
+- ✅ **R4** — docs match code in all three places: module docstring
+  (`scripts/openup-fence.py:18-23`), `parallel-lanes.md` class table (class **2**, per
+  DD2 — not class 1) and its "Allowed for task `T-NNN`" list, each naming the
+  files-not-prefix scope and the reason (written by non-opt-in mechanisms).
+
+## Completion grade (step 1b — success-measure instrumentation)
+
+✅ **instrumentation exists in the named read-back environment.** The measure reads back
+in `/Users/germandz/personal-code/kaze/kaze-webapp`, and the instrument
+(`grep -rl '\.claude/memory' docs/changes/` over that repo's change folders)
+**pre-exists there and was run on 2026-07-27**, returning 8 concrete paths — so it is
+demonstrably capable of returning a number, and a later `0` is distinguishable from
+"not measurable". This is the T-052 failure mode (instrument named for a downstream
+repo that did not have it) checked in the direction T-152 requires: from the read-back
+environment, not from this repo.
+
+**Read-back due:** after kaze-webapp runs `sync-from-framework.sh` (open action item
+`86.4`) + 3 completed lanes; reported *not yet readable* if that has not happened within
+90 days of 2026-07-27.
