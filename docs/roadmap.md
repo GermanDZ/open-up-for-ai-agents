@@ -289,7 +289,7 @@ T-002 (`/openup-sync-spec`) completed 2026-06-11 once T-008's readiness DAG un-b
 - Counter storage moves to a location genuinely shared across worktrees (not gitignored per-worktree, not git-merge-managed)
 - Regression: two sequential worktree lanes both see the same, correctly-advancing count
 
-**Dependencies**: T-142 (fixing the gate is moot if the underlying counter can't hold a value across worktrees)
+**Dependencies**: — (no DAG dependency; ship in the same PR as T-142 — landing T-142's universal-increment fix without this durability fix means the new increment calls still don't persist, and landing this without T-142 leaves the quick-track gap open. Neither is independently valuable.)
 
 **See**: Hand-off finding FD-006 (Mechanism B); this repo's own gitignored-`.openup/` variant self-confirmed this session (T-132→T-135 count reset)
 
