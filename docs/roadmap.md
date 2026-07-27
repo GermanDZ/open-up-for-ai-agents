@@ -207,7 +207,7 @@ T-002 (`/openup-sync-spec`) completed 2026-06-11 once T-008's readiness DAG un-b
 ---
 
 ## T-135: Sharpen on-task-request.py's classifier, then block at prompt time
-**Status**: pending
+**Status**: completed (2026-07-27)
 **Priority**: medium
 **Value**: Closes the "no prompt-time gate" finding from this session's own process-introspection discussion without breaking the "explore freely" design (T-057) — a genuine question or discussion message stops being misclassified as a delivery-work directive, so the hook can safely switch from advisory-only to a real block (matching the working `sys.exit(2)` precedent already used by the sibling `check-unfinished-tasks.py` hook) instead of a warning that's easy to ignore.
 **Description**: Sharpens `on-task-request.py`'s classifier (exclude messages ending in `?`; require task-language verbs near the message start, imperative-mood; require a bare task-id mention to be a short message) verified against real false-positive/true-positive quotes from this session's transcript, then switches the no-active-iteration branch from `sys.exit(0)` to `sys.exit(2)`.
@@ -220,6 +220,21 @@ T-002 (`/openup-sync-spec`) completed 2026-06-11 once T-008's readiness DAG un-b
 **Dependencies**: —
 
 **See**: `docs/iteration-plans/t-135-sharpen-task-request-classifier-and-block.md`
+
+---
+
+## T-136: Inception authoring-reliability measure independent of the post-authoring consent gate
+**Status**: pending
+**Priority**: medium
+**Value**: Gives T-107's promotion gate an honest ≥80%-clean-pass measurement instead of one that structurally reads 0% regardless of model quality — the `inception-taskdef` scenario runs past authoring into a deterministic consent-gate pause every run hits, so the bench harness's driver-exit-code-based `pass` definition can never register a clean authoring completion for this scenario. Without this, T-107 stays gated on a broken measurement, not a real signal.
+**Description**: New standalone analyzer that reads a completed `openup-agent-bench.py` run's saved `run-0N.driver.log` files and computes authoring-chain reliability (per-sub-run turn count + restart detection) directly, independent of the run's overall driver exit code. Does not modify `openup-agent-bench.py`'s shared pass/fail semantics — reads its already-saved artifacts. Re-measures this session's already-saved T-107 gate-check logs and records the honest result in `docs/changes/T-107/design.md`.
+- `scripts/analyze-authoring-reliability.py` (driver-log parser + classifier)
+- Hermetic unit tests (clean / over-ceiling / restart / never-started cases)
+- Re-measured result recorded in `docs/changes/T-107/design.md`, unblocking or explicitly re-blocking T-107
+
+**Dependencies**: T-106
+
+**See**: `docs/iteration-plans/t-136-authoring-reliability-measure.md`; disposition follow-up to this session's T-107 gate-check finding
 
 ---
 

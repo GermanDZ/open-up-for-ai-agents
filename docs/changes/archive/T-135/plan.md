@@ -1,7 +1,7 @@
 ---
 id: T-135
 title: "Sharpen on-task-request.py's classifier, then block at prompt time"
-status: ready
+status: done
 priority: medium
 estimate: 1 session
 plan: docs/iteration-plans/t-135-sharpen-task-request-classifier-and-block.md
