@@ -45,9 +45,9 @@ T-044 implements **Option B (branch-as-claim)** from the exploration (2026-06-16
 
 | Item | Owner | Due | Priority |
 |---|---|---|---|
-| **Merge T-043 to resolve dangling refs** — branch `docs/T-043-parallelism-scope-note` contains the scope note (parallel-lanes.md) and exploration (2026-06-16-cross-machine-claim-coordination.md) that T-044 now links to. Merge before next task ships. | framework-pm | 2026-06-17 | high |
+| ~~**Merge T-043 to resolve dangling refs** — branch `docs/T-043-parallelism-scope-note` contains the scope note (parallel-lanes.md) and exploration (2026-06-16-cross-machine-claim-coordination.md) that T-044 now links to. Merge before next task ships.~~ | ~~framework-pm~~ | ~~2026-06-17~~ | **satisfied 2026-07-27** — both files are on `main`: `docs-eng-process/parallel-lanes.md` and `docs/explorations/2026-06-16-cross-machine-claim-coordination.md` (added in commit `f7c1647`); no `T-043` branch remains |
 | **Review iteration 20 timing for T-043/T-044** — reflect on whether ordering dependencies-first (scope note → implementation) is a convention worth enforcing; consider a checklist item for `/openup-start-iteration` ("do dependencies, explorationsit on main?"). | retrospective-scribe | 2026-06-20 | medium |
-| **Monitor `duplicate_start_blocked` counter** — will only be meaningful once multiple clones are in flight in parallel. Set a reminder to review the counter at iteration 22+ retrospective. | product-manager | at-iteration-22 | medium |
+| ~~**Monitor `duplicate_start_blocked` counter** — will only be meaningful once multiple clones are in flight in parallel. Set a reminder to review the counter at iteration 22+ retrospective.~~ | ~~product-manager~~ | ~~at-iteration-22~~ | **satisfied 2026-07-27** — review performed at iteration 98: `grep -rh duplicate_start_blocked docs/agent-logs/runs/*.jsonl \| wc -l` → **0**. The guard has never fired; the precondition (parallel clones in flight) still has not occurred, so no follow-up item is warranted until it does |
 
 ## Metrics
 

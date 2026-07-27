@@ -8,7 +8,36 @@
 **Iteration Started**: 2026-06-18
 **Last Updated**: 2026-07-27
 **Updated By**: sync-status.py
-**Retrospective**: [iteration-86-retrospective.md](iteration-retrospectives/iteration-86-retrospective.md) — covers iterations 78–86 (2026-07-15 → 2026-07-24), incl. quick fixes T-125/T-126; prev [iteration-77-retrospective.md](iteration-retrospectives/iteration-77-retrospective.md) (iterations 21–77)
+**Retrospective**: [iteration-98-retrospective.md](iteration-retrospectives/iteration-98-retrospective.md) — covers iterations 87–98 (2026-07-25 → 2026-07-27); first run of the T-141 carried-item disposition pass (3 retired, 14 carried). Prev [iteration-86-retrospective.md](iteration-retrospectives/iteration-86-retrospective.md) (78–86), [iteration-77-retrospective.md](iteration-retrospectives/iteration-77-retrospective.md) (21–77)
+
+## Open Action Items
+
+Still-open only — retired items keep their evidence in the retrospective that authored
+them ([iteration-98](iteration-retrospectives/iteration-98-retrospective.md) §Carried
+Action Items). Verified 2026-07-27; age is in iterations.
+
+**New this cycle (iteration 98)**
+- **A1 — critical**: Fix the hook deployment deadlock. A merged `settings.json` referencing a not-yet-synced hook script blocks *both* Bash and Write at once. Do this before adding any further hook.
+- **A2 — high**: Retro counter double-increments (`openup-session.py end` *and* `/openup-complete-task` step 7a).
+- **A3 — high**: `retro.json` stores disagree and `retro reset` reaches only the shared one — verified live 2026-07-27: reset zeroed `.git/openup/` while `.openup/` (the store `retro get`/`check` read) stayed at 4. Decide which is authoritative; test that `reset` is observable through `get`.
+- **A4 — medium**: Require success measures to name instrumentation that provably exists in the *target* environment at completion time (T-052's read-back is unanswerable because its `bypass-log.md` never existed downstream).
+- **A5 — medium**: Force a disposition on the six "decide X" carried items — none has a greppable completion condition, which is why none has closed.
+
+**Carried (14)**
+- `9.1` (89 it.) Clarify retro cadence gate boundary — blocks with A2/A3.
+- `9.2` (89 it.) First real `/openup-sync-spec` use on a live refactor diff.
+- `9.3` (89 it.) Skills altitude / prose-vs-executable survey.
+- `10.1` (88 it.) T-048 archive repair — **es-invoices has 1 stale plan** (`T-009: in-progress → done`); tallyfox-app clean.
+- `10.2` (88 it.) T-052 read-back — unanswerable as written; no `bypass-log.md` in either target repo.
+- `20.2` (78 it.) Dependency-ordering convention for `/openup-start-iteration`.
+- `77.2` (21 it.) Should `gates.retro_due` apply outside `full`-track starts.
+- `77.3` (21 it.) **Overdue** — exercise `/openup-fan-out` for real or retire its success measure.
+- `77.4` (21 it.) Why July under-logged run shards relative to commit volume.
+- `77.5` (21 it.) Instantiate `docs/risk-list.md` or treat its absence as `n/a`.
+- `86.1` (12 it.) Consumer-smoke check for the install path.
+- `86.2` (12 it.) Audit framework-identity markers keyed on distributed artifacts.
+- `86.3` (12 it.) T-120/T-123 read-back when the owner endpoint is stable.
+- `86.4` (12 it.) kaze-webapp `sync-from-framework.sh` bump — kaze lead's schedule.
 
 ## Notes
 

@@ -44,7 +44,7 @@ Substantively, the window was extremely productive: the project shipped the enti
 
 | Item | Owner | Due | Priority |
 |---|---|---|---|
-| Fix `test_init_creates_valid_file` to assert `schema == CURRENT_SCHEMA` (or `2`) instead of the stale `1` | next `/openup-quick-task` | next iteration | low |
+| ~~Fix `test_init_creates_valid_file` to assert `schema == CURRENT_SCHEMA` (or `2`) instead of the stale `1`~~ | ~~next `/openup-quick-task`~~ | ~~next iteration~~ | **satisfied 2026-07-27** — `scripts/tests/test_openup_state.py:58` now asserts `data["schema"] == 2`; commit `c27f7c1` |
 | Decide whether `gates.retro_due` should be checked outside `full`-track starts (e.g., in `openup-agent.py cycle` or `/openup-next`) so a long solo `quick`/`standard` streak can't silently outrun the cadence again | project-manager / owner | next architecture pass | medium |
 | Either exercise `/openup-fan-out` for real (two disjoint READY lanes, capture the wall-clock numbers T-060 specified) or explicitly retire/mark-n/a its success measure | owner | by iteration 90 or next retrospective, whichever first | medium |
 | Confirm whether `openup-agent.py cycle`'s judgment sub-runs are expected to write to `docs/agent-logs/runs/`; if yes, find why July's high-volume days under-logged relative to commit volume | owner | next iteration | medium |
