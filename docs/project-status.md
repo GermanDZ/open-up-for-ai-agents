@@ -1,16 +1,18 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 94
-**Iteration Goal**: T-138 — T-107 split — doctor `--check` wiring + KB re-distill runbook
+**Iteration**: 95
+**Iteration Goal**: T-145 — `sync-status.py` derives `completed` from bookkeeping gates alone, no delivery evidence
 **Status**: completed
-**Current Task**: T-138
+**Current Task**: T-145
 **Iteration Started**: 2026-06-18
 **Last Updated**: 2026-07-27
 **Updated By**: sync-status.py
 **Retrospective**: [iteration-86-retrospective.md](iteration-retrospectives/iteration-86-retrospective.md) — covers iterations 78–86 (2026-07-15 → 2026-07-24), incl. quick fixes T-125/T-126; prev [iteration-77-retrospective.md](iteration-retrospectives/iteration-77-retrospective.md) (iterations 21–77)
 
 ## Notes
+
+- **Iteration 95** (2026-07-27): T-145 (standard) — **completion now requires delivery evidence, not bookkeeping alone**. Every gate in `sync-status.py`'s `TRACK_REQUIRED` was bookkeeping: `roadmap_synced` is set by `sync-status.py` itself, `log_written` by a log append, `team_deployed` by spawning a team — none observes the diff, so a lane carrying only a spec and a run log satisfied the whole set and was stamped `completed` on the roadmap (observed downstream, corrected by hand in `be2ee16`). New optional gate `gates.implementation_verified`, required on **every** track (quick relaxes ceremony, never evidence) and added to `openup-state.py`'s `DEFAULT_REQUIRED_GATES` so `check-gates` and the derived view can't disagree. Set from `/openup-complete-task` step 1a (which already graded every requirement against the actual diff but recorded the verdict nowhere machine-readable) and `/openup-quick-task` step 3 — deliberately at the point of verification, not alongside the bookkeeping gates. Schema-optional by design: a state file written before the gate existed still validates, and an absent key reads falsy = not verified. +6 tests; full suite 773 green.
 
 - **Iteration 94** (2026-07-27): T-138 — second of T-107's 3-way split: `openup-doctor.py` gains `check_task_library()`, pre-testing whether the KB source tree is vendored before running `build-task-library.py --check`, so it never misreports a routine downstream project (task-library.yaml present, KB source tree absent) as drifted — closes the false-positive shape T-105 already found once, at the doctor layer rather than the compiler. Documents the KB re-distillation runbook in reference-driver.md. 767/767 tests green, 4 new cases.
 

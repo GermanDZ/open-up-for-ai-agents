@@ -296,7 +296,7 @@ T-002 (`/openup-sync-spec`) completed 2026-06-11 once T-008's readiness DAG un-b
 ---
 
 ## T-145: `sync-status.py` derives `completed` from bookkeeping gates alone, no delivery evidence
-**Status**: pending
+**Status**: completed (2026-07-27)
 **Priority**: high
 **Value**: Closes the gap behind a real, observed incident downstream: a lane with zero implementation (spec + run log only) got stamped `completed` in `docs/roadmap.md` because its only required gates (`log_written`, `roadmap_synced` on `quick`/`standard`) are both bookkeeping — satisfiable mid-lane by process steps that run regardless of whether any work happened. Nothing in the current derivation evidences delivery actually occurred, so the roadmap can confidently report a task done that isn't.
 **Description**: Add a gate that evidences delivery rather than process bookkeeping — e.g. `implementation_verified` — and require it on every track's `TRACK_REQUIRED` set in `sync-status.py`. Set it from `/openup-complete-task`'s existing step 1a ("Verify Implementation Against Spec — BLOCKING", which already does per-requirement verification but records the result nowhere) and from `/openup-quick-task`'s verification step once the change is confirmed working. Add the key to `openup-state.schema.json` under `properties` but not `required`, so a state file written before the gate existed still validates (a missing key reads falsy — not verified — rather than raising).

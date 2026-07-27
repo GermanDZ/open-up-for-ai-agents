@@ -1,2 +1,4 @@
 {"event": "session_begin", "task_id": "T-145", "goal": "T-145 \u2014 sync-status.py must derive completed from delivery evidence", "branch": "fix/T-145-T-146-T-141-delivery-evidence", "phase": "construction", "ts": "2026-07-27T07:45:59Z"}
 {"run_id": "d40ad6cf5ab64e8d84cd453ab9c7fee7", "event": "commit", "task_id": "T-145", "branch": "fix/T-145-T-146-T-141-delivery-evidence", "sha": "88ad7df7cc5bcb5e62c3254b1bff80e959ef0aed", "model": null, "session_id": "fix/T-145-T-146-T-141-delivery-evidence", "ts": "2026-07-27T08:03:11Z"}
+{"event": "iteration_complete", "task_id": "T-145", "branch": "fix/T-145-T-146-T-141-delivery-evidence", "phase": "construction", "ts": "2026-07-27T08:04:33Z"}
+{"event": "session_end", "task_id": "T-145", "ts": "2026-07-27T08:05:17Z"}

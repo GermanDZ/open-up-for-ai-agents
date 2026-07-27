@@ -1,7 +1,7 @@
 ---
 id: T-145
 title: "sync-status.py must derive `completed` from delivery evidence, not bookkeeping gates alone"
-status: ready
+status: done
 priority: high
 estimate: 1 session
 plan: ""
