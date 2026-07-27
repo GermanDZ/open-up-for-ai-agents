@@ -111,3 +111,33 @@ environment: this repo** — action items are authored and disposed of here and 
 the instrument demonstrably pre-exists (iteration-98 and iteration-103 both carry the
 table). **Read-back: the second retrospective after landing**, backstop **2026-10-31**.
 Fewer than 5 new items authored by then must be reported as *insufficient data*.
+
+## DD8 — `sync-status.py` reports success for a task it cannot find
+
+Found at completion. `docs/roadmap.md` was missing from this spec's `touches`/Structure, so
+no roadmap entry existed for T-158. Running `sync-status.py` printed:
+
+```
+Synced roadmap + project-status for T-158 (status=completed).
+```
+
+…while writing **nothing** to the roadmap. `update_roadmap()` scans table rows, falls back
+to `stamp_section_status()` for a `## T-NNN:` section, and when neither matches returns the
+text unchanged — but `main()` prints its success line unconditionally. A lane that forgets
+its roadmap row therefore gets a green "Synced … status=completed" and a roadmap that never
+mentions the task.
+
+Same family as the status-rot T-067 fixed (section entries never stamped), but the inverse
+direction: there the view was silently stale, here the *generator* silently no-ops while
+claiming success. It is also the second silent-success this session — the first was
+`openup-claims.py claim --force` reading green off a lost lease.
+
+**Not fixed here** — it is a `scripts/sync-status.py` change, and this lane's own safeguard
+says "if this lane finds itself editing `scripts/`, the scope was misread". Filed as a
+finding for triage rather than bundled. The one-line fix is for `update_roadmap()` to
+report whether it matched, and for `main()` to warn when it did not.
+
+**Process note:** adding `docs/roadmap.md` mid-lane required a **re-claim**, because
+`openup-fence.py` reads the *live claim's* `touches`, not `plan.md`'s frontmatter — the
+same trap hit in T-157. Handled with release + claim (never `claim --force`, which strands
+the lane unleased).

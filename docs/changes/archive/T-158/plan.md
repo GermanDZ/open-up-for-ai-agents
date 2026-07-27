@@ -1,7 +1,7 @@
 ---
 id: T-158
 title: "Retrospective action items must carry a verified premise — and close 20.2 / 77.5"
-status: ready
+status: done
 priority: high
 estimate: 1 session
 plan: ""
@@ -16,6 +16,7 @@ touches:
   - docs/iteration-retrospectives/iteration-103-retrospective.md
   - docs/risk-list.md
   - docs/project-status.md
+  - docs/roadmap.md
 ---
 
 # T-158 — Retrospective action items must carry a verified premise — and close 20.2 / 77.5
@@ -112,6 +113,7 @@ Mirror step 5b rather than invent a new idiom: it is already a BLOCKING pass ove
 - `docs/iteration-retrospectives/iteration-77-retrospective.md` — strike `77.5` satisfied.
 - `docs/iteration-retrospectives/iteration-103-retrospective.md` — carried table points at both resolutions.
 - `docs/project-status.md` — `## Open Action Items` disposition.
+- `docs/roadmap.md` — this task's own entry. *(Added at completion: the original Structure omitted it, and `sync-status.py` then reported `status=completed` while silently writing nothing, because neither a table row nor a `## T-158:` section matched — see design.md DD8.)*
 
 **Do not touch:**
 - Step 5b of the pack — it already works; the new step is additive beside it, and editing it risks the carried-item pass that is currently the only thing pruning debt.
