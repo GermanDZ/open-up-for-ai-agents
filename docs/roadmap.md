@@ -399,7 +399,7 @@ T-002 (`/openup-sync-spec`) completed 2026-06-11 once T-008's readiness DAG un-b
 ---
 
 ## T-153: No consumer-smoke check exercises the install path, so consumer-only breakage is invisible
-**Status**: pending
+**Status**: completed (2026-07-27)
 **Priority**: high
 **Value**: Framework-only-invisible bugs currently surface in a downstream repo rather than in CI. Carried unaddressed since iteration 86; the T-140 merge produced a fresh example of exactly this shape (a change that is correct in the framework repo and broken in any checkout until a sync runs).
 **Description**: Add a lightweight smoke check that exercises the install path against a throwaway consumer fixture — `sync-from-framework` detection, a tracked bypass-log dirty-stop, and (post-T-150) a settings/hook-script skew — so the consumer perspective is tested rather than assumed. Deliberately a smoke check, not a full consumer integration suite: the goal is catching class-of-breakage, not coverage.

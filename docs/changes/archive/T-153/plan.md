@@ -1,7 +1,7 @@
 ---
 id: T-153
 title: "Nothing exercises the install path end to end, so consumer-only breakage is invisible"
-status: ready
+status: done
 priority: high
 estimate: 0.5 session
 plan: ""

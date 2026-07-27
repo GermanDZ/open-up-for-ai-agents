@@ -1,10 +1,10 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 99
-**Iteration Goal**: T-150 — A merged `settings.json` referencing a not-yet-synced hook script locks both Bash and Write
+**Iteration**: 102
+**Iteration Goal**: T-153 — No consumer-smoke check exercises the install path, so consumer-only breakage is invisible
 **Status**: completed
-**Current Task**: T-150
+**Current Task**: T-153
 **Iteration Started**: 2026-06-18
 **Last Updated**: 2026-07-27
 **Updated By**: sync-status.py
