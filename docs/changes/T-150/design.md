@@ -76,3 +76,20 @@ the constraint T-152 will generalize.
 **Read-back: after the next 3 merges touching `settings.json` or `.claude/scripts/hooks/`,
 or the next retrospective, whichever is first.** Expectation: zero sessions in which a
 hook-wiring change makes tool calls unusable (baseline 1, observed 2026-07-27).
+
+## Full-suite result, and one false failure worth recording
+
+**939 passed, 1 skipped, 0 failed.** (`main` baseline: 928 passed — the delta is this
+task's 12 new tests. The single skip is a worktree-context skip that also appeared in
+T-140's worktree run; it is not introduced here.)
+
+An earlier run of the same suite reported
+`test_openup_agent_bench.py::BenchHarnessTest::test_source_repo_untouched` as failing. That
+was **not** a regression: the test snapshots `git status --porcelain` of the repo before and
+after a bench run and asserts they match, and that run had been launched *before* the
+implementation commit landed — so the commit changed the repo's dirty state between the two
+snapshots. Re-run against a stable tree: green. Baseline on `main`: green.
+
+Recorded because the failure looks alarming and self-inflicted-by-tooling, and the next
+person to see it should reach for "was the tree changing under the run?" before
+"is the bench harness broken?".
