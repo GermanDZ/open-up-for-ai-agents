@@ -1,0 +1,23 @@
+{
+  "schema": 2,
+  "task_id": "T-150",
+  "iteration": 99,
+  "iteration_id": null,
+  "cycle": 1,
+  "phase": "construction",
+  "track": "standard",
+  "branch": "fix/T-150-guard-hook-commands",
+  "worktree": "/Users/germandz/personal-code/ai-dev-framework/open-up-for-ai-agents-T-150",
+  "base_sha": "8ef0167e97fcbcdcccd7e7a6799c865a23485e8e",
+  "session_id": "fix/T-150-guard-hook-commands",
+  "started_at": "2026-07-27T10:15:53Z",
+  "gates": {
+    "team_deployed": false,
+    "plan_persisted": "docs/changes/T-150/plan.md",
+    "log_written": true,
+    "roadmap_synced": true,
+    "retro_due": false,
+    "implementation_verified": true
+  },
+  "iterations_since_retro": 0
+}
