@@ -224,7 +224,7 @@ T-002 (`/openup-sync-spec`) completed 2026-06-11 once T-008's readiness DAG un-b
 ---
 
 ## T-136: Inception authoring-reliability measure independent of the post-authoring consent gate
-**Status**: pending
+**Status**: completed (2026-07-27)
 **Priority**: medium
 **Value**: Gives T-107's promotion gate an honest ≥80%-clean-pass measurement instead of one that structurally reads 0% regardless of model quality — the `inception-taskdef` scenario runs past authoring into a deterministic consent-gate pause every run hits, so the bench harness's driver-exit-code-based `pass` definition can never register a clean authoring completion for this scenario. Without this, T-107 stays gated on a broken measurement, not a real signal.
 **Description**: New standalone analyzer that reads a completed `openup-agent-bench.py` run's saved `run-0N.driver.log` files and computes authoring-chain reliability (per-sub-run turn count + restart detection) directly, independent of the run's overall driver exit code. Does not modify `openup-agent-bench.py`'s shared pass/fail semantics — reads its already-saved artifacts. Re-measures this session's already-saved T-107 gate-check logs and records the honest result in `docs/changes/T-107/design.md`.
