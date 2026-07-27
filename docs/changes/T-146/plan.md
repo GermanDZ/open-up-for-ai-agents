@@ -171,17 +171,17 @@ at inside this fix.
 
 ## Operations
 
-- [ ] Guard the `Iteration` `set_field` call in `update_project_status()`
+- [x] Guard the `Iteration` `set_field` call in `update_project_status()`
       (`scripts/sync-status.py`) on `state.get("iteration")` being truthy
-- [ ] Add the comment at the guard site naming the carried `Status` question and
+- [x] Add the comment at the guard site naming the carried `Status` question and
       its roadmap entry
-- [ ] Document the `0` sentinel in `docs-eng-process/state-file.md`
-- [ ] Add the roadmap entry carrying the `Status`-header open question (reserve
+- [x] Document the `0` sentinel in `docs-eng-process/state-file.md`
+- [x] Add the roadmap entry carrying the `Status`-header open question (reserve
       the id via `openup-claims.py reserve-id`)
-- [ ] (tester) Tests: falsy iteration leaves the header untouched; absent key
+- [x] (tester) Tests: falsy iteration leaves the header untouched; absent key
       likewise; a real iteration number still writes; every other header field
       is still regenerated on a falsy-iteration lane
-- [ ] Run the full test suite
+- [x] Run the full test suite
 
 ## Norms
 

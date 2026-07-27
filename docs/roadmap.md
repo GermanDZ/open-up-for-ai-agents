@@ -353,6 +353,21 @@ T-002 (`/openup-sync-spec`) completed 2026-06-11 once T-008's readiness DAG un-b
 
 ---
 
+## T-149: `project-status.md`'s `Status` header conflates last-completed-iteration with active-lane status
+**Status**: pending
+**Priority**: medium
+**Value**: Carried, unresolved half of T-146. The `Iteration` clobber is now guarded, but `**Status**` still has the same root cause and is still written unconditionally by every sync — so a quick lane in flight can rewrite a completed iteration's status to `in-progress` (observed downstream alongside the `Iteration` clobber). Left unfixed deliberately: unlike `Iteration`, there is no sentinel to test for, because the field is genuinely being asked to mean two different things at once.
+**Description**: `sync-status.py`'s `update_project_status()` writes `**Status**` from `derive_status(state)` — the *active lane's* derived status — into a header field that readers (and `/openup-retrospective` step 1) treat as "status of the last completed iteration". Resolve it with a real design decision, not another one-line guard: either (a) split the header into two fields (`Iteration Status` for the last completed iteration, `Lane Status` for the active lane), or (b) leave `Status` untouched on the `quick` track, matching T-146's `Iteration` treatment. Whichever wins, `docs-eng-process/templates/project-status.md` and `/openup-init`'s generated header have to move with it.
+- Pick (a) split-the-field or (b) skip-on-quick, with the rationale recorded
+- `sync-status.py`, the project-status template, and `/openup-init` all move together
+- Regression: a live quick lane cannot change the recorded status of the last completed iteration
+
+**Dependencies**: —
+
+**See**: T-146 (`docs/changes/archive/T-146/design.md` — carried open question); hand-off finding FD-002
+
+---
+
 ## T-134: Code-artifact task-def probe (Option D) — can the driver write AND run real code?
 **Status**: completed (2026-07-26)
 **Priority**: medium

@@ -11,7 +11,10 @@ views agree with machine state:
      than process bookkeeping (T-145).
   2. Regenerates the header fields of ``docs/project-status.md`` (Iteration,
      Current Task, Status, Iteration Goal, Last Updated, Phase) from state +
-     roadmap so the two documents can never disagree.
+     roadmap so the two documents can never disagree. ``Iteration`` is skipped
+     when the active lane has no real iteration number (the quick track's ``0``
+     sentinel), so a lane-local value never overwrites the project-wide
+     counter (T-146).
   3. Regenerates the ``## Notes`` section of ``docs/project-status.md`` from
      the sharded note files in ``docs/status-notes/`` (T-024): one file per
      completion, newest-first by filename. Lanes write their own note file
@@ -317,7 +320,21 @@ def set_field(text: str, field: str, value: str) -> str:
 def update_project_status(text: str, state: dict, status: str,
                           goal: str | None, today: str) -> str:
     text = set_field(text, "Phase", state.get("phase", ""))
-    text = set_field(text, "Iteration", str(state.get("iteration", "")))
+    # T-146: skip the shared `Iteration` header when the active lane has no real
+    # iteration number. `/openup-quick-task` initializes state with the literal
+    # `--iteration 0` sentinel, and writing that here rewrote the project-wide
+    # counter to `0` (observed downstream: `**Iteration**: 64` -> `0`). Tested as
+    # falsiness, not `== 0`, so an absent/None key behaves identically — no valid
+    # iteration number is falsy. Skipping means *not writing*: the existing value
+    # survives byte-identical (blanking would be a worse version of the same bug).
+    #
+    # `Status` below has the SAME root cause and is deliberately left alone: the
+    # field currently means both "status of the last completed iteration" and
+    # "status of the active lane", so guarding it needs the header split into two
+    # fields (or a decision to leave it untouched on `quick`) rather than another
+    # one-line condition. Carried as roadmap entry T-149, not resolved here.
+    if state.get("iteration"):
+        text = set_field(text, "Iteration", str(state["iteration"]))
     text = set_field(text, "Current Task", state.get("task_id", ""))
     text = set_field(text, "Status", status)
     if goal:

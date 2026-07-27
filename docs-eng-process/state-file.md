@@ -19,7 +19,7 @@ docs in `docs/`.
 |-------|------|-------|
 | `schema` | int | Always `1`. |
 | `task_id` | string | Roadmap task id, e.g. `"T-005"`. |
-| `iteration` | int | Iteration number. |
+| `iteration` | int | Iteration number. **`0` is the quick track's "no real iteration" sentinel** — `/openup-quick-task` initializes state with `--iteration 0`. A consumer must never write a falsy `iteration` into a project-wide view: `sync-status.py` skips the `**Iteration**` header entirely in that case rather than zeroing it (T-146). |
 | `phase` | string | `inception` \| `elaboration` \| `construction` \| `transition`. |
 | `track` | string | `quick` \| `standard` \| `full`. |
 | `branch` | string | Git branch for the iteration. |

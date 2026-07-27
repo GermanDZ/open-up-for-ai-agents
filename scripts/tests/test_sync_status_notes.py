@@ -171,6 +171,58 @@ class SyncStatusNotesTests(unittest.TestCase):
         self.assertIn("| in-progress |", rm)
         self.assertIn("**Iteration Goal**: T-200 — Notes fixture", self.ps.read_text())
 
+    def _init_state(self, *extra):
+        state_cli(
+            self.state_dir, "init", "--task-id", "T-200",
+            "--phase", "construction",
+            "--branch", "lane/T-200", "--worktree", str(self.dir), "--force",
+            *extra,
+        )
+
+    def test_falsy_iteration_leaves_shared_header_untouched(self):
+        """T-146: /openup-quick-task initializes state with the literal
+        `--iteration 0` sentinel. Writing that into the project-wide header
+        rewrote a real counter to 0 (observed downstream)."""
+        self._init_state("--iteration", "0", "--track", "quick")
+        proc = self._run_sync()
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertIn("**Iteration**: 1", self.ps.read_text())
+        self.assertNotIn("**Iteration**: 0", self.ps.read_text())
+
+    def test_absent_iteration_key_leaves_header_untouched(self):
+        """Falsiness, not `== 0`: a state file with no `iteration` key at all
+        behaves identically to the quick-track sentinel."""
+        import json
+        self._init_state("--iteration", "0", "--track", "quick")
+        sf = self.state_dir / "state.json"
+        data = json.loads(sf.read_text())
+        del data["iteration"]
+        sf.write_text(json.dumps(data))
+        proc = self._run_sync()
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertIn("**Iteration**: 1", self.ps.read_text())
+
+    def test_real_iteration_number_still_written(self):
+        """The guard is narrow — a lane that does carry an iteration number
+        still writes it."""
+        self._init_state("--iteration", "96", "--track", "standard")
+        proc = self._run_sync()
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertIn("**Iteration**: 96", self.ps.read_text())
+
+    def test_falsy_iteration_still_syncs_every_other_field(self):
+        """Skipping `Iteration` must not degrade into 'quick lanes don't sync'."""
+        self._init_state("--iteration", "0", "--track", "quick")
+        proc = self._run_sync()
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        ps = self.ps.read_text()
+        self.assertIn("**Current Task**: T-200", ps)
+        self.assertIn("**Phase**: construction", ps)
+        self.assertIn("**Status**: in-progress", ps)
+        self.assertIn("**Updated By**: sync-status.py", ps)
+        self.assertNotIn("**Last Updated**: 2026-01-01", ps)
+        self.assertIn("| in-progress |", self.roadmap.read_text())
+
     def test_completed_cell_is_date_stamped_and_stable(self):
         for gate in ("team_deployed", "log_written", "roadmap_synced",
                      "implementation_verified"):
