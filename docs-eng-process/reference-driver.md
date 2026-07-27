@@ -476,6 +476,54 @@ restores the bare typed exits below.
   human go/no-go + `openup-lifecycle.py` own that, exactly like
   `/openup-phase-review`.
 
+## The task library — checking and re-distilling (T-105, T-138)
+
+`docs-eng-process/task-library.yaml` is **object code**: `scripts/build-task-
+library.py` distills it from the vendored KB's authoring task files
+(`docs-eng-process/openup-knowledge-base/*/*/tasks/*.md`), a human reviews the
+distillation, and the result is committed. The engine (`cycle.py`) never reads
+the KB directly — only the committed library.
+
+**Checking for drift** — after editing a KB task file (or bumping the vendored
+KB to a newer version), verify the committed library is still in sync:
+
+```bash
+python3 scripts/build-task-library.py --check
+```
+
+Exit `0` means every committed def's `name`/`role`/`inputs` skeleton still
+matches what re-extracting its KB source would produce. A non-zero exit lists
+each drifted task on stderr — including a task whose KB source file is
+missing entirely (this is why `openup-doctor.py`'s task-library check
+pre-tests whether the KB tree is vendored at all before trusting `--check`'s
+exit code: a project that carries `task-library.yaml` but not the KB source
+tree — the normal downstream shape — would otherwise misreport as "drifted"
+rather than "not verifiable").
+
+**Re-distilling after a KB change** — the repeatable runbook:
+
+1. **Bump or edit.** Update the vendored KB (a new upstream version) or edit
+   the specific task file(s) that changed.
+2. **Check.** `python3 scripts/build-task-library.py --check` — confirms
+   which committed defs actually drifted; don't regenerate defs that didn't
+   change.
+3. **Regenerate.** Run `build-task-library.py` without `--check` for the
+   drifted task(s) — it re-extracts the Stage-1 skeleton and emits the
+   Stage-2 distillation prompt for review (the same LLM-assisted distillation
+   T-105 used to produce the library the first time).
+4. **Review.** A human reviews each regenerated def's `judgment` bullets
+   against the source KB task — distillation drift (prose paraphrase quality)
+   is advisory, not mechanically checkable, so this step is not optional.
+5. **Commit.** Commit the updated `task-library.yaml` entries alongside
+   whatever KB change triggered the re-distill, so the pair lands together.
+
+`openup-doctor.py` (T-138) surfaces step 2's result automatically on every
+run — `WARNING` when the KB is vendored and genuinely drifted, `INFO "in
+sync"` when clean, `INFO "not verifiable (no KB)"` when the KB source tree
+isn't present at all. Never `ERROR` — task-library drift is advisory, the
+same severity class as `docs-index.py --check` / `build-trace-model.py
+--check`.
+
 ## Console output (T-109)
 
 The driver narrates on **stderr**; **stdout carries only the sentinel** (the

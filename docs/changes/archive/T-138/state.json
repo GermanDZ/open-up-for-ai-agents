@@ -1,0 +1,22 @@
+{
+  "schema": 2,
+  "task_id": "T-138",
+  "iteration": 94,
+  "iteration_id": null,
+  "cycle": 1,
+  "phase": "construction",
+  "track": "standard",
+  "branch": "feat/T-138-doctor-redistill-wiring",
+  "worktree": "/Users/germandz/personal-code/ai-dev-framework/open-up-for-ai-agents-T-138",
+  "base_sha": "e58e8ed1e89136c5048c8032fcabc5a636cc17af",
+  "session_id": "feat/T-138-doctor-redistill-wiring",
+  "started_at": "2026-07-27T07:10:32Z",
+  "gates": {
+    "team_deployed": false,
+    "plan_persisted": "docs/changes/T-138/plan.md",
+    "log_written": true,
+    "roadmap_synced": true,
+    "retro_due": false
+  },
+  "iterations_since_retro": 0
+}

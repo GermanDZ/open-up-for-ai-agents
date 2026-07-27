@@ -218,5 +218,57 @@ class ContractTests(unittest.TestCase):
             self.assertEqual(before, after)
 
 
+class TaskLibraryTests(unittest.TestCase):
+    """T-138 — task-library drift must never ERROR, and must degrade to INFO
+    when the KB source tree isn't vendored, regardless of what
+    build-task-library.py --check itself would report."""
+
+    def test_script_absent_is_info_skipped(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = make_project(tmp)  # no build-task-library.py
+            code, payload, _ = run_doctor_json(root)
+            tl = findings_by_check(payload, "task-library")
+            self.assertTrue(tl)
+            self.assertEqual(tl[0]["severity"], "info")
+            self.assertIn("not present", tl[0]["message"])
+            self.assertEqual(code, OK)
+
+    def test_kb_absent_is_info_not_verifiable_even_though_check_would_fail(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            # STUB_FAIL simulates --check's real behavior when a task's KB
+            # source file is missing (exit 1, same as genuine drift) -- the
+            # doctor-side pre-test must never even invoke it when the KB
+            # tree itself is absent.
+            root = make_project(tmp, scripts={"build-task-library.py": STUB_FAIL})
+            # Deliberately do NOT create docs-eng-process/openup-knowledge-base/.
+            code, payload, _ = run_doctor_json(root)
+            tl = findings_by_check(payload, "task-library")
+            self.assertTrue(tl)
+            self.assertEqual(tl[0]["severity"], "info")
+            self.assertIn("not verifiable", tl[0]["message"])
+            self.assertEqual(code, OK)
+
+    def test_kb_present_and_in_sync_is_info(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = make_project(tmp, scripts={"build-task-library.py": STUB_PASS})
+            (Path(root) / "docs-eng-process" / "openup-knowledge-base").mkdir(parents=True)
+            code, payload, _ = run_doctor_json(root)
+            tl = findings_by_check(payload, "task-library")
+            self.assertEqual(tl[0]["severity"], "info")
+            self.assertIn("in sync", tl[0]["message"])
+            self.assertEqual(code, OK)
+
+    def test_kb_present_and_drifted_is_warning_not_error(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = make_project(tmp, scripts={"build-task-library.py": STUB_FAIL})
+            (Path(root) / "docs-eng-process" / "openup-knowledge-base").mkdir(parents=True)
+            code, payload, _ = run_doctor_json(root)
+            tl = findings_by_check(payload, "task-library")
+            self.assertEqual(tl[0]["severity"], "warning")
+            self.assertIn("drift", tl[0]["message"])
+            # A warning alone must not fail doctor's own exit code.
+            self.assertEqual(code, OK)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
