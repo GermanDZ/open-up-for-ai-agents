@@ -385,7 +385,7 @@ T-002 (`/openup-sync-spec`) completed 2026-06-11 once T-008's readiness DAG un-b
 ---
 
 ## T-152: Success measures may name instrumentation that does not exist where it must be read
-**Status**: pending
+**Status**: completed (2026-07-27)
 **Priority**: medium
 **Value**: Stops the project authoring falsifiable-looking expectations that turn out to be unanswerable at read-back — the failure just measured. T-052's measure was specified against `.claude/memory/bypass-log.md` in two downstream repos; at read-back (due 2026-07-18, checked 2026-07-27) **neither repo has that file at all**, so "0 occurrences" cannot be distinguished from "not logging" and the measure is dead. It had sat open as a carried action item for 88 iterations.
 **Description**: `/openup-complete-task` step 1b verifies the instrumentation exists **in the diff or demonstrably pre-existing** — but only in the framework repo, whereas the measure is often read back in a *consumer* environment. Tighten the gate so an instrument must be demonstrable in the environment where the read-back will happen, or the measure must be rewritten to one that is. Retiring T-052's measure as obsolete is already recorded in the iteration-98 retrospective; this task prevents the class.

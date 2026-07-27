@@ -104,14 +104,26 @@ is marked `n/a (quick track)`.
 expectation**: a named measure, a direction **and** magnitude ("weekly active
 editors +10%", not "engagement improves"), a time window, the instrumentation
 that will produce the number (an event, metric, or query — named concretely),
-and a read-back date (absolute, or relative to release). Impact / engagement /
+the **read-back environment** (where that number will actually be read), and a
+read-back date (absolute, or relative to release). Impact / engagement /
 returned value are prompts, not required slots — one honest expectation
 satisfies this. Gaps: a measure with no direction or magnitude; a vanity
 expectation with no instrumentation ("users will like it"); instrumentation
 that nothing in the Structure/Operations actually creates or already provides;
-no read-back date. A `quick`-track spec — or genuinely unmeasurable internal
-work — may write `n/a — <reason>`; an unargued `n/a`, or `n/a` on user-facing
-`standard`/`full` work without a credible reason, is a gap.
+**no named read-back environment**; **instrumentation that exists somewhere
+other than the read-back environment**; no read-back date. A `quick`-track spec
+— or genuinely unmeasurable internal work — may write `n/a — <reason>`; an
+unargued `n/a`, or `n/a` on user-facing `standard`/`full` work without a
+credible reason, is a gap.
+
+**Why the environment is a required element (T-152).** T-052's measure named a
+concrete instrument — `.claude/memory/bypass-log.md` — in two downstream repos.
+At read-back, neither repo had that file at all, so `grep -c` → 0 could not be
+distinguished from "not logging", and the measure was dead. It was not vague; it
+named an instrument that did not exist where the number had to come from, and the
+gap was invisible from the framework repo where the spec was graded. When the
+read-back happens here, one clause suffices — "read-back environment: this repo"
+— the rule is *state it*, not justify it.
 
 ## 13. Rollout Strategy
 

@@ -108,11 +108,16 @@ promise nobody can check.
 1. Read `## Success Measures` from `docs/changes/{task_id}/plan.md`.
 2. If it is `n/a — <reason>` (quick track or argued-unmeasurable): record
    `n/a` in `design.md` and move on.
-3. Otherwise, verify the named instrumentation **exists** — in the diff (the
-   event is emitted, the metric is registered, the query is committed) or
-   demonstrably pre-existing (point at where). Grade it like step 1a:
-   - `✅ instrumentation — <where it exists>`
-   - `❌ instrumentation — <what is missing>`
+3. Otherwise, verify the named instrumentation **exists in the measure's named
+   read-back environment** (T-152) — not merely somewhere. In the diff (the event
+   is emitted, the metric is registered, the query is committed) or demonstrably
+   pre-existing *there* (point at where). If the expectation is about a downstream
+   or consumer environment, "it exists in this repo" does **not** satisfy the
+   check — that is exactly how T-052 shipped an unanswerable measure. If the spec
+   names no read-back environment at all, that is a criterion-12 gap: fix the spec
+   first. Grade it like step 1a:
+   - `✅ instrumentation — <where it exists, in the read-back environment>`
+   - `❌ instrumentation — <what is missing, or which environment lacks it>`
 4. **A ❌ blocks completion** — the feature code being done is not enough.
    Add the instrumentation, or fix the spec first (re-run
    `/openup-create-task-spec`) if the measure itself was wrong.

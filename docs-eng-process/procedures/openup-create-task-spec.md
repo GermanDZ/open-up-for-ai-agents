@@ -149,7 +149,17 @@ containing **one falsifiable expectation** for the feature:
 
 > We expect **\<measure X\>** to move by **\<direction + magnitude Y\>** within
 > **\<window Z\>** of release. Instrumentation: **\<the event / metric / query
-> that will be read\>**. Read-back: **\<date or "Z after release"\>**.
+> that will be read\>**. Read-back environment: **\<where that number will actually
+> be read\>**. Read-back: **\<date or "Z after release"\>**.
+
+**Name the read-back environment (T-152).** An instrument that exists here but not
+where the number must come from produces a measure nobody can answer — T-052 named
+`.claude/memory/bypass-log.md` in two downstream repos, and at read-back neither repo
+had the file, so `0` was indistinguishable from "not logging". When the read-back
+happens in this repo, one clause is enough: *"Read-back environment: this repo."*
+The rule is **state it**, not justify it — but if the expectation is about a
+downstream or consumer environment, the instrument has to be demonstrable **there**,
+and `/openup-complete-task` step 1b will block on it.
 
 Use *impact*, *engagement*, and *returned value* as **prompts** to find the right
 measure — they are not three required slots; one honest, checkable expectation
