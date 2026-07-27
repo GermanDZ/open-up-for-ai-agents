@@ -1,16 +1,20 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 91
-**Iteration Goal**: T-134 — Code-artifact task-def probe (Option D) — can the driver write AND run real code?
+**Iteration**: 93
+**Iteration Goal**: T-136 — Inception authoring-reliability measure independent of the post-authoring consent gate
 **Status**: completed
-**Current Task**: T-134
+**Current Task**: T-136
 **Iteration Started**: 2026-06-18
-**Last Updated**: 2026-07-26
+**Last Updated**: 2026-07-27
 **Updated By**: sync-status.py
 **Retrospective**: [iteration-86-retrospective.md](iteration-retrospectives/iteration-86-retrospective.md) — covers iterations 78–86 (2026-07-15 → 2026-07-24), incl. quick fixes T-125/T-126; prev [iteration-77-retrospective.md](iteration-retrospectives/iteration-77-retrospective.md) (iterations 21–77)
 
 ## Notes
+
+- **Iteration 93** (2026-07-27): T-136 — new standalone analyzer (scripts/analyze-authoring-reliability.py) measures T-106's authoring-reliability gate from openup-agent-bench.py's saved driver logs, independent of the run's overall driver exit code (the inception-taskdef scenario structurally can't report pass — it runs past authoring into a deterministic consent gate every run hits). Re-measured this session's real t107-gate-nano batch: 4/5 = 80% clean, meeting T-107's gate; the one failure (run-04) is a real restart bug (12x repeated glob for an unresolved 'Technical Specification' input), not the coincidental rate limit that cut it off. Recorded in docs/changes/T-107/design.md — T-107's gate is now satisfied. 763/763 tests green.
+
+- **Iteration 92** (2026-07-26): T-135 — sharpened on-task-request.py's classifier (question-exclusion, imperative-mood leading-words bound, short-message bare-id rule) verified against real false-positive/true-positive quotes from the same session's transcript, then switched the no-active-iteration branch from advisory (sys.exit(0)) to genuine blocking (sys.exit(2)), matching check-unfinished-tasks.py's existing precedent. 749/749 tests green. Merged PR #89.
 
 - **Iteration 91** (2026-07-26): T-134 — code-artifact task-def probe (Option D): `probe-code-artifact` task-def (new non-spine `artifact: code` type) writes a small Ruby script and runs it via a narrowly-widened `exec` allowlist entry (`ruby <path>.rb`); a standalone runner drives it in isolation, zero diff to `docs-eng-process/process-map.yaml`. Live probe against `gpt-5.4-nano`: clean pass, 3 turns, zero restarts, marker confirmed independently. 742 tests green. Answers the falsifiable question from the 2026-07-26 exploration before any larger Rails+Postgres investment.
 
