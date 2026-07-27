@@ -354,7 +354,7 @@ T-002 (`/openup-sync-spec`) completed 2026-06-11 once T-008's readiness DAG un-b
 ---
 
 ## T-150: A merged `settings.json` referencing a not-yet-synced hook script locks both Bash and Write
-**Status**: pending
+**Status**: completed (2026-07-27)
 **Priority**: critical
 **Value**: Removes the only known failure mode that can leave a working repo with **no** agent escape hatch. Hit live on 2026-07-27 merging T-140: `.claude/settings.json` is tracked and merged instantly, so it immediately referenced `stage-run-log.py`; `.claude/scripts/hooks/*` is gitignored and only materializes after `sync-templates-to-claude.sh`. In that window every Bash call died on the missing hook and `gate-edits` blocked Write (no active iteration post-completion) — the owner had to run the sync by hand from their own shell. Every future hook addition reproduces this exactly.
 **Description**: The hook command is a bare `python3 "$CLAUDE_PROJECT_DIR"/.claude/scripts/hooks/<name>.py`, so a missing file is a hard interpreter error rather than a no-op. Two candidate fixes, pick one: (1) **guard the command** — `[ -f <path> ] && python3 <path> || true`, making a missing hook self-healing for every entry; (2) **track the hook scripts** alongside the `settings.json` that references them, so the two can never merge apart. Option 1 is smaller and also covers a partially-synced consumer; option 2 removes the skew at the source. Whichever wins, the invariant to test is: *a `settings.json` naming a hook that does not exist on disk must not block any tool call.*

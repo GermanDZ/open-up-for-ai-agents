@@ -1,7 +1,7 @@
 ---
 id: T-150
 title: "A merged settings.json referencing a not-yet-synced hook script locks both Bash and Write"
-status: ready
+status: done
 priority: critical
 estimate: 0.5 session
 plan: ""

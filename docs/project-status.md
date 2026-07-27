@@ -1,10 +1,10 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 98
-**Iteration Goal**: T-140 — `auto-log-commit.py` fires post-commit, forcing a follow-up sweep commit on every lane
+**Iteration**: 99
+**Iteration Goal**: T-150 — A merged `settings.json` referencing a not-yet-synced hook script locks both Bash and Write
 **Status**: completed
-**Current Task**: T-140
+**Current Task**: T-150
 **Iteration Started**: 2026-06-18
 **Last Updated**: 2026-07-27
 **Updated By**: sync-status.py
@@ -32,6 +32,8 @@ retrospective that authored them.
 `86.2`, `77.4`, `10.2` in triage. Evidence is inline in each authoring retrospective.
 
 ## Notes
+
+- **Iteration 99** (2026-07-27): T-150 (standard) — **a missing hook script can no longer lock the repo**. Root cause, measured rather than assumed: `python3` exits **2** when it cannot open a file, and 2 is exactly the code the harness reads as *block this tool call* — so a `settings.json` referencing a not-yet-synced hook script did not degrade to a warning, it vetoed every Bash call while `gate-edits` independently vetoed Write, leaving a session with no recovery route (observed live merging T-140/PR #94; the owner had to run `sync-templates-to-claude.sh` from their own shell). All 11 hook commands in `.claude/settings.json` and `settings.json.example` are now wrapped in `if [ -f <path> ]; then <interp> <path>; fi` — absent ⇒ exit 0 silently, present ⇒ propagates the script's own status, so the **five hooks that exit 2 to block** (`gate-edits`, `on-task-request`, `validate-commit`, `on-stop`, `check-unfinished-tasks`) keep working as gates. **Deliberately not `|| true`**: that would return 0 for a blocking hook and silently disarm every gate in the framework — a test asserts the trap directly so nobody simplifies the guard later. Also rejected: tracking `.claude/scripts/` and a shared `run-hook.sh` shim, both of which make the fix depend on another file existing, which is the failure class being removed. +12 tests (structural: every command guarded, no exit-suppressing form, both settings files identical, no entry silently dropped; behavioural: missing→0, present→propagates 2, stdin passthrough, bash interpreter). Live-verified with the real shipped command strings: missing→0/empty stderr, unguarded form still reproduces the bug at rc=2, blocking hook still returns 2 through the guard. Convention recorded in `conventions.md`. Full suite 939 green (1 skipped; `main` baseline 928).
 
 - **Iteration 96** (2026-07-27): T-146 (standard) — **a quick lane can no longer clobber the project-wide `**Iteration**` header**. `sync-status.py`'s `update_project_status()` wrote `state["iteration"]` unconditionally, and `/openup-quick-task` initializes state with the literal `--iteration 0` sentinel — so a sync run with a quick lane live rewrote the real counter to `0` (observed downstream: `**Iteration**: 64` → `0`). Latent in this repo only because `/openup-quick-task`'s steps set gates directly instead of invoking `sync-status.py`; the guard makes it unreachable either way. Tested as falsiness rather than `== 0`, so an absent/None key behaves identically, and the old `state.get("iteration", "")` default — the one path that could have blanked the field — is gone. **`Status` deliberately not fixed**: the field genuinely means two things (last completed iteration vs active lane), so there is no sentinel to test for; carried as roadmap entry T-149 with both candidate resolutions written down. +4 tests; full suite 777 green.
 
