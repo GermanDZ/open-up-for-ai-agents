@@ -1,7 +1,7 @@
 ---
 id: T-136
 title: "Inception authoring-reliability measure independent of the post-authoring consent gate"
-status: ready
+status: done
 priority: medium
 estimate: 1 session
 plan: docs/iteration-plans/t-136-authoring-reliability-measure.md
