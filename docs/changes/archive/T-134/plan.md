@@ -1,7 +1,7 @@
 ---
 id: T-134
 title: "Code-artifact task-def probe (Option D) — can the driver write AND run real code?"
-status: ready
+status: done
 priority: medium
 estimate: 1 session
 plan: docs/iteration-plans/t-134-code-artifact-task-def-probe.md
