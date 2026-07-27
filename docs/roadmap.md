@@ -1156,7 +1156,23 @@ authored when promoted.
 
 **Dependencies**: T-137 (confirms the library this extends)
 
-**See**: `docs/changes/archive/T-107/plan.md` (original spec — Requirement 4)
+**See**: `docs/changes/archive/T-107/plan.md` (original spec — Requirement 4); spec `docs/changes/T-139/plan.md`; premise check + scope decision in `docs/changes/T-139/design.md`
+
+---
+
+## T-156: Compile a project-local task library from a project's own process docs
+
+**Status**: pending
+**Priority**: low
+**Value**: The unbuilt half of T-107's P2 promise — but **the premise comes first, not the code**. T-139 delivered the override *seam* (`docs/process/task-library.yaml` resolves ahead of the vendored copy, documented and tested), so a project can already customize by authoring the library by hand. What does not exist is a compiler that *generates* one from a project's own process docs, and two things must be settled before it is worth building: (a) `build-task-library.py` writes **no YAML for anyone** today — the framework's own library is hand-assembled from `--offline` distillation prompts and human-reviewed — so this is a brand-new output path with no existing consumer; and (b) Stage-1 extraction (`extract_skeleton`) parses only **UMA/KB-shaped** documents — YAML frontmatter with `related.roles`, an `Inputs|` section of workproduct links — and whether any real project's process docs are in that shape is **unverified**. Settle (b) against an actual project's docs before writing a line of compiler.
+**Description**: Gated investigation, then (only if the gate clears) a `--source-root DIR` emit mode for `build-task-library.py` that reads a project's process-source directory and writes `docs/process/task-library.yaml`.
+- **Gate first**: find one real project whose process docs could feed Stage-1 extraction, or establish that none exist and the input needs a different (non-UMA) parser. Record the finding; if no consumer is found, **close this task as declined** rather than building speculatively — the T-137 disposition.
+- Only past the gate: emit mode + `--out` path, human-review step preserved (distillation stays advisory, never CI-automatic)
+- Tests: emit produces a library that `openup-process-map.py tasks --validate` accepts
+
+**Dependencies**: T-139 (delivered the override seam this would target)
+
+**See**: `docs/changes/T-139/design.md` § "Scope decision"; `docs-eng-process/project-config.md` § "Customized process sources" (states plainly that no such compiler exists); T-139's Success Measure — **if its read-back on 2026-10-25 finds 0 consumer repos carrying a `docs/process/` override, retire this task instead of scheduling it**, since that is direct evidence the P2 demand is not there
 
 ---
 

@@ -215,24 +215,24 @@ seam stops being an accident.
 
 ## Operations
 
-- [ ] Record the premise-check evidence (the two already-satisfied bullets, with
+- [x] Record the premise-check evidence (the two already-satisfied bullets, with
       the commands and their output) in `docs/changes/T-139/design.md`, so the
       "why this task shrank" reasoning outlives the session.
-- [ ] Prepend the project-owned candidate to `_MAP_CANDIDATES` and
+- [x] Prepend the project-owned candidate to `_MAP_CANDIDATES` and
       `_TASK_CANDIDATES`, and rewrite both tuples' comments to state owner +
       precedence per entry.
-- [ ] Verify `build-task-library.py --check` inherits the new resolution against a
+- [x] Verify `build-task-library.py --check` inherits the new resolution against a
       project-owned library; if it does not, note the cause in `design.md` before
       changing the compiler.
-- [ ] Write `project-config.md` § "Customized process sources": resolution order,
+- [x] Write `project-config.md` § "Customized process sources": resolution order,
       which file to create, replace-not-merge, the `source: driver` rule for
       non-KB-shaped defs, and the explicit no-emitter statement.
-- [ ] Add the `reference-driver.md` pointer from the task-library section to that
+- [x] Add the `reference-driver.md` pointer from the task-library section to that
       new section.
-- [ ] (tester) Add the four tests to `tests/test_process_map.py` (map override,
+- [x] (tester) Add the four tests to `tests/test_process_map.py` (map override,
       library override, no-override default unchanged, compiler `--check` on a
       project-owned library); run the full suite.
-- [ ] File the emitter follow-up as a pending roadmap entry (via
+- [x] File the emitter follow-up as a pending roadmap entry (via
       `/openup-complete-task`'s follow-up enqueue, not a hand-edit of the shared
       view) whose Value names the unverified UMA-shape premise as the thing to
       settle before any build.

@@ -478,6 +478,13 @@ restores the bare typed exits below.
 
 ## The task library — checking and re-distilling (T-105, T-138)
 
+> **Using your own definitions instead?** A project replaces the framework's map
+> and library by creating `docs/process/{process-map,task-library}.yaml`, which
+> resolve ahead of the vendored copies — see
+> [project-config.md § "Customized process sources"](project-config.md#customized-process-sources-t-139)
+> (T-139). The rest of this section describes the **framework's** library and its
+> KB source.
+
 `docs-eng-process/task-library.yaml` is **object code**: `scripts/build-task-
 library.py` distills it from the vendored KB's authoring task files
 (`docs-eng-process/openup-knowledge-base/*/*/tasks/*.md`), a human reviews the

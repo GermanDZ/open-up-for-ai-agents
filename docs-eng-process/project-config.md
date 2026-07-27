@@ -200,6 +200,74 @@ line (INFO when absent/valid, WARNING pointing at `check-docs.py` when invalid).
 It does **not** judge whether the chosen archetype is *appropriate* — that is a
 human call carried by the milestone record, not the script.
 
+## Customized process sources (T-139)
+
+The `process:` section above tailors **ceremony levels**. This section is the other
+half: replacing the framework's **authoring definitions** — the process map (which
+activities each phase runs, with what role and skills) and the task library (what
+each authoring task's `judgment` bullets say a good artifact looks like) — with your
+project's own.
+
+### Resolution order
+
+Both files resolve **first-match-wins, most-specific first**, relative to the repo
+root (`--repo-root`, else the CLI's parent directory):
+
+| # | Path | Owner | Notes |
+|---|---|---|---|
+| 1 | `docs/process/process-map.yaml`<br>`docs/process/task-library.yaml` | **your project** | The override. Create it yourself; the framework never writes or overwrites it. |
+| 2 | `docs-eng-process/process-map.yaml`<br>`docs-eng-process/task-library.yaml` | framework (vendored) | Copied wholesale by `bootstrap-project.sh` at install. The canonical path inside the framework repo. |
+| 3 | `scripts/process-map.yaml`<br>`scripts/task-library.yaml` | your project | Escape hatch for a project that installed the CLIs without the docs tree. Nothing ships this file. |
+
+To customize, create `docs/process/task-library.yaml` (and/or
+`docs/process/process-map.yaml`). Everything that reads the map or library —
+`openup-process-map.py`, `build-task-library.py`, the reference driver's engine —
+picks it up with no flag and no configuration.
+
+> **Do not edit the vendored `docs-eng-process/` copy instead.** It happens to
+> survive `sync-from-framework.sh` today, but that is an implementation detail of
+> the sync script, not a contract. `docs/process/` is the supported seam.
+
+### Replace, not merge
+
+A project-owned file **replaces** the framework's entirely — first match wins and
+the loop stops. There is no per-key merging: if your `task-library.yaml` defines one
+task, that is the *only* task in the library, and any process-map activity
+referencing a task you did not define will fail validation. Start by copying the
+framework's file and editing it, rather than authoring one from scratch.
+
+### Writing task defs: the `source:` field
+
+Each task def carries a `source:` naming where its skeleton came from.
+`build-task-library.py --check` re-extracts the `name` / `role` / `inputs`
+skeleton from that source and reports drift.
+
+- `source: driver` — **use this for hand-authored defs.** `--check` skips them.
+- `source: <path>` — only valid for a **UMA/KB-shaped** task file (YAML frontmatter
+  with `related.roles`, and an `Inputs|` section of workproduct links), the shape
+  the vendored OpenUP knowledge base uses. Point `source:` at anything else and
+  `--check` will report your def as drifted, because re-extraction yields nothing.
+
+Verify your library at any time:
+
+```bash
+python3 scripts/openup-process-map.py tasks --validate   # structure + judgment-bullet count
+python3 scripts/build-task-library.py --check            # skeleton drift vs source
+```
+
+### There is no compiler that generates a library from your docs
+
+`build-task-library.py` **never writes YAML** — for your project or for the
+framework. It only checks drift (`--check`) and emits LLM distillation prompts for
+review (`--offline`); the framework's own library is hand-assembled from those
+prompts and human-reviewed before commit. A project authors `docs/process/task-library.yaml`
+the same way: by hand, or by copying the framework's and editing it.
+
+A compile-from-your-own-process-docs mode is a **deferred follow-up**, not an
+omission: Stage-1 extraction only understands UMA-shaped documents, and whether any
+project's process docs are in that shape is unverified. See the emitter follow-up
+entry in `docs/roadmap.md`.
+
 ## Precedence
 
 ```
@@ -211,6 +279,13 @@ rubric can't carry, but it may **not** waive a framework rubric criterion or a
 task-spec safeguard. When grading an artifact for completeness, satisfy the
 framework rubric first, then the injected `<project-rules>`, then the task-spec's
 own `## Safeguards`.
+
+**Customized process sources are the one exception to "additive".** A project-owned
+`docs/process/` map or library *replaces* the framework's rather than adding to it —
+it is a swap of the authoring definitions, not a rule layered on top. It still may
+not waive a rubric criterion or a task-spec safeguard: those are enforced by
+`.claude/rubrics/` and the spec, neither of which the process map or task library
+can reach.
 
 The `process:` section extends this same additive chain at the **lifecycle** level:
 an archetype may only *raise or lower ceremony* (iteration budgets, artifact sets,

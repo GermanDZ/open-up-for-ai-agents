@@ -1,0 +1,2 @@
+{"run_id": "T-139-20260727T151648Z", "event": "session_begin", "task_id": "T-139", "goal": "T-139 \u2014 customized process sources: a project-owned docs/process/ override path, documented and pinned", "branch": "feat/T-139-customized-process-sources", "phase": "construction", "ts": "2026-07-27T15:16:52Z"}
+{"run_id": "T-139-20260727T151648Z", "event": "plan_gate_autoresolved", "task_id": "T-139", "branch": "feat/T-139-customized-process-sources", "track": "standard", "ts": "2026-07-27T15:16:52Z"}
