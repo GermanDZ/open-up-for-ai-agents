@@ -414,17 +414,22 @@ T-002 (`/openup-sync-spec`) completed 2026-06-11 once T-008's readiness DAG un-b
 ---
 
 ## T-154: Four long-open process decisions have no completion condition and never close
-**Status**: pending
+**Status**: cancelled (2026-07-27)
 **Priority**: medium
-**Value**: Four carried action items — the oldest open since iteration 9 — are phrased as "decide X". A decision has nothing to grep for, so no disposition pass can ever retire one; they have survived up to 89 iterations untouched and are pure noise in the one list agents read for context. Forcing each to a citable artifact (or an explicit retirement) is what converts them from permanent residue into either work or closure.
-**Description**: Resolve each of the following by producing a **recorded decision**, not a conversation: **(77.3, overdue)** exercise `/openup-fan-out` on two genuinely disjoint READY lanes and capture the wall-clock numbers T-060 specified, **or** retire its success measure as `n/a` with a reason — it has never once been exercised for its stated purpose and its due date (iteration 90) passed 8 iterations ago; **(77.5)** decide whether `docs/risk-list.md` is worth instantiating at this project's scale, or change `/openup-retrospective` step 4 to treat its absence as `n/a` rather than a silent skip — today neither branch has been taken; **(20.2)** decide whether "dependencies and explorations land before the implementation that links them" is a convention worth enforcing, and if so add the checklist line to `/openup-start-iteration`; **(9.3)** run the skills altitude / prose-vs-executable survey, or retire it as obsolete given how much the skill set has since changed. **(9.2)** rides along opportunistically: the first genuine refactor diff in a future lane should be audited with `/openup-sync-spec` and the result recorded.
-- Each of the four produces an artifact or an explicit `obsolete` retirement with evidence
-- Struck through in the retrospective that authored it, per the T-141 disposition rules
-- No item left in "decide X" form
+**Value**: Retired without being worked — the entry's four items were dispositioned individually instead, which is what it was asking for. Kept as a cancelled row rather than deleted so the trail from the iteration-98 retrospective's action item A5 lands somewhere.
+**Description**: **Cancelled 2026-07-27 by owner decision.** Filed to force a disposition on four "decide X" carried items; by the time it reached the front of the queue, all four had one:
+- **9.1** (retro gate boundary) — **closed in T-151**: recorded in `docs-eng-process/state-file.md` (gate fires at `count >= 5`, no code change).
+- **77.2** (should `retro_due` apply outside `full`) — **closed in T-151**: hard block stays `full`-only, with an explicit revisit condition.
+- **9.3** (skills altitude / prose-vs-executable survey) — **retired obsolete**: filed at iteration 9 against a skill set that has since changed beyond recognition; re-running it would answer a question nobody has.
+- **77.3** (exercise `/openup-fan-out` or retire its measure) — **resolved by retiring the measure** as `n/a`: 38 iterations, zero real use, and sequential `/openup-next` is the established working default.
+
+**9.2** (first real `/openup-sync-spec` use on a live refactor diff) is **not** retired and is deliberately **not** a task: it needs a genuine refactor diff to audit, so it rides along with the next lane that produces one. Tracked in `docs/project-status.md` as an opportunistic rider.
+
+The entry is cancelled rather than completed because no work was done under it — the correct outcome for a task whose premise dissolved before it started.
 
 **Dependencies**: —
 
-**See**: Iteration-98 retrospective action item A5; carried items 77.3 / 77.5 / 20.2 / 9.3 (+ 9.2 opportunistic)
+**See**: Iteration-98 retrospective action item A5; carried items 9.1 / 9.3 / 77.2 / 77.3 (each struck through in the retrospective that authored it); T-151
 
 ---
 

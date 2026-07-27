@@ -12,24 +12,30 @@
 
 ## Open Action Items
 
-Triaged 2026-07-27 (iteration-98 retrospective + same-day triage). Everything actionable
-inside this repo is now a roadmap task; retired items keep their evidence in the
-retrospective that authored them.
+Triaged 2026-07-27 and again after the T-150→T-153 lanes. Retired items keep their evidence
+in the retrospective that authored them; nothing here is carried without a destination.
 
-**Roadmap tasks — the work**
-- **T-150 (critical)** — a merged `settings.json` naming a not-yet-synced hook script locks *both* Bash and Write. Do before adding any further hook.
-- **T-151 (high)** — retro counter double-increments and `reset` reaches only one of two stores; folds in the two undecided gate-semantics questions (carried since iterations 9 and 77).
-- **T-153 (high)** — consumer-smoke check over the install path (carried since iteration 86). Depends on T-150.
-- **T-152 (medium)** — a success measure may not name instrumentation absent from the environment where it is read back.
-- **T-154 (medium)** — four long-open "decide X" items (`77.3` overdue, `77.5`, `20.2`, `9.3`) must each produce an artifact or an explicit retirement.
+**In flight — awaiting merge**
+- **T-150** ✅ merged — hook commands guarded; a missing hook script can no longer lock Bash and Write.
+- **T-151** (PR #96) — cadence decisions 9.1 / 77.2 recorded; action items A2 and A3 **retracted as misdiagnoses**.
+- **T-152** (PR #97) — a success measure must name its read-back environment.
+- **T-153** (PR #98) — the install path is exercised end to end by a consumer smoke check.
 
-**Still open — external, not closable here (3)**
-- `10.1` — **es-invoices has exactly one stale archived plan** (`T-009: in-progress → done`); tallyfox-app is clean. Not run: it mutates another repo. Fix: `python3 scripts/openup-claims.py migrate-archived-status` in es-invoices.
+**Open — external, not closable here (3)**
+- `10.1` — **es-invoices has exactly one stale archived plan** (`T-009: in-progress → done`); tallyfox-app clean. Fix: `python3 scripts/openup-claims.py migrate-archived-status` in es-invoices. Not run: it mutates another repo.
 - `86.3` — T-120/T-123 success-measure read-back, blocked on owner endpoint stability.
 - `86.4` — kaze-webapp `sync-from-framework.sh` bump, on the kaze lead's schedule.
 
-**Retired in iteration 98 (6 of 17)** — `77.1`, `20.1`, `20.3` in the disposition pass;
-`86.2`, `77.4`, `10.2` in triage. Evidence is inline in each authoring retrospective.
+**Open — opportunistic rider (1)**
+- `9.2` — first real `/openup-sync-spec` use on a live refactor diff. Deliberately **not** a task: it needs a genuine refactor to audit, so it rides along with the next lane that produces one.
+
+**Retired to date (9 of the original 17, plus 2 retracted)**
+`77.1`, `20.1`, `20.3` (iteration-98 disposition pass) · `86.2`, `77.4`, `10.2` (same-day triage) ·
+`9.1`, `77.2` (closed by T-151) · `9.3`, `77.3` (retired by owner decision 2026-07-27; T-154 cancelled) ·
+and **A2 + A3 retracted** as misdiagnoses — A2 already fixed by T-142/`177ee42`, A3 measured false.
+
+> **Cadence note:** the retro counter reads 4; the next completion reaches the threshold of 5
+> and will gate a `full`-track start until `/openup-retrospective` runs.
 
 ## Notes
 

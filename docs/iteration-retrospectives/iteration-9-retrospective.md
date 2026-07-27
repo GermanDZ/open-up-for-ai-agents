@@ -56,7 +56,7 @@
 |---|---|---|---|
 | **Clarify retro cadence gate boundary** — Should `retro_due` block on completion 4→5 (retro=4) or 5→6 (retro=5)? Verify against the intended "retrospective every 5 tasks" rule and fix the gate in `openup-state.py retro check` if needed. | PM (you) | HIGH | backlog |
 | **First real `/openup-sync-spec` use** — Audit a live refactor diff (rename a function, move a file, change a conditional) and confirm the skill's output matches expectations. Plan for the next feature work. | Next dev | MEDIUM | deferred to first T-0XX that includes refactors |
-| **Skills altitude / prose-vs-executable survey** — Review the new skill alongside readiness and other workflow skills; document whether prose-based heuristics are the pattern or edge case. | Architect | MEDIUM | next elaboration phase |
+| ~~**Skills altitude / prose-vs-executable survey** — Review the new skill alongside readiness and other workflow skills; document whether prose-based heuristics are the pattern or edge case.~~ | ~~Architect~~ | ~~MEDIUM~~ | **obsolete 2026-07-27 (owner decision, T-154)** — filed at iteration 9 against a skill set that has since changed beyond recognition (37 skills today, the pack/mirror render pipeline, graded tracks, the REASONS-Canvas task spec — none of which existed then). Re-running the survey would answer a question nobody now has. Retired unworked rather than carried a 90th iteration |
 
 ---
 
