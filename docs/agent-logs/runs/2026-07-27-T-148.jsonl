@@ -1,2 +1,3 @@
 {"run_id": "run-T-148-20260727", "event": "session_begin", "task_id": "T-148", "goal": "T-148 \u2014 begin auto-resolves gates.plan_persisted from the task's own spec", "branch": "fix/T-148-begin-autoresolve-plan-gate", "phase": "construction", "ts": "2026-07-27T12:12:05Z"}
 {"event": "iteration_complete", "task_id": "T-148", "branch": "fix/T-148-begin-autoresolve-plan-gate", "phase": "construction", "track": "standard", "ts": "2026-07-27T12:27:43Z"}
+{"event": "session_end", "task_id": "T-148", "ts": "2026-07-27T12:28:19Z"}
