@@ -10,12 +10,19 @@ Goal: keep context small. This file is a quick index; details live in docs.
 - For complex multi-role work: `/openup-orchestrate`
 - For **pre-delivery exploration** (is the problem real? what's the right shape?): `/openup-explore` — produces notes that may seed a proposal, not a deliverable.
 
-**Hooks gate at commit, not at prompt.** `on-task-request.py` is advisory — it
-emits a track suggestion and iteration reminder but never blocks the user's prompt
-(exits 0 on all paths). The enforcement gate is `check-iteration.py` at `git commit`
-(also exits 0 — warns but never blocks). The hard gate is the pre-push write-fence
-(`openup-fence.py`). This means you can explore freely before starting an iteration;
-the process only enforces at the point of persistence.
+**Hooks gate at commit AND at prompt, for a genuine directive with no active
+iteration.** `on-task-request.py` (T-135) blocks (`sys.exit(2)`) a classified
+task-request prompt when no iteration is active — but the classifier is
+precision-tuned first: a message ending in `?`, or a task-language verb that
+isn't in the message's leading words, or a task-id mentioned in a longer
+non-imperative message, is never classified as a request, so genuine
+questions and discussion still pass through unblocked. The active-iteration
+reminder branch stays advisory (exit 0) — no missing precondition to block
+on there. The enforcement gate at commit is `check-iteration.py` (also exits
+0 — warns but never blocks). The hard gate is the pre-push write-fence
+(`openup-fence.py`). This means you can still explore freely and ask
+questions before starting an iteration; only a genuine delivery directive
+with no active iteration is stopped before you can act on it.
 
 **Never offer to skip or bypass the process.** "Just commit" is not a valid option.
 If the work is small, use `/openup-quick-task` — that IS the lightweight path.
