@@ -636,7 +636,7 @@ Mark a task as complete, update roadmap, commit changes, and prepare traceabilit
 
 After this skill completes, ALL of these must be true:
 
-- [ ] **BLOCKING**: Every spec requirement is graded ✅ against the actual diff (step 1a) — no requirement is unmet, and any ❌ blocks "done"
+- [ ] **BLOCKING**: Every spec requirement is graded ✅ against the actual diff (step 1a) — no requirement is unmet, any ❌ blocks "done", and the verdict is recorded as `gates.implementation_verified` (the delivery-evidence gate every track requires)
 - [ ] **BLOCKING (standard/full)**: The spec's Success Measure instrumentation exists in the diff or demonstrably pre-exists (step 1b) — or the section is an argued `n/a`
 - [ ] **BLOCKING (flagged features)**: A flag-removal task row exists in the roadmap Maintenance table (step 4a) — every flag enqueues its own removal
 - [ ] All changes are committed (no uncommitted changes remain)
@@ -1067,7 +1067,8 @@ Do NOT use for:
 **Success Criteria**
 
 - [ ] Task completed
-- [ ] Changes verified
+- [ ] Changes verified — and the verification recorded as
+      `gates.implementation_verified` (step 3)
 - [ ] Branch created (if not skipped)
 - [ ] Committed (if not skipped)
 - [ ] Logged (if not skipped)

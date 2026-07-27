@@ -19,6 +19,7 @@ touches:
   - docs-eng-process/procedures/openup-quick-task.md
   - docs-eng-process/state-file.md
   - docs-eng-process/tracks.md
+  - docs-eng-process/skills-guide.md
   - docs-eng-process/.claude-templates/skills/openup-complete-task/SKILL.md
   - docs-eng-process/.claude-templates/skills/openup-quick-task/SKILL.md
 ---
@@ -235,7 +236,8 @@ an absent key must read falsy — "not verified" — rather than raising.
 - Existing tests that set only the bookkeeping gates and expect `completed`
   (`test_sync_status_notes.py`, `test_t006_hooks.py`, `test_openup_state.py`)
 - Generated skill mirrors under `docs-eng-process/.claude-templates/skills/`
-  (via `render-skills-mirror.py --write` + `sync-templates-to-claude.sh` — never
+  and `docs-eng-process/skills-guide.md` (via `render-skills-mirror.py --write`,
+  `check-skills-guide.py --write`, `sync-templates-to-claude.sh` — never
   hand-edited)
 
 **Do not touch:**
@@ -249,22 +251,22 @@ an absent key must read falsy — "not verified" — rather than raising.
 
 ## Operations
 
-- [ ] Add `implementation_verified` to `gates.properties` in
+- [x] Add `implementation_verified` to `gates.properties` in
       `scripts/openup-state.schema.json` (optional; documented as
       "delivery evidence, set by the completion skills")
-- [ ] Add `implementation_verified` to all three `TRACK_REQUIRED` entries in
+- [x] Add `implementation_verified` to all three `TRACK_REQUIRED` entries in
       `scripts/sync-status.py` and update the module docstring's description of
       the derivation
-- [ ] Add `implementation_verified` to `DEFAULT_REQUIRED_GATES` in
+- [x] Add `implementation_verified` to `DEFAULT_REQUIRED_GATES` in
       `scripts/openup-state.py`
-- [ ] Update `openup-complete-task.md` (step 1a set-gate + step 7 `--require`
+- [x] Update `openup-complete-task.md` (step 1a set-gate + step 7 `--require`
       lines) and `openup-quick-task.md` (step 3 set-gate + step 6 `--require`
       line) in `docs-eng-process/procedures/`
-- [ ] Update `docs-eng-process/state-file.md` and `docs-eng-process/tracks.md`
-- [ ] (tester) Tests: gate-absent derives `in-progress` on quick/standard/full;
+- [x] Update `docs-eng-process/state-file.md` and `docs-eng-process/tracks.md`
+- [x] (tester) Tests: gate-absent derives `in-progress` on quick/standard/full;
       gate-present derives `completed`; `check-gates` default names the gate;
       a schema-valid state without the key still validates
-- [ ] Regenerate the skill mirrors (`render-skills-mirror.py --write`,
+- [x] Regenerate the skill mirrors (`render-skills-mirror.py --write`,
       `sync-templates-to-claude.sh`) and run the full test suite
 
 ## Norms

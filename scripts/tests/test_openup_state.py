@@ -130,15 +130,43 @@ class OpenupStateTests(unittest.TestCase):
         )
 
     # -- check-gates ------------------------------------------------------
+    DEFAULT_GATES = ("team_deployed", "log_written", "roadmap_synced",
+                     "implementation_verified")
+
     def test_check_gates_fails_then_passes(self):
         run(INIT_BASE, self.state_dir, expect_code=0)
         proc = run(["check-gates"], self.state_dir, expect_code=6)
         # default required set listed one per line on stderr
-        for gate in ("team_deployed", "log_written", "roadmap_synced"):
+        for gate in self.DEFAULT_GATES:
             self.assertIn(gate, proc.stderr)
-        for gate in ("team_deployed", "log_written", "roadmap_synced"):
+        for gate in self.DEFAULT_GATES:
             run(["set-gate", gate, "true"], self.state_dir, expect_code=0)
         run(["check-gates"], self.state_dir, expect_code=0)
+
+    def test_check_gates_default_requires_delivery_evidence(self):
+        """T-145: the bookkeeping gates alone must not satisfy the default set —
+        `implementation_verified` is absent from a freshly-initialized state and
+        an absent key reads falsy."""
+        run(INIT_BASE, self.state_dir, expect_code=0)
+        for gate in ("team_deployed", "log_written", "roadmap_synced"):
+            run(["set-gate", gate, "true"], self.state_dir, expect_code=0)
+        proc = run(["check-gates"], self.state_dir, expect_code=6)
+        self.assertIn("implementation_verified", proc.stderr)
+        run(["set-gate", "implementation_verified", "true"], self.state_dir,
+            expect_code=0)
+        run(["check-gates"], self.state_dir, expect_code=0)
+
+    def test_state_without_verified_gate_still_validates(self):
+        """T-145: the key is optional in the schema, so a state file written
+        before the gate existed validates and archives unchanged."""
+        run(INIT_BASE, self.state_dir, expect_code=0)
+        self.assertNotIn("implementation_verified", self.state_json()["gates"])
+        run(["validate"], self.state_dir, expect_code=0)
+        # Reading the absent key is the defined "key missing" exit (5) — never a
+        # crash; every consumer (check-gates, sync-status.derive_status) uses
+        # gates.get(), so an absent key reads falsy = not verified.
+        run(["get", "gates.implementation_verified"], self.state_dir,
+            expect_code=5)
 
     def test_check_gates_custom_require(self):
         run(INIT_BASE, self.state_dir, expect_code=0)

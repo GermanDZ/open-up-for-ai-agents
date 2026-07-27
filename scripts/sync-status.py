@@ -6,7 +6,9 @@ views agree with machine state:
 
   1. Flips the current task's ``Status`` cell in the roadmap task table to
      match state (derived: ``completed`` when the track's required gates are
-     all met, otherwise ``in-progress``).
+     all met, otherwise ``in-progress``). The required set always includes
+     ``implementation_verified`` — the one gate that evidences delivery rather
+     than process bookkeeping (T-145).
   2. Regenerates the header fields of ``docs/project-status.md`` (Iteration,
      Current Task, Status, Iteration Goal, Last Updated, Phase) from state +
      roadmap so the two documents can never disagree.
@@ -57,10 +59,20 @@ STATE_CLI = SCRIPT_DIR / "openup-state.py"
 # requires a team. `standard` is solo unless a team is explicitly opted in, so
 # requiring team_deployed here would leave every solo standard task permanently
 # "in-progress" (T-041 F11).
+#
+# `implementation_verified` is required on EVERY track (T-145). The other gates
+# are all bookkeeping — `roadmap_synced` is set by this very script,
+# `log_written` by a log append, `team_deployed` by spawning a team — so before
+# it existed a lane that produced only a spec and a run log could satisfy the
+# whole required set and be stamped `completed`. This gate is the one that
+# evidences delivery: it is set only where a completion skill has graded the
+# implementation against the spec requirement by requirement. The quick track is
+# relaxed on ceremony, never on delivery evidence.
 TRACK_REQUIRED = {
-    "quick": ["log_written", "roadmap_synced"],
-    "standard": ["log_written", "roadmap_synced"],
-    "full": ["team_deployed", "log_written", "roadmap_synced"],
+    "quick": ["log_written", "roadmap_synced", "implementation_verified"],
+    "standard": ["log_written", "roadmap_synced", "implementation_verified"],
+    "full": ["team_deployed", "log_written", "roadmap_synced",
+             "implementation_verified"],
 }
 
 

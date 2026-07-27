@@ -813,7 +813,8 @@ class SyncStatusTests(unittest.TestCase):
         self.assertEqual(g.stdout.strip(), "true")
 
     def test_completed_when_all_gates_met(self):
-        for gate in ("team_deployed", "log_written", "roadmap_synced"):
+        for gate in ("team_deployed", "log_written", "roadmap_synced",
+                     "implementation_verified"):
             state_cli(self.repo.state_dir, "set-gate", gate, "true")
         proc = self._run_sync()
         self.assertEqual(proc.returncode, 0)

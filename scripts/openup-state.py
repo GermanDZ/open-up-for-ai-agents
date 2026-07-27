@@ -61,7 +61,13 @@ CURRENT_SCHEMA = 2
 
 # Default gates required for a standard completion. plan_persisted and
 # retro_due are deliberately excluded: they are track-dependent.
-DEFAULT_REQUIRED_GATES = ["team_deployed", "log_written", "roadmap_synced"]
+# `implementation_verified` (T-145) is included on every track — it is the only
+# gate here that evidences delivery rather than bookkeeping, and the default
+# must agree with sync-status.py's TRACK_REQUIRED or a lane could pass
+# check-gates while the derived roadmap still read `in-progress`.
+DEFAULT_REQUIRED_GATES = [
+    "team_deployed", "log_written", "roadmap_synced", "implementation_verified",
+]
 
 
 # --------------------------------------------------------------------------
