@@ -1,16 +1,22 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 94
-**Iteration Goal**: T-138 — T-107 split — doctor `--check` wiring + KB re-distill runbook
+**Iteration**: 97
+**Iteration Goal**: T-141 — Retrospective action items are never verified or retired
 **Status**: completed
-**Current Task**: T-138
+**Current Task**: T-141
 **Iteration Started**: 2026-06-18
 **Last Updated**: 2026-07-27
 **Updated By**: sync-status.py
 **Retrospective**: [iteration-86-retrospective.md](iteration-retrospectives/iteration-86-retrospective.md) — covers iterations 78–86 (2026-07-15 → 2026-07-24), incl. quick fixes T-125/T-126; prev [iteration-77-retrospective.md](iteration-retrospectives/iteration-77-retrospective.md) (iterations 21–77)
 
 ## Notes
+
+- **Iteration 96** (2026-07-27): T-146 (standard) — **a quick lane can no longer clobber the project-wide `**Iteration**` header**. `sync-status.py`'s `update_project_status()` wrote `state["iteration"]` unconditionally, and `/openup-quick-task` initializes state with the literal `--iteration 0` sentinel — so a sync run with a quick lane live rewrote the real counter to `0` (observed downstream: `**Iteration**: 64` → `0`). Latent in this repo only because `/openup-quick-task`'s steps set gates directly instead of invoking `sync-status.py`; the guard makes it unreachable either way. Tested as falsiness rather than `== 0`, so an absent/None key behaves identically, and the old `state.get("iteration", "")` default — the one path that could have blanked the field — is gone. **`Status` deliberately not fixed**: the field genuinely means two things (last completed iteration vs active lane), so there is no sentinel to test for; carried as roadmap entry T-149 with both candidate resolutions written down. +4 tests; full suite 777 green.
+
+- **Iteration 95** (2026-07-27): T-145 (standard) — **completion now requires delivery evidence, not bookkeeping alone**. Every gate in `sync-status.py`'s `TRACK_REQUIRED` was bookkeeping: `roadmap_synced` is set by `sync-status.py` itself, `log_written` by a log append, `team_deployed` by spawning a team — none observes the diff, so a lane carrying only a spec and a run log satisfied the whole set and was stamped `completed` on the roadmap (observed downstream, corrected by hand in `be2ee16`). New optional gate `gates.implementation_verified`, required on **every** track (quick relaxes ceremony, never evidence) and added to `openup-state.py`'s `DEFAULT_REQUIRED_GATES` so `check-gates` and the derived view can't disagree. Set from `/openup-complete-task` step 1a (which already graded every requirement against the actual diff but recorded the verdict nowhere machine-readable) and `/openup-quick-task` step 3 — deliberately at the point of verification, not alongside the bookkeeping gates. Schema-optional by design: a state file written before the gate existed still validates, and an absent key reads falsy = not verified. +6 tests; full suite 773 green.
+
+- **Iteration 97** (2026-07-27): T-141 (standard) — **`/openup-retrospective` now verifies and retires carried action items before authoring new ones**. Step 6 authored items and step 7 wrote them into `docs/project-status.md`, but no step ever read a prior retrospective's items — append-only in practice as well as design. Measured here: **15 open action items across 4 retrospective files reaching back to iteration 9, and not one row has ever been struck through**. New step 5b, placed *physically* ahead of the authoring step (a reminder inside step 6 is the failure mode being fixed): collect every not-yet-struck row from the trail → assign one of three verdicts (satisfied / obsolete / still open) → strike satisfied and obsolete through **in the retrospective that authored them**, with mandatory citable evidence (commit SHA, existing artifact path, archived task id, or command + observed output). **No evidence ⇒ the item stays open** — that rule is what keeps the pass from becoming a rubber stamp, since a false 'satisfied' removes the very trail that would catch it. Nothing is ever deleted; still-open items carry forward with their original date so age stays visible, and a new item may not duplicate one. Step 6 gains a Carried Action Items section, step 7 mirrors only still-open items. The design question the source hand-off raised — skill-local pass vs a shared carried-items helper — is carried on the step itself with its extraction trigger named, not resolved. Pack-only change; both mirrors regenerated; full suite 777 green.
 
 - **Iteration 94** (2026-07-27): T-138 — second of T-107's 3-way split: `openup-doctor.py` gains `check_task_library()`, pre-testing whether the KB source tree is vendored before running `build-task-library.py --check`, so it never misreports a routine downstream project (task-library.yaml present, KB source tree absent) as drifted — closes the false-positive shape T-105 already found once, at the doctor layer rather than the compiler. Documents the KB re-distillation runbook in reference-driver.md. 767/767 tests green, 4 new cases.
 

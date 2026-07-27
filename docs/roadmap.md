@@ -253,7 +253,7 @@ T-002 (`/openup-sync-spec`) completed 2026-06-11 once T-008's readiness DAG un-b
 ---
 
 ## T-141: Retrospective action items are never verified or retired
-**Status**: pending
+**Status**: completed (2026-07-27)
 **Priority**: high
 **Value**: Prevents `docs/project-status.md` from reporting resolved blockers as live, Critical-priority ones — a downstream project found three carried action items (two of them its highest-priority entries) that had actually been satisfied 2–11 days before being read as still-blocking, which would mislead any agent or human choosing work from that file into deprioritizing real work behind a phantom blocker. The failure is silent and compounds: every retrospective appends, none prunes, so signal-to-noise in the one file agents are told to read for context degrades monotonically past a project's second retrospective.
 **Description**: `/openup-retrospective` step 6 authors action items and step 7 writes them into `docs/project-status.md`, but no step ever verifies or retires one — they are hand-written prose in an append-only section. Add a verification step, run *before* new items are authored: for each carried action item, check whether what it asks for now exists, and strike it through **with evidence** (commit SHA, date, artifact path) when satisfied — not a silent deletion, since the evidence trail is what makes a false-negative provable later.
@@ -296,7 +296,7 @@ T-002 (`/openup-sync-spec`) completed 2026-06-11 once T-008's readiness DAG un-b
 ---
 
 ## T-145: `sync-status.py` derives `completed` from bookkeeping gates alone, no delivery evidence
-**Status**: pending
+**Status**: completed (2026-07-27)
 **Priority**: high
 **Value**: Closes the gap behind a real, observed incident downstream: a lane with zero implementation (spec + run log only) got stamped `completed` in `docs/roadmap.md` because its only required gates (`log_written`, `roadmap_synced` on `quick`/`standard`) are both bookkeeping — satisfiable mid-lane by process steps that run regardless of whether any work happened. Nothing in the current derivation evidences delivery actually occurred, so the roadmap can confidently report a task done that isn't.
 **Description**: Add a gate that evidences delivery rather than process bookkeeping — e.g. `implementation_verified` — and require it on every track's `TRACK_REQUIRED` set in `sync-status.py`. Set it from `/openup-complete-task`'s existing step 1a ("Verify Implementation Against Spec — BLOCKING", which already does per-requirement verification but records the result nowhere) and from `/openup-quick-task`'s verification step once the change is confirmed working. Add the key to `openup-state.schema.json` under `properties` but not `required`, so a state file written before the gate existed still validates (a missing key reads falsy — not verified — rather than raising).
@@ -312,7 +312,7 @@ T-002 (`/openup-sync-spec`) completed 2026-06-11 once T-008's readiness DAG un-b
 ---
 
 ## T-146: Quick-task's hardcoded `--iteration 0` can clobber `project-status.md`'s real header on sync
-**Status**: pending
+**Status**: completed (2026-07-27)
 **Priority**: medium
 **Value**: Prevents a quick task from silently rewriting the project-wide `**Iteration**` (and, less fixably, `**Status**`) header to values describing the quick lane instead of the actual last completed iteration — observed downstream rewriting `**Iteration**: 64` to `0` and a completed iteration's status to `in-progress`. This repo's own `/openup-quick-task` skill steps avoid the full `sync-status.py` run today (they set gates directly), so the bug is latent rather than triggered here — but latent is not the same as fixed, and any future skill revision or manual `sync-status.py` run with an active quick-task state would hit it exactly as downstream did.
 **Description**: `sync-status.py`'s `update_project_status()` writes the active lane's `state["iteration"]` (initialized to the literal `0` by `/openup-quick-task` step 2) directly into the shared header, with no guard for "this lane doesn't have a real iteration number." Skip the `Iteration` field when `state["iteration"]` is falsy (`0`/absent) — `0` is already the quick-track sentinel for "no iteration," so this is a small, backward-compatible guard. `Status` needs a real design decision (the header field currently means both "status of the last completed iteration" and "status of the active lane," which is the deeper source of the clobber) — recorded as an open question, not resolved by the `Iteration` fix alone.
@@ -350,6 +350,21 @@ T-002 (`/openup-sync-spec`) completed 2026-06-11 once T-008's readiness DAG un-b
 **Dependencies**: —
 
 **See**: This session's own repeated workaround (T-132, T-134, T-135, T-136, T-138); corroborated live in a sibling project's `/openup-next T-057` session (`gate-edits.py` blocked mid-flow)
+
+---
+
+## T-149: `project-status.md`'s `Status` header conflates last-completed-iteration with active-lane status
+**Status**: pending
+**Priority**: medium
+**Value**: Carried, unresolved half of T-146. The `Iteration` clobber is now guarded, but `**Status**` still has the same root cause and is still written unconditionally by every sync — so a quick lane in flight can rewrite a completed iteration's status to `in-progress` (observed downstream alongside the `Iteration` clobber). Left unfixed deliberately: unlike `Iteration`, there is no sentinel to test for, because the field is genuinely being asked to mean two different things at once.
+**Description**: `sync-status.py`'s `update_project_status()` writes `**Status**` from `derive_status(state)` — the *active lane's* derived status — into a header field that readers (and `/openup-retrospective` step 1) treat as "status of the last completed iteration". Resolve it with a real design decision, not another one-line guard: either (a) split the header into two fields (`Iteration Status` for the last completed iteration, `Lane Status` for the active lane), or (b) leave `Status` untouched on the `quick` track, matching T-146's `Iteration` treatment. Whichever wins, `docs-eng-process/templates/project-status.md` and `/openup-init`'s generated header have to move with it.
+- Pick (a) split-the-field or (b) skip-on-quick, with the rationale recorded
+- `sync-status.py`, the project-status template, and `/openup-init` all move together
+- Regression: a live quick lane cannot change the recorded status of the last completed iteration
+
+**Dependencies**: —
+
+**See**: T-146 (`docs/changes/archive/T-146/design.md` — carried open question); hand-off finding FD-002
 
 ---
 

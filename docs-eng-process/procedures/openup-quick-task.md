@@ -63,7 +63,7 @@ BRANCH_NAME="quick/$(date +%Y%m%d-%H%M%S)-$(echo $task | tr ' ' '-' | head -c 20
 git checkout -b $BRANCH_NAME
 ```
 
-Then initialize iteration state on the **quick** track — this is the same `quick` track `/openup-start-iteration` selects for tiny scopes (see [tracks.md](../../../docs-eng-process/tracks.md)). The quick track only requires the `log_written` and `roadmap_synced` gates — there is no plan or team gate:
+Then initialize iteration state on the **quick** track — this is the same `quick` track `/openup-start-iteration` selects for tiny scopes (see [tracks.md](../../../docs-eng-process/tracks.md)). The quick track requires the `log_written`, `roadmap_synced` and `implementation_verified` gates — there is no plan or team gate:
 
 ```bash
 python3 scripts/openup-state.py init \
@@ -84,6 +84,20 @@ Implement the change:
 - Read task description
 - Make necessary changes
 - Verify the fix works
+
+**Record the verification as delivery evidence (T-145).** Once — and only once —
+you have actually confirmed the change does what the task asked (ran it, ran the
+test, read the rendered output; not "it should work"), set the gate:
+
+```bash
+python3 scripts/openup-state.py set-gate implementation_verified true 2>/dev/null || true
+```
+
+This is the quick track's counterpart to `/openup-complete-task` step 1a. Every
+other gate in the required set is bookkeeping — satisfiable by process steps that
+run regardless of whether any work happened — so this is the one that keeps a
+lane which produced no working change from being derived as `completed`. If the
+change is **not** verified, leave it unset and finish the work first.
 
 ### 4. Quick Commit (optional)
 
@@ -128,8 +142,12 @@ After the log is written, record the gates and verify the quick-track required s
 ```bash
 python3 scripts/openup-state.py set-gate log_written true 2>/dev/null || true
 python3 scripts/openup-state.py set-gate roadmap_synced true 2>/dev/null || true
-python3 scripts/openup-state.py check-gates --require log_written,roadmap_synced 2>/dev/null || true
+python3 scripts/openup-state.py check-gates --require log_written,roadmap_synced,implementation_verified 2>/dev/null || true
 ```
+
+`implementation_verified` was set back in step 3, where the change was actually
+verified — it is deliberately **not** set here alongside the bookkeeping gates,
+because a gate set in the same breath as the logging step evidences nothing.
 
 ### 7. Archive State (if state was created)
 
@@ -181,7 +199,8 @@ Returns:
 ## Success Criteria
 
 - [ ] Task completed
-- [ ] Changes verified
+- [ ] Changes verified — and the verification recorded as
+      `gates.implementation_verified` (step 3)
 - [ ] Branch created (if not skipped)
 - [ ] Committed (if not skipped)
 - [ ] Logged (if not skipped)

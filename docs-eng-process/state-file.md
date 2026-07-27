@@ -19,7 +19,7 @@ docs in `docs/`.
 |-------|------|-------|
 | `schema` | int | Always `1`. |
 | `task_id` | string | Roadmap task id, e.g. `"T-005"`. |
-| `iteration` | int | Iteration number. |
+| `iteration` | int | Iteration number. **`0` is the quick track's "no real iteration" sentinel** — `/openup-quick-task` initializes state with `--iteration 0`. A consumer must never write a falsy `iteration` into a project-wide view: `sync-status.py` skips the `**Iteration**` header entirely in that case rather than zeroing it (T-146). |
 | `phase` | string | `inception` \| `elaboration` \| `construction` \| `transition`. |
 | `track` | string | `quick` \| `standard` \| `full`. |
 | `branch` | string | Git branch for the iteration. |
@@ -32,10 +32,13 @@ docs in `docs/`.
 | `gates.log_written` | bool | Run log written. |
 | `gates.roadmap_synced` | bool | Roadmap updated. |
 | `gates.retro_due` | bool | A retrospective is due. |
+| `gates.implementation_verified` | bool | **Delivery evidence** (T-145): the implementation was graded against the spec, requirement by requirement, and every requirement passed. Optional key — absent reads falsy. |
 | `iterations_since_retro` | int | Iterations completed since the last retro. |
 
-All fields are required; `additionalProperties` is forbidden at the top level
-and inside `gates`. The schema is JSON Schema draft 2020-12; the helper ships a
+All fields are required except `gates.implementation_verified`, which is
+deliberately optional so a state file written before the gate existed still
+validates (an absent key reads falsy — "not verified" — rather than raising).
+`additionalProperties` is forbidden at the top level and inside `gates`. The schema is JSON Schema draft 2020-12; the helper ships a
 small focused validator so no third-party libraries are needed.
 
 ## Helper CLI
@@ -49,7 +52,7 @@ point at an alternate `.openup` directory (tests do this).
 | `get [dotted.key]` | Print whole state (indent 2) or a dotted-path value. Exit 3 if no state, 5 if key missing. |
 | `set <dotted.key> <value>` | Set a value with typed coercion (`true`/`false`→bool, ints→int, `null`→None, else string). Re-validates. |
 | `set-gate <name> <value>` | Convenience for `gates.<name>`; same coercion (pass a path string for `plan_persisted`). |
-| `check-gates [--require a,b,c]` | Exit 0 if required gates truthy; else exit 6 and print each unmet gate to stderr. Default required: `team_deployed,log_written,roadmap_synced`. |
+| `check-gates [--require a,b,c]` | Exit 0 if required gates truthy; else exit 6 and print each unmet gate to stderr. Default required: `team_deployed,log_written,roadmap_synced,implementation_verified`. |
 | `archive <dest_path>` | Validate, copy state to `dest_path` (mkdir parents), then remove `state.json`. Exit 3 if no state. |
 | `retro {get\|increment\|reset\|check} [--threshold N]` | Manage the durable retro-cadence counter (`.openup/retro.json`). See [retro cadence](#retro-cadence-t-011). |
 | `validate` | Validate `state.json`; exit 0 ok, exit 7 invalid (prints reasons). |
@@ -68,6 +71,7 @@ Which skill flips which gate:
 | `log_written` | `openup-log-run` | After the run log is written. |
 | `roadmap_synced` | `openup-complete-task` | After the roadmap is updated. |
 | `retro_due` | `openup-start-iteration` (`retro check`) | Set to `count >= 5` at iteration start; see [retro cadence](#retro-cadence-t-011). |
+| `implementation_verified` | `openup-complete-task` (step 1a) / `openup-quick-task` (step 3) | Once every spec requirement graded ✅ against the actual diff (or, on the quick track, once the change was confirmed working). Any ❌ leaves it unset. |
 
 `openup-complete-task` runs `check-gates` before marking complete (blocking on
 any unmet gate) and, as its final step, `archive`s the state to
@@ -75,10 +79,21 @@ any unmet gate) and, as its final step, `archive`s the state to
 
 ### Track-dependent gates
 
-`check-gates` defaults to `team_deployed,log_written,roadmap_synced`.
+`check-gates` defaults to
+`team_deployed,log_written,roadmap_synced,implementation_verified`.
 `plan_persisted` and `retro_due` are **not** in the default set because they are
-track-dependent. The **quick** track requires only `log_written,roadmap_synced`
-and calls `check-gates --require log_written,roadmap_synced`.
+track-dependent. The **quick** track requires
+`log_written,roadmap_synced,implementation_verified` and calls
+`check-gates --require log_written,roadmap_synced,implementation_verified`.
+
+`implementation_verified` is required on **every** track, and is the only gate
+in the set that is not bookkeeping. `roadmap_synced` is set by `sync-status.py`
+itself, `log_written` by a log append, `team_deployed` by spawning a team — all
+three are satisfiable by process steps that run whether or not any work
+happened. Before this gate existed, a lane that produced only a spec and a run
+log could satisfy the whole required set and be derived as `completed` on the
+roadmap (T-145). The quick track is relaxed on ceremony, never on delivery
+evidence.
 
 See [tracks.md](tracks.md) for the full quick / standard / full ceremony matrix and how
 `track` wires to the gates, team deployment, and the complete-task rubric.

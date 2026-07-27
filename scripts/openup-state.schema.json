@@ -98,6 +98,10 @@
         },
         "retro_due": {
           "type": "boolean"
+        },
+        "implementation_verified": {
+          "type": "boolean",
+          "description": "Delivery evidence (T-145): the task's implementation was graded against its spec, requirement by requirement, and every requirement passed. Set by /openup-complete-task step 1a and /openup-quick-task's verification step — never by a bookkeeping step. Deliberately NOT in `required`: a state file written before this gate existed must still validate, and an absent key reads falsy (= not verified)."
         }
       }
     },

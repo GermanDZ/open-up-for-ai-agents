@@ -6,10 +6,15 @@ views agree with machine state:
 
   1. Flips the current task's ``Status`` cell in the roadmap task table to
      match state (derived: ``completed`` when the track's required gates are
-     all met, otherwise ``in-progress``).
+     all met, otherwise ``in-progress``). The required set always includes
+     ``implementation_verified`` — the one gate that evidences delivery rather
+     than process bookkeeping (T-145).
   2. Regenerates the header fields of ``docs/project-status.md`` (Iteration,
      Current Task, Status, Iteration Goal, Last Updated, Phase) from state +
-     roadmap so the two documents can never disagree.
+     roadmap so the two documents can never disagree. ``Iteration`` is skipped
+     when the active lane has no real iteration number (the quick track's ``0``
+     sentinel), so a lane-local value never overwrites the project-wide
+     counter (T-146).
   3. Regenerates the ``## Notes`` section of ``docs/project-status.md`` from
      the sharded note files in ``docs/status-notes/`` (T-024): one file per
      completion, newest-first by filename. Lanes write their own note file
@@ -57,10 +62,20 @@ STATE_CLI = SCRIPT_DIR / "openup-state.py"
 # requires a team. `standard` is solo unless a team is explicitly opted in, so
 # requiring team_deployed here would leave every solo standard task permanently
 # "in-progress" (T-041 F11).
+#
+# `implementation_verified` is required on EVERY track (T-145). The other gates
+# are all bookkeeping — `roadmap_synced` is set by this very script,
+# `log_written` by a log append, `team_deployed` by spawning a team — so before
+# it existed a lane that produced only a spec and a run log could satisfy the
+# whole required set and be stamped `completed`. This gate is the one that
+# evidences delivery: it is set only where a completion skill has graded the
+# implementation against the spec requirement by requirement. The quick track is
+# relaxed on ceremony, never on delivery evidence.
 TRACK_REQUIRED = {
-    "quick": ["log_written", "roadmap_synced"],
-    "standard": ["log_written", "roadmap_synced"],
-    "full": ["team_deployed", "log_written", "roadmap_synced"],
+    "quick": ["log_written", "roadmap_synced", "implementation_verified"],
+    "standard": ["log_written", "roadmap_synced", "implementation_verified"],
+    "full": ["team_deployed", "log_written", "roadmap_synced",
+             "implementation_verified"],
 }
 
 
@@ -305,7 +320,21 @@ def set_field(text: str, field: str, value: str) -> str:
 def update_project_status(text: str, state: dict, status: str,
                           goal: str | None, today: str) -> str:
     text = set_field(text, "Phase", state.get("phase", ""))
-    text = set_field(text, "Iteration", str(state.get("iteration", "")))
+    # T-146: skip the shared `Iteration` header when the active lane has no real
+    # iteration number. `/openup-quick-task` initializes state with the literal
+    # `--iteration 0` sentinel, and writing that here rewrote the project-wide
+    # counter to `0` (observed downstream: `**Iteration**: 64` -> `0`). Tested as
+    # falsiness, not `== 0`, so an absent/None key behaves identically — no valid
+    # iteration number is falsy. Skipping means *not writing*: the existing value
+    # survives byte-identical (blanking would be a worse version of the same bug).
+    #
+    # `Status` below has the SAME root cause and is deliberately left alone: the
+    # field currently means both "status of the last completed iteration" and
+    # "status of the active lane", so guarding it needs the header split into two
+    # fields (or a decision to leave it untouched on `quick`) rather than another
+    # one-line condition. Carried as roadmap entry T-149, not resolved here.
+    if state.get("iteration"):
+        text = set_field(text, "Iteration", str(state["iteration"]))
     text = set_field(text, "Current Task", state.get("task_id", ""))
     text = set_field(text, "Status", status)
     if goal:

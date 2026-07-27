@@ -31,7 +31,7 @@ Finalize a completed task: commit remaining changes, update docs, create traceab
 
 After this skill completes, ALL of these must be true:
 
-- [ ] **BLOCKING**: Every spec requirement is graded ✅ against the actual diff (step 1a) — no requirement is unmet, and any ❌ blocks "done"
+- [ ] **BLOCKING**: Every spec requirement is graded ✅ against the actual diff (step 1a) — no requirement is unmet, any ❌ blocks "done", and the verdict is recorded as `gates.implementation_verified` (the delivery-evidence gate every track requires)
 - [ ] **BLOCKING (standard/full)**: The spec's Success Measure instrumentation exists in the diff or demonstrably pre-exists (step 1b) — or the section is an argued `n/a`
 - [ ] **BLOCKING (flagged features)**: A flag-removal task row exists in the roadmap Maintenance table (step 4a) — every flag enqueues its own removal
 - [ ] All changes are committed (no uncommitted changes remain)
@@ -80,6 +80,21 @@ the spec's own quality.
    re-run; per fix-spec-first) so the spec and the diff agree, then re-grade.
 5. Record the grade in `docs/changes/{task_id}/design.md` (it is part of the
    traceability trail, not conversation-only state).
+6. **Only once every requirement reads ✅**, record the verdict in machine state
+   so the derived views can consume it (T-145):
+
+   ```bash
+   python3 scripts/openup-state.py set-gate implementation_verified true
+   ```
+
+   This is the one gate in the required set that evidences *delivery* rather
+   than process bookkeeping — `log_written`, `roadmap_synced` and
+   `team_deployed` are all satisfiable by process steps that run whether or not
+   any work happened, so before this gate existed a lane carrying only a spec
+   and a run log could be stamped `completed` on the roadmap. **Any ❌ means the
+   gate stays unset** — do not set it "provisionally" and fix the requirement
+   afterwards; an unset gate is what keeps `sync-status.py` (step 4) from
+   deriving `completed`.
 
 > A requirement that reads ✅ only because "that was the plan" is not verified.
 > Point at the line of the diff (or the green test) that makes it true.
@@ -303,12 +318,15 @@ mechanical.
 
 The gate set depends on the track — **only `full` requires a team** (teams are opt-in; `quick` and `standard` work solo by default, so they do not gate on `team_deployed`):
 
+`implementation_verified` (step 1a) is required on **every** track — the team
+gate is the only track-dependent one:
+
 ```bash
 # full track (a team was deployed): require the full set
-python3 scripts/openup-state.py check-gates --require team_deployed,log_written,roadmap_synced
+python3 scripts/openup-state.py check-gates --require team_deployed,log_written,roadmap_synced,implementation_verified
 
 # quick / standard track (solo, no team): omit the team gate
-python3 scripts/openup-state.py check-gates --require log_written,roadmap_synced
+python3 scripts/openup-state.py check-gates --require log_written,roadmap_synced,implementation_verified
 ```
 
 (If `standard` work *did* explicitly deploy a team, use the `full` invocation to gate on it.)

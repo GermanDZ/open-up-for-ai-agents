@@ -1,0 +1,23 @@
+{
+  "schema": 2,
+  "task_id": "T-145",
+  "iteration": 95,
+  "iteration_id": null,
+  "cycle": 1,
+  "phase": "construction",
+  "track": "standard",
+  "branch": "fix/T-145-T-146-T-141-delivery-evidence",
+  "worktree": "/Users/germandz/personal-code/ai-dev-framework/open-up-for-ai-agents",
+  "base_sha": "5261aeeb55d90e64c71298fc07f906a866b2c5ea",
+  "session_id": "fix/T-145-T-146-T-141-delivery-evidence",
+  "started_at": "2026-07-27T07:45:59Z",
+  "gates": {
+    "team_deployed": false,
+    "plan_persisted": "docs/changes/T-145/plan.md",
+    "log_written": true,
+    "roadmap_synced": true,
+    "retro_due": false,
+    "implementation_verified": true
+  },
+  "iterations_since_retro": 1
+}
