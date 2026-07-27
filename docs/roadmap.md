@@ -238,6 +238,63 @@ T-002 (`/openup-sync-spec`) completed 2026-06-11 once T-008's readiness DAG un-b
 
 ---
 
+## T-140: `auto-log-commit.py` fires post-commit, forcing a follow-up sweep commit on every lane
+**Status**: pending
+**Priority**: medium
+**Value**: Removes a permanently noisy `git log` where a large share of commits describe process rather than product change (a downstream project measured 59%→74% of commits as bookkeeping across two retrospective windows, with `chore` volume doubling while product commits stayed flat) — degrading `git log` as a review/archaeology tool and costing every lane an extra commit whose entire content is "the log record describing the previous commit." First-hand evidence from this session too: the "fold heartbeat log delta" / "sweep run-log shard" commits made throughout T-132/T-134/T-135/T-136/T-137/T-138.
+**Description**: `auto-log-commit.py` is a `PostToolUse` hook — it can only append the run-log shard *after* a commit completes, so the shard is by construction never in the commit that triggered it, and `openup-complete-task/SKILL.md` step 2 already documents "fold in any delta... it can only fire post-commit" as a standing workaround rather than a fix. Two proposed directions (from a downstream hand-off, `docs/explorations/2026-07-27-...` if promoted — see below): (1) stage-then-commit — write the shard pre-commit so it lands in the triggering commit; (2) batch at session end — accumulate shards and write once during `openup-session.py end` (which already writes `session_end`), reducing per-commit I/O and making the append atomic per session.
+- Root-cause + evidence documented; pick stage-then-commit vs batch-at-session-end
+- Update `openup-complete-task/SKILL.md` step 2 to drop the now-unneeded workaround instruction once fixed
+
+**Dependencies**: —
+
+**See**: Hand-off finding FD-004, corroborated by this session's own repeated sweep-commit pattern (T-132 through T-138)
+
+---
+
+## T-141: Retrospective action items are never verified or retired
+**Status**: pending
+**Priority**: high
+**Value**: Prevents `docs/project-status.md` from reporting resolved blockers as live, Critical-priority ones — a downstream project found three carried action items (two of them its highest-priority entries) that had actually been satisfied 2–11 days before being read as still-blocking, which would mislead any agent or human choosing work from that file into deprioritizing real work behind a phantom blocker. The failure is silent and compounds: every retrospective appends, none prunes, so signal-to-noise in the one file agents are told to read for context degrades monotonically past a project's second retrospective.
+**Description**: `/openup-retrospective` step 6 authors action items and step 7 writes them into `docs/project-status.md`, but no step ever verifies or retires one — they are hand-written prose in an append-only section. Add a verification step, run *before* new items are authored: for each carried action item, check whether what it asks for now exists, and strike it through **with evidence** (commit SHA, date, artifact path) when satisfied — not a silent deletion, since the evidence trail is what makes a false-negative provable later.
+- New verification step in `/openup-retrospective`, ahead of authoring new items
+- Struck-through format with evidence citation (see hand-off's worked example)
+- Open design question (surfaced by the source hand-off, not resolved here): does verification live in the retrospective skill directly, or a shared "carried items" helper another skill could reuse?
+
+**Dependencies**: —
+
+**See**: Hand-off finding FD-005 (downstream project, framework v2.1.0, 2026-07-27) — three dated examples of stale-but-reported-live blockers
+
+---
+
+## T-142: Quick-track completion never increments the retro-cadence counter
+**Status**: pending
+**Priority**: high
+**Value**: The retro-cadence counter is an **enforcement gate**, not a statistic — `openup-start-iteration/SKILL.md` step 3b reads it and refuses a `full`-track start once it reaches 5. A counter that silently undercounts disables that gate without any error. First-hand evidence from this session: T-133 and T-137 (both quick-track) completed without ever calling `retro increment` — only `/openup-complete-task` (step 7a) calls it; `/openup-quick-task` has zero reference to `retro` anywhere in the skill.
+**Description**: Route quick-task completion through the retro-increment call (or a shared teardown step with `/openup-complete-task`) so every completed lane — regardless of track — advances the cadence. Verify: `grep -c retro .claude/skills/openup-quick-task/SKILL.md` should be non-zero after the fix.
+- `/openup-quick-task` calls `openup-state.py retro increment` on completion
+- Regression: a quick-track lane completing advances the durable counter (`.openup/retro.json` / equivalent)
+
+**Dependencies**: —
+
+**See**: Hand-off finding FD-006 (Mechanism A); self-confirmed this session (T-133, T-137)
+
+---
+
+## T-143: Retro-cadence counter isn't safely durable across worktrees
+**Status**: pending
+**Priority**: high
+**Value**: Independent of T-142's gap, the counter's storage location isn't safe under this framework's own worktree-per-lane model. A downstream project (which tracks `.openup/retro.json` in git) found the counter is **overwritten, not summed** when two lanes branching from the same count each merge independently — a structural lost-update bug that gets worse with more parallelism, degrading the retro gate fastest exactly where process discipline matters most. This repo's own variant is different but related: `.openup/` is entirely gitignored here (confirmed via `.gitignore`), so the counter doesn't persist across worktrees *at all* — every fresh worktree starts back at a fresh/low count (observed directly this session: a T-135 worktree read `retro get` as `0` immediately after T-132 had already advanced it to `1`).
+**Description**: Move the counter out of the tracked/per-worktree working tree entirely — e.g. into `<git-common-dir>/openup/` alongside the claims directory, which this repo already treats as shared-across-worktrees and not merge-managed (see `openup-claims.py`'s claims-dir resolution, reused this session for `T-134`/`T-135`/`T-136`/`T-138`'s claim operations). If a project prefers to keep it tracked, an additive merge strategy (union-merge driver or an append-only event list instead of a scalar) would fix the sibling project's specific lost-update mechanism, but doesn't fix this repo's gitignored-`.openup/` variant on its own.
+- Counter storage moves to a location genuinely shared across worktrees (not gitignored per-worktree, not git-merge-managed)
+- Regression: two sequential worktree lanes both see the same, correctly-advancing count
+
+**Dependencies**: T-142 (fixing the gate is moot if the underlying counter can't hold a value across worktrees)
+
+**See**: Hand-off finding FD-006 (Mechanism B); this repo's own gitignored-`.openup/` variant self-confirmed this session (T-132→T-135 count reset)
+
+---
+
 ## T-134: Code-artifact task-def probe (Option D) — can the driver write AND run real code?
 **Status**: completed (2026-07-26)
 **Priority**: medium
