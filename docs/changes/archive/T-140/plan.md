@@ -1,7 +1,7 @@
 ---
 id: T-140
 title: "auto-log-commit.py fires post-commit, forcing a follow-up sweep commit on every lane"
-status: ready
+status: done
 priority: medium
 estimate: 1 session
 plan: ""

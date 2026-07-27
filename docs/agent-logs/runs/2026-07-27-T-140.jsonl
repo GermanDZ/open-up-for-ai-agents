@@ -7,3 +7,5 @@
 {"run_id": "82dee8000e51471ea501457e56484e26", "event": "commit", "task_id": "T-140", "branch": "fix/T-140-runlog-pending-queue", "sha": "71ca0a6aaaa4b57844c8d328563e48bd80941036", "model": null, "session_id": "fix/T-140-runlog-pending-queue", "ts": "2026-07-27T09:39:27Z"}
 {"event": "iteration_complete", "task_id": "T-140", "branch": "fix/T-140-runlog-pending-queue", "phase": "construction", "ts": "2026-07-27T09:40:16Z"}
 {"run_id": "a09ac50ee2254920ab9330cad1b1d0e2", "event": "commit", "task_id": "T-140", "branch": "fix/T-140-runlog-pending-queue", "sha": "71ca0a6aaaa4b57844c8d328563e48bd80941036", "model": null, "session_id": "fix/T-140-runlog-pending-queue", "ts": "2026-07-27T09:40:16Z"}
+{"run_id": "05dbf28123ef46efaa34bc15e7722e0b", "event": "commit", "task_id": "T-140", "branch": "fix/T-140-runlog-pending-queue", "sha": "af0427e1cece686aebcbd6e6af3b6165fd82c653", "model": null, "session_id": "fix/T-140-runlog-pending-queue", "ts": "2026-07-27T09:41:07Z"}
+{"event": "session_end", "task_id": "T-140", "ts": "2026-07-27T09:41:16Z"}
