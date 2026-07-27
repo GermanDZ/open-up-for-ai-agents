@@ -62,8 +62,9 @@ authors `**Action Items**: specific action, owner, due date, priority` and step 
 writes them into `docs/project-status.md` — and no step between 1 and 8 reads a
 prior retrospective's items at all. Verified against the real trail: this repo's
 `iteration-86-retrospective.md` has a 4-row Action Items table and no reference
-to `iteration-77-retrospective.md`'s 3 items, two of which are still unstruck
-today. The section is append-only in practice as well as in design, so
+to `iteration-77-retrospective.md`'s 5 items — and across all five retrospective
+files, **not one row has ever been struck through** (15 open items reaching back
+to iteration 9). The section is append-only in practice as well as in design, so
 signal-to-noise degrades monotonically past a project's second retrospective —
 exactly as reported downstream.
 
