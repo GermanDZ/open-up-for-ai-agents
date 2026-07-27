@@ -12,6 +12,7 @@ touches:
   - scripts/openup-runlog.py
   - scripts/tests/test_openup_runlog.py
   - scripts/tests/test_run_log_hooks.py
+  - scripts/tests/test_t006_hooks.py
   - docs-eng-process/.claude-templates/scripts/hooks/auto-log-commit.py
   - docs-eng-process/.claude-templates/scripts/hooks/stage-run-log.py
   - docs-eng-process/.claude-templates/settings.json.example
@@ -209,6 +210,11 @@ explicit flush. Both hooks stay fail-open.
   stating the tree stays clean automatically.
 - `docs-eng-process/procedures/openup-complete-task.md` — step 2 drops the fold-in
   instruction; re-render the mirror.
+- `scripts/tests/test_t006_hooks.py` — `AutoLogCommitTests` asserted the old
+  shard-write contract; updated to the queue-then-drain contract (adds a
+  `drain()` helper and a `queue_lines()` assertion that the post-commit hook no
+  longer touches the tracked shard). Found by the full-suite run, not predicted
+  at authoring time.
 - `docs/roadmap.md` — status row for T-140.
 
 **Do not touch:**

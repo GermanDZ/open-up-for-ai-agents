@@ -29,6 +29,7 @@ SCRIPTS_DIR = REPO_ROOT / "scripts"
 STATE_CLI = SCRIPTS_DIR / "openup-state.py"
 SCHEMA = SCRIPTS_DIR / "openup-state.schema.json"
 SYNC_STATUS = SCRIPTS_DIR / "sync-status.py"
+RUNLOG_CLI = SCRIPTS_DIR / "openup-runlog.py"
 
 
 def git(cwd, *args):
@@ -52,6 +53,28 @@ def run_hook(hook_name, payload, cwd):
         cwd=cwd,
     )
     return proc
+
+
+def queue_lines(repo_dir):
+    """Records sitting in the untracked run-log queue (T-140). The post-commit
+    hook writes HERE, never to a tracked shard — that is the whole fix."""
+    q = Path(repo_dir) / ".openup" / "run-log-pending.jsonl"
+    if not q.exists():
+        return []
+    return [l for l in q.read_text().splitlines() if l.strip()]
+
+
+def drain(repo_dir, worktree=None):
+    """Run the pre-commit drain: queue → lane shard, staged (T-140).
+
+    In production `stage-run-log.py` does this just before the next commit;
+    tests call it directly so shard assertions stay meaningful.
+    """
+    return subprocess.run(
+        [sys.executable, str(Path(repo_dir) / "scripts" / "openup-runlog.py"),
+         "--cwd", str(repo_dir), "flush",
+         "--worktree", str(worktree or repo_dir)],
+        capture_output=True, text=True)
 
 
 def shard_lines(repo_dir, task_id=None):
@@ -85,6 +108,7 @@ class TempRepo:
         shutil.copy(STATE_CLI, self.dir / "scripts" / "openup-state.py")
         shutil.copy(SCHEMA, self.dir / "scripts" / "openup-state.schema.json")
         shutil.copy(SYNC_STATUS, self.dir / "scripts" / "sync-status.py")
+        shutil.copy(RUNLOG_CLI, self.dir / "scripts" / "openup-runlog.py")
         git(self.dir, "init", "-q")
         git(self.dir, "config", "user.email", "t@example.com")
         git(self.dir, "config", "user.name", "Tester")
@@ -298,9 +322,14 @@ class AutoLogCommitTests(unittest.TestCase):
         proc = run_hook("auto-log-commit.py", self._commit_payload(),
                         self.repo.dir)
         self.assertEqual(proc.returncode, 0)
-        # T-046: record lands in the lane shard, NOT the shared agent-runs.jsonl.
+        # T-046: record belongs to the lane shard, NOT the shared agent-runs.jsonl.
         self.assertFalse(
             (self.repo.dir / "docs" / "agent-logs" / "agent-runs.jsonl").exists())
+        # T-140: the post-commit hook QUEUES; it must not touch the tracked
+        # shard (that write is what dirtied the tree and forced a sweep commit).
+        self.assertEqual(shard_lines(self.repo.dir, "T-006"), [])
+        self.assertEqual(len(queue_lines(self.repo.dir)), 1)
+        drain(self.repo.dir)
         lines = shard_lines(self.repo.dir, "T-006")
         self.assertEqual(len(lines), 1)
         rec = json.loads(lines[0])
@@ -323,6 +352,7 @@ class AutoLogCommitTests(unittest.TestCase):
             (wt / "scripts").mkdir(parents=True, exist_ok=True)
             shutil.copy(STATE_CLI, wt / "scripts" / "openup-state.py")
             shutil.copy(SCHEMA, wt / "scripts" / "openup-state.schema.json")
+            shutil.copy(RUNLOG_CLI, wt / "scripts" / "openup-runlog.py")
             state_cli(wt / ".openup", "init", "--task-id", "T-077",
                       "--iteration", "1", "--phase", "construction",
                       "--track", "standard", "--branch", "feature/alc",
@@ -338,6 +368,7 @@ class AutoLogCommitTests(unittest.TestCase):
             }
             proc = run_hook("auto-log-commit.py", payload, repo.dir)
             self.assertEqual(proc.returncode, 0, proc.stderr)
+            drain(repo.dir)  # T-140: queue → shard
             rec = json.loads(shard_lines(repo.dir, "T-077")[-1])
             self.assertEqual(rec.get("task_id"), "T-077")  # not null
         finally:
@@ -357,6 +388,7 @@ class AutoLogCommitTests(unittest.TestCase):
             (wt / "scripts").mkdir(parents=True, exist_ok=True)
             shutil.copy(STATE_CLI, wt / "scripts" / "openup-state.py")
             shutil.copy(SCHEMA, wt / "scripts" / "openup-state.schema.json")
+            shutil.copy(RUNLOG_CLI, wt / "scripts" / "openup-runlog.py")
             state_cli(wt / ".openup", "init", "--task-id", "T-088",
                       "--iteration", "1", "--phase", "construction",
                       "--track", "standard", "--branch", "feature/T-088",
@@ -381,6 +413,9 @@ class AutoLogCommitTests(unittest.TestCase):
             }
             proc = run_hook("auto-log-commit.py", payload, repo.dir)
             self.assertEqual(proc.returncode, 0, proc.stderr)
+            # T-140: the queue lives in the MAIN checkout (it must survive the
+            # worktree teardown), but the drain targets the WORKTREE's shard.
+            drain(repo.dir, worktree=wt)
 
             # Record lands in the WORKTREE shard, carrying the worktree commit.
             wt_lines = shard_lines(wt, "T-088")
@@ -403,16 +438,20 @@ class AutoLogCommitTests(unittest.TestCase):
         self._make_commit()
         run_hook("auto-log-commit.py", self._commit_payload(), self.repo.dir)
         run_hook("auto-log-commit.py", self._commit_payload(), self.repo.dir)
+        self.assertEqual(len(queue_lines(self.repo.dir)), 1)  # not double-queued
+        drain(self.repo.dir)
         self.assertEqual(len(shard_lines(self.repo.dir, "T-006")), 1)  # not double
 
     def test_new_commit_appends_again(self):
         self._make_commit()
         run_hook("auto-log-commit.py", self._commit_payload(), self.repo.dir)
+        drain(self.repo.dir)
         # second distinct commit
         (self.repo.dir / "g.txt").write_text("y\n")
         git(self.repo.dir, "add", "-A")
         git(self.repo.dir, "commit", "-q", "-m", "feat: more [T-006]")
         run_hook("auto-log-commit.py", self._commit_payload(), self.repo.dir)
+        drain(self.repo.dir)
         # Same task + same UTC day → same shard, two records.
         self.assertEqual(len(shard_lines(self.repo.dir, "T-006")), 2)
 
@@ -487,6 +526,7 @@ class AutoLogCommitTests(unittest.TestCase):
         # must not over-skip real work.
         self._make_commit()
         run_hook("auto-log-commit.py", self._commit_payload(), self.repo.dir)
+        drain(self.repo.dir)
         n_before = len(shard_lines(self.repo.dir, "T-006"))
         (self.repo.dir / "h.txt").write_text("z\n")
         note = self.repo.dir / "docs" / "agent-logs" / "note.md"
@@ -494,6 +534,7 @@ class AutoLogCommitTests(unittest.TestCase):
         git(self.repo.dir, "add", "-A")
         git(self.repo.dir, "commit", "-q", "-m", "feat: mix code and log [T-006]")
         run_hook("auto-log-commit.py", self._commit_payload(), self.repo.dir)
+        drain(self.repo.dir)
         n_after = len(shard_lines(self.repo.dir, "T-006"))
         self.assertEqual(n_after, n_before + 1)
 
