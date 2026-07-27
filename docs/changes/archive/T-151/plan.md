@@ -1,7 +1,7 @@
 ---
 id: T-151
 title: "Retro-cadence: record the two open gate decisions and correct two false findings"
-status: ready
+status: done
 priority: high
 estimate: 0.5 session
 plan: ""

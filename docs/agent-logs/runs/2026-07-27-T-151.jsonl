@@ -1,1 +1,3 @@
 {"run_id": "t151-33ce970", "event": "session_begin", "task_id": "T-151", "goal": "T-151 \u2014 one completion advances the retro counter exactly once; record decisions 9.1/77.2; correct the false split-store finding", "branch": "fix/T-151-retro-counter-exactly-once", "phase": "construction", "ts": "2026-07-27T10:49:46Z"}
+{"event": "iteration_complete", "task_id": "T-151", "branch": "fix/T-151-retro-counter-exactly-once", "phase": "construction", "ts": "2026-07-27T10:54:52Z"}
+{"event": "session_end", "task_id": "T-151", "ts": "2026-07-27T10:54:52Z"}
