@@ -111,6 +111,62 @@ class ActiveIterationTest(unittest.TestCase):
         self.assertIn("Active iteration detected", proc.stderr)
 
 
+class LaneStatusFieldTest(unittest.TestCase):
+    """T-149 — the hook asks 'is a lane live right now?', which is
+    `**Lane Status**`. `**Status**` answers a different question (how the
+    iteration named in `**Iteration**` ended) and during a quick lane
+    legitimately still reads `completed`."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.cwd = self.tmp.name
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def test_lane_status_wins_over_a_completed_iteration_status(self):
+        # The post-T-149 shape of a live quick lane: the last iteration is
+        # recorded `completed`, the lane is live. The hook must see the lane.
+        status = ("**Phase**: construction\n**Iteration**: 104\n"
+                  "**Status**: completed\n**Lane Status**: in-progress\n"
+                  "**Current Task**: T-999\n")
+        proc = run_hook("implement T-107", self.cwd, status_text=status)
+        self.assertEqual(proc.returncode, 0, msg=proc.stderr)
+        self.assertIn("Active iteration detected", proc.stderr)
+
+    def test_lane_status_blocks_when_no_lane_is_live(self):
+        # Inverse: a completed lane must still block, even though `**Status**`
+        # (the iteration's) reads `completed` too — the hook must not treat
+        # "iteration finished" as "lane active".
+        status = ("**Phase**: construction\n**Iteration**: 104\n"
+                  "**Status**: completed\n**Lane Status**: completed\n"
+                  "**Current Task**: None\n")
+        proc = run_hook("implement T-107", self.cwd, status_text=status)
+        self.assertEqual(proc.returncode, 2, msg=proc.stderr)
+        self.assertIn("/openup-start-iteration", proc.stderr)
+
+    def test_falls_back_to_status_when_lane_status_absent(self):
+        # An un-migrated document (no `**Lane Status**` yet) must behave
+        # exactly as it did before the split — both directions.
+        proc = run_hook("implement T-107", self.cwd,
+                        status_text=IN_PROGRESS_STATUS)
+        self.assertEqual(proc.returncode, 0, msg=proc.stderr)
+        self.assertIn("Active iteration detected", proc.stderr)
+
+        proc = run_hook("implement T-107", self.cwd,
+                        status_text=NO_ITERATION_STATUS)
+        self.assertEqual(proc.returncode, 2, msg=proc.stderr)
+
+    def test_empty_lane_status_falls_back_rather_than_reading_blank(self):
+        # A blank value is not an answer; fall back instead of concluding
+        # "no lane" from an empty string.
+        status = ("**Phase**: construction\n**Status**: in-progress\n"
+                  "**Lane Status**: \n**Current Task**: T-999\n")
+        proc = run_hook("implement T-107", self.cwd, status_text=status)
+        self.assertEqual(proc.returncode, 0, msg=proc.stderr)
+        self.assertIn("Active iteration detected", proc.stderr)
+
+
 class BareIdLengthTest(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()

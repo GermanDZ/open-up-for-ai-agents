@@ -29,6 +29,13 @@ If `$ARGUMENTS[iteration_number]` is provided, use it. Otherwise read `docs/proj
 
 Read `docs/project-status.md` for: iteration goal, dates, team members, overall status.
 
+> **Read `**Status**`, not `**Lane Status**` (T-149).** `**Status**` describes the
+> iteration named in `**Iteration**` — the one this retrospective is about.
+> `**Lane Status**` describes whichever lane happens to be live while you run,
+> which is a different question and may well be an unrelated quick task. See
+> [state-file.md](../state-file.md) § *How state reaches `docs/project-status.md`'s
+> status fields*.
+
 ### 3. Analyze Completed Tasks
 
 Read `docs/roadmap.md` to identify: tasks planned, completed, not completed, and added during iteration. Note complexity, challenges, and successes for each.

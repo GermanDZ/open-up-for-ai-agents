@@ -1,0 +1,6 @@
+{"run_id": "t149-7e3b14e", "event": "session_begin", "task_id": "T-149", "goal": "T-149 \u2014 split project-status.md's Status header: Status keeps the iteration's status, new Lane Status carries the active lane's", "branch": "fix/T-149-split-status-header", "phase": "construction", "ts": "2026-07-27T13:45:26Z"}
+{"run_id": "t149-7e3b14e", "event": "plan_gate_autoresolved", "task_id": "T-149", "branch": "fix/T-149-split-status-header", "track": "standard", "ts": "2026-07-27T13:45:26Z"}
+{"run_id": "b42c45ce370e418b8559ba2402230cbf", "event": "commit", "task_id": "T-149", "branch": "fix/T-149-split-status-header", "sha": "dfb7c9687f62afc402010dc74a8a7eba4b82f63b", "model": null, "session_id": "fix/T-149-split-status-header", "ts": "2026-07-27T13:45:35Z"}
+{"event": "iteration_complete", "task_id": "T-149", "branch": "fix/T-149-split-status-header", "phase": "construction", "ts": "2026-07-27T14:14:07Z"}
+{"event": "session_end", "task_id": "T-149", "ts": "2026-07-27T14:14:41Z"}
+{"run_id": "aede90fc0c844b869704ca40b2441a9b", "event": "commit", "task_id": "T-149", "branch": "fix/T-149-split-status-header", "sha": "df7f4143e80df61816842ae1fe4e9c4400e41646", "model": null, "session_id": "fix/T-149-split-status-header", "ts": "2026-07-27T14:10:40Z"}

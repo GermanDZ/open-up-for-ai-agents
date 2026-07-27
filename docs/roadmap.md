@@ -437,7 +437,7 @@ The entry is cancelled rather than completed because no work was done under it �
 ---
 
 ## T-149: `project-status.md`'s `Status` header conflates last-completed-iteration with active-lane status
-**Status**: pending
+**Status**: completed (2026-07-27)
 **Priority**: medium
 **Value**: Carried, unresolved half of T-146. The `Iteration` clobber is now guarded, but `**Status**` still has the same root cause and is still written unconditionally by every sync — so a quick lane in flight can rewrite a completed iteration's status to `in-progress` (observed downstream alongside the `Iteration` clobber). Left unfixed deliberately: unlike `Iteration`, there is no sentinel to test for, because the field is genuinely being asked to mean two different things at once.
 **Description**: `sync-status.py`'s `update_project_status()` writes `**Status**` from `derive_status(state)` — the *active lane's* derived status — into a header field that readers (and `/openup-retrospective` step 1) treat as "status of the last completed iteration". Resolve it with a real design decision, not another one-line guard: either (a) split the header into two fields (`Iteration Status` for the last completed iteration, `Lane Status` for the active lane), or (b) leave `Status` untouched on the `quick` track, matching T-146's `Iteration` treatment. Whichever wins, `docs-eng-process/templates/project-status.md` and `/openup-init`'s generated header have to move with it.
