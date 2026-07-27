@@ -1,0 +1,23 @@
+{
+  "schema": 2,
+  "task_id": "T-152",
+  "iteration": 101,
+  "iteration_id": null,
+  "cycle": 1,
+  "phase": "construction",
+  "track": "standard",
+  "branch": "fix/T-152-measure-readback-environment",
+  "worktree": "/Users/germandz/personal-code/ai-dev-framework/open-up-for-ai-agents-T-152",
+  "base_sha": "448cb18eca665d7dd17b0397850e3838c3279fd3",
+  "session_id": "fix/T-152-measure-readback-environment",
+  "started_at": "2026-07-27T11:18:40Z",
+  "gates": {
+    "team_deployed": false,
+    "plan_persisted": "docs/changes/T-152/plan.md",
+    "log_written": true,
+    "roadmap_synced": true,
+    "retro_due": false,
+    "implementation_verified": true
+  },
+  "iterations_since_retro": 2
+}

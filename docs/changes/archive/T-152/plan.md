@@ -1,7 +1,7 @@
 ---
 id: T-152
 title: "A success measure may name instrumentation that does not exist where it will be read back"
-status: ready
+status: done
 priority: medium
 estimate: 0.5 session
 plan: ""
