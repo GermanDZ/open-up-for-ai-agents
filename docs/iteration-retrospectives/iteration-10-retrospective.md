@@ -53,10 +53,11 @@ No product-manager re-ranking triggered.
 
 ## Action Items
 
-1. **Backfill T-048 archive repair in live repos** — es-invoices and tallyfox-app should run `python3 scripts/openup-claims.py migrate-archived-status --dry-run` to check for stale archived plans, then run without `--dry-run` to repair. (Non-blocking: these repos' current work isn't affected, only *future* dependent tasks would fail.)
-   - Owner: GermanDZ  
-   - Due: next scheduled maintenance (within 1 week)  
-   - Priority: low
+1. ~~**Backfill T-048 archive repair in live repos** — es-invoices and tallyfox-app should run `python3 scripts/openup-claims.py migrate-archived-status --dry-run` to check for stale archived plans, then run without `--dry-run` to repair. (Non-blocking: these repos' current work isn't affected, only *future* dependent tasks would fail.)~~
+   - ~~Owner: GermanDZ~~
+   - ~~Due: next scheduled maintenance (within 1 week)~~
+   - ~~Priority: low~~
+   - **obsolete 2026-07-27** (carried as `10.1`, 95 iterations) — **owner decision: the target repos are too old to be worth migrating.** The defect itself was verified real one last time before retiring: `../es-invoices/docs/changes/archive/T-009/plan.md` still reads `status: in-progress`, and it is the only stale plan there (tallyfox-app is not present on this machine). But es-invoices' last commit is **2026-06-23** — dormant five weeks, and predating both the harness-optional merge to `main` (2026-07-24) and every lane since, so it sits a whole framework generation behind. Running `migrate-archived-status` there would repair one cosmetic status field in a repo that is not consuming the framework any more; the only cost of the stale field is a false dependency block on a *future* task in that repo, and there are none. Retired as obsolete rather than satisfied: the fix was never applied, the item is simply no longer wanted.
 
 2. ~~**T-052 read-back: on-stop loop gone in 30 days** — after 2026-07-18, check `.claude/memory/bypass-log.md` and session transcripts in es-invoices/tallyfox for on-stop override-cap loops. If zero occurrences, success measure met. If any, diagnose why the fix didn't land.~~
    - ~~Owner: GermanDZ~~
