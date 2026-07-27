@@ -268,7 +268,7 @@ T-002 (`/openup-sync-spec`) completed 2026-06-11 once T-008's readiness DAG un-b
 ---
 
 ## T-142: Quick-track completion never increments the retro-cadence counter
-**Status**: pending
+**Status**: completed (2026-07-27)
 **Priority**: high
 **Value**: The retro-cadence counter is an **enforcement gate**, not a statistic — `openup-start-iteration/SKILL.md` step 3b reads it and refuses a `full`-track start once it reaches 5. A counter that silently undercounts disables that gate without any error. First-hand evidence from this session: T-133 and T-137 (both quick-track) completed without ever calling `retro increment` — only `/openup-complete-task` (step 7a) calls it; `/openup-quick-task` has zero reference to `retro` anywhere in the skill.
 **Description**: Route quick-task completion through the retro-increment call (or a shared teardown step with `/openup-complete-task`) so every completed lane — regardless of track — advances the cadence. Verify: `grep -c retro .claude/skills/openup-quick-task/SKILL.md` should be non-zero after the fix.
