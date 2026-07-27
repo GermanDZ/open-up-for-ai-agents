@@ -884,7 +884,51 @@ authored when promoted.
 | T-104 | Engine-owned authoring ceremony (frontmatter stamping, config injection, ceremony-exclusion) + restore the pinned initial-roadmap contract (T-103 regression) | completed (2026-07-14) | high | — |
 | T-105 | Task-def schema + `build-task-library.py` process compiler (deterministic extraction + LLM distillation + validate + `--check`) + committed library for map-referenced tasks | completed (2026-07-15) | high | T-104 |
 | T-106 | Engine consumes the library: generic authoring sub-run (no procedure read) + `tasks:` map wiring + vision/roadmap split + bench measurement | completed (2026-07-15) | high | T-104, T-105 |
-| T-107 | Scale: full KB compile, doctor `--check` wiring, KB-update re-distillation, customized process sources (P2 lands) | pending | medium | T-106 + live acceptance |
+| T-107 | Scale: full KB compile, doctor `--check` wiring, KB-update re-distillation, customized process sources (P2 lands) — **split 2026-07-27 into T-137 (done, already-satisfied), T-138 (doctor + re-distill), T-139 (customized sources)** once T-106's gate cleared via T-136 | split — see T-137/T-138/T-139 | medium | T-106 + live acceptance (satisfied, T-136) |
+
+---
+
+## T-137: T-107 split — full KB compile + review
+**Status**: completed (2026-07-27)
+**Priority**: medium
+**Value**: Confirms T-107's KB-compile lane needs no new work — every task-def any `process-map.yaml` activity actually references is already compiled, so scaling ahead of a real consumer would be speculative rather than closing a real gap.
+**Description**: Verified `build-task-library.py --check` and `openup-process-map.py tasks --validate` both already exit 0 against the current library. The KB's other ~30 task files (documentation training, deployment, release planning, team change management) aren't referenced by any process-map activity today; compiling them now has no consumer. Closed already-satisfied, zero new compilation, per owner decision this session.
+- Verification recorded in `docs/changes/archive/T-137/design.md`
+
+**Dependencies**: T-107 (parent, split from)
+
+**See**: `docs/changes/archive/T-137/design.md`
+
+---
+
+## T-138: T-107 split — doctor `--check` wiring + KB re-distill runbook
+**Status**: pending
+**Priority**: medium
+**Value**: Surfaces task-library drift (a KB task file changed but its compiled def wasn't re-distilled) in the project's own health check, degrading gracefully to INFO on a downstream project with no vendored KB — closing T-105's "false-positive on absent KB" lesson before doctor gains a check that could otherwise wrongly ERROR every bootstrapped project.
+**Description**: Wire `build-task-library.py --check` into `openup-doctor.py` as a WARNING-level check, INFO-degrading (never ERROR) when the vendored KB is absent; document a repeatable KB-update re-distillation runbook (bump → regenerate skeletons/prompts → review diff → commit).
+- `openup-doctor.py` task-library drift check, KB-absent-degrading
+- Documented re-distill runbook (`docs-eng-process/reference-driver.md`)
+- Tests: doctor KB-absent degradation, drift detection
+
+**Dependencies**: T-137 (confirms the library this checks against)
+
+**See**: `docs/changes/archive/T-107/plan.md` (original spec — Requirements 2, 3, 5)
+
+---
+
+## T-139: T-107 split — customized process sources
+**Status**: pending
+**Priority**: medium
+**Value**: Lets a downstream project override the framework's default task library with its own process docs — the original P2 promise — instead of every project being locked to this framework's authoring definitions.
+**Description**: Generalize `build-task-library.py`'s input root to accept a project's own process-source directory, emitting a project-local `task-library.yaml` (+ map) the loader prefers via the existing `_TASK_CANDIDATES` fallback order; document the mechanism in `project-config.md`.
+- Compiler accepts a project-local input root
+- Project-local library/map override via the loader's candidate fallback
+- Documented in `project-config.md`
+- Tests: project-source compile emits a project-local override
+
+**Dependencies**: T-137 (confirms the library this extends)
+
+**See**: `docs/changes/archive/T-107/plan.md` (original spec — Requirement 4)
 
 ---
 

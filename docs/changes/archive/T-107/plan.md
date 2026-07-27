@@ -1,7 +1,7 @@
 ---
 id: T-107
 title: "Scale the task library: full KB compile, doctor --check wiring, re-distill, customized sources"
-status: proposed   # GATED — promote only after T-106's live qwen-batch acceptance passes
+status: split — superseded by T-137, T-138, T-139
 priority: medium
 estimate: 2-3 sessions
 plan: docs/iteration-plans/2026-07-14-lean-authoring-tasks.md
