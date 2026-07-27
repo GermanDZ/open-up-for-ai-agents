@@ -205,21 +205,21 @@ prose statements of the allowlist with the code.
 
 ## Operations
 
-- [ ] Add both `.claude/memory/` paths to `ALWAYS_ALLOWED` in `scripts/openup-fence.py`
+- [x] Add both `.claude/memory/` paths to `ALWAYS_ALLOWED` in `scripts/openup-fence.py`
       with the why-files-not-directory comment, and update the module docstring's
       lane-owned bullet.
-- [ ] (tester) Add fence tests: both paths pass without a `touches` declaration; `allowed`
+- [x] (tester) Add fence tests: both paths pass without a `touches` declaration; `allowed`
       lists them; `.claude/settings.json` and `.claude/memory/scratch-notes.md` still
       exit 8 as `OUT OF LANE`.
-- [ ] Run the full fence suite plus the whole `scripts/tests/` suite; confirm no
+- [x] Run the full fence suite plus the whole `scripts/tests/` suite; confirm no
       pre-existing assertion changed.
-- [ ] Verify the fix bites: revert the constant edit, confirm the new tests fail and only
+- [x] Verify the fix bites: revert the constant edit, confirm the new tests fail and only
       they fail, restore, confirm green (record the observed output in `design.md`).
-- [ ] Update `docs-eng-process/parallel-lanes.md` (class-1 row + allowed list) to name the
+- [x] Update `docs-eng-process/parallel-lanes.md` (class-1 row + allowed list) to name the
       two files and state the reason once.
-- [ ] Record in `design.md`: the files-vs-directory decision, the deferred
+- [x] Record in `design.md`: the files-vs-directory decision, the deferred
       `.gitattributes merge=union` question, and the kaze-webapp baseline measurement.
-- [ ] Reserve an id for the deferred `.gitattributes merge=union` question
+- [x] Reserve an id for the deferred `.gitattributes merge=union` question
       (`openup-claims.py reserve-id`) and write the ready-to-file roadmap entry into
       `design.md`, to be appended to `docs/roadmap.md` at `/openup-complete-task` time —
       the roadmap is a fenced shared view, so a mid-lane edit would trip the stale-view

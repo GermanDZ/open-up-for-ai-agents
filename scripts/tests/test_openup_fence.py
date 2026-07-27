@@ -138,6 +138,42 @@ class FenceCheckTests(unittest.TestCase):
         proc = self.repo.fence("--task-id", TASK)
         self.assertEqual(proc.returncode, OK, proc.stderr)
 
+    def test_claude_memory_files_pass_without_being_claimed(self):
+        """T-147: both files are written by mechanisms no lane opts into.
+
+        `.claude/memory/bypass-log.md` is appended by gate-edits / check-iteration
+        / validate-commit; `.claude/memory/iteration-learnings.md` by
+        `openup-scribe.py learnings`, which /openup-complete-task runs on every
+        track. The fixture's `touches` is `src/widget.py` only — neither path is
+        claimed, which is exactly the downstream situation (FD-003).
+        """
+        self.repo.commit(".claude/memory/bypass-log.md", "- bypass\n")
+        self.repo.commit(".claude/memory/iteration-learnings.md", "- learning\n")
+        proc = self.repo.fence("--task-id", TASK)
+        self.assertEqual(proc.returncode, OK, proc.stderr)
+        self.assertNotIn("OUT OF LANE", proc.stderr)
+
+    def test_other_claude_file_is_still_out_of_lane(self):
+        """The exemption is the two files, not `.claude/`."""
+        self.repo.commit(".claude/settings.json", "{}\n")
+        proc = self.repo.fence("--task-id", TASK)
+        self.assertEqual(proc.returncode, VIOLATION)
+        self.assertIn("OUT OF LANE", proc.stderr)
+        self.assertIn(".claude/settings.json", proc.stderr)
+
+    def test_claude_memory_dir_is_not_blanket_exempt(self):
+        """Guards the files-not-prefix decision (T-147 spec assumption).
+
+        If someone widens ALWAYS_ALLOWED to `.claude/memory/`, this fails — which
+        is the point: widening it would silently exempt whatever else a consumer
+        project keeps there.
+        """
+        self.repo.commit(".claude/memory/scratch-notes.md", "notes\n")
+        proc = self.repo.fence("--task-id", TASK)
+        self.assertEqual(proc.returncode, VIOLATION)
+        self.assertIn("OUT OF LANE", proc.stderr)
+        self.assertIn(".claude/memory/scratch-notes.md", proc.stderr)
+
     def test_archive_destination_passes(self):
         self.repo.commit(f"docs/changes/archive/{TASK}/state.json", "{}\n")
         proc = self.repo.fence("--task-id", TASK)
@@ -250,6 +286,15 @@ class FenceAllowedTests(unittest.TestCase):
         self.assertIn("docs/status-notes/", payload["allowed"])
         self.assertIn("docs/roadmap.md", payload["views"])
         self.assertIn("docs/INDEX.md", payload["views"])  # T-122/B8
+
+    def test_allowed_lists_the_claude_memory_files(self):
+        """T-147: present for every task, with nothing declared in `touches`."""
+        proc = self.repo.fence("--task-id", TASK, sub="allowed")
+        self.assertEqual(proc.returncode, OK, proc.stderr)
+        allowed = json.loads(proc.stdout)["allowed"]
+        self.assertIn(".claude/memory/bypass-log.md", allowed)
+        self.assertIn(".claude/memory/iteration-learnings.md", allowed)
+        self.assertNotIn(".claude/memory/", allowed)  # files, not a prefix
 
 
 class FenceQuickTrackTests(unittest.TestCase):

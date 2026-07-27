@@ -56,7 +56,7 @@ git-native, conflict-free discipline:
 | Class | Examples | Discipline |
 |---|---|---|
 | **1. Lane-owned** | `docs/changes/T-NNN/**`, dated `docs/agent-logs/YYYY/MM/DD/*.md`, `docs/agent-logs/runs/<date>-<lane>.jsonl` (T-046), `docs/status-notes/*.md`, `docs/explorations/*.md` | One writer per file by construction. Write freely; never conflicts. **Maximize this class.** |
-| **2. Append-only set** | *(empty — the run log left this class in T-046)* | `merge=union` in `.gitattributes` keeps both sides' appended lines **locally** — but GitHub does **not** run merge drivers server-side, so a union file still conflicts on PRs. That is why `agent-runs.jsonl` was sharded into class 1 (T-046) and the consolidated file is now a derived view (class 3). Avoid this class. |
+| **2. Append-only set** | `.claude/memory/bypass-log.md`, `.claude/memory/iteration-learnings.md` — **only in projects that track `.claude/`** (this repo gitignores it) | `merge=union` in `.gitattributes` keeps both sides' appended lines **locally** — but GitHub does **not** run merge drivers server-side, so a union file still conflicts on PRs. That is why `agent-runs.jsonl` was sharded into class 1 (T-046) and the consolidated file is now a derived view (class 3). Avoid this class. The two `.claude/memory/` files are here **involuntarily**: hooks (`gate-edits`, `check-iteration`, `validate-commit`) and `/openup-complete-task` step 6 append to them on every lane's behalf, so no lane can opt out and neither can be sharded from this repo. The fence therefore **exempts** them (T-147) — that removes the false `OUT OF LANE`, but it does **not** make them conflict-free; that is the open `merge=union` question. |
 | **3. Derived view** | `docs/roadmap.md` Status cells, the whole `docs/project-status.md` header + `## Notes` (both by `scripts/sync-status.py`); `docs/INDEX.md`, the trace-web index (by `scripts/docs-index.py`) | Written **only** by their generator, **only** against a fresh trunk (rebase first). Never hand-edited on a task branch, never hand-merged: on conflict, rebase and re-run the generator. All three are fenced views (`openup-fence.py` `VIEW_PATHS`) — regenerating one on a fresh base passes; on a stale base it is a STALE VIEW, never OUT OF LANE (T-122/B8). |
 | **4. Global mutable prose** | roadmap program sections (Context, "Next step" narrative), plan docs | Cannot be derived. Edited only by a task whose `touches` includes the file, after rebasing — i.e. serialized through the normal claim machinery, not written as a side effect of every completion. |
 
@@ -90,7 +90,11 @@ Allowed for task `T-NNN` (vs `merge-base(base, HEAD)..HEAD`):
   enforcement time, T-009 D7), else plan frontmatter;
 - `docs/changes/T-NNN/` and `docs/changes/archive/T-NNN/`;
 - the class-1/2 audit surfaces: `docs/agent-logs/`, `docs/status-notes/`,
-  `docs/explorations/`;
+  `docs/explorations/`, and the two files framework mechanisms append to on
+  every lane's behalf — `.claude/memory/bypass-log.md` and
+  `.claude/memory/iteration-learnings.md` (T-147). These two are named as
+  **files, not the `.claude/memory/` prefix**, so anything else a project keeps
+  there is still fenced;
 - the class-3 views (`docs/roadmap.md`, `docs/project-status.md`) **only**
   when the base is an ancestor of HEAD (fresh-base rule) or with
   `--allow-views` (passed by `/openup-complete-task` immediately after it
