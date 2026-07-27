@@ -399,6 +399,22 @@ T-002 (`/openup-sync-spec`) completed 2026-06-11 once T-008's readiness DAG un-b
 
 ---
 
+## T-158: Retrospective action items must carry a verified premise — and close 20.2 / 77.5
+**Status**: completed (2026-07-27)
+**Priority**: high
+**Value**: An action item is a promise that someone will spend a session on it. Of the five items iteration-98 filed and promoted, **four did not survive contact** — `A2` was already fixed, `A3` was disproved on inspection, and `T-153`/`T-147` both shrunk on measurement — so the sessions went to discovering the premise was wrong rather than to the work. Step 5b already verifies *carried* items; nothing verified a *new* one. Closes iteration-103's B2 and B3, and with them the last two carried items that were actionable in this repo (`20.2` at 83 iterations, `77.5` at 26).
+**Description**: Add BLOCKING step 5c to the `/openup-retrospective` pack requiring every newly-authored action item to carry an **Evidence** element (what was checked, where, what it showed), with a failure-mode table citing the three observed modes. Then close both carried items with recorded owner decisions.
+- No rubric file and no validator script — "is this premise real?" is not mechanically parseable
+- `20.2` retired **obsolete**: both halves became enforcement (preflight exit 3, board `depends_ok`, T-079 partitioner, `/openup-explore`)
+- `77.5` **satisfied**: `docs/risk-list.md` instantiated — decided on the dangling-promise argument (5 live docs referenced it), not the unfalsifiable scale question
+- Both struck **in place** in their authoring retrospectives, never deleted
+
+**Dependencies**: —
+
+**See**: `docs/changes/T-158/plan.md`; iteration-103 retrospective action items **B2** + **B3**; `docs/risk-list.md`
+
+---
+
 ## T-157: `sync-status.py --views-only` — regenerate the shared views without a live lane
 **Status**: completed (2026-07-27)
 **Priority**: high

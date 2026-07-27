@@ -1,0 +1,23 @@
+{
+  "schema": 2,
+  "task_id": "T-158",
+  "iteration": 109,
+  "iteration_id": null,
+  "cycle": 1,
+  "phase": "construction",
+  "track": "standard",
+  "branch": "feat/T-158-retro-item-hygiene",
+  "worktree": "/Users/germandz/personal-code/ai-dev-framework/open-up-for-ai-agents-T-158",
+  "base_sha": "2f1dd134513de50c87ee12de8e1662834de8567d",
+  "session_id": "feat/T-158-retro-item-hygiene",
+  "started_at": "2026-07-27T18:25:34Z",
+  "gates": {
+    "team_deployed": false,
+    "plan_persisted": "docs/changes/T-158/plan.md",
+    "log_written": true,
+    "roadmap_synced": true,
+    "retro_due": false,
+    "implementation_verified": true
+  },
+  "iterations_since_retro": 6
+}

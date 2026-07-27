@@ -157,6 +157,51 @@ step is exactly the failure mode being fixed.
 > Until that second caller exists, a shared helper would be abstraction ahead of
 > demand.
 
+### 5c. Verify New Action Items' Premises — BLOCKING, before any item is authored
+
+Step 5b asks of a carried item: *is this still true?* This step asks of a **new**
+one: *was it ever true?* Both run ahead of step 6 for the same reason — a
+reminder inside the authoring step is the failure mode being fixed.
+
+An action item is a promise that someone will spend a session on it. Filing one
+whose premise was never checked spends that session discovering the premise was
+wrong — and the wrong item still costs a full lane to disprove. Of the five items
+iteration-98 filed and promoted, **four did not survive contact**:
+
+| Failure mode | What it looks like | Observed |
+|---|---|---|
+| **Already fixed** | The item describes a defect a merged task had removed before the retrospective was written | `A2` — T-142 had already shipped the fix and its regression tests; the lane observing it was running a pre-merge skill mirror (iteration 100) |
+| **Disproved on inspection** | The claim was inferred from indirect evidence and falls apart the moment the actual command is run | `A3` — inferred from two direct file reads, never from `get`; in an isolated fixture the behavior was correct. Retired **WRONG**, not "done" |
+| **Shrunk on measurement** | Real, but far smaller than filed — most sub-items already covered | `T-153` (two of three sub-items already had real coverage; the genuine gap was none of the three); `T-147` (owner noted it did not reproduce locally) |
+
+So, for **each new item you are about to author**:
+
+1. **State what would make the problem real, then check it** — the same
+   mechanical bias as 5b: run the command, `grep` for the artifact, read the
+   roadmap Status, open the path. Prefer the check that could *falsify* the item.
+2. **Check it where the problem lives.** If the item is about a downstream or
+   consumer repo, "it reproduces here" is not evidence — and neither is "it does
+   not reproduce here". T-147's premise was structurally invisible in this repo
+   because it gitignores `/.claude/*`. Name the environment you checked.
+3. **Record the evidence on the item.** Every row of the `## Action Items` table
+   carries an **Evidence** element: one line stating what was checked, where, and
+   what it showed. A citation (file:line, command + output, task id) beats a
+   summary.
+4. **If the check shows the problem is already fixed, do not file the item.**
+   Say so in *What Went Well* instead — that is a closed loop, not an action.
+5. **If the check shows it is smaller than it looked, file the smaller item.**
+   Scope it to what you measured, not to what you first suspected.
+
+**An item with no Evidence element is a gap and blocks the retrospective** — the
+same BLOCKING idiom as 5b. This is deliberately a graded, prose check with **no
+validator script**: *"is this premise real?"* is not mechanically parseable, and a
+name-matcher would pass any phrasing while answering nothing (the reasoning T-152
+recorded for its own criterion).
+
+> **Scope: new items only.** This step grades the `## Action Items` (new-only)
+> table. Carried items are step 5b's business — re-verifying them here would
+> duplicate that pass and reset the age signal it depends on.
+
 ### 6. Create Retrospective Document
 
 Create `docs/iteration-retrospectives/iteration-{n}-retrospective.md` with sections:
@@ -166,7 +211,7 @@ Create `docs/iteration-retrospectives/iteration-{n}-retrospective.md` with secti
 - **What to Improve**: process issues, technical challenges, gaps
 - **Measure Read-Back**: for each success measure due (step 4b) — expectation, actual, verdict (met / missed / can't tell), interpretation; plus the product-manager's resulting re-rank decisions (entries moved + updated `Value` rationale), or "no re-rank — evidence supports current order"
 - **Carried Action Items** (from step 5b): two tables — **retired this cycle** (each item, its verdict `satisfied`/`obsolete`, and the evidence cited) and **still open** (each item with its *original* authoring date, so age is visible). "None carried" is a legitimate entry for a project's first retrospective; silence is not
-- **Action Items**: specific action, owner, due date, priority for each improvement — **new items only**, and none may duplicate a still-open carried item (step 5b point 6)
+- **Action Items**: specific action, owner, due date, priority, **and Evidence** for each improvement — **new items only**; none may duplicate a still-open carried item (step 5b point 6), and none may be authored without the verified premise step 5c requires. The Evidence element states what was checked, **where**, and what it showed; an item without one is a gap that blocks the retrospective
 - **Metrics** (if included): task completion stats, git stats
 - **Next Iteration Considerations**: carry forward, changes, risks to monitor
 

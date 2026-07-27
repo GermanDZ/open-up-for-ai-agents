@@ -112,8 +112,8 @@ decision, and **A2 / A3 retracted** as misdiagnoses.
 |---|---|---|---|---|
 | 9.2 | First real `/openup-sync-spec` use on a live refactor diff | iter-9 | 94 it. | **Opportunistic rider, deliberately not a task** — needs a real refactor diff to audit |
 | 10.1 | T-048 archive repair in live repos | iter-10 | 93 it. | **External.** es-invoices has exactly 1 stale plan (`T-009`); tallyfox-app clean |
-| 20.2 | Dependency-ordering convention for `/openup-start-iteration` | iter-20 | 83 it. | **Was wrongly recorded as handled by T-154** — still open; see the roadmap correction |
-| 77.5 | Instantiate `docs/risk-list.md` or treat its absence as `n/a` | iter-77 | 26 it. | **Same wrongly-dropped pair as 20.2** — still open |
+| 20.2 | Dependency-ordering convention for `/openup-start-iteration` | iter-20 | 83 it. | ~~**Was wrongly recorded as handled by T-154** — still open; see the roadmap correction~~ → **closed 2026-07-27 by T-158: retired obsolete.** Resolution and evidence live in [`iteration-20-retrospective.md`](iteration-20-retrospective.md) §Action Items, where the item was authored |
+| 77.5 | Instantiate `docs/risk-list.md` or treat its absence as `n/a` | iter-77 | 26 it. | ~~**Same wrongly-dropped pair as 20.2** — still open~~ → **closed 2026-07-27 by T-158: satisfied**, [`docs/risk-list.md`](../risk-list.md) instantiated. Resolution in [`iteration-77-retrospective.md`](iteration-77-retrospective.md) §Action Items |
 | 86.3 | T-120/T-123 read-back when endpoint stable | iter-86 | 17 it. | **External** — blocked on owner endpoint stability |
 | 86.4 | kaze-webapp `sync-from-framework.sh` bump | iter-86 | 17 it. | **External** — kaze lead's schedule |
 

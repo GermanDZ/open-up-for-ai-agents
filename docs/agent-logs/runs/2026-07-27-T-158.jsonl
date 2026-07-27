@@ -1,0 +1,5 @@
+{"run_id": "T-158-2026-07-27", "event": "session_begin", "task_id": "T-158", "goal": "T-158 \u2014 retrospective action-item premise verification + close 20.2/77.5", "branch": "feat/T-158-retro-item-hygiene", "phase": "construction", "ts": "2026-07-27T18:25:35Z"}
+{"run_id": "T-158-2026-07-27", "event": "plan_gate_autoresolved", "task_id": "T-158", "branch": "feat/T-158-retro-item-hygiene", "track": "standard", "ts": "2026-07-27T18:25:35Z"}
+{"event": "iteration_complete", "task_id": "T-158", "branch": "feat/T-158-retro-item-hygiene", "phase": "construction", "ts": "2026-07-27T18:36:39Z"}
+{"event": "session_end", "task_id": "T-158", "ts": "2026-07-27T18:36:39Z"}
+{"run_id": "978fd1228fad4823901a1d4b1dccc3c8", "event": "commit", "task_id": "T-158", "branch": "feat/T-158-retro-item-hygiene", "sha": "ebd419695ccee48bddeca7c2d827ad0be83822a0", "model": null, "session_id": "feat/T-158-retro-item-hygiene", "ts": "2026-07-27T18:34:33Z"}

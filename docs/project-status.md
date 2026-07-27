@@ -1,11 +1,11 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 108
-**Iteration Goal**: T-157 — `sync-status.py --views-only` — regenerate the shared views without a live lane
+**Iteration**: 109
+**Iteration Goal**: T-158 — Retrospective action items must carry a verified premise — and close 20.2 / 77.5
 **Status**: completed
 **Lane Status**: completed
-**Current Task**: T-157
+**Current Task**: T-158
 **Iteration Started**: 2026-06-18
 **Last Updated**: 2026-07-27
 **Updated By**: sync-status.py
@@ -13,17 +13,15 @@
 
 ## Open Action Items
 
-Disposition pass run 2026-07-27 (iteration-103). Retired items keep their evidence in the
-retrospective that authored them.
+Disposition pass run 2026-07-27 (iteration-103); **closures applied 2026-07-27 by T-157 and
+T-158**. Retired items keep their evidence in the retrospective that authored them.
 
-**New this cycle**
-- **B1 — high**: give `sync-status.py` a no-lane path (`--views-only`). The documented "rebase and re-run" conflict fix is impossible after `openup-session.py end` archives the state — the recovery tool needs a precondition the situation destroyed.
-- **B2 — high**: verify a retrospective action item's premise **before** promoting it to a roadmap task. Two of five filed that way were false; two more had shrunk.
-- **B3 — medium**: decide `20.2` and `77.5` — the two items T-154's cancellation wrongly dropped.
-
-**Open — genuinely actionable here (2)**
-- `20.2` (83 it.) Dependency-ordering convention for `/openup-start-iteration`. **Was mis-recorded as handled by T-154**; still open.
-- `77.5` (26 it.) Instantiate `docs/risk-list.md` or treat its absence as `n/a`. Same wrongly-dropped pair.
+**Closed this cycle (5)**
+- ~~**B1 — high**: give `sync-status.py` a no-lane path (`--views-only`).~~ **done** — T-157. `--views-only` returns before `read_state()`, reassembling `## Notes` from the shards and reconciling roadmap sections; header fields and table-row cells deliberately excluded (they need a live lane). Verified live on trunk: plain run exits `3`, `--views-only` exits `0`.
+- ~~**B2 — high**: verify a retrospective action item's premise before promoting it.~~ **done** — T-158. `/openup-retrospective` gains **step 5c** (BLOCKING): every newly-authored item must carry an **Evidence** element naming what was checked, *where*, and what it showed. Names the three observed failure modes — already-fixed (`A2`), disproved-on-inspection (`A3`), shrunk-on-measurement (`T-153`, `T-147`).
+- ~~**B3 — medium**: decide `20.2` and `77.5`.~~ **done** — T-158; both decided below, neither carried again.
+- ~~`20.2` (83 it.) Dependency-ordering convention for `/openup-start-iteration`.~~ **retired obsolete** — owner decision. It asked for a *convention* because no mechanism existed; both halves are now *enforcement* (`openup-claims.py preflight` exit 3, board `depends_ok`, the T-079 partitioner's `depends-on` clustering, and `/openup-explore` for the explorations half). Struck in place in `iteration-20-retrospective.md` with that evidence.
+- ~~`77.5` (26 it.) Instantiate `docs/risk-list.md` or treat its absence as `n/a`.~~ **satisfied** — owner decision: instantiate. [`docs/risk-list.md`](risk-list.md) now exists (7 ranked risks, each citing its evidence). The deciding argument was a dangling promise, not scale: five live docs already referenced the path as though the file existed.
 
 **Open — external, not closable here (3)**
 - `10.1` — es-invoices has exactly one stale archived plan (`T-009: in-progress → done`); tallyfox-app clean. Fix: `python3 scripts/openup-claims.py migrate-archived-status` there.
@@ -33,9 +31,17 @@ retrospective that authored them.
 **Open — opportunistic rider (1)**
 - `9.2` — first real `/openup-sync-spec` use; needs a genuine refactor diff, so it rides with the next lane that produces one.
 
-**Retired to date**: 12 of the original 17, plus A2/A3 retracted as misdiagnoses.
+**Retired to date**: 14 of the original 17 (`20.2` and `77.5` closed 2026-07-27), plus A2/A3
+retracted as misdiagnoses. All three of iteration-103's own items (B1–B3) are closed in the
+same cycle they were authored — the first time that has happened, and the thing step 5c
+exists to keep true.
+
+**Still open: 4** — three external (`10.1`, `86.3`, `86.4`) and one opportunistic rider (`9.2`).
+Nothing actionable here remains carried.
 
 ## Notes
+
+- **Iteration 109** (2026-07-27): T-158 (standard) — **a retrospective action item must now carry a verified premise, and the last two actionable carried items are closed.** Step 5b already asked of a *carried* item "is this still true?"; nothing asked of a *new* one "was it ever true?" — and of the five items iteration-98 filed and promoted, **four did not survive contact**: `A2` was already fixed (T-142 had shipped it, plus regression tests), `A3` was disproved on inspection (inferred from two file reads, never from `get`; retired **WRONG**, not "done"), and `T-153`/`T-147` both **shrunk on measurement**. New **step 5c** (BLOCKING, numbered to sit beside 5b and physically ahead of authoring — a `6a` label would contradict 5b's own rationale that a reminder *inside* the authoring step is the failure mode) requires an **Evidence** element on every new item: what was checked, **where**, and what it showed. It carries a failure-mode table with real citations, because an author can recognise their own item in a table but not in an abstract instruction to "verify the premise". **Deliberately no rubric file and no validator script** — *"is this premise real?"* is not mechanically parseable, and a name-matcher would pass any phrasing while answering nothing (T-152's reasoning); a rubric created for one criterion is abstraction ahead of demand. **`20.2` retired obsolete** after 83 iterations: it asked for a *convention* because no mechanism existed, and both halves have since become *enforcement* (`preflight` exit 3, board `depends_ok`, the T-079 partitioner's `depends-on` clustering, `/openup-explore`) — struck **in place**, not deleted, because it had already been re-derived from scratch twice. **`77.5` satisfied**: `docs/risk-list.md` instantiated (7 ranked risks, each citing the evidence it came from). The deciding argument was **not** iteration-77's unfalsifiable scale question — which is exactly why it sat open 26 iterations — but a **dangling promise**: five live docs already referenced the path as though the file existed, the same defect class T-157 had just fixed. Two risks are recorded with deliberately uncomfortable residuals: **R3** (ceremony outgrows its value) stays **high** because nothing currently *removes* a gate, and **R5** (stale leases) stays **high with the mechanism not understood** — six dead claims blocked T-157, then T-075's claim **reappeared** with a minutes-old mtime, a `claimed_at` of 2026-07-13 and a repo-wide surface, having already been released once during T-142/143. The risk list is deliberately **untyped** (`risk-list` is not a v1 spine type), so `check-docs` skips it — requirement 5's green is trivial, and that is stated rather than left to be misread. All three of iteration-103's own items (B1–B3) closed in the cycle that authored them, a first. Full suite **884 passed**, 1 skipped, 20 subtests — unchanged; no script touched.
 
 - **Iteration 108** (2026-07-27): T-157 (standard) — **the conflict-recovery recipe now works in the situation it is written for.** `sync-status.py` returns `EXIT_NO_STATE` without `.openup/state.json`, but `/openup-complete-task` runs `openup-session.py end --archive-to …`, which moves that file out — and a PR conflict surfaces *after* push, which is after completion. So the framework's one documented fix for a conflicted shared view ("rebase onto trunk and re-run the generator") was **impossible whenever it was actually needed**; the iteration-103 four-PR merge wave left `## Notes` assembled from whichever copy won, with three notes on disk absent from the block, and the recovery was calling the module's own `assemble_notes` / `update_notes_section` directly. Same shape as T-150: **the recovery tool needing a precondition the situation had already destroyed.** New `--views-only` returns before `read_state()` — the shape `--reconcile` already proved — and composes three existing, already-tested functions rather than adding derivation logic. **The scope is drawn at "committed and lane-independent"**: `## Notes` (from the shards) and `## T-NNN:` section statuses (from archived folders) are regenerated; the **header fields** and roadmap **table-row** cells are deliberately not, because they need a live lane, and reconstructing one from an archived state is the fragility being rejected — the tempting `--state-dir docs/changes/T-NNN` workaround was rejected for exactly that, plus it would write `gates.roadmap_synced` **into an archived artifact**. The accepted cost is named rather than buried: a recovered lane carries trunk's header values, so its own iteration is never reflected there. **Premise measured before drafting** (action item B2): the exit-3 path was reproduced against the pristine script first, and the retrospective's own manual recovery confirmed the scope is the observed need, not a guess. Scope grew by one file mid-lane — `docs-eng-process/.claude-templates/CLAUDE.md`, loaded into every agent session, still named the broken command — added to the spec **before** editing it; the historical records (`status-notes/`, `explorations/`, retrospectives, `changes/archive/`) that state the old recipe were deliberately **not** swept, being audit records of what was true when written. Bite-checked rather than assumed: **9 of 11** new tests fail against `HEAD` (the 2 that do not are a deliberate no-regression guard and one vacuous pass, recorded as such). Live check on a copy of the real repo docs restored **113/113** shards with an empty header diff. Full suite **884 passed**, 1 skipped, 20 subtests (873 baseline + 11).
 
