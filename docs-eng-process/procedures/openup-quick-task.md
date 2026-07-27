@@ -156,6 +156,19 @@ python3 scripts/openup-state.py archive \
   "docs/agent-logs/$(date -u +%Y)/$(date -u +%m)/$(date -u +%d)/state-quick-$(date -u +%H%M%S).json" 2>/dev/null || true
 ```
 
+**This also advances the retro-cadence counter (T-142).** `archive` increments the
+durable, worktree-shared counter (`<git-common-dir>/openup/retro.json`) and prints
+`Retro cadence: N` — so a quick lane counts toward the retrospective cadence exactly like
+a `/openup-complete-task` completion. There is **no separate `retro increment` step to
+run**: the cadence lives in the shared teardown precisely so that no track can silently
+skip it (before T-142, quick lanes advanced nothing at all, quietly disabling the
+`full`-track retro gate). If this archive is genuinely not a lane completion, pass
+`--no-retro` to suppress the increment. See
+[state-file.md](../../../../docs-eng-process/state-file.md).
+
+**If state was never created** (branching skipped, per step 2) there is nothing to
+archive, and the cadence does not advance — that lane recorded no iteration to count.
+
 ## Output
 
 Returns:

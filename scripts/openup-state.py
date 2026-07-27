@@ -7,7 +7,8 @@ OpenUP skills write (via this CLI) and hooks read to enforce process gates.
 
 Design rules:
   * Deterministic. Never invokes a model.
-  * Python standard library only (json, argparse, pathlib, datetime, sys).
+  * Python standard library only (json, argparse, pathlib, datetime, sys,
+    subprocess -- the last only to ask git for its common dir).
   * Skills MUST write state through this CLI, never by hand-editing JSON.
   * State is validated against scripts/openup-state.schema.json (a focused
     in-house validator, not a general JSON-Schema engine) before every write.
@@ -22,7 +23,9 @@ Subcommands:
   set-gate     Set gates.<name> (typed coercion; path string allowed).
   check-gates  Exit nonzero if required gates are not all truthy.
   archive      Validate, copy state to a destination, then remove the original.
-  retro        Manage the durable retro-cadence counter (.openup/retro.json).
+               Advances the durable retro-cadence counter (--no-retro opts out).
+  retro        Manage the durable retro-cadence counter, stored at
+               <git-common-dir>/openup/retro.json (shared across worktrees).
   validate     Validate .openup/state.json against the schema.
   log-event    Append a clock-stamped record to docs/agent-logs/agent-runs.jsonl
                (ts is stamped by this CLI — the model never supplies it).
@@ -40,6 +43,7 @@ Exit codes:
 import argparse
 import json
 import re
+import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -234,22 +238,75 @@ def require_state(args):
 # Retro cadence counter (T-011)
 #
 # The retrospective-cadence counter is DURABLE across iterations, so it cannot
-# live inside state.json: `archive` deletes state.json on every completion. It
-# lives in a sibling .openup/retro.json that `archive` never touches. The
+# live inside state.json: `archive` deletes state.json on every completion. The
 # `iterations_since_retro` field in state.json is an init-time mirror of this
 # value for audit/visibility. See docs/changes/T-011/design.md (DD1).
+#
+# WHERE it lives is T-143. It used to sit next to state.json in the *worktree's*
+# .openup/ — which is per-worktree (REPO_ROOT comes from __file__) and gitignored
+# here, so under this framework's own worktree-per-lane model every fresh lane
+# started the count over at 0. (Downstream projects that instead TRACK the file
+# hit the mirror image: two lanes branching from the same count merge by
+# overwrite, not sum — a lost update.) It now lives in <git-common-dir>/openup/,
+# the same directory openup-claims.py already uses for claims: shared by every
+# linked worktree, and never touched by git's merge machinery.
 # --------------------------------------------------------------------------
 RETRO_DEFAULT_THRESHOLD = 5
 
 
+def git_common_dir(start: Path = REPO_ROOT):
+    """Return <git-common-dir> as an absolute Path, or None outside a git repo.
+
+    Mirrors openup-claims.py's claims-dir resolution. Resolved from REPO_ROOT
+    (the script's own checkout) rather than the process cwd, so the answer is
+    the same no matter where a skill invokes the CLI from; in a linked worktree
+    this correctly yields the MAIN repo's .git, which is the whole point.
+    """
+    try:
+        proc = subprocess.run(
+            ["git", "rev-parse", "--git-common-dir"],
+            cwd=str(start), capture_output=True, text=True, timeout=10,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if proc.returncode != 0 or not proc.stdout.strip():
+        return None
+    p = Path(proc.stdout.strip())
+    if not p.is_absolute():
+        p = start / p
+    return p.resolve()
+
+
+def retro_dir(args) -> Path:
+    """Resolve the directory holding retro.json.
+
+    Precedence: --retro-dir > an explicit --state-dir > <git-common-dir>/openup
+    > REPO_ROOT/.openup. An explicit --state-dir still scopes the counter so
+    that tests and deliberately-isolated callers cannot touch the developer's
+    real shared counter; nothing passes it in normal operation. The final
+    fallback keeps the CLI working outside a git repo — the cadence is an
+    advisory gate and must fail open, never raise.
+    """
+    if getattr(args, "retro_dir", None):
+        return Path(args.retro_dir).expanduser().resolve()
+    if getattr(args, "state_dir", None):
+        return Path(args.state_dir).expanduser().resolve()
+    common = git_common_dir()
+    if common is not None:
+        return common / "openup"
+    return REPO_ROOT / ".openup"
+
+
 def retro_path(args) -> Path:
+    return retro_dir(args) / "retro.json"
+
+
+def legacy_retro_path(args) -> Path:
+    """The pre-T-143 per-worktree location, still read as a migration source."""
     return state_dir(args) / "retro.json"
 
 
-def read_retro_count(args) -> int:
-    p = retro_path(args)
-    if not p.exists():
-        return 0
+def _read_count_file(p: Path) -> int:
     try:
         with p.open("r", encoding="utf-8") as fh:
             data = json.load(fh)
@@ -259,10 +316,25 @@ def read_retro_count(args) -> int:
         return 0
 
 
+def read_retro_count(args) -> int:
+    p = retro_path(args)
+    if p.exists():
+        return _read_count_file(p)
+    # Read-forward migration (T-143): a project upgrading mid-cadence has its
+    # count in the old per-worktree file. Seed from it rather than silently
+    # resetting to 0. The first write lands at the shared path, after which
+    # this branch stops applying — so the legacy value is carried once, never
+    # re-applied, and the legacy file is left in place (a non-destructive
+    # migration is the reversible one).
+    legacy = legacy_retro_path(args)
+    if legacy != p and legacy.exists():
+        return _read_count_file(legacy)
+    return 0
+
+
 def write_retro_count(args, count: int):
-    d = state_dir(args)
-    d.mkdir(parents=True, exist_ok=True)
-    p = d / "retro.json"
+    p = retro_path(args)
+    p.parent.mkdir(parents=True, exist_ok=True)
     with p.open("w", encoding="utf-8") as fh:
         json.dump({"iterations_since_retro": count}, fh, indent=2)
         fh.write("\n")
@@ -531,11 +603,24 @@ def cmd_archive(args):
         fh.write("\n")
     state_path(args).unlink()
     print(f"Archived state to {dest}")
+    # Archiving IS the "this lane is over" event, so it is where the durable
+    # retro cadence advances (T-142). Keeping the increment here rather than in
+    # skill prose is what makes it universal: every completion path —
+    # /openup-complete-task (via `openup-session.py end`) and /openup-quick-task
+    # alike — already runs archive, and a completion path added later inherits
+    # it. The increment sits AFTER the unlink so a refused or failed archive
+    # never advances the count. Over-counting is the safe direction for a
+    # cadence gate: it makes a retrospective due sooner, where under-counting
+    # silently disables the gate.
+    if not getattr(args, "no_retro", False):
+        count = read_retro_count(args) + 1
+        write_retro_count(args, count)
+        print(f"Retro cadence: {count}")
     return EXIT_OK
 
 
 def cmd_retro(args):
-    """Manage the durable retrospective-cadence counter (.openup/retro.json)."""
+    """Manage the durable retrospective-cadence counter (see retro_dir())."""
     action = args.action
     if action == "get":
         print(read_retro_count(args))
@@ -592,6 +677,14 @@ def build_parser():
         sp.add_argument(
             "--state-dir",
             help="Override the .openup directory (default: <repo-root>/.openup).",
+        )
+
+    def add_retro_dir(sp):
+        sp.add_argument(
+            "--retro-dir",
+            help="Override the directory holding retro.json (default: "
+            "<git-common-dir>/openup, shared across worktrees). Wins over "
+            "--state-dir.",
         )
 
     sub = parser.add_subparsers(dest="command", required=True)
@@ -677,13 +770,21 @@ def build_parser():
         "archive", help="Validate, copy state to dest, then remove the original."
     )
     p_ar.add_argument("dest_path", help="Destination path for the archived state.")
+    p_ar.add_argument(
+        "--no-retro",
+        action="store_true",
+        help="Do not advance the retro-cadence counter. For callers archiving a "
+        "state that is not a lane completion.",
+    )
     add_state_dir(p_ar)
+    add_retro_dir(p_ar)
     p_ar.set_defaults(func=cmd_archive)
 
     # retro
     p_re = sub.add_parser(
         "retro",
-        help="Manage the durable retrospective-cadence counter (.openup/retro.json).",
+        help="Manage the durable retro-cadence counter "
+        "(<git-common-dir>/openup/retro.json, shared across worktrees).",
     )
     p_re.add_argument(
         "action",
@@ -698,6 +799,7 @@ def build_parser():
         help=f"Cadence threshold for 'check' (default: {RETRO_DEFAULT_THRESHOLD}).",
     )
     add_state_dir(p_re)
+    add_retro_dir(p_re)
     p_re.set_defaults(func=cmd_retro)
 
     # validate

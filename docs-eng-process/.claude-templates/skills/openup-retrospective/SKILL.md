@@ -181,7 +181,8 @@ it is still true.
 ### 8. Reset the Retro-Cadence Counter (T-011)
 
 Running this retrospective satisfies the cadence, so reset the durable counter. This zeroes
-`.openup/retro.json` and clears `gates.retro_due` in any live `.openup/state.json`:
+`<git-common-dir>/openup/retro.json` (shared across worktrees) and clears
+`gates.retro_due` in any live `.openup/state.json`:
 
 ```bash
 python3 scripts/openup-state.py retro reset

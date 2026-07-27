@@ -375,15 +375,18 @@ python3 scripts/openup-session.py end \
 Either way the live `.openup/state.json` is removed by `end` (via the `archive` step) and
 the claim is released. Commit the archive move with the task's other completion commits.
 
-### 7a. Increment the Retro-Cadence Counter (T-011)
+### 7a. Retro-Cadence Counter — advanced by the teardown, nothing to run (T-011, T-142)
 
-Every completion advances the retrospective cadence. The counter is **durable**
-(`.openup/retro.json`) and survives the archive above, so this is independent of state
-removal — run it once per completed task:
+Every completion advances the retrospective cadence, and **step 7's `end` already did
+it**: the counter is incremented by `openup-state.py archive`, which `end` runs. Do
+**not** issue a separate `retro increment` here — that would double-count this lane. (The
+increment lives in `archive` rather than in this skill precisely so that *every* track's
+completion path advances the cadence; `/openup-quick-task` archives too, and used to
+advance nothing at all.)
 
-```bash
-python3 scripts/openup-state.py retro increment   # prints the new count
-```
+The counter is **durable** and shared across worktrees
+(`<git-common-dir>/openup/retro.json`), so it survives both the archive and the worktree
+removal in §7b. The `end` output prints the new count (`Retro cadence: N`).
 
 When the count reaches the threshold (5), the next `/openup-start-iteration` will set
 `gates.retro_due` and **refuse a `full`-track start** until `/openup-retrospective` runs

@@ -53,8 +53,8 @@ point at an alternate `.openup` directory (tests do this).
 | `set <dotted.key> <value>` | Set a value with typed coercion (`true`/`false`→bool, ints→int, `null`→None, else string). Re-validates. |
 | `set-gate <name> <value>` | Convenience for `gates.<name>`; same coercion (pass a path string for `plan_persisted`). |
 | `check-gates [--require a,b,c]` | Exit 0 if required gates truthy; else exit 6 and print each unmet gate to stderr. Default required: `team_deployed,log_written,roadmap_synced,implementation_verified`. |
-| `archive <dest_path>` | Validate, copy state to `dest_path` (mkdir parents), then remove `state.json`. Exit 3 if no state. |
-| `retro {get\|increment\|reset\|check} [--threshold N]` | Manage the durable retro-cadence counter (`.openup/retro.json`). See [retro cadence](#retro-cadence-t-011). |
+| `archive <dest_path> [--no-retro]` | Validate, copy state to `dest_path` (mkdir parents), then remove `state.json`, then advance the [retro-cadence counter](#retro-cadence-t-011) (`--no-retro` opts out). Exit 3 if no state — and then the counter is untouched. |
+| `retro {get\|increment\|reset\|check} [--threshold N] [--retro-dir DIR]` | Manage the durable retro-cadence counter (`<git-common-dir>/openup/retro.json`, shared across worktrees). See [retro cadence](#retro-cadence-t-011). |
 | `validate` | Validate `state.json`; exit 0 ok, exit 7 invalid (prints reasons). |
 
 Exit codes: `0` ok, `2` usage, `3` no state, `4` already exists, `5` key
@@ -102,18 +102,59 @@ See [tracks.md](tracks.md) for the full quick / standard / full ceremony matrix 
 
 The retrospective cadence is enforced by a **durable counter**, not a convention. Because
 `archive` deletes `state.json` on every completion, the counter cannot live there — it lives
-in a sibling `.openup/retro.json` (`{"iterations_since_retro": N}`) that `archive` never
-touches. `state.json.iterations_since_retro` is an **init-time mirror** of that durable value
+in its own `retro.json` file (`{"iterations_since_retro": N}`) that outlives every archive.
+`state.json.iterations_since_retro` is an **init-time mirror** of that durable value
 (seeded via `init --iterations-since-retro "$(… retro get)"`), kept for audit/visibility.
-Both files are local (`.openup/` is gitignored); the cadence nudge fails safe — if the file
-is lost, the count restarts at 0 and the next retro simply fires sooner.
+The cadence nudge fails safe — if the file is lost, the count restarts at 0 and the next
+retro simply fires sooner.
 
 | Action | Run by | Effect |
 |--------|--------|--------|
 | `retro get` | `openup-start-iteration` (seeds `--iterations-since-retro`) | Print N (0 if absent). |
-| `retro increment` | `openup-complete-task` (step 7a) | N += 1. Independent of archive ordering. |
+| `archive <dest> [--no-retro]` | **every** completion path — `openup-session.py end` (`/openup-complete-task`) and `/openup-quick-task` step 7 | N += 1 **after** a successful archive; prints `Retro cadence: N`. `--no-retro` opts out. |
+| `retro increment` | (manual / repair only) | N += 1. No skill calls this any more — see below. |
 | `retro check [--threshold N]` | `openup-start-iteration` (step 6) | Set `gates.retro_due = (count >= N)` in the live state; threshold default 5. Prints `due N` / `ok N`. |
 | `retro reset` | `openup-retrospective` (step 8) | N = 0; clears `gates.retro_due` in any live state. |
+
+**Where the counter lives, and why (T-143).** `retro.json` sits at
+**`<git-common-dir>/openup/retro.json`** — the same directory `openup-claims.py` already
+uses for claims, and the only one this framework treats as *shared by every linked
+worktree* and *outside git's merge machinery*. It used to sit next to `state.json` in the
+worktree's `.openup/`, which is wrong in two different ways depending on the project:
+
+- **Here** (`.openup/` gitignored, worktree-per-lane): the file was per-worktree, so
+  every fresh lane started the count over at `0` — observed directly, a T-135 worktree
+  read `0` immediately after T-132 had advanced it to `1`.
+- **Downstream** (projects that *track* `.openup/retro.json`): two lanes branching from
+  the same count merge by **overwrite, not sum** — a structural lost update that gets
+  worse the more parallelism a project has, i.e. exactly where the gate matters most.
+
+Resolution precedence: **`--retro-dir` > an explicit `--state-dir` > `<git-common-dir>/openup`
+> `<repo-root>/.openup`**. An explicit `--state-dir` still scopes the counter so tests and
+deliberately-isolated callers can never touch the real shared one (nothing passes it in
+normal operation); the last entry is the **fail-open fallback** outside a git repo — a
+missing or failing `git` must never raise, because the cadence is an advisory gate, not a
+correctness gate.
+
+**Migration is read-forward and non-destructive.** If the shared file does not exist yet
+but a legacy `<worktree>/.openup/retro.json` does, its count is read as the current value,
+so an upgrading project carries its cadence forward instead of silently resetting to `0`.
+The first write lands at the shared path, after which the legacy file is never consulted
+again — carried once, never re-applied. The legacy file is deliberately **left in place**:
+deleting is the irreversible half of a migration and buys nothing here.
+
+**Where the increment lives, and why (T-142).** Until T-142 the increment was a prose
+step in exactly one skill (`/openup-complete-task` §7a). `/openup-quick-task` never
+mentioned `retro` at all, so every quick lane completed without advancing the cadence —
+an enforcement gate degrading with no error, just a threshold that arrives late or never
+(observed: T-133 and T-137). The increment therefore moved into `archive`, the one
+teardown step *every* completion path already runs: the cadence now advances by
+construction rather than by a model remembering a step, and a completion path added later
+inherits it. Corollaries: `/openup-complete-task` must **not** also call `retro
+increment` (that double-counts), a failed or refused archive never advances the count
+(the increment sits after the state file is removed), and a genuinely non-completion
+archive passes `--no-retro`. Over-counting is the safe direction here — it makes a
+retrospective due sooner, where under-counting silently disables the gate.
 
 **The gate's teeth:** when `iterations_since_retro >= 5`, `/openup-start-iteration`
 **refuses a `full`-track start** until `/openup-retrospective` runs; `quick`/`standard`

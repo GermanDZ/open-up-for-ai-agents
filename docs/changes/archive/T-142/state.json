@@ -1,0 +1,23 @@
+{
+  "schema": 2,
+  "task_id": "T-142",
+  "iteration": 98,
+  "iteration_id": null,
+  "cycle": 1,
+  "phase": "construction",
+  "track": "standard",
+  "branch": "fix/T-142-T-143-retro-cadence",
+  "worktree": "/Users/germandz/personal-code/ai-dev-framework/open-up-for-ai-agents-T-142",
+  "base_sha": "4357ac37b7b5b1c7f4b54b18c86fadd50d0214f6",
+  "session_id": "fix/T-142-T-143-retro-cadence",
+  "started_at": "2026-07-27T08:35:13Z",
+  "gates": {
+    "team_deployed": false,
+    "plan_persisted": "docs/changes/T-142/plan.md",
+    "log_written": true,
+    "roadmap_synced": true,
+    "retro_due": false,
+    "implementation_verified": true
+  },
+  "iterations_since_retro": 0
+}
