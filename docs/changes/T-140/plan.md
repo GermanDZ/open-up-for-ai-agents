@@ -11,6 +11,7 @@ last-synced: ""
 touches:
   - scripts/openup-runlog.py
   - scripts/tests/test_openup_runlog.py
+  - scripts/tests/test_run_log_hooks.py
   - docs-eng-process/.claude-templates/scripts/hooks/auto-log-commit.py
   - docs-eng-process/.claude-templates/scripts/hooks/stage-run-log.py
   - docs-eng-process/.claude-templates/settings.json.example
@@ -191,6 +192,9 @@ explicit flush. Both hooks stay fail-open.
   dedupe by SHA, print staged paths); `--repo-root` / `--worktree` args, exit 0 always.
 - `scripts/tests/test_openup_runlog.py` — pytest covering flush, dedupe, corrupt-line
   tolerance, multi-lane routing, empty/missing pending.
+- `scripts/tests/test_run_log_hooks.py` — end-to-end pytest driving BOTH real hook
+  scripts with realistic payloads against a throwaway git repo (added during
+  implementation: the hooks themselves were otherwise untested).
 - `docs-eng-process/.claude-templates/scripts/hooks/stage-run-log.py` — `PreToolUse`/Bash;
   matches the same `COMMIT_RE`, calls flush against the target worktree, `git add`s
   the shards, exits 0 unconditionally.
@@ -229,7 +233,7 @@ explicit flush. Both hooks stay fail-open.
 - [x] Drop the sweep instruction from `docs-eng-process/conventions.md` and
       `docs-eng-process/procedures/openup-complete-task.md`, then re-render the mirror
       (`render-skills-mirror.py --write` + sync-templates).
-- [ ] (tester) Verify end to end in this lane: make a real commit, confirm
+- [x] (tester) Verify end to end in this lane: make a real commit, confirm
       `git status --porcelain -- docs/agent-logs/` is empty and the previous commit's
       record is inside the new commit.
 
