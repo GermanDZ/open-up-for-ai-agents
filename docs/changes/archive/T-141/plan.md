@@ -1,7 +1,7 @@
 ---
 id: T-141
 title: "Retrospective must verify and retire carried action items before authoring new ones"
-status: ready
+status: done
 priority: high
 estimate: 1 session
 plan: ""

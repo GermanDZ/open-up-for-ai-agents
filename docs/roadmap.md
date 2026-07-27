@@ -253,7 +253,7 @@ T-002 (`/openup-sync-spec`) completed 2026-06-11 once T-008's readiness DAG un-b
 ---
 
 ## T-141: Retrospective action items are never verified or retired
-**Status**: pending
+**Status**: completed (2026-07-27)
 **Priority**: high
 **Value**: Prevents `docs/project-status.md` from reporting resolved blockers as live, Critical-priority ones — a downstream project found three carried action items (two of them its highest-priority entries) that had actually been satisfied 2–11 days before being read as still-blocking, which would mislead any agent or human choosing work from that file into deprioritizing real work behind a phantom blocker. The failure is silent and compounds: every retrospective appends, none prunes, so signal-to-noise in the one file agents are told to read for context degrades monotonically past a project's second retrospective.
 **Description**: `/openup-retrospective` step 6 authors action items and step 7 writes them into `docs/project-status.md`, but no step ever verifies or retires one — they are hand-written prose in an append-only section. Add a verification step, run *before* new items are authored: for each carried action item, check whether what it asks for now exists, and strike it through **with evidence** (commit SHA, date, artifact path) when satisfied — not a silent deletion, since the evidence trail is what makes a false-negative provable later.
