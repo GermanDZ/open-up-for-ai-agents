@@ -1,0 +1,3 @@
+{"run_id": "t153-eaa21a4", "event": "session_begin", "task_id": "T-153", "goal": "T-153 \u2014 one smoke test installs a throwaway consumer via the real installer and asserts it is usable", "branch": "fix/T-153-consumer-smoke", "phase": "construction", "ts": "2026-07-27T11:36:13Z"}
+{"event": "iteration_complete", "task_id": "T-153", "branch": "fix/T-153-consumer-smoke", "phase": "construction", "ts": "2026-07-27T11:41:32Z"}
+{"event": "session_end", "task_id": "T-153", "ts": "2026-07-27T11:41:32Z"}
