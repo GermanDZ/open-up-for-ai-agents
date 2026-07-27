@@ -136,13 +136,13 @@ sub-items are deliberately not re-tested; the value here is that the installer i
 
 ## Operations
 
-- [ ] Add `scripts/tests/test_consumer_smoke.py` that bootstraps a consumer into `tmp_path`
+- [x] Add `scripts/tests/test_consumer_smoke.py` that bootstraps a consumer into `tmp_path`
       via the real `bootstrap-project.sh` and asserts it exits 0 and created the project.
-- [ ] Assert the consumer is usable: process CLIs present and executable, and
+- [x] Assert the consumer is usable: process CLIs present and executable, and
       `scripts/sync-from-framework.sh` shipped.
-- [ ] Assert the consumer's hook commands are all existence-guarded, and that the
+- [x] Assert the consumer's hook commands are all existence-guarded, and that the
       framework-exclusive marker is absent so it cannot be misdetected as the framework.
-- [ ] (tester) Run the new file plus the full suite; confirm hermetic (no network, nothing
+- [x] (tester) Run the new file plus the full suite; confirm hermetic (no network, nothing
       written outside `tmp_path`) and that it fails if the guard is stripped.
 
 ## Norms
