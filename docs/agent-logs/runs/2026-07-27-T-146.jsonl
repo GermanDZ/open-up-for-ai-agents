@@ -1,1 +1,2 @@
 {"event": "session_begin", "task_id": "T-146", "goal": "T-146 \u2014 quick-task's --iteration 0 must not clobber the project-status header", "branch": "fix/T-145-T-146-T-141-delivery-evidence", "phase": "construction", "ts": "2026-07-27T08:06:45Z"}
+{"run_id": "b86d3d2375af46c1bd0d665547f8346e", "event": "commit", "task_id": "T-146", "branch": "fix/T-145-T-146-T-141-delivery-evidence", "sha": "c22e6faafb1a92de90ea4a05776baac3d7eef27c", "model": null, "session_id": "fix/T-145-T-146-T-141-delivery-evidence", "ts": "2026-07-27T08:12:17Z"}
