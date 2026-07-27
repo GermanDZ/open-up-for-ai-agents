@@ -53,6 +53,13 @@ state = _load("openup_state", "openup-state.py")
 # openup-claims.py's `reap --stale-after` default (1800s = 30 min).
 DEFAULT_STALE_AFTER = 1800
 
+# Tracks whose plan gate `gate-edits.py` actually enforces. `quick` relaxes the
+# gate (tracks.md), so seeding it there would be noise (T-148).
+PLAN_GATE_TRACKS = ("standard", "full")
+
+# Conventional location of a task's own spec, relative to the worktree root.
+TASK_SPEC_TEMPLATE = "docs/changes/{task_id}/plan.md"
+
 
 # --------------------------------------------------------------------------
 # Composition helper — run a module's CLI in-process, normalizing exit signal.
@@ -103,6 +110,37 @@ def _current_head_sha(cwd=None):
         return None
 
 
+def _resolve_plan_path(plan_arg, track, worktree, task_id):
+    """Return ``(plan_path, auto_resolved)`` for ``state init --plan`` (T-148).
+
+    The plan gate exists to prove a spec was persisted before code is edited, and
+    on a change lane that spec is *always* ``docs/changes/<task_id>/plan.md`` —
+    ``begin`` already requires it on disk, because the claim reads its ``touches``
+    / ``depends-on`` frontmatter. Making the caller name that path again was the
+    bug: the skill advertised ``--plan`` as an optional flag pointing at the
+    phase-plan convention (``docs/plans/``), so every session skipped it and then
+    hit ``gate-edits.py`` on its first edit, recovering by hand with
+    ``openup-state.py set-gate plan_persisted``. Resolve it here instead, where it
+    cannot be forgotten.
+
+    An explicit ``--plan`` always wins, verbatim and without warning: legacy lanes
+    legitimately point at ``docs/plans/`` and ``docs/iteration-plans/`` files.
+
+    Fail-open by design — an absent spec returns ``(None, False)``, leaving the
+    gate ``false`` exactly as before rather than refusing the begin. A lane that
+    keeps its plan elsewhere must stay startable.
+    """
+    if plan_arg:
+        return plan_arg, False
+    if track not in PLAN_GATE_TRACKS or not task_id:
+        return None, False
+    rel = TASK_SPEC_TEMPLATE.format(task_id=task_id)
+    root = Path(worktree).expanduser() if worktree else Path.cwd()
+    if not (root / rel).is_file():
+        return None, False
+    return rel, True
+
+
 # --------------------------------------------------------------------------
 # begin
 # --------------------------------------------------------------------------
@@ -113,6 +151,11 @@ def cmd_begin(args):
         claims_flags += ["--claims-dir", args.claims_dir]
     push_flags = ["--no-push"] if args.no_push else []
     base_sha = _current_head_sha(cwd=args.worktree)
+    # Resolved BEFORE the claim (pure, read-only) so it can never add a failure
+    # path inside the rollback boundary — see DD3 / the T-148 no-go zone.
+    plan_path, plan_auto = _resolve_plan_path(
+        args.plan, args.track, args.worktree, task
+    )
 
     # 1. Stale-lease reap — DEFAULT is dry-run + warn (does not change begin's
     #    blast radius; DD4). --reap opts into a live sweep. The live self-heal
@@ -196,8 +239,8 @@ def cmd_begin(args):
         init_argv += ["--base-sha", base_sha]
     if args.session_id:
         init_argv += ["--session-id", args.session_id]
-    if args.plan:
-        init_argv += ["--plan", args.plan]
+    if plan_path:
+        init_argv += ["--plan", plan_path]
     if args.iterations_since_retro is not None:
         init_argv += ["--iterations-since-retro", str(args.iterations_since_retro)]
     if args.force:
@@ -227,6 +270,23 @@ def cmd_begin(args):
         _rollback(remove_state=True)  # state-init succeeded above → remove what we made
         sys.stderr.write(f"begin failed at log (code {code}); claim + state rolled back.\n")
         return code or 1
+
+    # 7. Record that the plan gate was auto-resolved (T-148). Best-effort and
+    #    strictly non-fatal: this is the durable instrument the success measure
+    #    reads back from the lane's run shard, never a reason to fail a begin
+    #    whose claim + state + session_begin log all landed.
+    if plan_auto:
+        auto_argv = ["log-event", "--event", "plan_gate_autoresolved", "--task-id", task]
+        if args.branch:
+            auto_argv += ["--branch", args.branch]
+        if args.track:
+            auto_argv += ["--track", args.track]
+        if args.run_id:
+            auto_argv += ["--run-id", args.run_id]
+        if args.log_dir:
+            auto_argv += ["--log-dir", args.log_dir]
+        _run(state, auto_argv)
+        sys.stderr.write(f"[session begin] plan gate auto-resolved -> {plan_path}\n")
 
     print(json.dumps({
         "task": task,
