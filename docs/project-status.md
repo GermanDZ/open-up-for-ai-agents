@@ -24,8 +24,7 @@ which retired 5 this cycle (B1, B2, B3, `20.2`, `77.5`).
 - **C3 — medium**: `sync-status.py` must not report success for a task it cannot find. *Evidence*: observed live in T-158 — printed `status=completed` while writing nothing, because `update_roadmap()` matched neither a table row nor a section and `main()` prints unconditionally.
 - **C4 — medium**: decide how downstream-environment measures get read. *Evidence*: `kaze-webapp`, `cqecho-app`, `tallyfox-app` are not present on this machine; T-147 and T-155 both came back `can't tell` this cycle.
 
-**Open — blocked outside this repo (3)**
-- `10.1` — **reclassified: actionable here with owner consent.** `../es-invoices` *is* present on this machine; `docs/changes/archive/T-009/plan.md` still reads `status: in-progress` and is the only stale one. Fix: `python3 scripts/openup-claims.py migrate-archived-status` there.
+**Open — blocked outside this repo (2)**
 - `86.3` — T-120/T-123 read-back, blocked on owner endpoint stability.
 - `86.4` — kaze-webapp `sync-from-framework.sh` bump, kaze lead's schedule.
 
@@ -37,9 +36,11 @@ retracted as misdiagnoses. All three of iteration-103's own items (B1–B3) are 
 same cycle they were authored — the first time that has happened, and the thing step 5c
 exists to keep true.
 
-**Still open: 8** — 4 new this cycle (C1–C4, all actionable here), 3 blocked outside this repo
-(`10.1` now actionable with owner consent, `86.3`, `86.4`), and 1 opportunistic rider (`9.2`).
-Carried backlog went 6 → 4 before the new items; no carried item is older than its evidence.
+**Still open: 7** — 4 new this cycle (C1–C4, all actionable here), 2 blocked outside this repo
+(`86.3`, `86.4`), and 1 opportunistic rider (`9.2`). `10.1` was retired **obsolete**
+2026-07-27 by owner decision (target repos too old to migrate); evidence in
+[iteration-10-retrospective.md](iteration-retrospectives/iteration-10-retrospective.md).
+Carried backlog went 6 → 3 across this cycle — the lowest it has been.
 
 ## Notes
 
