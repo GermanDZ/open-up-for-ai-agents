@@ -1,0 +1,1 @@
+{"run_id": "t152-448cb18", "event": "session_begin", "task_id": "T-152", "goal": "T-152 \u2014 a success measure must name its read-back environment and prove the instrument exists there", "branch": "fix/T-152-measure-readback-environment", "phase": "construction", "ts": "2026-07-27T11:18:40Z"}

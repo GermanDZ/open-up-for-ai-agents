@@ -162,18 +162,18 @@ added ("does this instrument exist over there?") is exactly the kind a parser ca
 
 ## Operations
 
-- [ ] Update criterion 12 in `.claude/rubrics/task-spec-rubric.md`: require a named
+- [x] Update criterion 12 in `.claude/rubrics/task-spec-rubric.md`: require a named
       read-back environment; add "instrument exists somewhere other than the read-back
       environment" as an explicit gap, citing T-052.
-- [ ] Apply the identical change to
+- [x] Apply the identical change to
       `docs-eng-process/.claude-templates/rubrics/task-spec-rubric.md` and confirm
       `check-claude-sync.sh` reports the two in sync.
-- [ ] Update the Success Measures guidance in
+- [x] Update the Success Measures guidance in
       `docs-eng-process/procedures/openup-create-task-spec.md` to require the environment,
       with the "this repo" one-clause case shown.
-- [ ] Update step 1b of `docs-eng-process/procedures/openup-complete-task.md` to verify
+- [x] Update step 1b of `docs-eng-process/procedures/openup-complete-task.md` to verify
       existence **in the named environment**; re-render the mirrors and sync templates.
-- [ ] (tester) Verify: grading an existing spec that names no environment yields ❌ on
+- [x] (tester) Verify: grading an existing spec that names no environment yields ❌ on
       criterion 12; this task's own spec satisfies the new rule; sync + check-docs clean.
 
 ## Norms
