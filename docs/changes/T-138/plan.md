@@ -193,18 +193,19 @@ behavior needed, only the documented sequence.
 
 ## Operations
 
-- [ ] Add `check_task_library(repo)` to `scripts/openup-doctor.py`:
+- [x] Add `check_task_library(repo)` to `scripts/openup-doctor.py`:
       KB-tree presence pre-test → INFO "not verifiable" when absent;
       script-presence check → INFO "not present" when absent; otherwise
       run `--check` and map exit 0 → INFO "in sync", exit 1 → WARNING
       naming the drift, other exit → INFO "could not run"
-- [ ] Wire it into `detect_all()`
-- [ ] Write `docs-eng-process/reference-driver.md`'s re-distill runbook
+- [x] Wire it into `detect_all()`
+- [x] Write `docs-eng-process/reference-driver.md`'s re-distill runbook
       section (bump → regenerate → review diff → commit)
-- [ ] (tester) Tests: KB absent → INFO; KB present + in sync → INFO;
+- [x] (tester) Tests: KB absent → INFO; KB present + in sync → INFO;
       KB present + genuine drift → WARNING; script absent → INFO; confirm
       no ERROR is ever produced by this check regardless of scenario
-- [ ] Run the full existing test suite; confirm no regression
+- [x] Run the full existing test suite; confirm no regression (767/767
+      green, 1 correctly skipped)
 
 ## Norms
 

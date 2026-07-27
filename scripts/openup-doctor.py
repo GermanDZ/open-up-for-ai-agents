@@ -286,6 +286,34 @@ _FIX_ORDER = {
 }
 
 
+# ── Check: task-library drift (T-138) — KB-presence-aware, never ERROR ────────
+# Not folded into _AGGREGATED: build-task-library.py --check treats a task's
+# individually-missing KB source file as drift (same exit code as a genuine
+# skeleton mismatch — scripts/build-task-library.py's check_drift()), and the
+# KB source tree (docs-eng-process/openup-knowledge-base/) is NOT vendored to
+# downstream projects (only task-library.yaml itself ships, per
+# process-manifest.txt) — so a routine downstream project would misreport as
+# "drifted" under the generic mechanism. This check pre-tests KB-tree presence
+# BEFORE ever running --check, so severity never depends on parsing the
+# compiler's own drift messages.
+def check_task_library(repo: str) -> list[Finding]:
+    chk = "task-library"
+    script_path = os.path.join(repo, "scripts", "build-task-library.py")
+    if not os.path.isfile(script_path):
+        return [Finding(INFO, chk, "build-task-library.py --check: not present (skipped)")]
+    kb_dir = os.path.join(repo, "docs-eng-process", "openup-knowledge-base")
+    if not os.path.isdir(kb_dir):
+        return [Finding(INFO, chk,
+                        "task-library.yaml: not verifiable (no vendored KB)")]
+    code, output = run(["python3", script_path, "--check"], repo)
+    if code == 0:
+        return [Finding(INFO, chk, "task-library.yaml: in sync with KB sources")]
+    if code == 127:
+        return [Finding(INFO, chk, f"build-task-library.py --check: could not run ({output})")]
+    tail = (output.splitlines() or [""])[-1][:200]
+    return [Finding(WARNING, chk, f"task-library.yaml drift: {tail}")]
+
+
 def check_aggregate(repo: str) -> list[Finding]:
     out: list[Finding] = []
     chk = "aggregate"
@@ -428,6 +456,7 @@ def detect_all(repo: str, framework_path: str | None) -> list[Finding]:
     findings += check_framework_drift(repo, framework_path)
     findings += check_state_integrity(repo)
     findings += check_aggregate(repo)
+    findings += check_task_library(repo)
     findings += check_section_status_drift(repo)
     findings += check_plan_gate(repo)
     findings += check_process_config(repo)
