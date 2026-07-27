@@ -1,3 +1,5 @@
 {"run_id": "t153-eaa21a4", "event": "session_begin", "task_id": "T-153", "goal": "T-153 \u2014 one smoke test installs a throwaway consumer via the real installer and asserts it is usable", "branch": "fix/T-153-consumer-smoke", "phase": "construction", "ts": "2026-07-27T11:36:13Z"}
 {"event": "iteration_complete", "task_id": "T-153", "branch": "fix/T-153-consumer-smoke", "phase": "construction", "ts": "2026-07-27T11:41:32Z"}
 {"event": "session_end", "task_id": "T-153", "ts": "2026-07-27T11:41:32Z"}
+{"run_id": "253189f911da462f9657e0c2a3851fdb", "event": "commit", "task_id": "T-153", "branch": "fix/T-153-consumer-smoke", "sha": "eaa21a4be70f98feb9ae57d5814300fd8b11c723", "model": null, "session_id": "fix/T-153-consumer-smoke", "ts": "2026-07-27T11:36:16Z"}
+{"run_id": "337b3e9b4ec546a7936469b3677137dc", "event": "commit", "task_id": "T-153", "branch": "fix/T-153-consumer-smoke", "sha": "261af30e57509608f79a1e7140a2c0f09aea7417", "model": null, "session_id": "fix/T-153-consumer-smoke", "ts": "2026-07-27T11:37:47Z"}

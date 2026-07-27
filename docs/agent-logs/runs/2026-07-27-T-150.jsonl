@@ -1,3 +1,6 @@
 {"run_id": "t150-8ef0167", "event": "session_begin", "task_id": "T-150", "goal": "T-150 \u2014 guard every hook command so a missing hook script is a no-op that cannot lock Bash and Write", "branch": "fix/T-150-guard-hook-commands", "phase": "construction", "ts": "2026-07-27T10:15:53Z"}
 {"event": "iteration_complete", "task_id": "T-150", "branch": "fix/T-150-guard-hook-commands", "phase": "construction", "ts": "2026-07-27T10:30:10Z"}
 {"event": "session_end", "task_id": "T-150", "ts": "2026-07-27T10:30:20Z"}
+{"run_id": "e680ecfa352e4ae1a2d941f28c109c89", "event": "commit", "task_id": "T-150", "branch": "fix/T-150-guard-hook-commands", "sha": "8ef0167e97fcbcdcccd7e7a6799c865a23485e8e", "model": null, "session_id": "fix/T-150-guard-hook-commands", "ts": "2026-07-27T10:15:54Z"}
+{"run_id": "0d14c9e1a38e414aa77ccc1f9b506c16", "event": "commit", "task_id": "T-150", "branch": "fix/T-150-guard-hook-commands", "sha": "524aa34f9a5c723da68379c66084ddea3ee6a41c", "model": null, "session_id": "fix/T-150-guard-hook-commands", "ts": "2026-07-27T10:18:58Z"}
+{"run_id": "1bbded4b92d64dbeb5d63e974f8a7a74", "event": "commit", "task_id": "T-150", "branch": "fix/T-150-guard-hook-commands", "sha": "3e91e085bcef312e2494b4429f533693405c7fe0", "model": null, "session_id": "fix/T-150-guard-hook-commands", "ts": "2026-07-27T10:29:46Z"}
