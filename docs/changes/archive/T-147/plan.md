@@ -2,7 +2,7 @@
 id: T-147
 task-id: T-147
 title: Fence allowlist omits the two `.claude/memory/` files every completion writes
-status: ready   # proposed → ready → in-progress → done → verified
+status: done
 priority: low   # critical | high | medium | low
 estimate: 0.5 session
 track: standard
