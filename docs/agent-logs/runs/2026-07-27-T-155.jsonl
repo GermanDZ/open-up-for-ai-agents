@@ -1,0 +1,3 @@
+{"run_id": "t155-c0de5e9", "event": "session_begin", "task_id": "T-155", "goal": "T-155 \u2014 merge=union for the two shared .claude/memory/ files, delivered to existing consumers too", "branch": "chore/T-155-memory-merge-union", "phase": "construction", "ts": "2026-07-27T14:36:31Z"}
+{"run_id": "t155-c0de5e9", "event": "plan_gate_autoresolved", "task_id": "T-155", "branch": "chore/T-155-memory-merge-union", "track": "standard", "ts": "2026-07-27T14:36:31Z"}
+{"run_id": "814275d71c864162a2d6bba4524e9dea", "event": "commit", "task_id": "T-155", "branch": "chore/T-155-memory-merge-union", "sha": "2216ae0963ca9fe6905bc12e1128aef62bf471cd", "model": null, "session_id": "chore/T-155-memory-merge-union", "ts": "2026-07-27T14:36:41Z"}

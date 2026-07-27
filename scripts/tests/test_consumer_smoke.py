@@ -99,6 +99,20 @@ def test_consumer_receives_its_own_self_updater(consumer):
     assert (consumer / "scripts" / "sync-from-framework.sh").exists()
 
 
+def test_consumer_receives_merge_union_for_shared_memory_files(consumer):
+    """T-155: the two `.claude/memory/` files every lane is forced to append to
+    are class-2 shared (docs-eng-process/parallel-lanes.md). A fresh consumer
+    must arrive with `merge=union` already set for both — this is the *new
+    project* half of delivery; projects that already exist get it from
+    `migrate_gitattributes_merge_union` on their next sync instead."""
+    ga = consumer / ".gitattributes"
+    assert ga.exists(), "bootstrap shipped no .gitattributes"
+    body = ga.read_text()
+    for entry in (".claude/memory/bypass-log.md",
+                  ".claude/memory/iteration-learnings.md"):
+        assert f"{entry} merge=union" in body, f"{entry} did not reach the consumer"
+
+
 # --- 3. hook wiring is present AND guarded (T-150, consumer side) -------------
 
 

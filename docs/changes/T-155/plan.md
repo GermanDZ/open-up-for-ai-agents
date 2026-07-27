@@ -11,6 +11,7 @@ last-synced: ""
 touches:
   - .gitattributes
   - scripts/sync-from-framework.sh
+  - scripts/lib/migrate-data.sh
   - scripts/tests/test_t155_memory_merge_union.py
   - scripts/tests/test_consumer_smoke.py
   - docs-eng-process/parallel-lanes.md
@@ -182,8 +183,10 @@ contract lives in `docs-eng-process/`, which the citations name.
 ## Entities
 
 - **Attribute file** (modified) — `.gitattributes`
-- **Consumer updater** (modified) — `scripts/sync-from-framework.sh` (the T-056
-  `.gitignore` patch block is the pattern to mirror)
+- **Migration helper** (modified) — `scripts/lib/migrate-data.sh`
+  (`migrate_gitattributes_merge_union`, new)
+- **Consumer updater** (modified) — `scripts/sync-from-framework.sh` (call site
+  only; mirrors the T-046 `migrate_untrack_agent_runs` wiring)
 - **Bootstrap** (read-only — already copies the file) —
   `scripts/bootstrap-project.sh` entrypoint-file loop
 - **Class-2 definition** (modified) — `docs-eng-process/parallel-lanes.md`
@@ -208,9 +211,14 @@ zero of the repos where the collision occurs.
 **Modify:**
 - `.gitattributes` — two entries plus a comment naming T-155, the decision, and
   the server-side residual.
-- `scripts/sync-from-framework.sh` — idempotent `.gitattributes` patch beside the
-  existing T-056 `.gitignore` block; honors `DRY_RUN`, increments `SYNCED_FILES`,
-  logs via `log_success` / `log_verbose`.
+- `scripts/lib/migrate-data.sh` — new sourceable
+  `migrate_gitattributes_merge_union <root> <dry>`. The logic lives here, not
+  inline in the sync script, because that file states the convention itself at
+  its T-046 call site: *"logic lives in scripts/lib/migrate-data.sh so it is
+  unit-testable"*. An inline block would be untestable without running the whole
+  sync.
+- `scripts/sync-from-framework.sh` — source the helper and call it, mirroring the
+  existing T-046 `migrate_untrack_agent_runs` call site; honors `DRY_RUN`.
 - `scripts/tests/test_consumer_smoke.py` — requirement 2, on the existing
   module-scoped bootstrapped `consumer` fixture.
 - `docs-eng-process/parallel-lanes.md` — class-2 row: decision, rejected
@@ -229,18 +237,18 @@ zero of the repos where the collision occurs.
 
 ## Operations
 
-- [ ] Add the two `merge=union` entries to `.gitattributes`, with a comment
+- [x] Add the two `merge=union` entries to `.gitattributes`, with a comment
       naming T-155, the rejected sharding option, and the server-side residual.
-- [ ] Add the idempotent `.gitattributes` patch block to
-      `scripts/sync-from-framework.sh` (mirroring the T-056 `.gitignore` block:
-      `DRY_RUN`-aware, `SYNCED_FILES`, creates the file when absent, appends
-      without disturbing existing lines).
-- [ ] Record the decision, the rejected alternative, and the residual in
+- [x] Add `migrate_gitattributes_merge_union <root> <dry>` to
+      `scripts/lib/migrate-data.sh` (idempotent, `DRY_RUN`-aware, creates the
+      file when absent, appends without disturbing existing lines) and call it
+      from `scripts/sync-from-framework.sh` at the existing migration call site.
+- [x] Record the decision, the rejected alternative, and the residual in
       `docs-eng-process/parallel-lanes.md`'s class-2 row.
-- [ ] (tester) Write `scripts/tests/test_t155_memory_merge_union.py` covering
+- [x] (tester) Write `scripts/tests/test_t155_memory_merge_union.py` covering
       requirements 3–6 against fixtures for both consumer shapes (has
       `.gitattributes` / has none).
-- [ ] (tester) Add the requirement-2 assertion to
+- [x] (tester) Add the requirement-2 assertion to
       `scripts/tests/test_consumer_smoke.py`'s bootstrapped fixture, then run
       that module plus the new one and `test_sync_migration.py` green.
 

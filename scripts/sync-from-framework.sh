@@ -715,6 +715,24 @@ if [ -f "$GITIGNORE_FILE" ] && grep -qxF '/.claude' "$GITIGNORE_FILE"; then
 else
   log_verbose ".gitignore already has the settings-only pattern (or does not exist) — skipping"
 fi
+
+# T-155: give the two shared .claude/memory/ files merge=union in the consumer's
+# .gitattributes (logic lives in scripts/lib/migrate-data.sh so it is
+# unit-testable). bootstrap-project.sh copies .gitattributes only at FIRST
+# install, so this is the only path that reaches an existing project.
+if [ -f "$MIGRATE_HELPER" ]; then
+  ga_out="$(migrate_gitattributes_merge_union "$PROJECT_ROOT" "$DRY_RUN")"
+  if [ -n "$ga_out" ]; then
+    if [ "$DRY_RUN" = false ]; then
+      log_success "$ga_out"
+      SYNCED_FILES=$((SYNCED_FILES + 1))
+    else
+      log_info "$ga_out"
+    fi
+  else
+    log_verbose ".gitattributes already covers the shared .claude/memory/ files — skipping"
+  fi
+fi
 echo ""
 
 # Self-commit the tracked files this sync overwrote (T-052) so the working tree
