@@ -26,3 +26,43 @@ migrate_untrack_agent_runs() {
   git -C "$root" rm --cached --quiet "$rel" >/dev/null 2>&1 || true
   return 0
 }
+
+# T-155: give the two INVOLUNTARILY shared .claude/memory/ append-only files
+# `merge=union` in the consumer's .gitattributes. bootstrap-project.sh copies
+# .gitattributes, but ONLY at initial bootstrap — so without this the attribute
+# reaches new projects only, and never the existing ones where the collision
+# actually occurs (which is the whole point).
+#
+# APPENDS, never overwrites: a consumer's own attributes must survive. Idempotent
+# per entry — matches on the PATH, not the whole line, so a consumer that wrote
+# its own variant is left alone rather than duplicated. Creates the file when the
+# project has none. Never commits (the user commits, like the rest of the sync).
+#
+# Mitigation, not a fix: git runs merge drivers LOCALLY only — GitHub does not
+# run them server-side, so a PR that conflicts on these files still conflicts.
+# Args: <project_root> <dry_run:true|false>. Echoes one line per action taken.
+migrate_gitattributes_merge_union() {
+  local root="$1" dry="$2"
+  local ga="$root/.gitattributes"
+  local added=0 path
+  for path in ".claude/memory/bypass-log.md" ".claude/memory/iteration-learnings.md"; do
+    if [ -f "$ga" ] && grep -qF "$path" "$ga" 2>/dev/null; then
+      continue  # already covered → clean no-op
+    fi
+    if [ "$dry" = true ]; then
+      echo "[DRY RUN] Would add '$path merge=union' to .gitattributes"
+      continue
+    fi
+    if [ ! -f "$ga" ]; then
+      {
+        printf '# OpenUP: merge behavior for shared append-only files (T-155).\n'
+        printf '# Reduces LOCAL merge conflicts only — GitHub does not run merge\n'
+        printf '# drivers server-side, so PR conflicts on these files remain.\n'
+      } > "$ga"
+    fi
+    printf '%s merge=union\n' "$path" >> "$ga"
+    added=$((added + 1))
+  done
+  [ "$added" -gt 0 ] && echo "Patched .gitattributes: merge=union for $added shared .claude/memory/ file(s)"
+  return 0
+}

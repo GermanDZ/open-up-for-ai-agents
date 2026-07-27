@@ -452,7 +452,7 @@ The entry is cancelled rather than completed because no work was done under it â
 ---
 
 ## T-155: `merge=union` (or sharding) for the two shared `.claude/memory/` append-only files
-**Status**: pending
+**Status**: completed (2026-07-27)
 **Priority**: low
 **Value**: T-147 exempted `.claude/memory/bypass-log.md` and `.claude/memory/iteration-learnings.md` from the write-fence, which stops the false `OUT OF LANE` â€” but it does not make them conflict-free. They are genuine **class-2** shared append-only files (`docs-eng-process/parallel-lanes.md`): every lane appends to the *same* file, so two parallel lanes still collide at EOF on merge. `docs/agent-logs/runs/*.jsonl` already carries the `merge=union` treatment for the identical shape, and T-046 chose *sharding* over union for the run log precisely because union does not solve the PR case.
 **Description**: Decide how the two involuntarily-shared `.claude/memory/` files should behave under parallel lanes, knowing `merge=union` only fixes **local** merges/rebases (GitHub does not run merge drivers server-side, per the existing `.gitattributes` comment) and so is a partial mitigation at best.

@@ -14,3 +14,25 @@
 # attribute only helps merges/rebases performed locally. The consolidated
 # agent-runs.jsonl is a gitignored derived view (T-046), so it needs no attribute.
 docs/agent-logs/runs/*.jsonl merge=union
+
+# T-155 — the two INVOLUNTARILY shared append-only files (class 2 in
+# docs-eng-process/parallel-lanes.md). Hooks and `/openup-complete-task` step 6
+# append to these on every lane's behalf, into fixed paths in the consumer's
+# checkout, so no lane can opt out and neither file can be sharded from here.
+#
+# Inert in THIS repo (it gitignores /.claude/*); they matter only in a project
+# that TRACKS .claude/. Evidence from such a project, 2026-07-27: of the merge
+# commits touching bypass-log.md, 3 of 3 required reconciling both parents —
+# each a LOCAL `merge origin/main into <branch>`, exactly the case a merge
+# driver runs for. iteration-learnings.md had 0 (one append per completion,
+# and completions are serial); it gets the attribute anyway because it is the
+# same shape, and a per-file split would encode "hasn't bitten yet" as design.
+#
+# NOT a fix, a mitigation — same caveat as the run log above: GitHub does NOT
+# run merge drivers server-side, so a PR that conflicts on these files still
+# conflicts. Sharding (the T-046 treatment) was considered and rejected: unlike
+# agent-runs.jsonl these are read DIRECTLY at a fixed path by an agent at
+# session start, so sharding would need a consolidation step nothing runs, in
+# the consumer's checkout. See docs/changes/archive/T-155/plan.md.
+.claude/memory/bypass-log.md merge=union
+.claude/memory/iteration-learnings.md merge=union
