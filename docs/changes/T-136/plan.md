@@ -185,19 +185,19 @@ gate actually cares about.
 
 ## Operations
 
-- [ ] Write `scripts/analyze-authoring-reliability.py`: log parser (sub-run
+- [x] Write `scripts/analyze-authoring-reliability.py`: log parser (sub-run
       block splitting), turn-count + repeated-tool-call classifier, JSON
       output
-- [ ] Write `scripts/tests/test_analyze_authoring_reliability.py` with
+- [x] Write `scripts/tests/test_analyze_authoring_reliability.py` with
       synthetic fixture logs for: clean run, over-turn-ceiling sub-run,
       3+-repeat restart, never-started run (endpoint-error on iteration 1)
-- [ ] Run the analyzer against `.openup/bench/t107-gate-nano/` and confirm
+- [x] Run the analyzer against `.openup/bench/t107-gate-nano/` and confirm
       the output matches this session's hand-verified finding (4/5 clean,
       run-04 flagged for the repeated `glob` call)
-- [ ] Write `docs/changes/T-107/design.md` recording the result plainly
+- [x] Write `docs/changes/T-107/design.md` recording the result plainly
       against the ≥80% bar, naming run-04's real failure reason
-- [ ] (tester) Run the new test file plus the full existing suite; confirm
-      no regression
+- [x] (tester) Run the new test file plus the full existing suite; confirm
+      no regression (763/763 green, 1 correctly skipped)
 
 ## Norms
 
