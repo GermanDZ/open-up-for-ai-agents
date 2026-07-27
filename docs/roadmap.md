@@ -239,7 +239,7 @@ T-002 (`/openup-sync-spec`) completed 2026-06-11 once T-008's readiness DAG un-b
 ---
 
 ## T-140: `auto-log-commit.py` fires post-commit, forcing a follow-up sweep commit on every lane
-**Status**: pending
+**Status**: completed (2026-07-27)
 **Priority**: medium
 **Value**: Removes a permanently noisy `git log` where a large share of commits describe process rather than product change (a downstream project measured 59%→74% of commits as bookkeeping across two retrospective windows, with `chore` volume doubling while product commits stayed flat) — degrading `git log` as a review/archaeology tool and costing every lane an extra commit whose entire content is "the log record describing the previous commit." First-hand evidence from this session too: the "fold heartbeat log delta" / "sweep run-log shard" commits made throughout T-132/T-134/T-135/T-136/T-137/T-138.
 **Description**: `auto-log-commit.py` is a `PostToolUse` hook — it can only append the run-log shard *after* a commit completes, so the shard is by construction never in the commit that triggered it, and `openup-complete-task/SKILL.md` step 2 already documents "fold in any delta... it can only fire post-commit" as a standing workaround rather than a fix. Two proposed directions (from a downstream hand-off, `docs/explorations/2026-07-27-...` if promoted — see below): (1) stage-then-commit — write the shard pre-commit so it lands in the triggering commit; (2) batch at session end — accumulate shards and write once during `openup-session.py end` (which already writes `session_end`), reducing per-commit I/O and making the append atomic per session.
