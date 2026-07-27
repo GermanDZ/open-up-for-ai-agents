@@ -14,6 +14,7 @@ touches:
   - scripts/tests/test_sync_status_sections.py
   - docs-eng-process/parallel-lanes.md
   - docs-eng-process/script-cli-reference.md
+  - docs-eng-process/.claude-templates/CLAUDE.md
 ---
 
 # T-157 — `sync-status.py --views-only` — regenerate the shared views without a live lane
@@ -75,6 +76,9 @@ INVEST check:
 8. `docs-eng-process/parallel-lanes.md`'s "Conflict recovery recipe" names the command that actually works after completion.
    - **Given** the recipe block at `docs-eng-process/parallel-lanes.md:206-219`, **When** a maintainer follows it verbatim in a post-completion checkout with no state file, **Then** every command in it succeeds.
 
+9. Every *live* instruction that states the recovery recipe names the working command; historical records are left as written.
+   - **Given** `docs-eng-process/.claude-templates/CLAUDE.md`'s "If a PR conflicts in the views" rule — the copy loaded into every agent session — **When** the recipe changes, **Then** that rule names `--views-only` too, **and** the recipe text in `docs/status-notes/`, `docs/explorations/`, `docs/iteration-retrospectives/` and `docs/changes/archive/` is unchanged, because those are audit records of what was true when written.
+
 ## Behavior Delta
 
 Ring 1 (`docs/product/`) contains only `milestones/` and carries no artifact describing `sync-status.py`; the authoritative document for this behavior is the process doc cited below, so that is what the Modified entry cites.
@@ -110,10 +114,10 @@ Mirror the branch that already exists: `--reconcile` returns from `main()` at li
 
 **Modify:**
 - `scripts/sync-status.py` — register `--views-only`; early-return from `main()` before `read_state()`; extend `--dry-run`'s help to cover both state-free paths.
-- `scripts/tests/test_sync_status_notes.py` — cases for requirements 1, 2, 4, 6.
-- `scripts/tests/test_sync_status_sections.py` — cases for requirements 3, 5.
+- `scripts/tests/test_sync_status_notes.py` — one `ViewsOnlyTests` class covering **all** of requirements 1–6. *(Corrected mid-lane: the original Structure split these across the two test files by which module they exercised. Splitting one feature's tests across two files to mirror the implementation's internals makes the feature's coverage unreadable — every test here shares the same "no state file present" fixture, which is the actual subject. `test_sync_status_sections.py` is consequently unmodified; it stays in `touches` as a harmless superset.)*
 - `docs-eng-process/parallel-lanes.md` — the recovery recipe (req. 8) and a one-line note that the header fields are not regenerated.
 - `docs-eng-process/script-cli-reference.md` — the `sync-status.py` signature.
+- `docs-eng-process/.claude-templates/CLAUDE.md` — the "If a PR conflicts in the views" rule (req. 9). Added mid-lane: this is the copy loaded into every agent session, so leaving it naming the broken command is precisely the rot the iteration-103 retrospective warned about. Its untracked, gitignored mirror `.claude/CLAUDE.md` needs no edit.
 
 **Do not touch:**
 - `update_project_status()` — tempting, since it owns the header, but requirement 4 is that the header is *not* written; the new path simply never calls it.
@@ -121,16 +125,20 @@ Mirror the branch that already exists: `--reconcile` returns from `main()` at li
 - `set_gate_roadmap_synced()` — requirement 5 is that it is not called; it needs no change.
 - `scripts/openup-session.py` — archiving state at completion is correct; the fix belongs in the recovery tool, not by keeping state alive longer.
 - `scripts/tests/test_t149_status_split.py` — asserts header-field behavior this task must leave unchanged; if a test here fails, that is a real regression, not a test to update.
+- `docs/status-notes/`, `docs/explorations/`, `docs/iteration-retrospectives/`, `docs/changes/archive/` — several state the old recipe verbatim and a sweep is tempting, but they are **audit records of what was true when written**. Rewriting history to match current behavior destroys the evidence trail this task was built from (req. 9).
+- `.claude/CLAUDE.md` — the local mirror of the template above; gitignored (`.gitignore:38`) and untracked, so editing it would put an uncommittable file in the lane's diff.
 
 ## Operations
 
-- [ ] Add the `--views-only` argparse flag and the `run_views_only()` skeleton; confirm `python3 scripts/sync-status.py --views-only --help` lists the flag and the script still imports clean.
-- [ ] Write the failing tests for requirements 1, 2, 4, 6 in `test_sync_status_notes.py` and 3, 5 in `test_sync_status_sections.py`; confirm they fail against the current implementation for the stated reason (exit 3), not an import error.
-- [ ] Implement `run_views_only()` — early-return in `main()` before `read_state()`, composing `assemble_notes` / `update_notes_section` / `reconcile_sections`, honoring `--dry-run`; confirm the new tests pass.
-- [ ] Verify the change is a pure widening: run the full `scripts/tests/` suite and confirm the pre-existing count still passes with no assertion edits (requirement 7).
-- [ ] Verify the fix bites end-to-end: in a throwaway copy with `.openup/state.json` deleted and a stale `## Notes`, confirm plain `sync-status.py` exits 3 and `--views-only` exits 0 and repairs the block.
-- [ ] Update `docs-eng-process/parallel-lanes.md`'s recovery recipe and `docs-eng-process/script-cli-reference.md`; re-read the recipe verbatim to confirm every command in it now succeeds post-completion.
-- [ ] (tester) Confirm the header-preservation claim independently — diff `docs/project-status.md` above `## Notes` before/after a `--views-only` run and confirm zero bytes changed.
+- [x] Confirm the current failure mode first: in a fixture with no `.openup/state.json`, plain `sync-status.py` exits `3` with `No state file at …` — verified before any edit (this is requirement 2's precondition, checked against the pristine script rather than after the flag existed).
+- [x] Add the `--views-only` argparse flag and the `run_views_only()` skeleton; confirm `python3 scripts/sync-status.py --views-only --help` lists the flag and the script still imports clean.
+- [x] Write the `ViewsOnlyTests` cases for requirements 1–6; confirm they fail against the current implementation for the stated reason, not an import error. **9 of 11 failed** against `HEAD`'s script; the 2 that passed are `test_plain_sync_still_fails_without_state` (a deliberate no-regression guard, expected to pass both ways) and `test_table_row_status_untouched` (which passes vacuously on the old script, since the command errors out before touching anything).
+- [x] Implement `run_views_only()` — early-return in `main()` before `read_state()`, composing `assemble_notes` / `update_notes_section` / `reconcile_sections`, honoring `--dry-run`; confirm the new tests pass (11/11).
+- [x] Verify the change is a pure widening: full `scripts/tests/` suite **884 passed, 1 skipped, 20 subtests** — exactly the 873 baseline + 11 new, with no assertion edits to any pre-existing test (requirement 7).
+- [x] Verify the fix bites end-to-end: on a copy of the **real** repo docs with `.openup/state.json` absent and `## Notes` truncated to one stale line, plain `sync-status.py` exits `3` and `--views-only` exits `0`, restoring all **113 of 113** shards (0 missing) — the exact iteration-103 failure mode ("three notes on disk but absent from the block").
+- [x] Update `docs-eng-process/parallel-lanes.md`'s recovery recipe and `docs-eng-process/script-cli-reference.md`; the recipe now branches on lane-live vs completed, and the completed branch's `--views-only` command was the one run in the live check above.
+- [x] Update the "If a PR conflicts in the views" rule in `docs-eng-process/.claude-templates/CLAUDE.md` (requirement 9, added mid-lane); `check-claude-sync` green, and the historical records were deliberately left unrewritten.
+- [x] (tester) Confirm the header-preservation claim independently — `diff` of `docs/project-status.md` above `## Notes` before/after a live `--views-only` run is **empty**, including `Last Updated` and `Updated By`, which a normal sync run would have rewritten.
 
 ## Norms
 

@@ -190,6 +190,8 @@ sync-status.py [--state-dir] [--roadmap] [--project-status] [--notes-dir] [--no-
                                         # default: derive current task's status from state, regen both views
 sync-status.py --reconcile [--dry-run] [--roadmap]
                                         # self-heal: stamp completed(<archival-date>) on section-style entries
+sync-status.py --views-only [--dry-run] [--roadmap] [--project-status] [--notes-dir]
+                                        # state-free view recovery: reassemble ## Notes + reconcile sections
 ```
 - **Writes** `docs/roadmap.md` + `docs/project-status.md` — the sole writer of
   those derived shared views (never hand-edit them; re-run this instead).
@@ -206,6 +208,17 @@ sync-status.py --reconcile [--dry-run] [--roadmap]
   `--dry-run` reports drift as machine-readable `DRIFT <id> <status>` lines
   without writing — this is what `openup-doctor`'s read-only
   `roadmap-status-drift` check invokes.
+- `--views-only` is the **state-free conflict-recovery path** (T-157). Plain
+  `sync-status.py` exits `3` without `.openup/state.json`, which
+  `openup-session.py end` archives at completion — so before this flag the
+  documented "rebase and re-run" fix was impossible once a lane was done, which
+  is when view conflicts actually surface. It reassembles `## Notes` from the
+  `docs/status-notes/` shards **and** runs the `--reconcile` pass (it is a
+  superset; passing both is redundant). It deliberately does **not** write the
+  lane-derived header fields, does not touch roadmap **table-row** Status cells
+  (those need a lane's id + derived status, so no state-free truth exists), and
+  sets no gates. `--dry-run` previews. Use it after `git rebase origin/main` —
+  see `parallel-lanes.md` § Conflict recovery recipe.
 
 ## check-docs.py — work-product validator
 

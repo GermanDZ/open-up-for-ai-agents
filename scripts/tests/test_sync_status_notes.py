@@ -244,6 +244,199 @@ class SyncStatusNotesTests(unittest.TestCase):
         self.assertEqual(self.roadmap.read_text(), rm)
 
 
+class ViewsOnlyTests(unittest.TestCase):
+    """T-157: --views-only regenerates the state-free parts of the two shared
+    views so a post-completion view conflict can be recovered at all.
+
+    Plain `sync-status.py` exits EXIT_NO_STATE (3) without `.openup/state.json`,
+    which `openup-session.py end` archives at completion — so the documented
+    'rebase and re-run' recipe was impossible in exactly the situation it is
+    written for. Every test here runs with NO state file present.
+    """
+
+    def setUp(self):
+        self.dir = Path(tempfile.mkdtemp())
+        self.root = self.dir / "repo"
+        (self.root / "docs").mkdir(parents=True)
+        self.notes = self.root / "docs" / "status-notes"
+        self.roadmap = self.root / "docs" / "roadmap.md"
+        self.ps = self.root / "docs" / "project-status.md"
+        self.state_dir = self.root / ".openup"   # deliberately never created
+        self.roadmap.write_text(
+            "# Roadmap\n\n"
+            "| ID | Title | Status | Priority |\n"
+            "|---|---|---|---|\n"
+            "| T-200 | A table task | in-progress | high |\n\n"
+            "## T-042: a section task\n"
+            "**Status**: in-progress\n"
+            "**Priority**: high\n",
+            encoding="utf-8",
+        )
+        self.ps.write_text(
+            "# Project Status\n\n"
+            "**Phase**: construction\n"
+            "**Iteration**: 107\n"
+            "**Iteration Goal**: an older goal\n"
+            "**Status**: completed\n"
+            "**Lane Status**: completed\n"
+            "**Current Task**: T-139\n"
+            "**Last Updated**: 2026-01-01\n"
+            "**Updated By**: sync-status.py\n\n"
+            "## Open Action Items\n\n"
+            "- an item that must survive\n\n"
+            "## Notes\n\n"
+            "- only the T-001 note\n",
+            encoding="utf-8",
+        )
+
+    def tearDown(self):
+        shutil.rmtree(self.dir, ignore_errors=True)
+
+    def _note(self, name, body):
+        self.notes.mkdir(parents=True, exist_ok=True)
+        (self.notes / name).write_text(body, encoding="utf-8")
+
+    def _run(self, *extra):
+        cmd = [
+            sys.executable, str(SYNC_STATUS), "--views-only",
+            "--state-dir", str(self.state_dir),
+            "--roadmap", str(self.roadmap),
+            "--project-status", str(self.ps),
+            "--notes-dir", str(self.notes),
+            *extra,
+        ]
+        return subprocess.run(cmd, capture_output=True, text=True)
+
+    def _header(self, text=None):
+        """Everything above the ## Notes heading — the region req 4 freezes."""
+        text = self.ps.read_text() if text is None else text
+        return text.split("## Notes")[0]
+
+    def test_runs_without_state_file(self):
+        """Req 1: the whole point — no .openup/state.json, exit 0 not 3."""
+        self.assertFalse((self.state_dir / "state.json").exists())
+        proc = self._run()
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertNotIn("No state file at", proc.stderr)
+
+    def test_plain_sync_still_fails_without_state(self):
+        """The bug this fixes must stay reproducible without the flag —
+        otherwise a later refactor could make --views-only redundant without
+        anyone noticing the guard was what mattered."""
+        proc = subprocess.run(
+            [sys.executable, str(SYNC_STATUS),
+             "--state-dir", str(self.state_dir),
+             "--roadmap", str(self.roadmap),
+             "--project-status", str(self.ps),
+             "--notes-dir", str(self.notes)],
+            capture_output=True, text=True,
+        )
+        self.assertEqual(proc.returncode, 3)
+        self.assertIn("No state file at", proc.stderr)
+
+    def test_reassembles_notes_newest_first(self):
+        """Req 2: all shards land, newest-first, replacing the stale body."""
+        self._note("2026-01-01-T-001.md", "- only the T-001 note\n")
+        self._note("2026-01-02-T-002.md", "- the **T-002** note\n")
+        self._note("2026-01-03-T-003.md", "- the **T-003** note\n")
+        proc = self._run()
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        ps = self.ps.read_text()
+        for marker in ("T-001", "**T-002**", "**T-003**"):
+            self.assertIn(marker, ps)
+        self.assertLess(ps.index("T-003"), ps.index("T-002"))
+        self.assertLess(ps.index("T-002"), ps.index("T-001"))
+
+    def test_reconciles_archived_section(self):
+        """Req 3: the state-free roadmap pass runs too, so one command
+        restores both views."""
+        (self.root / "docs" / "changes" / "archive" / "T-042").mkdir(parents=True)
+        proc = self._run()
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertRegex(
+            self.roadmap.read_text(),
+            r"## T-042: a section task\n\*\*Status\*\*: completed \(\d{4}-\d{2}-\d{2}\)",
+        )
+
+    def test_header_is_byte_identical(self):
+        """Req 4: the no-go zone. Every line above ## Notes survives exactly —
+        including the fields a normal sync run WOULD rewrite (Last Updated,
+        Updated By), and the intervening ## Open Action Items section."""
+        before = self._header()
+        self._note("2026-01-03-T-003.md", "- a new note that rewrites the body\n")
+        proc = self._run()
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertEqual(self._header(), before)
+        ps = self.ps.read_text()
+        self.assertIn("**Iteration**: 107", ps)
+        self.assertIn("**Current Task**: T-139", ps)
+        self.assertIn("**Last Updated**: 2026-01-01", ps)
+        self.assertIn("- an item that must survive", ps)
+        # and the note really did land, so the assertion above is not vacuous
+        self.assertIn("a new note that rewrites the body", ps)
+
+    def test_table_row_status_untouched(self):
+        """Req 4 corollary + the first Assumption: table-row cells have no
+        state-free truth source, so they are deliberately out of scope."""
+        (self.root / "docs" / "changes" / "archive" / "T-200").mkdir(parents=True)
+        self._run()
+        self.assertIn("| T-200 | A table task | in-progress | high |",
+                      self.roadmap.read_text())
+
+    def test_does_not_write_gate_or_state(self):
+        """Req 5: no lane to gate. Even when a state file IS present, the
+        state-free path must not touch it."""
+        import json
+        self.state_dir.mkdir(parents=True, exist_ok=True)
+        sf = self.state_dir / "state.json"
+        original = json.dumps({"task_id": "T-200", "track": "standard",
+                               "gates": {"log_written": True}})
+        sf.write_text(original, encoding="utf-8")
+        self._note("2026-01-03-T-003.md", "- a note\n")
+        proc = self._run()
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertEqual(sf.read_text(), original)
+        self.assertNotIn("roadmap_synced", sf.read_text())
+
+    def test_dry_run_writes_nothing(self):
+        """Req 6: reports the pending change, leaves both files byte-identical."""
+        (self.root / "docs" / "changes" / "archive" / "T-042").mkdir(parents=True)
+        self._note("2026-01-03-T-003.md", "- a note that would land\n")
+        ps_before = self.ps.read_text()
+        rm_before = self.roadmap.read_text()
+        proc = self._run("--dry-run")
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertIn("DRIFT T-042", proc.stdout)
+        self.assertIn("stale", proc.stdout)
+        self.assertEqual(self.ps.read_text(), ps_before)
+        self.assertEqual(self.roadmap.read_text(), rm_before)
+
+    def test_absent_notes_dir_is_a_clean_noop(self):
+        """Second Assumption: a repo with no shards is legitimate, not an
+        error. The roadmap pass must still run."""
+        (self.root / "docs" / "changes" / "archive" / "T-042").mkdir(parents=True)
+        ps_before = self.ps.read_text()
+        proc = self._run()
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertEqual(self.ps.read_text(), ps_before)
+        self.assertIn("completed (", self.roadmap.read_text())
+
+    def test_idempotent(self):
+        self._note("2026-01-03-T-003.md", "- a note\n")
+        self._run()
+        ps1, rm1 = self.ps.read_text(), self.roadmap.read_text()
+        proc = self._run()
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertEqual(self.ps.read_text(), ps1)
+        self.assertEqual(self.roadmap.read_text(), rm1)
+
+    def test_missing_doc_reports_exit_4(self):
+        self.ps.unlink()
+        proc = self._run()
+        self.assertEqual(proc.returncode, 4)
+        self.assertIn("Missing doc", proc.stderr)
+
+
 class DeriveStatusTests(unittest.TestCase):
     """T-041 F11: a solo standard task (team_deployed=false) must derive
     'completed' once log_written + roadmap_synced are set. Only 'full' gates on
