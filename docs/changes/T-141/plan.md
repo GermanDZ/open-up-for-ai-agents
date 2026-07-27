@@ -155,13 +155,13 @@ retrospective flow — the skill's own procedure file is the spec.
 
 We expect **zero unstruck action items in `docs/iteration-retrospectives/` that
 are provably satisfied** at the end of the next retrospective — measured against
-the concrete backlog this task inherits: `iteration-77-retrospective.md` carries
-3 items and `iteration-86-retrospective.md` carries 4, none struck, and the
-next run must dispose of all 7. Instrumentation:
-`grep -c '^| ' docs/iteration-retrospectives/*.md` under the Action Items
-sections vs `grep -c '~~'` in the same files — a countable before/after in the
-repo itself. Read-back: the next `/openup-retrospective` run (retro counter is
-at 3 of 5 after this branch's three lanes, so within two more completions).
+the concrete backlog this task inherits, counted at completion time: **15 open
+items across 4 files, 0 struck** (iteration-9: 3, iteration-20: 3, iteration-77:
+5, iteration-86: 4). The next run must give each of the 15 a verdict.
+Instrumentation: rows under each `## Action Items` heading vs
+`grep -c '~~' docs/iteration-retrospectives/*.md` — a countable before/after in
+the repo itself. Read-back: the next `/openup-retrospective` run (retro counter
+is at 3 of 5 after this branch's three lanes, so within two more completions).
 
 ## Rollout
 
@@ -221,18 +221,18 @@ step 7's project-status write are updated to consume the pass's output.
 
 ## Operations
 
-- [ ] Author step 5b in `docs-eng-process/procedures/openup-retrospective.md`:
+- [x] Author step 5b in `docs-eng-process/procedures/openup-retrospective.md`:
       collect carried items → three verdicts → struck format with mandatory
       evidence → no deletion → carry-forward with original date
-- [ ] Add the evidence-kinds list and the explicit "no evidence ⇒ stays open"
+- [x] Add the evidence-kinds list and the explicit "no evidence ⇒ stays open"
       rule to that step
-- [ ] Add the carried open question (skill-local vs shared helper) as a closing
+- [x] Add the carried open question (skill-local vs shared helper) as a closing
       note on the step
-- [ ] Update step 6's section list (carried-action-items section) and step 7's
+- [x] Update step 6's section list (carried-action-items section) and step 7's
       project-status instruction (still-open items only), plus the Output section
-- [ ] Regenerate the mirrors (`render-skills-mirror.py --write`,
+- [x] Regenerate the mirrors (`render-skills-mirror.py --write`,
       `check-skills-guide.py --write`, `sync-templates-to-claude.sh`)
-- [ ] (tester) Run the full test suite — the deterministic guards for this change
+- [x] (tester) Run the full test suite — the deterministic guards for this change
       are `test_render_skills_mirror` and `test_check_skills_guide`'s live-repo
       sync assertions
 

@@ -82,6 +82,74 @@ git shortlog -sn --since="$start_date" --until="$end_date"
 
 Task metrics: tasks planned, tasks completed, completion rate (completed / planned * 100%).
 
+### 5b. Verify and Retire Carried Action Items — BLOCKING, before any new item is authored
+
+Every retrospective so far has *appended* action items and none has ever pruned
+one. That makes the one section agents are pointed at for context degrade
+monotonically: a blocker resolved days ago keeps reading as live and
+high-priority, and real work gets deprioritized behind a phantom. This step runs
+**here**, physically ahead of step 6, because a reminder inside the authoring
+step is exactly the failure mode being fixed.
+
+1. **Collect the carried items from the durable trail, not from memory.** Read
+   every prior file in `docs/iteration-retrospectives/` (newest first) and take
+   every row of its `## Action Items` table that is **not already struck
+   through** — those are the open items. Add any carried list the project keeps
+   in `docs/project-status.md`. If a project has no prior retrospective, say so
+   in one line and go to step 6.
+
+2. **For each open item, establish what would make it true, then check it.** The
+   check is mechanical wherever it can be: `grep` for the artifact the item asks
+   for, run the command it names and read the output, read the roadmap row's
+   Status, `git log` the file it wanted changed, open the path it wanted created.
+   You are allowed judgment about *whether the evidence answers the item*; you
+   are not allowed to skip the check.
+
+3. **Assign exactly one of three verdicts:**
+
+   | Verdict | When | What you write |
+   |---|---|---|
+   | **satisfied** | The thing the item asked for now exists | Strike the row through **in the retrospective that authored it**, appending `**satisfied YYYY-MM-DD** — <evidence>` |
+   | **obsolete** | It is no longer wanted — superseded, reversed, or the underlying problem is gone | Strike it through the same way with `**obsolete YYYY-MM-DD** — <what superseded it>` |
+   | **still open** | Neither of the above, *including* "probably done but nothing to cite" | Leave it unstruck and carry it forward (point 6) |
+
+   Worked example — a row in `iteration-77-retrospective.md` rewritten in place:
+
+   ```
+   | ~~Fix `test_init_creates_valid_file` to assert `schema == CURRENT_SCHEMA`~~ | next `/openup-quick-task` | ~~next iteration~~ | **satisfied 2026-07-27** — `scripts/tests/test_openup_state.py:61`, commit `a1b2c3d` (T-133) |
+   ```
+
+4. **Evidence is mandatory and must be citable.** One of: a **commit SHA**, an
+   **artifact path** (that exists), a **task id** whose change folder is archived,
+   or a **command plus the output you observed**. "I believe this was done", "this
+   looks handled", and "the task it belongs to is completed, so presumably" are
+   not evidence. **An item you cannot cite evidence for stays open** — that rule
+   is what keeps this pass from becoming a rubber stamp, and a false "satisfied"
+   is worse than a stale item because it removes the thing that would have caught
+   it.
+
+5. **Never delete an item.** Retirement is strike-through **with** the evidence
+   inline, never a deletion. The struck row is the trail that makes a wrong
+   verdict provable later; deleting it destroys precisely the record you would
+   need. This is also why the strike lands in the authoring retrospective — a
+   reader arriving there from an old link sees the resolution instead of a stale
+   demand.
+
+6. **Carry the still-open items forward with their original date.** They go into
+   the new retrospective's carried table (step 6) with the date they were first
+   authored, so age is visible — a three-retrospective-old item should look like
+   one. **Do not author a new item in step 6 that duplicates a carried one**;
+   extend or re-date the carried item instead, otherwise the duplicate resets its
+   apparent age and the section grows a second copy of the same debt.
+
+> **Where this pass lives — open question, not settled.** It is a step of this
+> skill today, because this is the only skill that authors action items. If a
+> second skill ever needs the same disposition pass over carried, hand-written
+> items (a phase review, a handoff), extract it into a shared "carried items"
+> helper both call rather than copying these rules — the copy is what would drift.
+> Until that second caller exists, a shared helper would be abstraction ahead of
+> demand.
+
 ### 6. Create Retrospective Document
 
 Create `docs/iteration-retrospectives/iteration-{n}-retrospective.md` with sections:
@@ -90,13 +158,25 @@ Create `docs/iteration-retrospectives/iteration-{n}-retrospective.md` with secti
 - **What Went Well**: process, technical, collaboration successes
 - **What to Improve**: process issues, technical challenges, gaps
 - **Measure Read-Back**: for each success measure due (step 4b) — expectation, actual, verdict (met / missed / can't tell), interpretation; plus the product-manager's resulting re-rank decisions (entries moved + updated `Value` rationale), or "no re-rank — evidence supports current order"
-- **Action Items**: specific action, owner, due date, priority for each improvement
+- **Carried Action Items** (from step 5b): two tables — **retired this cycle** (each item, its verdict `satisfied`/`obsolete`, and the evidence cited) and **still open** (each item with its *original* authoring date, so age is visible). "None carried" is a legitimate entry for a project's first retrospective; silence is not
+- **Action Items**: specific action, owner, due date, priority for each improvement — **new items only**, and none may duplicate a still-open carried item (step 5b point 6)
 - **Metrics** (if included): task completion stats, git stats
 - **Next Iteration Considerations**: carry forward, changes, risks to monitor
 
 ### 7. Update Project Status
 
 In `docs/project-status.md`: add link to retrospective, note ongoing action items, update iteration status.
+
+**Ongoing means still open.** Mirror only the items step 5b left unretired —
+anything struck through as `satisfied` or `obsolete` must not reappear here. The
+retrospective documents are the system of record for the full trail (retired
+items keep their evidence there); `project-status.md` carries the short live
+list agents actually read for context, and its whole value is that everything on
+it is still true.
+
+> `docs/project-status.md`'s header fields and `## Notes` are a **derived view**
+> regenerated by `scripts/sync-status.py` — never hand-edit those. The action-item
+> list is separate, hand-maintained content and is the part this step writes.
 
 ### 8. Reset the Retro-Cadence Counter (T-011)
 
@@ -112,7 +192,7 @@ tasks complete. See [state-file.md](../../../../docs-eng-process/state-file.md).
 
 ## Output
 
-Returns: retrospective document path, counts of what went well / what to improve / action items, overall iteration rating, key metrics (if included).
+Returns: retrospective document path, counts of what went well / what to improve / action items, **carried-item disposition (retired satisfied / retired obsolete / still open, from step 5b)**, overall iteration rating, key metrics (if included).
 
 ## See Also
 
