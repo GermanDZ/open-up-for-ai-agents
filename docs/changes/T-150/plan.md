@@ -159,16 +159,16 @@ present-and-blocking → 2, stdin passes through).
 
 ## Operations
 
-- [ ] Add the existence guard to all 11 `hooks[].command` strings in `.claude/settings.json`,
+- [x] Add the existence guard to all 11 `hooks[].command` strings in `.claude/settings.json`,
       preserving each interpreter (`python3` / `bash`) and argument list exactly.
-- [ ] Apply the identical change to `docs-eng-process/.claude-templates/settings.json.example`
+- [x] Apply the identical change to `docs-eng-process/.claude-templates/settings.json.example`
       and confirm `scripts/check-claude-sync.sh` still reports the two in sync.
-- [ ] Add `scripts/tests/test_hook_command_guards.py` covering: every command guarded, no
+- [x] Add `scripts/tests/test_hook_command_guards.py` covering: every command guarded, no
       exit-suppressing form, the two files identical, and the guard's behaviour
       (missing → 0, present → propagates 2, stdin passthrough).
-- [ ] Record the hook-command convention in `docs-eng-process/conventions.md`, naming the
+- [x] Record the hook-command convention in `docs-eng-process/conventions.md`, naming the
       `|| true` hazard and the five blocking hooks it would disable.
-- [ ] (tester) Verify live in this session: point a guarded command at a deliberately
+- [x] (tester) Verify live in this session: point a guarded command at a deliberately
       absent path and confirm a Bash call still runs; confirm `gate-edits` still blocks a
       source edit with no active iteration.
 

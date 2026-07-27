@@ -1,0 +1,1 @@
+{"run_id": "t150-8ef0167", "event": "session_begin", "task_id": "T-150", "goal": "T-150 \u2014 guard every hook command so a missing hook script is a no-op that cannot lock Bash and Write", "branch": "fix/T-150-guard-hook-commands", "phase": "construction", "ts": "2026-07-27T10:15:53Z"}

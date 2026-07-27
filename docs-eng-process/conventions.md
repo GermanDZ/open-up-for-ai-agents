@@ -82,3 +82,29 @@ docs/{description}
 ---
 
 **For project-specific conventions** (naming conventions for domain, architecture patterns, API conventions, etc.), see `docs/conventions.md` (created during project development).
+
+## Hook Commands Must Be Guarded
+
+Every `hooks[].command` in `.claude/settings.json` (and its template
+`docs-eng-process/.claude-templates/settings.json.example`) is wrapped in an existence
+test:
+
+```
+if [ -f "$CLAUDE_PROJECT_DIR"/.claude/scripts/hooks/<name>.py ]; then python3 "$CLAUDE_PROJECT_DIR"/.claude/scripts/hooks/<name>.py; fi
+```
+
+**Why.** `settings.json` is tracked and merges instantly; `.claude/scripts/hooks/*` is
+gitignored and only materializes when `sync-templates-to-claude.sh` runs. Between those two
+moments an unguarded command is a hard interpreter error: it blocked every Bash call while
+`gate-edits` independently blocked Write, leaving a session with no recovery route at all
+(observed 2026-07-27 merging T-140).
+
+**Never write `python3 <path> || true`.** Five hooks — `gate-edits.py`,
+`on-task-request.py`, `validate-commit.py`, `on-stop.py`, `check-unfinished-tasks.py` —
+deliberately `exit 2` to *block* a tool call, and that exit code is the entire enforcement
+mechanism. `|| true` swallows it and silently disarms every gate in the framework.
+`if`/`fi` is used precisely because it returns 0 when the file is absent and otherwise
+propagates the script's own status.
+
+`scripts/tests/test_hook_command_guards.py` enforces both halves — every command guarded,
+and no command using an exit-suppressing form.

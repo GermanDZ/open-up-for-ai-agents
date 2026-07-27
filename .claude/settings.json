@@ -17,15 +17,15 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/scripts/hooks/stage-run-log.py"
+            "command": "if [ -f \"$CLAUDE_PROJECT_DIR\"/.claude/scripts/hooks/stage-run-log.py ]; then python3 \"$CLAUDE_PROJECT_DIR\"/.claude/scripts/hooks/stage-run-log.py; fi"
           },
           {
             "type": "command",
-            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/scripts/hooks/check-iteration.py"
+            "command": "if [ -f \"$CLAUDE_PROJECT_DIR\"/.claude/scripts/hooks/check-iteration.py ]; then python3 \"$CLAUDE_PROJECT_DIR\"/.claude/scripts/hooks/check-iteration.py; fi"
           },
           {
             "type": "command",
-            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/scripts/hooks/validate-commit.py"
+            "command": "if [ -f \"$CLAUDE_PROJECT_DIR\"/.claude/scripts/hooks/validate-commit.py ]; then python3 \"$CLAUDE_PROJECT_DIR\"/.claude/scripts/hooks/validate-commit.py; fi"
           }
         ]
       },
@@ -34,7 +34,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/scripts/hooks/gate-edits.py"
+            "command": "if [ -f \"$CLAUDE_PROJECT_DIR\"/.claude/scripts/hooks/gate-edits.py ]; then python3 \"$CLAUDE_PROJECT_DIR\"/.claude/scripts/hooks/gate-edits.py; fi"
           }
         ]
       }
@@ -45,11 +45,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/scripts/hooks/on-branch-created.py"
+            "command": "if [ -f \"$CLAUDE_PROJECT_DIR\"/.claude/scripts/hooks/on-branch-created.py ]; then python3 \"$CLAUDE_PROJECT_DIR\"/.claude/scripts/hooks/on-branch-created.py; fi"
           },
           {
             "type": "command",
-            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/scripts/hooks/auto-log-commit.py"
+            "command": "if [ -f \"$CLAUDE_PROJECT_DIR\"/.claude/scripts/hooks/auto-log-commit.py ]; then python3 \"$CLAUDE_PROJECT_DIR\"/.claude/scripts/hooks/auto-log-commit.py; fi"
           }
         ]
       },
@@ -58,7 +58,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/scripts/hooks/on-plan-exit.py"
+            "command": "if [ -f \"$CLAUDE_PROJECT_DIR\"/.claude/scripts/hooks/on-plan-exit.py ]; then python3 \"$CLAUDE_PROJECT_DIR\"/.claude/scripts/hooks/on-plan-exit.py; fi"
           }
         ]
       }
@@ -68,7 +68,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/scripts/hooks/on-stop.py"
+            "command": "if [ -f \"$CLAUDE_PROJECT_DIR\"/.claude/scripts/hooks/on-stop.py ]; then python3 \"$CLAUDE_PROJECT_DIR\"/.claude/scripts/hooks/on-stop.py; fi"
           }
         ]
       }
@@ -78,11 +78,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/scripts/hooks/on-task-request.py"
+            "command": "if [ -f \"$CLAUDE_PROJECT_DIR\"/.claude/scripts/hooks/on-task-request.py ]; then python3 \"$CLAUDE_PROJECT_DIR\"/.claude/scripts/hooks/on-task-request.py; fi"
           },
           {
             "type": "command",
-            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/scripts/hooks/check-unfinished-tasks.py"
+            "command": "if [ -f \"$CLAUDE_PROJECT_DIR\"/.claude/scripts/hooks/check-unfinished-tasks.py ]; then python3 \"$CLAUDE_PROJECT_DIR\"/.claude/scripts/hooks/check-unfinished-tasks.py; fi"
           }
         ]
       }
@@ -92,7 +92,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"$CLAUDE_PROJECT_DIR\"/scripts/session-start.sh"
+            "command": "if [ -f \"$CLAUDE_PROJECT_DIR\"/scripts/session-start.sh ]; then bash \"$CLAUDE_PROJECT_DIR\"/scripts/session-start.sh; fi"
           }
         ]
       }
