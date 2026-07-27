@@ -2,27 +2,34 @@
 """
 auto-log-commit.py — OpenUP hook: fires after every Bash tool call.
 
-On a SUCCESSFUL `git commit`, appends one schema-stable JSONL record to
-docs/agent-logs/agent-runs.jsonl and sets gates.log_written true. The model
-never writes the JSONL record again — this erases Kaze's 39% unlogged-run gap.
+On a SUCCESSFUL `git commit`, QUEUES one schema-stable JSONL record and sets
+gates.log_written true. The model never writes the JSONL record again — this
+erases Kaze's 39% unlogged-run gap.
+
+T-140 — the record is queued, never written to the tracked shard from here. A
+commit can never contain its own log record (the record carries the commit's
+SHA, and the SHA hashes the tree that would hold it), so a PostToolUse write
+into docs/agent-logs/ left the tree dirty and forced a follow-up "sweep" commit
+on every lane. The record now goes to the UNTRACKED queue
+`<main-repo-root>/.openup/run-log-pending.jsonl` (via `scripts/openup-runlog.py
+append`); the PreToolUse hook `stage-run-log.py` drains it into the lane shard
+and stages it just before the NEXT commit. Records therefore land inside a
+commit, and a successful commit never dirties a tracked file.
 
 Record shape (one line):
   {"run_id", "event":"commit", "task_id", "branch", "sha",
    "model", "session_id", "ts"}
 
 Success signal: the Bash command is a `git commit`, and the current HEAD
-resolves to a SHA. Idempotency guards against double-appends: if the last
-line of agent-runs.jsonl already records this SHA with event "commit", we
-do nothing. This makes the hook safe even when the same commit fires the
-hook more than once.
+resolves to a SHA. Idempotency guards against double-appends: if this SHA is
+already recorded — in the lane shard, or still sitting in the queue — we do
+nothing. This makes the hook safe even when the same commit fires the hook
+more than once.
 
 Self-reference guard: a commit that touched ONLY audit-trail files (anything
-under docs/agent-logs/ — the JSONL run log and the markdown narrative logs)
-is pure bookkeeping (it persists previously auto-logged lines). Logging it
-again would re-dirty the log and tail-chase forever, so such commits are
-skipped. This lets a closing "commit the logs" reach a genuinely clean tree
-even when the markdown log is bundled with the JSONL (the complete-task
-pattern), not just when the JSONL is committed alone.
+under docs/agent-logs/) is pure bookkeeping and is not logged. With the queue
+this is no longer load-bearing (nothing here dirties the shard), but it is kept
+so a logs-only commit does not generate a record about itself.
 
 Exit codes:
   0 — always (PostToolUse cannot block; this hook only appends)
@@ -221,6 +228,47 @@ def commit_only_touches_logs(cwd: str, sha: str) -> bool:
     return bool(files) and all(f.startswith(LOG_DIR) for f in files)
 
 
+def queue_record(root: str, record: dict) -> bool:
+    """Queue the record via scripts/openup-runlog.py (T-140).
+
+    Writes to the UNTRACKED `<main-root>/.openup/run-log-pending.jsonl`, so a
+    successful commit never dirties a tracked file. Returns False if the queue
+    script is missing or errored — the caller then simply does not flip the gate.
+    """
+    script = Path(root) / "scripts" / "openup-runlog.py"
+    if not script.exists():
+        return False
+    try:
+        res = subprocess.run(
+            ["python3", str(script), "--cwd", root, "append", "--record",
+             json.dumps(record)],
+            cwd=root, capture_output=True, text=True,
+        )
+        return res.returncode == 0
+    except Exception:
+        return False
+
+
+def pending_has_sha(root: str, sha: str) -> bool:
+    """True if this SHA is already sitting in the queue (double-fire guard)."""
+    try:
+        script = Path(root) / "scripts" / "openup-runlog.py"
+        res = subprocess.run(["python3", str(script), "--cwd", root, "path"],
+                             cwd=root, capture_output=True, text=True)
+        if res.returncode != 0 or not res.stdout.strip():
+            return False
+        queue = Path(res.stdout.strip())
+        if not queue.exists():
+            return False
+        return any(
+            json.loads(ln).get("sha") == sha
+            for ln in queue.read_text(encoding="utf-8").splitlines()
+            if ln.strip().startswith("{")
+        )
+    except Exception:
+        return False
+
+
 def last_logged_sha(log_path: Path) -> str | None:
     """Return the sha recorded on the last commit-event line, or None."""
     try:
@@ -294,11 +342,13 @@ def main() -> None:
             or datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         )
 
-        # T-046: write to the LANE-OWNED shard, never the shared agent-runs.jsonl
-        # (now a gitignored derived view). Idempotency reads the same shard.
-        # Shard lives in the commit's worktree (`root`), not the pinned cwd (T-068).
+        # T-046: the record belongs to the LANE-OWNED shard, never the shared
+        # agent-runs.jsonl (a gitignored derived view). T-140: we do not write
+        # that shard here — a PostToolUse write would dirty the tree the commit
+        # just cleaned. Idempotency therefore checks BOTH the shard (already
+        # flushed) and the queue (flushed pending).
         log_path = shard_path(root, task_id, branch, ts)
-        if last_logged_sha(log_path) == sha:
+        if last_logged_sha(log_path) == sha or pending_has_sha(root, sha):
             sys.exit(0)
 
         sidcode, session_id = state_get(sroot, "session_id")
@@ -321,9 +371,10 @@ def main() -> None:
             "ts": ts,
         }
 
-        log_path.parent.mkdir(parents=True, exist_ok=True)
-        with log_path.open("a", encoding="utf-8") as fh:
-            fh.write(json.dumps(record) + "\n")
+        # T-140: queue it (untracked); stage-run-log.py drains it into the shard
+        # immediately before the next commit, so it lands INSIDE that commit.
+        if not queue_record(root, record):
+            sys.exit(0)
 
         # Flip the log_written gate (best-effort; only if state exists).
         if scode == 0:

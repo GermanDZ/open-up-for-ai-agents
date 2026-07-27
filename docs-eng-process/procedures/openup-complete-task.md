@@ -122,11 +122,11 @@ promise nobody can check.
 
 ### 2. Commit Remaining Changes
 
-Most changes should already be committed as atomic commits during implementation (see `commit-procedure.md`). This step handles any leftover uncommitted work — **including** any `docs/agent-logs/` delta `auto-log-commit.py` appended after an earlier commit in this lane (it can only fire post-commit; see `conventions.md`'s Pre-Commit Housekeeping) and left dirty ever since.
+Most changes should already be committed as atomic commits during implementation (see `commit-procedure.md`). This step handles any leftover uncommitted work. **Run-log shards need no attention**: since T-140 the record is queued to an untracked file and staged into the next commit by `stage-run-log.py`, so `docs/agent-logs/` is already clean (see `conventions.md`'s Pre-Commit Housekeeping).
 
 1. Run `git status --porcelain` to check for uncommitted changes
 2. If changes exist:
-   - Stage relevant files: `git add <files>` — always include `docs/agent-logs/` if it shows a delta, folding any hook-appended shard into this commit rather than leaving it for yet another one
+   - Stage relevant files: `git add <files>`
    - Commit using canonical format: `type(scope): description [$ARGUMENTS[task_id]]`
    - Use `$ARGUMENTS[commit_message]` if provided
 3. Verify: `git status --porcelain` returns empty

@@ -215,18 +215,18 @@ explicit flush. Both hooks stay fail-open.
 
 ## Operations
 
-- [ ] Add `scripts/openup-runlog.py` with `append` + `flush`, resolving the pending
+- [x] Add `scripts/openup-runlog.py` with `append` + `flush`, resolving the pending
       path from `git rev-parse --git-common-dir` and routing each record to its own
       lane shard, deduping by SHA, and skipping entirely on a pathspec-limited commit.
-- [ ] Add `scripts/tests/test_openup_runlog.py` covering flush, SHA dedupe, corrupt
+- [x] Add `scripts/tests/test_openup_runlog.py` covering flush, SHA dedupe, corrupt
       lines, multi-lane routing, pathspec-limited skip, and missing/empty pending; run it green.
-- [ ] Rewrite `auto-log-commit.py` (pack copy) to append via the pending queue and
+- [x] Rewrite `auto-log-commit.py` (pack copy) to append via the pending queue and
       update its docstring.
-- [ ] Add `stage-run-log.py` (pack copy) and register it under `PreToolUse`/Bash in
+- [x] Add `stage-run-log.py` (pack copy) and register it under `PreToolUse`/Bash in
       both `.claude/settings.json` and `settings.json.example`.
-- [ ] Run `scripts/sync-templates-to-claude.sh` so the live `.claude/scripts/hooks/`
+- [x] Run `scripts/sync-templates-to-claude.sh` so the live `.claude/scripts/hooks/`
       copies match the pack.
-- [ ] Drop the sweep instruction from `docs-eng-process/conventions.md` and
+- [x] Drop the sweep instruction from `docs-eng-process/conventions.md` and
       `docs-eng-process/procedures/openup-complete-task.md`, then re-render the mirror
       (`render-skills-mirror.py --write` + sync-templates).
 - [ ] (tester) Verify end to end in this lane: make a real commit, confirm
