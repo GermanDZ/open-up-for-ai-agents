@@ -295,6 +295,49 @@ T-002 (`/openup-sync-spec`) completed 2026-06-11 once T-008's readiness DAG un-b
 
 ---
 
+## T-145: `sync-status.py` derives `completed` from bookkeeping gates alone, no delivery evidence
+**Status**: pending
+**Priority**: high
+**Value**: Closes the gap behind a real, observed incident downstream: a lane with zero implementation (spec + run log only) got stamped `completed` in `docs/roadmap.md` because its only required gates (`log_written`, `roadmap_synced` on `quick`/`standard`) are both bookkeeping — satisfiable mid-lane by process steps that run regardless of whether any work happened. Nothing in the current derivation evidences delivery actually occurred, so the roadmap can confidently report a task done that isn't.
+**Description**: Add a gate that evidences delivery rather than process bookkeeping — e.g. `implementation_verified` — and require it on every track's `TRACK_REQUIRED` set in `sync-status.py`. Set it from `/openup-complete-task`'s existing step 1a ("Verify Implementation Against Spec — BLOCKING", which already does per-requirement verification but records the result nowhere) and from `/openup-quick-task`'s verification step once the change is confirmed working. Add the key to `openup-state.schema.json` under `properties` but not `required`, so a state file written before the gate existed still validates (a missing key reads falsy — not verified — rather than raising).
+- New `implementation_verified` gate, required on every track
+- `/openup-complete-task` step 1a and `/openup-quick-task`'s verify step set it
+- Schema addition is backward-compatible (optional key, absent reads falsy)
+- Regression: bookkeeping-only state derives `in-progress`, not `completed`
+
+**Dependencies**: —
+
+**See**: Hand-off finding FD-001 (downstream project, T-043a incident, corrected by hand in commit `be2ee16`, would recur on the next sync without this fix)
+
+---
+
+## T-146: Quick-task's hardcoded `--iteration 0` can clobber `project-status.md`'s real header on sync
+**Status**: pending
+**Priority**: medium
+**Value**: Prevents a quick task from silently rewriting the project-wide `**Iteration**` (and, less fixably, `**Status**`) header to values describing the quick lane instead of the actual last completed iteration — observed downstream rewriting `**Iteration**: 64` to `0` and a completed iteration's status to `in-progress`. This repo's own `/openup-quick-task` skill steps avoid the full `sync-status.py` run today (they set gates directly), so the bug is latent rather than triggered here — but latent is not the same as fixed, and any future skill revision or manual `sync-status.py` run with an active quick-task state would hit it exactly as downstream did.
+**Description**: `sync-status.py`'s `update_project_status()` writes the active lane's `state["iteration"]` (initialized to the literal `0` by `/openup-quick-task` step 2) directly into the shared header, with no guard for "this lane doesn't have a real iteration number." Skip the `Iteration` field when `state["iteration"]` is falsy (`0`/absent) — `0` is already the quick-track sentinel for "no iteration," so this is a small, backward-compatible guard. `Status` needs a real design decision (the header field currently means both "status of the last completed iteration" and "status of the active lane," which is the deeper source of the clobber) — recorded as an open question, not resolved by the `Iteration` fix alone.
+- `Iteration` field skipped (not zeroed) when the active lane has no real iteration number
+- Open question carried, not resolved: `Status` needs the header split into two fields, or to stay untouched on `quick`
+
+**Dependencies**: —
+
+**See**: Hand-off finding FD-002 (downstream project, observed 2026-07-21, caught in review before commit)
+
+---
+
+## T-147: `openup-fence.py`'s audit-surface allowlist omits `.claude/memory/` files every completion writes
+**Status**: pending
+**Priority**: low
+**Value**: Closes a fence false-positive for any downstream project that tracks `.claude/` (this framework repo gitignores it entirely — confirmed via `.gitignore` — so the bug is real but does not reproduce here; a project that tracks `.claude/memory/` for durable cross-session learnings hits it on every single lane).
+**Description**: `.claude/memory/bypass-log.md` (auto-appended by `gate-edits` on every `quick`-track edit) and `.claude/memory/iteration-learnings.md` (`/openup-complete-task` step 6, mandatory on every track) are both append-only, lane-agnostic files — the same shape as `docs/agent-logs/`, `docs/status-notes/`, `docs/explorations/`, which the fence's documented allowlist already exempts — but neither is actually in that allowlist, so `openup-fence.py check` reports `OUT OF LANE` the first time any lane commits them.
+- Add both paths to the fence's lane-owned/append-only allowlist category
+
+**Dependencies**: —
+
+**See**: Hand-off finding FD-003 (downstream project, observed 2026-07-26 on T-048); does not reproduce in this repo (`.claude/` fully gitignored here) but would affect any project that tracks it
+
+---
+
 ## T-134: Code-artifact task-def probe (Option D) — can the driver write AND run real code?
 **Status**: completed (2026-07-26)
 **Priority**: medium
