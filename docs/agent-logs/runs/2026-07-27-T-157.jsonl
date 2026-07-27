@@ -2,3 +2,6 @@
 {"run_id": "T-157-2026-07-27", "event": "plan_gate_autoresolved", "task_id": "T-157", "branch": "feat/T-157-sync-status-views-only", "track": "standard", "ts": "2026-07-27T17:47:51Z"}
 {"event": "iteration_complete", "task_id": "T-157", "branch": "feat/T-157-sync-status-views-only", "phase": "construction", "ts": "2026-07-27T18:03:28Z"}
 {"event": "session_end", "task_id": "T-157", "ts": "2026-07-27T18:04:10Z"}
+{"run_id": "bd3f6c6ef90b4c6880a726b365de9cfd", "event": "commit", "task_id": "T-157", "branch": "feat/T-157-sync-status-views-only", "sha": "91793d874437546f1721e8b24487893f6c87bf68", "model": null, "session_id": "feat/T-157-sync-status-views-only", "ts": "2026-07-27T17:49:15Z"}
+{"run_id": "9097913350594922b76a1e13a3295d18", "event": "commit", "task_id": "T-157", "branch": "feat/T-157-sync-status-views-only", "sha": "cc7fbcf0e4ad66635e423703f6b7c3e1d1d4ed2e", "model": null, "session_id": "feat/T-157-sync-status-views-only", "ts": "2026-07-27T18:00:14Z"}
+{"run_id": "86dc4cf2292c4110a72680484b76480a", "event": "commit", "task_id": "T-157", "branch": "feat/T-157-sync-status-views-only", "sha": "f0435ddfbdfbeba1594bddbbbb637ff996de460b", "model": null, "session_id": "feat/T-157-sync-status-views-only", "ts": "2026-07-27T18:01:34Z"}
