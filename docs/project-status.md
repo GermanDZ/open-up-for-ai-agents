@@ -9,22 +9,23 @@
 **Iteration Started**: 2026-06-18
 **Last Updated**: 2026-07-27
 **Updated By**: sync-status.py
-**Retrospective**: [iteration-103-retrospective.md](iteration-retrospectives/iteration-103-retrospective.md) — covers iterations 99–103 (2026-07-27): T-150→T-153 + the T-154 retirement. 3 more carried items retired (6 open, 4 external/opportunistic). Prev [iteration-98](iteration-retrospectives/iteration-98-retrospective.md) (87–98), [iteration-86](iteration-retrospectives/iteration-86-retrospective.md) (78–86)
+**Retrospective**: [iteration-109-retrospective.md](iteration-retrospectives/iteration-109-retrospective.md) — covers T-147, T-148, T-149, T-155, T-157, T-158 + 1 quick lane (2026-07-27). **5 items retired** (B1, B2, B3, `20.2` at 83 iterations, `77.5` at 26) — all three of iteration-103's own items closed in the cycle that authored them, a first. 9 measures read back: 3 met, 3 `can't tell` (all downstream-access), 1 not due, 2 pending. 4 new items (C1–C4), each premise-verified under the step 5c this cycle shipped. Prev [iteration-103](iteration-retrospectives/iteration-103-retrospective.md) (99–103), [iteration-98](iteration-retrospectives/iteration-98-retrospective.md) (87–98), [iteration-86](iteration-retrospectives/iteration-86-retrospective.md) (78–86)
 
 ## Open Action Items
 
-Disposition pass run 2026-07-27 (iteration-103); **closures applied 2026-07-27 by T-157 and
-T-158**. Retired items keep their evidence in the retrospective that authored them.
+Live list only — **everything here is still open.** Retired items keep their evidence in the
+retrospective that authored them; the full trail is in
+[iteration-109-retrospective.md](iteration-retrospectives/iteration-109-retrospective.md),
+which retired 5 this cycle (B1, B2, B3, `20.2`, `77.5`).
 
-**Closed this cycle (5)**
-- ~~**B1 — high**: give `sync-status.py` a no-lane path (`--views-only`).~~ **done** — T-157. `--views-only` returns before `read_state()`, reassembling `## Notes` from the shards and reconciling roadmap sections; header fields and table-row cells deliberately excluded (they need a live lane). Verified live on trunk: plain run exits `3`, `--views-only` exits `0`.
-- ~~**B2 — high**: verify a retrospective action item's premise before promoting it.~~ **done** — T-158. `/openup-retrospective` gains **step 5c** (BLOCKING): every newly-authored item must carry an **Evidence** element naming what was checked, *where*, and what it showed. Names the three observed failure modes — already-fixed (`A2`), disproved-on-inspection (`A3`), shrunk-on-measurement (`T-153`, `T-147`).
-- ~~**B3 — medium**: decide `20.2` and `77.5`.~~ **done** — T-158; both decided below, neither carried again.
-- ~~`20.2` (83 it.) Dependency-ordering convention for `/openup-start-iteration`.~~ **retired obsolete** — owner decision. It asked for a *convention* because no mechanism existed; both halves are now *enforcement* (`openup-claims.py preflight` exit 3, board `depends_ok`, the T-079 partitioner's `depends-on` clustering, and `/openup-explore` for the explorations half). Struck in place in `iteration-20-retrospective.md` with that evidence.
-- ~~`77.5` (26 it.) Instantiate `docs/risk-list.md` or treat its absence as `n/a`.~~ **satisfied** — owner decision: instantiate. [`docs/risk-list.md`](risk-list.md) now exists (7 ranked risks, each citing its evidence). The deciding argument was a dangling promise, not scale: five live docs already referenced the path as though the file existed.
+**New this cycle (4)** — each verified under the new step 5c before being filed
+- **C1 — high**: make `openup-claims.py claim` stamp `last_heartbeat`, as `begin` already does. *Evidence*: a claim written into an isolated `--claims-dir` has no `last_heartbeat` (`scripts/openup-claims.py:944-952`), and `reap` skips heartbeat-less claims by design (`:1146-1147`) — so such claims are never auto-reaped. Today's T-157 and T-158 re-claims each created one.
+- **C2 — medium**: make "full suite" mean the whole suite. *Evidence*: `scripts/tests/` → 884 passed, `tests/` → 114 passed, 999 collected repo-wide; T-155/T-157/T-158 all reported the 884-family number as "full suite", leaving `tests/test_claims_heartbeat_reap.py` unrun.
+- **C3 — medium**: `sync-status.py` must not report success for a task it cannot find. *Evidence*: observed live in T-158 — printed `status=completed` while writing nothing, because `update_roadmap()` matched neither a table row nor a section and `main()` prints unconditionally.
+- **C4 — medium**: decide how downstream-environment measures get read. *Evidence*: `kaze-webapp`, `cqecho-app`, `tallyfox-app` are not present on this machine; T-147 and T-155 both came back `can't tell` this cycle.
 
-**Open — external, not closable here (3)**
-- `10.1` — es-invoices has exactly one stale archived plan (`T-009: in-progress → done`); tallyfox-app clean. Fix: `python3 scripts/openup-claims.py migrate-archived-status` there.
+**Open — blocked outside this repo (3)**
+- `10.1` — **reclassified: actionable here with owner consent.** `../es-invoices` *is* present on this machine; `docs/changes/archive/T-009/plan.md` still reads `status: in-progress` and is the only stale one. Fix: `python3 scripts/openup-claims.py migrate-archived-status` there.
 - `86.3` — T-120/T-123 read-back, blocked on owner endpoint stability.
 - `86.4` — kaze-webapp `sync-from-framework.sh` bump, kaze lead's schedule.
 
@@ -36,8 +37,9 @@ retracted as misdiagnoses. All three of iteration-103's own items (B1–B3) are 
 same cycle they were authored — the first time that has happened, and the thing step 5c
 exists to keep true.
 
-**Still open: 4** — three external (`10.1`, `86.3`, `86.4`) and one opportunistic rider (`9.2`).
-Nothing actionable here remains carried.
+**Still open: 8** — 4 new this cycle (C1–C4, all actionable here), 3 blocked outside this repo
+(`10.1` now actionable with owner consent, `86.3`, `86.4`), and 1 opportunistic rider (`9.2`).
+Carried backlog went 6 → 4 before the new items; no carried item is older than its evidence.
 
 ## Notes
 
