@@ -1,7 +1,7 @@
 ---
 id: T-149
 title: "Split project-status.md's Status header — Status keeps the iteration's status, Lane Status carries the active lane's"
-status: ready
+status: done
 priority: medium
 estimate: 1 session
 plan: ""

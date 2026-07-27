@@ -139,3 +139,29 @@ assertion is trivially true there).
 - **`**Current Task**` has the same lane-scoped shape** and was left alone
   deliberately: naming the live lane is its whole job, so there is no clobber to
   fix. Not an oversight.
+
+## Tooling bug hit during completion (not fixed here — out of lane)
+
+**`openup-claims.py claim --force` deletes the existing claim *before* the
+remote-check can refuse, stranding the lane unclaimed.** Reproduced exactly:
+this lane extended its `touches` mid-work (the T-146 test, see above), so the
+claim written at `begin` was stale and the fence correctly reported `OUT OF
+LANE`. The documented fix — "add to the task's frontmatter `touches` and
+re-claim" — was run as `claim --force`, which printed
+`REFUSED: T-149 already claimed on remote by session <this same session>` **and
+left no claim file at all**. Two distinct problems:
+
+1. `--force` is not atomic: it removes the old claim, then the remote check
+   refuses, and nothing is written back. The lane silently loses its lease.
+2. The remote check refuses against the lane's **own** session id. A re-claim
+   from the same session/branch is the documented recovery path for a stale
+   `touches` list, so it should be an update, not a collision.
+
+The tell is subtle and worth naming: after the failed `--force` the fence went
+**green** — not because the surface was claimed, but because with no claim file
+the fence falls back to the plan's frontmatter. A disappearing lease reads as
+success. Recovered with an explicit `release` → `claim` → `heartbeat`.
+
+Not fixed in this lane (`scripts/openup-claims.py` is not in `touches`, and the
+fix needs a decision about same-session re-claim semantics). Surfaced for
+roadmap triage rather than filed unilaterally.
