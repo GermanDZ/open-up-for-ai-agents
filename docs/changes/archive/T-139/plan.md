@@ -1,7 +1,7 @@
 ---
 id: T-139
 title: "T-107 split — customized process sources: a project-owned override path, documented and pinned"
-status: ready
+status: done
 priority: medium
 estimate: 1 session
 plan: docs/changes/archive/T-107/plan.md

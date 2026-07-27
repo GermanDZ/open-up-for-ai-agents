@@ -1,0 +1,23 @@
+{
+  "schema": 2,
+  "task_id": "T-139",
+  "iteration": 107,
+  "iteration_id": null,
+  "cycle": 1,
+  "phase": "construction",
+  "track": "standard",
+  "branch": "feat/T-139-customized-process-sources",
+  "worktree": "/Users/germandz/personal-code/ai-dev-framework/open-up-for-ai-agents-T-139",
+  "base_sha": "663131f35a3956fd0d665dc6d282e584f53ec4bd",
+  "session_id": "feat/T-139-customized-process-sources",
+  "started_at": "2026-07-27T15:16:51Z",
+  "gates": {
+    "team_deployed": false,
+    "plan_persisted": "docs/changes/T-139/plan.md",
+    "log_written": true,
+    "roadmap_synced": true,
+    "retro_due": false,
+    "implementation_verified": true
+  },
+  "iterations_since_retro": 4
+}
