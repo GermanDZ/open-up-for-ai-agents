@@ -10,6 +10,7 @@ blocks: []
 last-synced: ""
 touches:
   - scripts/openup-state.py
+  - scripts/tests/test_t011_retro.py
   - scripts/tests/test_openup_state.py
   - docs-eng-process/procedures/openup-quick-task.md
   - docs-eng-process/procedures/openup-complete-task.md
@@ -17,9 +18,21 @@ touches:
   - docs-eng-process/.claude-templates/skills/openup-quick-task/SKILL.md
   - docs-eng-process/.claude-templates/skills/openup-complete-task/SKILL.md
   - docs/roadmap.md
+  - docs/changes/T-143/plan.md
+  - docs/changes/T-143/design.md
+  - docs-eng-process/procedures/openup-start-iteration.md
+  - docs-eng-process/procedures/openup-retrospective.md
+  - docs-eng-process/.claude-templates/skills/openup-start-iteration/SKILL.md
+  - docs-eng-process/.claude-templates/skills/openup-retrospective/SKILL.md
+  - .claude/skills/openup-start-iteration/SKILL.md
 ---
 
 # T-142 — Quick-track completion never increments the retro-cadence counter
+
+> **This lane owns two tasks.** T-143 ships in the same PR by explicit roadmap
+> instruction ("neither is independently valuable" — see T-143's Dependencies
+> line), so `touches` above covers both change folders and both tasks' surfaces.
+> T-143 keeps its own change folder, spec, and roadmap status.
 
 ## Story
 
@@ -181,13 +194,18 @@ which is what prevents the double count.
 
 **Add:**
 - `--no-retro` argument on the `archive` subparser — `scripts/openup-state.py`
-- Retro-cadence tests in `scripts/tests/test_openup_state.py` (archive
-  increments; failed archive does not; `--no-retro` suppresses; `get` /
-  `increment` / `reset` round-trip)
+- Retro-cadence tests in `scripts/tests/test_t011_retro.py` — the existing home
+  for counter behavior (archive increments; failed archive does not;
+  `--no-retro` suppresses but still archives)
 
 **Modify:**
 - `scripts/openup-state.py` — `cmd_archive()` increments after a successful
   archive; module docstring's `archive` line notes the cadence side effect
+- `scripts/tests/test_t011_retro.py` — `test_counter_survives_archive` asserted
+  the *old* contract ("archive leaves the counter untouched"); it now asserts
+  survives-and-increments
+- `scripts/tests/test_openup_state.py` — pointer comment to the cadence tests'
+  home; no behavioural test changes
 - `docs-eng-process/procedures/openup-complete-task.md` — §7a becomes a note,
   the `retro increment` command is removed
 - `docs-eng-process/procedures/openup-quick-task.md` — §7 states that archiving
@@ -209,26 +227,27 @@ which is what prevents the double count.
 
 ## Operations
 
-- [ ] Add `--no-retro` to the `archive` subparser and increment the durable
+- [x] Add `--no-retro` to the `archive` subparser and increment the durable
       counter in `cmd_archive()` after the archive succeeds
       (`scripts/openup-state.py`); update the module docstring's `archive` line
-- [ ] Reduce `/openup-complete-task` §7a to a note (remove the
+- [x] Reduce `/openup-complete-task` §7a to a note (remove the
       `retro increment` command) in
       `docs-eng-process/procedures/openup-complete-task.md`
-- [ ] State the cadence side effect in `/openup-quick-task` §7
+- [x] State the cadence side effect in `/openup-quick-task` §7
       (`docs-eng-process/procedures/openup-quick-task.md`)
-- [ ] Document archive-increment + `--no-retro` in
+- [x] Document archive-increment + `--no-retro` in
       `docs-eng-process/state-file.md`
-- [ ] (tester) Tests in `scripts/tests/test_openup_state.py`: archive advances
-      the count by one; archive with no state file (exit 3) leaves it unchanged;
-      `--no-retro` suppresses the increment; `get`/`increment`/`reset` still
-      round-trip
-- [ ] Regenerate the skill mirrors (`python3 scripts/render-skills-mirror.py
+- [x] (tester) Tests in `scripts/tests/test_t011_retro.py`: archive advances the
+      count by one; archive with no state file (exit 3) leaves it unchanged;
+      `--no-retro` suppresses the increment but still archives; and update
+      `test_counter_survives_archive`, which asserted the old
+      "archive-never-touches-it" contract
+- [x] Regenerate the skill mirrors (`python3 scripts/render-skills-mirror.py
       --write`, `bash scripts/sync-templates-to-claude.sh`) and confirm
       `grep -c retro
       docs-eng-process/.claude-templates/skills/openup-quick-task/SKILL.md` is
       non-zero
-- [ ] Run the full test suite
+- [x] Run the full test suite
 
 ## Norms
 

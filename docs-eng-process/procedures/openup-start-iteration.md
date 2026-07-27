@@ -387,7 +387,8 @@ python3 scripts/openup-state.py retro check   # sets gates.retro_due = (count >=
 ```
 
 The `--iterations-since-retro` flag **seeds the new state's mirror from the durable
-counter** (`.openup/retro.json`), carrying the cadence forward across the iteration that
+counter** (`<git-common-dir>/openup/retro.json` — shared by every worktree of
+this clone), carrying the cadence forward across the iteration that
 `/openup-complete-task` archived. If the team was already deployed in step 4, also run
 `python3 scripts/openup-state.py set-gate team_deployed true` now.
 

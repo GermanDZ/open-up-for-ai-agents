@@ -198,6 +198,8 @@ class OpenupStateTests(unittest.TestCase):
         dest = self.state_dir / "x.json"
         run(["archive", str(dest)], self.state_dir, expect_code=3)
 
+    # (retro-cadence behaviour of `archive` lives in test_t011_retro.py — T-142)
+
     # -- validate ---------------------------------------------------------
     def test_validate_rejects_corrupted(self):
         run(INIT_BASE, self.state_dir, expect_code=0)

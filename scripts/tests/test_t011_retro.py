@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """Unit tests for the T-011 retro-cadence counter (`openup-state.py retro`).
 
-Covers the durable counter in `.openup/retro.json` and its three lifecycle
-actions (increment / reset / check) plus the live-state mirroring, driven
-through the CLI exactly as the skills drive it.
+Covers the durable counter at `<git-common-dir>/openup/retro.json` and its
+lifecycle actions (increment / reset / check) plus the live-state mirroring,
+driven through the CLI exactly as the skills drive it. `RetroCadenceTests`
+covers the counter's behaviour (including T-142's archive-advances-the-cadence
+rule); `RetroStorageLocationTests` covers T-143's worktree-shared storage.
 
 Run with either:
     python3 -m unittest scripts.tests.test_t011_retro
@@ -11,6 +13,7 @@ Run with either:
 """
 
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -73,14 +76,51 @@ class RetroCadenceTests(unittest.TestCase):
 
     # -- increment survives an archive (the core carry-forward guarantee) -
     def test_counter_survives_archive(self):
+        """The counter outlives the state file `archive` deletes. Since T-142
+        `archive` also *advances* it (it is the completion event), so the
+        carry-forward guarantee is now "survives and increments", not
+        "untouched"."""
         run(INIT_BASE, self.state_dir, expect_code=0)
         run(["retro", "increment"], self.state_dir, expect_code=0)
         run(["retro", "increment"], self.state_dir, expect_code=0)
         dest = self.state_dir / "archived-state.json"
         run(["archive", str(dest)], self.state_dir, expect_code=0)
         self.assertFalse((self.state_dir / "state.json").exists())  # archive removed state
-        # retro.json is untouched by archive:
-        self.assertEqual(run(["retro", "get"], self.state_dir, 0).stdout.strip(), "2")
+        # retro.json survived the archive, and the archive counted as a completion:
+        self.assertEqual(run(["retro", "get"], self.state_dir, 0).stdout.strip(), "3")
+
+    # -- archive advances the cadence on EVERY track (T-142) --------------
+    def test_archive_advances_cadence(self):
+        """T-142: the increment lives in `archive` — the one teardown step every
+        completion path runs — so a quick-track lane counts like any other. It
+        used to be prose in `/openup-complete-task` only, which is why quick
+        lanes silently advanced nothing."""
+        run(INIT_BASE, self.state_dir, expect_code=0)
+        proc = run(
+            ["archive", str(self.state_dir / "archived-state.json")],
+            self.state_dir,
+            expect_code=0,
+        )
+        self.assertIn("Retro cadence: 1", proc.stdout)
+        self.assertEqual(self.retro_json()["iterations_since_retro"], 1)
+
+    def test_failed_archive_does_not_advance_cadence(self):
+        """Exit 3 (no state) must leave the count alone, so a repeated or
+        mistaken archive can never inflate the cadence."""
+        run(["retro", "increment"], self.state_dir, expect_code=0)
+        run(["archive", str(self.state_dir / "x.json")], self.state_dir, expect_code=3)
+        self.assertEqual(run(["retro", "get"], self.state_dir, 0).stdout.strip(), "1")
+
+    def test_archive_no_retro_suppresses_increment(self):
+        run(["retro", "increment"], self.state_dir, expect_code=0)
+        run(INIT_BASE, self.state_dir, expect_code=0)
+        dest = self.state_dir / "archived-state.json"
+        proc = run(["archive", str(dest), "--no-retro"], self.state_dir, expect_code=0)
+        self.assertNotIn("Retro cadence", proc.stdout)
+        self.assertEqual(run(["retro", "get"], self.state_dir, 0).stdout.strip(), "1")
+        # --no-retro changes only the cadence, never the archive itself:
+        self.assertTrue(dest.exists())
+        self.assertFalse((self.state_dir / "state.json").exists())
 
     # -- check below threshold: ok, retro_due stays false ----------------
     def test_check_below_threshold(self):
@@ -148,6 +188,135 @@ class RetroCadenceTests(unittest.TestCase):
         self.assertEqual(self.state_json()["iterations_since_retro"], 3)
         # state is still schema-valid with the seeded mirror.
         run(["validate"], self.state_dir, expect_code=0)
+
+
+class RetroStorageLocationTests(unittest.TestCase):
+    """T-143: the counter must live somewhere every worktree of a clone shares.
+
+    These tests copy the CLI into a throwaway git repo and drive it there, so
+    they exercise the real `git rev-parse --git-common-dir` resolution without
+    ever touching the developer's own <git-common-dir>/openup/retro.json.
+    """
+
+    SCHEMA = SCRIPT.parent / "openup-state.schema.json"
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.tmp = Path(self._tmp.name)
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def plant(self, root: Path) -> Path:
+        """Copy the CLI (+ its schema) into root/scripts; return the CLI path."""
+        (root / "scripts").mkdir(parents=True, exist_ok=True)
+        for src in (SCRIPT, self.SCHEMA):
+            (root / "scripts" / src.name).write_bytes(src.read_bytes())
+        return root / "scripts" / SCRIPT.name
+
+    def git(self, *args, cwd):
+        proc = subprocess.run(
+            ["git", *args], cwd=str(cwd), capture_output=True, text=True,
+            env={**os.environ, "GIT_CONFIG_GLOBAL": "/dev/null",
+                 "GIT_CONFIG_SYSTEM": "/dev/null"},
+        )
+        assert proc.returncode == 0, f"git {args} failed: {proc.stderr}"
+        return proc
+
+    def make_repo(self) -> Path:
+        repo = self.tmp / "repo"
+        repo.mkdir()
+        self.git("init", "-q", "-b", "main", cwd=repo)
+        self.git("config", "user.email", "t@example.com", cwd=repo)
+        self.git("config", "user.name", "T", cwd=repo)
+        self.plant(repo)
+        self.git("add", "-A", cwd=repo)
+        self.git("commit", "-qm", "seed", cwd=repo)
+        return repo
+
+    def cli(self, cli_path: Path, *args) -> str:
+        proc = subprocess.run(
+            [sys.executable, str(cli_path), *args], capture_output=True, text=True,
+        )
+        assert proc.returncode == 0, f"{args} -> {proc.returncode}: {proc.stderr}"
+        return proc.stdout.strip()
+
+    # -- default location is the shared git common dir --------------------
+    def test_default_location_is_git_common_dir(self):
+        repo = self.make_repo()
+        cli = repo / "scripts" / SCRIPT.name
+        self.assertEqual(self.cli(cli, "retro", "increment"), "1")
+        self.assertTrue((repo / ".git" / "openup" / "retro.json").exists())
+        # NOT the old per-worktree location:
+        self.assertFalse((repo / ".openup" / "retro.json").exists())
+
+    # -- the whole point: two worktrees, one count ------------------------
+    def test_two_worktrees_share_one_count(self):
+        repo = self.make_repo()
+        cli = repo / "scripts" / SCRIPT.name
+        self.cli(cli, "retro", "increment")  # -> 1 in the main worktree
+
+        wt = self.tmp / "repo-lane"
+        self.git("worktree", "add", "-q", str(wt), "-b", "lane", cwd=repo)
+        wt_cli = wt / "scripts" / SCRIPT.name
+        self.assertTrue(wt_cli.exists())  # scripts/ is committed, so the lane has it
+
+        # The fresh worktree sees the count the previous lane left behind...
+        self.assertEqual(self.cli(wt_cli, "retro", "get"), "1")
+        # ...and its own increment is visible back in the main worktree.
+        self.assertEqual(self.cli(wt_cli, "retro", "increment"), "2")
+        self.assertEqual(self.cli(cli, "retro", "get"), "2")
+
+    # -- override precedence ----------------------------------------------
+    def test_retro_dir_overrides_state_dir_and_shared_default(self):
+        repo = self.make_repo()
+        cli = repo / "scripts" / SCRIPT.name
+        override = self.tmp / "elsewhere"
+        state = self.tmp / "state"
+        self.cli(cli, "retro", "increment",
+                 "--retro-dir", str(override), "--state-dir", str(state))
+        self.assertTrue((override / "retro.json").exists())
+        self.assertFalse((state / "retro.json").exists())
+        self.assertFalse((repo / ".git" / "openup" / "retro.json").exists())
+
+    def test_state_dir_scopes_counter_when_no_retro_dir(self):
+        """Isolation guarantee: a --state-dir caller (every test in this file,
+        and any deliberately-isolated run) must not touch the shared counter."""
+        repo = self.make_repo()
+        cli = repo / "scripts" / SCRIPT.name
+        state = self.tmp / "state"
+        self.cli(cli, "retro", "increment", "--state-dir", str(state))
+        self.assertTrue((state / "retro.json").exists())
+        self.assertFalse((repo / ".git" / "openup" / "retro.json").exists())
+
+    # -- read-forward migration -------------------------------------------
+    def test_legacy_count_is_carried_forward_once(self):
+        repo = self.make_repo()
+        cli = repo / "scripts" / SCRIPT.name
+        legacy = repo / ".openup"
+        legacy.mkdir()
+        (legacy / "retro.json").write_text('{"iterations_since_retro": 3}\n')
+
+        # Carried forward, not reset to 0:
+        self.assertEqual(self.cli(cli, "retro", "get"), "3")
+        # The first write lands at the shared path and seeds from the legacy value:
+        self.assertEqual(self.cli(cli, "retro", "increment"), "4")
+        self.assertTrue((repo / ".git" / "openup" / "retro.json").exists())
+        # Non-destructive: the legacy file is left exactly as it was...
+        self.assertEqual(
+            json.loads((legacy / "retro.json").read_text())["iterations_since_retro"], 3
+        )
+        # ...and is never re-applied now that the shared file exists.
+        self.assertEqual(self.cli(cli, "retro", "get"), "4")
+
+    # -- fail-open outside a git repo -------------------------------------
+    def test_non_git_checkout_falls_back_to_repo_local_openup(self):
+        """The cadence is advisory: no git, no crash — just the old location."""
+        root = self.tmp / "not-a-repo"
+        root.mkdir()
+        cli = self.plant(root)
+        self.assertEqual(self.cli(cli, "retro", "increment"), "1")
+        self.assertTrue((root / ".openup" / "retro.json").exists())
 
 
 if __name__ == "__main__":
