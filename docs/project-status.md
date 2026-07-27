@@ -1,16 +1,18 @@
 # Project Status
 
 **Phase**: construction
-**Iteration**: 93
-**Iteration Goal**: T-136 — Inception authoring-reliability measure independent of the post-authoring consent gate
+**Iteration**: 94
+**Iteration Goal**: T-138 — T-107 split — doctor `--check` wiring + KB re-distill runbook
 **Status**: completed
-**Current Task**: T-136
+**Current Task**: T-138
 **Iteration Started**: 2026-06-18
 **Last Updated**: 2026-07-27
 **Updated By**: sync-status.py
 **Retrospective**: [iteration-86-retrospective.md](iteration-retrospectives/iteration-86-retrospective.md) — covers iterations 78–86 (2026-07-15 → 2026-07-24), incl. quick fixes T-125/T-126; prev [iteration-77-retrospective.md](iteration-retrospectives/iteration-77-retrospective.md) (iterations 21–77)
 
 ## Notes
+
+- **Iteration 94** (2026-07-27): T-138 — second of T-107's 3-way split: `openup-doctor.py` gains `check_task_library()`, pre-testing whether the KB source tree is vendored before running `build-task-library.py --check`, so it never misreports a routine downstream project (task-library.yaml present, KB source tree absent) as drifted — closes the false-positive shape T-105 already found once, at the doctor layer rather than the compiler. Documents the KB re-distillation runbook in reference-driver.md. 767/767 tests green, 4 new cases.
 
 - **Iteration 93** (2026-07-27): T-136 — new standalone analyzer (scripts/analyze-authoring-reliability.py) measures T-106's authoring-reliability gate from openup-agent-bench.py's saved driver logs, independent of the run's overall driver exit code (the inception-taskdef scenario structurally can't report pass — it runs past authoring into a deterministic consent gate every run hits). Re-measured this session's real t107-gate-nano batch: 4/5 = 80% clean, meeting T-107's gate; the one failure (run-04) is a real restart bug (12x repeated glob for an unresolved 'Technical Specification' input), not the coincidental rate limit that cut it off. Recorded in docs/changes/T-107/design.md — T-107's gate is now satisfied. 763/763 tests green.
 

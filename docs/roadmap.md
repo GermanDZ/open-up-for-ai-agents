@@ -902,7 +902,7 @@ authored when promoted.
 ---
 
 ## T-138: T-107 split — doctor `--check` wiring + KB re-distill runbook
-**Status**: pending
+**Status**: completed (2026-07-27)
 **Priority**: medium
 **Value**: Surfaces task-library drift (a KB task file changed but its compiled def wasn't re-distilled) in the project's own health check, degrading gracefully to INFO on a downstream project with no vendored KB — closing T-105's "false-positive on absent KB" lesson before doctor gains a check that could otherwise wrongly ERROR every bootstrapped project.
 **Description**: Wire `build-task-library.py --check` into `openup-doctor.py` as a WARNING-level check, INFO-degrading (never ERROR) when the vendored KB is absent; document a repeatable KB-update re-distillation runbook (bump → regenerate skeletons/prompts → review diff → commit).
