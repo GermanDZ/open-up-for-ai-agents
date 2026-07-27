@@ -1,7 +1,7 @@
 ---
 id: T-148
 title: "`begin` never seeds the plan gate from the task's own spec, forcing a manual `set-gate plan_persisted` every session"
-status: ready
+status: done
 priority: medium
 estimate: 0.5 session
 plan: ""
