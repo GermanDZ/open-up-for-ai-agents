@@ -58,10 +58,11 @@ No product-manager re-ranking triggered.
    - Due: next scheduled maintenance (within 1 week)  
    - Priority: low
 
-2. **T-052 read-back: on-stop loop gone in 30 days** — after 2026-07-18, check `.claude/memory/bypass-log.md` and session transcripts in es-invoices/tallyfox for on-stop override-cap loops. If zero occurrences, success measure met. If any, diagnose why the fix didn't land.
-   - Owner: GermanDZ  
-   - Due: 2026-07-18  
-   - Priority: medium (success signal for a high-impact fix)
+2. ~~**T-052 read-back: on-stop loop gone in 30 days** — after 2026-07-18, check `.claude/memory/bypass-log.md` and session transcripts in es-invoices/tallyfox for on-stop override-cap loops. If zero occurrences, success measure met. If any, diagnose why the fix didn't land.~~
+   - ~~Owner: GermanDZ~~
+   - ~~Due: 2026-07-18~~
+   - ~~Priority: medium~~
+   - **obsolete 2026-07-27** — the measure is unanswerable as specified. Checked on 2026-07-27 (9 days past due): `grep -c "override-cap"` → **0** in both repos, but **neither has a `.claude/memory/bypass-log.md` at all**, so "0" cannot be distinguished from "not logging". Superseded by **T-152**, which fixes the class (a success measure may not name instrumentation that does not exist where the read-back happens). Re-specifying this particular measure 88 iterations after the fix shipped is not worth it.
 
 ## Metrics
 

@@ -353,6 +353,81 @@ T-002 (`/openup-sync-spec`) completed 2026-06-11 once T-008's readiness DAG un-b
 
 ---
 
+## T-150: A merged `settings.json` referencing a not-yet-synced hook script locks both Bash and Write
+**Status**: pending
+**Priority**: critical
+**Value**: Removes the only known failure mode that can leave a working repo with **no** agent escape hatch. Hit live on 2026-07-27 merging T-140: `.claude/settings.json` is tracked and merged instantly, so it immediately referenced `stage-run-log.py`; `.claude/scripts/hooks/*` is gitignored and only materializes after `sync-templates-to-claude.sh`. In that window every Bash call died on the missing hook and `gate-edits` blocked Write (no active iteration post-completion) — the owner had to run the sync by hand from their own shell. Every future hook addition reproduces this exactly.
+**Description**: The hook command is a bare `python3 "$CLAUDE_PROJECT_DIR"/.claude/scripts/hooks/<name>.py`, so a missing file is a hard interpreter error rather than a no-op. Two candidate fixes, pick one: (1) **guard the command** — `[ -f <path> ] && python3 <path> || true`, making a missing hook self-healing for every entry; (2) **track the hook scripts** alongside the `settings.json` that references them, so the two can never merge apart. Option 1 is smaller and also covers a partially-synced consumer; option 2 removes the skew at the source. Whichever wins, the invariant to test is: *a `settings.json` naming a hook that does not exist on disk must not block any tool call.*
+- Pick guard-the-command vs track-the-scripts; apply to every hook entry in `settings.json` + `settings.json.example`
+- Regression test: settings referencing a nonexistent hook script leaves Bash and Write usable
+- Note the interaction: `gate-edits` legitimately blocks Write with no active iteration, so the Bash path must never be the *only* recovery route
+
+**Dependencies**: —
+
+**See**: Iteration-98 retrospective action item A1 (the only carried item that can hard-block a repo); observed live merging T-140 (PR #94)
+
+---
+
+## T-151: The retro-cadence counter double-increments and `reset` reaches only one of its two stores
+**Status**: pending
+**Priority**: high
+**Value**: Makes the one durable signal governing retrospective cadence trustworthy. Today it is wrong in two independent ways at once, and the two long-open decisions about the gate's semantics (open since iterations 9 and 77) cannot be answered while the number they are about is unreliable.
+**Description**: Three findings, all observed live on 2026-07-27 while completing T-140 and running the iteration-98 retrospective. **(1) Double-increment**: `openup-session.py end` increments the counter *and* `/openup-complete-task` step 7a increments it again — one completion moved it 4 → 7. **(2) Split stores**: main `.openup/retro.json` and shared `.git/openup/retro.json` are independent; `openup-state.py retro reset` zeroed the shared one while `retro get` / `retro check` read the *other*, so the reset was a silent no-op for the gate until corrected by hand. **(3) Semantics undecided**: carried items 9.1 (should the gate fire on 4→5 or 5→6?) and 77.2 (should `retro_due` apply outside `full`-track starts, so a long solo `quick`/`standard` streak cannot outrun the cadence) are folded in here — they are the same decision and both are blocked on a counter that means something.
+- Single owner for the increment; regression test that one completion moves the counter by exactly 1
+- Decide the authoritative store, make the other derived or delete it; test that `reset` is observable through `get`
+- Record the gate-boundary decision (9.1) and the track-scope decision (77.2) as explicit, citable choices
+
+**Dependencies**: —
+
+**See**: Iteration-98 retrospective action items A2 + A3, and carried items 9.1 (iteration 9) / 77.2 (iteration 77)
+
+---
+
+## T-152: Success measures may name instrumentation that does not exist where it must be read
+**Status**: pending
+**Priority**: medium
+**Value**: Stops the project authoring falsifiable-looking expectations that turn out to be unanswerable at read-back — the failure just measured. T-052's measure was specified against `.claude/memory/bypass-log.md` in two downstream repos; at read-back (due 2026-07-18, checked 2026-07-27) **neither repo has that file at all**, so "0 occurrences" cannot be distinguished from "not logging" and the measure is dead. It had sat open as a carried action item for 88 iterations.
+**Description**: `/openup-complete-task` step 1b verifies the instrumentation exists **in the diff or demonstrably pre-existing** — but only in the framework repo, whereas the measure is often read back in a *consumer* environment. Tighten the gate so an instrument must be demonstrable in the environment where the read-back will happen, or the measure must be rewritten to one that is. Retiring T-052's measure as obsolete is already recorded in the iteration-98 retrospective; this task prevents the class.
+- Step 1b requires naming the read-back environment and showing the instrument exists there
+- Reject an instrument that only exists framework-side when the expectation is about downstream behavior
+- Cross-check the `## Success Measures` rubric criterion (12) so the two do not drift
+
+**Dependencies**: —
+
+**See**: Iteration-98 retrospective action item A4 + Measure Read-Back table (T-052 verdict `can't tell`)
+
+---
+
+## T-153: No consumer-smoke check exercises the install path, so consumer-only breakage is invisible
+**Status**: pending
+**Priority**: high
+**Value**: Framework-only-invisible bugs currently surface in a downstream repo rather than in CI. Carried unaddressed since iteration 86; the T-140 merge produced a fresh example of exactly this shape (a change that is correct in the framework repo and broken in any checkout until a sync runs).
+**Description**: Add a lightweight smoke check that exercises the install path against a throwaway consumer fixture — `sync-from-framework` detection, a tracked bypass-log dirty-stop, and (post-T-150) a settings/hook-script skew — so the consumer perspective is tested rather than assumed. Deliberately a smoke check, not a full consumer integration suite: the goal is catching class-of-breakage, not coverage.
+- Throwaway consumer fixture created and torn down per run
+- Covers framework detection, the dirty-stop, and settings/hook skew
+- Runs in the normal suite, no network, no sibling-repo dependency
+
+**Dependencies**: T-150
+
+**See**: Iteration-86 retrospective action item 1 (carried 12 iterations); iteration-98 retrospective
+
+---
+
+## T-154: Four long-open process decisions have no completion condition and never close
+**Status**: pending
+**Priority**: medium
+**Value**: Four carried action items — the oldest open since iteration 9 — are phrased as "decide X". A decision has nothing to grep for, so no disposition pass can ever retire one; they have survived up to 89 iterations untouched and are pure noise in the one list agents read for context. Forcing each to a citable artifact (or an explicit retirement) is what converts them from permanent residue into either work or closure.
+**Description**: Resolve each of the following by producing a **recorded decision**, not a conversation: **(77.3, overdue)** exercise `/openup-fan-out` on two genuinely disjoint READY lanes and capture the wall-clock numbers T-060 specified, **or** retire its success measure as `n/a` with a reason — it has never once been exercised for its stated purpose and its due date (iteration 90) passed 8 iterations ago; **(77.5)** decide whether `docs/risk-list.md` is worth instantiating at this project's scale, or change `/openup-retrospective` step 4 to treat its absence as `n/a` rather than a silent skip — today neither branch has been taken; **(20.2)** decide whether "dependencies and explorations land before the implementation that links them" is a convention worth enforcing, and if so add the checklist line to `/openup-start-iteration`; **(9.3)** run the skills altitude / prose-vs-executable survey, or retire it as obsolete given how much the skill set has since changed. **(9.2)** rides along opportunistically: the first genuine refactor diff in a future lane should be audited with `/openup-sync-spec` and the result recorded.
+- Each of the four produces an artifact or an explicit `obsolete` retirement with evidence
+- Struck through in the retrospective that authored it, per the T-141 disposition rules
+- No item left in "decide X" form
+
+**Dependencies**: —
+
+**See**: Iteration-98 retrospective action item A5; carried items 77.3 / 77.5 / 20.2 / 9.3 (+ 9.2 opportunistic)
+
+---
+
 ## T-149: `project-status.md`'s `Status` header conflates last-completed-iteration with active-lane status
 **Status**: pending
 **Priority**: medium

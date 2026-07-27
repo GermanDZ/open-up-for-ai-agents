@@ -158,3 +158,41 @@ as new action items A2 and A3.
   return to capability work.
 - **T-140 read-back** falls due after the next two lanes — check that no lane produces a
   logs-only commit.
+
+## Post-Retrospective Triage (2026-07-27, same day)
+
+Every action item — the 5 new and the 14 carried — was triaged into *resolve now*,
+*needs a lane*, or *not ours*. Nothing was left in the list without a destination.
+
+### Resolved on the spot (3 more retired, by investigation)
+
+| Item | Verdict | Evidence |
+|---|---|---|
+| `86.2` Audit framework-identity markers | **satisfied** | The one real detection site (`scripts/sync-from-framework.sh:217-221`) already keys on the framework-exclusive `scripts/sync-templates-to-claude.sh` and names this hazard inline (commit `bbfa984`, T-126). Verified neither consumer carries `docs-eng-process/.claude-templates`. The other `docs-eng-process` tests are project/template checks, not identity checks |
+| `77.4` Why did July under-log run shards | **satisfied — premise overturned** | There is no under-logging. On 2026-07-13 (167 commits / 90 records): 91 commits were **logs-only** (deliberately skipped by the self-reference guard) and 27 were **merges** (never logged), leaving 49 loggable against 90 records. A further 17 records point at SHAs rebased away and unreachable from `main`, while `git log` buckets by post-rebase committer date — the two counts were never comparable quantities |
+| `10.2` T-052 read-back | **obsolete** | Unanswerable as specified: neither target repo has a `bypass-log.md`, so "0 occurrences" ≠ "no loops". Superseded by **T-152**, which fixes the class rather than this instance |
+
+**Disposition total for iteration 98: 6 of 17 carried items retired** (3 in the main pass,
+3 in triage), all with citable evidence.
+
+### Filed as roadmap entries (needs a delivery lane)
+
+| Task | Covers | Priority |
+|---|---|---|
+| **T-150** | A1 — a merged `settings.json` naming a not-yet-synced hook script locks both Bash and Write | **critical** |
+| **T-151** | A2 + A3 + carried `9.1` + carried `77.2` — retro counter double-increment, split stores, and the two undecided gate-semantics questions, folded because they are one decision on one number | high |
+| **T-152** | A4 (+ retires `10.2`'s class) — a success measure may not name instrumentation absent from the environment where it is read back | medium |
+| **T-153** | carried `86.1` — consumer-smoke check over the install path. Depends on T-150 | high |
+| **T-154** | A5 residue — the four "decide X" items (`77.3`, `77.5`, `20.2`, `9.3`) plus `9.2` opportunistically; each must produce an artifact or an explicit obsolete retirement | medium |
+
+### Not ours to close
+
+- `10.1` — **one concrete repair pending**: es-invoices has exactly one stale archived plan
+  (`T-009: in-progress → done`); tallyfox-app is clean. Deliberately **not run** — it mutates
+  a repo outside this one, so it is the owner's call. `python3 scripts/openup-claims.py migrate-archived-status`
+  in es-invoices closes it.
+- `86.3` — T-120/T-123 read-back, genuinely blocked on owner endpoint stability.
+- `86.4` — kaze-webapp `sync-from-framework.sh` bump, owned by the kaze lead on their schedule.
+
+**Net effect on the carried list: 14 open → 3 open**, and the three that remain are all
+external dependencies rather than unowned residue.
