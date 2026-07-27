@@ -1,7 +1,7 @@
 ---
 id: T-157
 title: "`sync-status.py --views-only` — regenerate the shared views without a live lane"
-status: ready
+status: done
 priority: high
 estimate: 1 session
 plan: ""

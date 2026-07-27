@@ -400,7 +400,7 @@ T-002 (`/openup-sync-spec`) completed 2026-06-11 once T-008's readiness DAG un-b
 ---
 
 ## T-157: `sync-status.py --views-only` — regenerate the shared views without a live lane
-**Status**: ready
+**Status**: completed (2026-07-27)
 **Priority**: high
 **Value**: The documented conflict-recovery recipe is impossible in exactly the situation it is written for. `sync-status.py` returns `EXIT_NO_STATE` without `.openup/state.json`, but `/openup-complete-task` archives that file — and a PR conflict surfaces *after* push, which is after completion. So the one procedure the framework offers for a conflicted shared view leaves a human hand-repairing the file. Same failure shape as T-150: the recovery tool needs a precondition the situation has already destroyed. Per the iteration-103 retrospective, this is the only open action item that leaves the repo in a state a human has to hand-repair.
 **Description**: Add a state-free `--views-only` flag that returns before `read_state()` (mirroring the existing `--reconcile` branch), reassembling `## Notes` from the `docs/status-notes/*.md` shards and running the roadmap section reconcile, so one command restores both views post-completion.

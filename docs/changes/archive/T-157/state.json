@@ -1,0 +1,23 @@
+{
+  "schema": 2,
+  "task_id": "T-157",
+  "iteration": 108,
+  "iteration_id": null,
+  "cycle": 1,
+  "phase": "construction",
+  "track": "standard",
+  "branch": "feat/T-157-sync-status-views-only",
+  "worktree": "/Users/germandz/personal-code/ai-dev-framework/open-up-for-ai-agents-T-157",
+  "base_sha": "5726680c8a0917f8a98e75a3d846a3589c2ce7c7",
+  "session_id": "feat/T-157-sync-status-views-only",
+  "started_at": "2026-07-27T17:47:51Z",
+  "gates": {
+    "team_deployed": false,
+    "plan_persisted": "docs/changes/T-157/plan.md",
+    "log_written": true,
+    "roadmap_synced": true,
+    "retro_due": true,
+    "implementation_verified": true
+  },
+  "iterations_since_retro": 5
+}
