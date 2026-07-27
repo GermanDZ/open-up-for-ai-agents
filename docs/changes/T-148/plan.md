@@ -13,6 +13,7 @@ touches:
   - scripts/tests/test_openup_session.py
   - docs-eng-process/procedures/openup-start-iteration.md
   - docs-eng-process/.claude-templates/skills/openup-start-iteration/SKILL.md
+  - .claude/skills/openup-start-iteration/SKILL.md
   - docs-eng-process/script-cli-reference.md
   - docs-eng-process/state-file.md
   - docs/roadmap.md
@@ -191,21 +192,21 @@ load-bearing.
 
 ## Operations
 
-- [ ] Add `_resolve_plan_path()` to `scripts/openup-session.py` and wire it into `cmd_begin`'s
+- [x] Add `_resolve_plan_path()` to `scripts/openup-session.py` and wire it into `cmd_begin`'s
       `init_argv` assembly (explicit `--plan` wins; `standard`/`full` only; fail-open).
-- [ ] Emit a `plan_gate_autoresolved` `log-event` from `cmd_begin` when the helper resolved
+- [x] Emit a `plan_gate_autoresolved` `log-event` from `cmd_begin` when the helper resolved
       the path, so the effect is readable from the run shard.
-- [ ] (tester) Add the four regression tests to `scripts/tests/test_openup_session.py`
+- [x] (tester) Add the four regression tests to `scripts/tests/test_openup_session.py`
       (auto-resolve, explicit wins, missing-file fail-open, quick-track no-op) and run
       `python3 -m unittest scripts.tests.test_openup_session`.
-- [ ] Fix `docs-eng-process/procedures/openup-start-iteration.md` step 6: drop
+- [x] Fix `docs-eng-process/procedures/openup-start-iteration.md` step 6: drop
       `--plan docs/plans/{plan}.md`, state the auto-resolution from
       `docs/changes/{task_id}/plan.md` on `standard`/`full`.
-- [ ] Update `docs-eng-process/script-cli-reference.md` (`begin` block) and
+- [x] Update `docs-eng-process/script-cli-reference.md` (`begin` block) and
       `docs-eng-process/state-file.md` (`plan_persisted` gate-source row) to match.
-- [ ] Regenerate the mirror — `python3 scripts/render-skills-mirror.py --write` then
+- [x] Regenerate the mirror — `python3 scripts/render-skills-mirror.py --write` then
       `bash scripts/sync-templates-to-claude.sh` — and confirm `--check` exits 0.
-- [ ] Run the full suite (`python3 scripts/check-docs.py`, `bash tests/test-scripts.sh`)
+- [x] Run the full suite (`python3 scripts/check-docs.py`, `bash tests/test-scripts.sh`)
       and confirm no regression.
 
 ## Norms
