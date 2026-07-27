@@ -1,7 +1,7 @@
 ---
 id: T-138
 title: "T-107 split: doctor --check wiring + KB re-distill runbook"
-status: ready
+status: done
 priority: medium
 estimate: 1 session
 plan: docs/changes/archive/T-107/plan.md

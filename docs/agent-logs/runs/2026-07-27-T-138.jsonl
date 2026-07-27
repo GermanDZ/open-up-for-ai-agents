@@ -1,3 +1,4 @@
 {"run_id": "T-138-run1", "event": "session_begin", "task_id": "T-138", "goal": "T-138 \u2014 T-107 split: doctor --check wiring + KB re-distill runbook", "branch": "feat/T-138-doctor-redistill-wiring", "phase": "construction", "ts": "2026-07-27T07:10:32Z"}
 {"run_id": "cef08f1b86ed44b59dc9e3ae17ff8e78", "event": "commit", "task_id": "T-138", "branch": "feat/T-138-doctor-redistill-wiring", "sha": "bb50e2d3fdcc514947203a7c3063817dc79795b2", "model": null, "session_id": "feat/T-138-doctor-redistill-wiring", "ts": "2026-07-27T07:13:28Z"}
 {"run_id": "e3ca804e12df4ecd9aa2280e93ee481d", "event": "commit", "task_id": "T-138", "branch": "feat/T-138-doctor-redistill-wiring", "sha": "e4b6d675068dce3f1f5b90707c3aafe11ded5060", "model": null, "session_id": "feat/T-138-doctor-redistill-wiring", "ts": "2026-07-27T07:18:49Z"}
+{"event": "session_end", "task_id": "T-138", "ts": "2026-07-27T07:20:57Z"}
