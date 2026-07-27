@@ -338,6 +338,21 @@ T-002 (`/openup-sync-spec`) completed 2026-06-11 once T-008's readiness DAG un-b
 
 ---
 
+## T-148: `/openup-start-iteration` never passes `--plan`, forcing a manual `plan_persisted` workaround every session
+**Status**: pending
+**Priority**: medium
+**Value**: Removes a recurring, session-after-session paper cut: `gate-edits.py` blocks the first source-code edit with "no active OpenUP iteration plan" until someone manually runs `openup-state.py set-gate plan_persisted <path>` — even though the task's own spec (`docs/changes/<task_id>/plan.md`) already exists and is committed by the time `begin` runs. Triple-corroborated: this exact manual workaround is already recorded in this session owner's own persisted memory from a past session, was hit and manually patched on every single task this session (T-132, T-134, T-135, T-136, T-138), and was just observed live in a sibling downstream project's session mid-transcript.
+**Description**: `openup-session.py begin --plan <path>` (which forwards to `openup-state.py init --plan <path>`) already correctly seeds `gates.plan_persisted` — the mechanism works. The bug is in `/openup-start-iteration`'s own skill template (`docs-eng-process/procedures/openup-start-iteration.md`, step 6): it shows `--plan docs/plans/{plan}.md` — the wrong path convention (`docs/plans/` is for phase-level plans; a task's spec lives at `docs/changes/{task_id}/plan.md`) — as an optional, easy-to-skip flag, rather than always resolving it from the task's own already-committed spec file. Fix the skill's step 6 to always pass `--plan docs/changes/{task_id}/plan.md` on standard/full tracks when that file exists at begin time (it always does, by step 6c's "commit the promoted spec" ordering), eliminating the manual post-hoc gate-set step this session repeated five times.
+- `docs-eng-process/procedures/openup-start-iteration.md` step 6: correct path + always-pass (standard/full)
+- `render-skills-mirror.py --write` + `sync-templates-to-claude.sh` to propagate the pack fix to the mirror
+- Regression: a fresh `begin` for a standard-track task with a committed spec never needs a follow-up `set-gate plan_persisted` call
+
+**Dependencies**: —
+
+**See**: This session's own repeated workaround (T-132, T-134, T-135, T-136, T-138); corroborated live in a sibling project's `/openup-next T-057` session (`gate-edits.py` blocked mid-flow)
+
+---
+
 ## T-134: Code-artifact task-def probe (Option D) — can the driver write AND run real code?
 **Status**: completed (2026-07-26)
 **Priority**: medium
