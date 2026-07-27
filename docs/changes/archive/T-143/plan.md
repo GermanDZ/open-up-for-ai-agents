@@ -1,7 +1,7 @@
 ---
 id: T-143
 title: "Retro-cadence counter must live in a location genuinely shared across worktrees"
-status: ready
+status: done
 priority: high
 estimate: 1 session
 plan: ""

@@ -282,7 +282,7 @@ T-002 (`/openup-sync-spec`) completed 2026-06-11 once T-008's readiness DAG un-b
 ---
 
 ## T-143: Retro-cadence counter isn't safely durable across worktrees
-**Status**: pending
+**Status**: completed (2026-07-27)
 **Priority**: high
 **Value**: Independent of T-142's gap, the counter's storage location isn't safe under this framework's own worktree-per-lane model. A downstream project (which tracks `.openup/retro.json` in git) found the counter is **overwritten, not summed** when two lanes branching from the same count each merge independently — a structural lost-update bug that gets worse with more parallelism, degrading the retro gate fastest exactly where process discipline matters most. This repo's own variant is different but related: `.openup/` is entirely gitignored here (confirmed via `.gitignore`), so the counter doesn't persist across worktrees *at all* — every fresh worktree starts back at a fresh/low count (observed directly this session: a T-135 worktree read `retro get` as `0` immediately after T-132 had already advanced it to `1`).
 **Description**: Move the counter out of the tracked/per-worktree working tree entirely — e.g. into `<git-common-dir>/openup/` alongside the claims directory, which this repo already treats as shared-across-worktrees and not merge-managed (see `openup-claims.py`'s claims-dir resolution, reused this session for `T-134`/`T-135`/`T-136`/`T-138`'s claim operations). If a project prefers to keep it tracked, an additive merge strategy (union-merge driver or an append-only event list instead of a scalar) would fix the sibling project's specific lost-update mechanism, but doesn't fix this repo's gitignored-`.openup/` variant on its own.

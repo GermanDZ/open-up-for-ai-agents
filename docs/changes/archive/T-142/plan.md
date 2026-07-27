@@ -1,7 +1,7 @@
 ---
 id: T-142
 title: "Every completed lane must advance the retro-cadence counter, regardless of track"
-status: ready
+status: done
 priority: high
 estimate: 1 session
 plan: ""
