@@ -8,34 +8,31 @@
 **Iteration Started**: 2026-06-18
 **Last Updated**: 2026-07-27
 **Updated By**: sync-status.py
-**Retrospective**: [iteration-98-retrospective.md](iteration-retrospectives/iteration-98-retrospective.md) — covers iterations 87–98 (2026-07-25 → 2026-07-27); first run of the T-141 carried-item disposition pass (3 retired, 14 carried). Prev [iteration-86-retrospective.md](iteration-retrospectives/iteration-86-retrospective.md) (78–86), [iteration-77-retrospective.md](iteration-retrospectives/iteration-77-retrospective.md) (21–77)
+**Retrospective**: [iteration-103-retrospective.md](iteration-retrospectives/iteration-103-retrospective.md) — covers iterations 99–103 (2026-07-27): T-150→T-153 + the T-154 retirement. 3 more carried items retired (6 open, 4 external/opportunistic). Prev [iteration-98](iteration-retrospectives/iteration-98-retrospective.md) (87–98), [iteration-86](iteration-retrospectives/iteration-86-retrospective.md) (78–86)
 
 ## Open Action Items
 
-Triaged 2026-07-27 and again after the T-150→T-153 lanes. Retired items keep their evidence
-in the retrospective that authored them; nothing here is carried without a destination.
+Disposition pass run 2026-07-27 (iteration-103). Retired items keep their evidence in the
+retrospective that authored them.
 
-**In flight — awaiting merge**
-- **T-150** ✅ merged — hook commands guarded; a missing hook script can no longer lock Bash and Write.
-- **T-151** (PR #96) — cadence decisions 9.1 / 77.2 recorded; action items A2 and A3 **retracted as misdiagnoses**.
-- **T-152** (PR #97) — a success measure must name its read-back environment.
-- **T-153** (PR #98) — the install path is exercised end to end by a consumer smoke check.
+**New this cycle**
+- **B1 — high**: give `sync-status.py` a no-lane path (`--views-only`). The documented "rebase and re-run" conflict fix is impossible after `openup-session.py end` archives the state — the recovery tool needs a precondition the situation destroyed.
+- **B2 — high**: verify a retrospective action item's premise **before** promoting it to a roadmap task. Two of five filed that way were false; two more had shrunk.
+- **B3 — medium**: decide `20.2` and `77.5` — the two items T-154's cancellation wrongly dropped.
+
+**Open — genuinely actionable here (2)**
+- `20.2` (83 it.) Dependency-ordering convention for `/openup-start-iteration`. **Was mis-recorded as handled by T-154**; still open.
+- `77.5` (26 it.) Instantiate `docs/risk-list.md` or treat its absence as `n/a`. Same wrongly-dropped pair.
 
 **Open — external, not closable here (3)**
-- `10.1` — **es-invoices has exactly one stale archived plan** (`T-009: in-progress → done`); tallyfox-app clean. Fix: `python3 scripts/openup-claims.py migrate-archived-status` in es-invoices. Not run: it mutates another repo.
-- `86.3` — T-120/T-123 success-measure read-back, blocked on owner endpoint stability.
-- `86.4` — kaze-webapp `sync-from-framework.sh` bump, on the kaze lead's schedule.
+- `10.1` — es-invoices has exactly one stale archived plan (`T-009: in-progress → done`); tallyfox-app clean. Fix: `python3 scripts/openup-claims.py migrate-archived-status` there.
+- `86.3` — T-120/T-123 read-back, blocked on owner endpoint stability.
+- `86.4` — kaze-webapp `sync-from-framework.sh` bump, kaze lead's schedule.
 
 **Open — opportunistic rider (1)**
-- `9.2` — first real `/openup-sync-spec` use on a live refactor diff. Deliberately **not** a task: it needs a genuine refactor to audit, so it rides along with the next lane that produces one.
+- `9.2` — first real `/openup-sync-spec` use; needs a genuine refactor diff, so it rides with the next lane that produces one.
 
-**Retired to date (9 of the original 17, plus 2 retracted)**
-`77.1`, `20.1`, `20.3` (iteration-98 disposition pass) · `86.2`, `77.4`, `10.2` (same-day triage) ·
-`9.1`, `77.2` (closed by T-151) · `9.3`, `77.3` (retired by owner decision 2026-07-27; T-154 cancelled) ·
-and **A2 + A3 retracted** as misdiagnoses — A2 already fixed by T-142/`177ee42`, A3 measured false.
-
-> **Cadence note:** the retro counter reads 4; the next completion reaches the threshold of 5
-> and will gate a `full`-track start until `/openup-retrospective` runs.
+**Retired to date**: 12 of the original 17, plus A2/A3 retracted as misdiagnoses.
 
 ## Notes
 

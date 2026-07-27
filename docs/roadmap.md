@@ -424,6 +424,8 @@ T-002 (`/openup-sync-spec`) completed 2026-06-11 once T-008's readiness DAG un-b
 - **9.3** (skills altitude / prose-vs-executable survey) — **retired obsolete**: filed at iteration 9 against a skill set that has since changed beyond recognition; re-running it would answer a question nobody has.
 - **77.3** (exercise `/openup-fan-out` or retire its measure) — **resolved by retiring the measure** as `n/a`: 38 iterations, zero real use, and sequential `/openup-next` is the established working default.
 
+**Correction (2026-07-27, iteration-103 disposition pass).** The cancellation note above originally listed this entry's four items as 9.1 / 77.2 / 9.3 / 77.3. That was wrong: T-154's actual four were **77.3, 77.5, 20.2, 9.3**. 9.1 and 77.2 were real closures (by T-151) but were never part of T-154, and substituting them silently dropped **77.5** (instantiate `docs/risk-list.md` or treat its absence as `n/a`) and **20.2** (dependency-ordering convention for `/openup-start-iteration`) — both of which remain **open** and are carried forward in `docs/project-status.md`. The cancellation of T-154 itself still stands; only its accounting was wrong.
+
 **9.2** (first real `/openup-sync-spec` use on a live refactor diff) is **not** retired and is deliberately **not** a task: it needs a genuine refactor diff to audit, so it rides along with the next lane that produces one. Tracked in `docs/project-status.md` as an opportunistic rider.
 
 The entry is cancelled rather than completed because no work was done under it — the correct outcome for a task whose premise dissolved before it started.
