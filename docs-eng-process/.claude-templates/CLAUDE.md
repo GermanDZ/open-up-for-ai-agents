@@ -66,8 +66,12 @@ If the user asks to skip, redirect: "Let me run `/openup-quick-task` instead —
   (`docs/agent-logs/`, `docs/status-notes/`, `docs/explorations/`). The write-fence
   enforces this — `scripts/openup-fence.py check` — at `/openup-complete-task` (blocking)
   and at `git push` for humans (`.githooks/pre-push`).
-- **If a PR conflicts in the views:** rebase onto the trunk and re-run
-  `python3 scripts/sync-status.py` — never hand-merge them. Full model:
+- **If a PR conflicts in the views:** rebase onto the trunk and re-run the
+  generator — never hand-merge them. Mid-iteration (state file present):
+  `python3 scripts/sync-status.py`. **After the lane completed** — the common
+  case, since conflicts surface after push — that exits `3`, because
+  `openup-session.py end` archived the state; use
+  `python3 scripts/sync-status.py --views-only` instead (T-157). Full model:
   [docs-eng-process/parallel-lanes.md](../docs-eng-process/parallel-lanes.md).
 
 **Fix the spec first when behavior changes.**

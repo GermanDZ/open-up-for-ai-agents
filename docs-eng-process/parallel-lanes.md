@@ -205,7 +205,12 @@ echo '[{"id":"wi-1","touches":[…],"depends-on":[]}, …]' \
 
 ## Conflict recovery recipe
 
-If a PR reports conflicts in `docs/roadmap.md` or `docs/project-status.md`:
+If a PR reports conflicts in `docs/roadmap.md` or `docs/project-status.md`, the
+command depends on **whether the lane is still live** — because
+`openup-session.py end` archives `.openup/state.json` at completion, and plain
+`sync-status.py` requires it.
+
+**The lane is still live** (`.openup/state.json` present — you are mid-iteration):
 
 ```bash
 git fetch origin main
@@ -215,8 +220,33 @@ python3 scripts/sync-status.py
 git push --force-with-lease
 ```
 
+**The lane already completed** (the common case — a conflict surfaces *after*
+push, which is after `/openup-complete-task`). Plain `sync-status.py` exits `3`
+(`No state file`) here, so use the state-free path (T-157):
+
+```bash
+git fetch origin main
+git rebase origin/main        # take THEIRS for the view files if prompted
+python3 scripts/sync-status.py --views-only    # add --dry-run to preview
+git push --force-with-lease
+```
+
+`--views-only` regenerates only what derives from **committed, lane-independent
+inputs**: it reassembles `## Notes` from the `docs/status-notes/` shards and
+reconciles the roadmap's `## T-NNN:` section statuses from the archived change
+folders. It deliberately leaves the **header fields** (`Phase`, `Iteration`,
+`Status`, `Current Task`, `Lane Status`, `Iteration Goal`, `Last Updated`,
+`Updated By`) and the roadmap's **table-row** Status cells untouched — those
+derive from a live lane, and after a rebase they already carry the correct trunk
+value. It sets no gates.
+
 Never hand-merge the views. Every field they carry is derived from lane-owned
 inputs (frontmatter, state, status-notes), so the re-run is always correct.
+
+> Before T-157 only the first recipe existed, which made the documented fix
+> impossible in exactly the situation it was written for. If you find yourself
+> hand-editing a view or calling `sync-status.py`'s internals directly, that is
+> the bug returning — reach for `--views-only` instead.
 
 ## See Also
 

@@ -464,6 +464,71 @@ def run_reconcile(args) -> int:
     return EXIT_OK
 
 
+def run_views_only(args) -> int:
+    """--views-only entrypoint (T-157). State-free.
+
+    Regenerates exactly the parts of the two shared views that derive from
+    **committed, lane-independent inputs** — the ``docs/status-notes/*.md``
+    shards and the archived change folders — so a PR that conflicts in the
+    views can be recovered *after* the lane completed. Plain ``sync-status.py``
+    cannot: it needs ``.openup/state.json``, which ``openup-session.py end``
+    archives at completion, and a view conflict surfaces after push. That made
+    the documented recipe in ``docs-eng-process/parallel-lanes.md`` impossible
+    in the one situation it is written for (same shape as T-150 — the recovery
+    tool needing a precondition the situation already destroyed).
+
+    Deliberately does NOT:
+      * write the lane-derived header fields (``Phase``, ``Iteration``,
+        ``Status``, ``Current Task``, ``Lane Status``, ``Iteration Goal``,
+        ``Last Updated``, ``Updated By``) — after a rebase they correctly carry
+        the trunk value, and reconstructing one from an archived state file is
+        the fragility this path exists to avoid;
+      * touch roadmap **table-row** Status cells — those need a specific lane's
+        id and derived status (``update_roadmap``), so no state-free truth
+        exists for them;
+      * set ``gates.roadmap_synced`` — there is no lane to gate.
+    """
+    rm_path = roadmap_path(args)
+    ps_path = project_status_path(args)
+    if not rm_path.exists() or not ps_path.exists():
+        sys.stderr.write(
+            f"Missing doc: roadmap={rm_path.exists()} project-status={ps_path.exists()}\n"
+        )
+        return EXIT_NO_DOC
+    root = rm_path.resolve().parent.parent  # docs/roadmap.md -> repo root
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+    # 1. project-status.md — reassemble ## Notes from the sharded notes.
+    #    assemble_notes() returns None for an absent/empty directory; that is a
+    #    legitimate repo state, so it is a clean no-op rather than an error.
+    ps_text = ps_path.read_text(encoding="utf-8")
+    notes_block = assemble_notes(notes_dir(args))
+    new_ps = ps_text if notes_block is None else update_notes_section(ps_text, notes_block)
+    ps_changed = new_ps != ps_text
+
+    # 2. roadmap.md — the existing state-free section reconcile.
+    rm_text = rm_path.read_text(encoding="utf-8")
+    new_rm, changed = reconcile_sections(rm_text, root, today)
+
+    if args.dry_run:
+        print(f"NOTES {'stale' if ps_changed else 'current'}")
+        for task_id, current in section_status_drift(rm_text, root):
+            print(f"DRIFT {task_id} {current}")
+        print(f"views-only (dry run): notes={'would rewrite' if ps_changed else 'unchanged'}, "
+              f"sections={len(changed)}")
+        return EXIT_OK
+
+    if ps_changed:
+        ps_path.write_text(new_ps, encoding="utf-8")
+    if new_rm != rm_text:
+        rm_path.write_text(new_rm, encoding="utf-8")
+
+    notes_msg = "rewrote ## Notes" if ps_changed else "## Notes already current"
+    print(f"views-only: {notes_msg}, reconciled {len(changed)} section(s). "
+          "Header fields left untouched (no lane state).")
+    return EXIT_OK
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(
         prog="sync-status.py",
@@ -489,12 +554,26 @@ def main(argv=None) -> int:
              "'## T-NNN:' section whose change folder is archived. State-free.",
     )
     parser.add_argument(
+        "--views-only",
+        action="store_true",
+        help="State-free view recovery: reassemble the ## Notes section from "
+             "docs/status-notes/ and reconcile roadmap sections, WITHOUT "
+             "requiring .openup/state.json. Use after a rebase when a PR "
+             "conflicts in the shared views and the lane has already "
+             "completed. Leaves the lane-derived header fields untouched.",
+    )
+    parser.add_argument(
         "--dry-run",
         action="store_true",
-        help="With --reconcile: report drift without writing (read-only).",
+        help="With --reconcile or --views-only: report what would change "
+             "without writing (read-only).",
     )
     args = parser.parse_args(argv)
 
+    # State-free paths return before read_state(). --views-only is a superset of
+    # --reconcile (it runs that pass too), so it is checked first.
+    if args.views_only:
+        return run_views_only(args)
     if args.reconcile:
         return run_reconcile(args)
 
