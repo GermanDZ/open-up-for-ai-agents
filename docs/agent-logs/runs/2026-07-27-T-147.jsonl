@@ -1,0 +1,4 @@
+{"run_id": "T-147-2026-07-27", "event": "session_begin", "task_id": "T-147", "goal": "T-147 \u2014 fence allowlist omits the two .claude/memory/ files every completion writes", "branch": "fix/T-147-fence-claude-memory-allowlist", "phase": "construction", "ts": "2026-07-27T13:11:44Z"}
+{"run_id": "T-147-2026-07-27", "event": "plan_gate_autoresolved", "task_id": "T-147", "branch": "fix/T-147-fence-claude-memory-allowlist", "track": "standard", "ts": "2026-07-27T13:11:44Z"}
+{"event": "iteration_complete", "task_id": "T-147", "branch": "fix/T-147-fence-claude-memory-allowlist", "phase": "construction", "ts": "2026-07-27T13:21:05Z"}
+{"event": "session_end", "task_id": "T-147", "ts": "2026-07-27T13:21:21Z"}

@@ -326,7 +326,7 @@ T-002 (`/openup-sync-spec`) completed 2026-06-11 once T-008's readiness DAG un-b
 ---
 
 ## T-147: `openup-fence.py`'s audit-surface allowlist omits `.claude/memory/` files every completion writes
-**Status**: pending
+**Status**: completed (2026-07-27)
 **Priority**: low
 **Value**: Closes a fence false-positive for any downstream project that tracks `.claude/` (this framework repo gitignores it entirely — confirmed via `.gitignore` — so the bug is real but does not reproduce here; a project that tracks `.claude/memory/` for durable cross-session learnings hits it on every single lane).
 **Description**: `.claude/memory/bypass-log.md` (auto-appended by `gate-edits` on every `quick`-track edit) and `.claude/memory/iteration-learnings.md` (`/openup-complete-task` step 6, mandatory on every track) are both append-only, lane-agnostic files — the same shape as `docs/agent-logs/`, `docs/status-notes/`, `docs/explorations/`, which the fence's documented allowlist already exempts — but neither is actually in that allowlist, so `openup-fence.py check` reports `OUT OF LANE` the first time any lane commits them.
@@ -448,6 +448,21 @@ The entry is cancelled rather than completed because no work was done under it �
 **Dependencies**: —
 
 **See**: T-146 (`docs/changes/archive/T-146/design.md` — carried open question); hand-off finding FD-002
+
+---
+
+## T-155: `merge=union` (or sharding) for the two shared `.claude/memory/` append-only files
+**Status**: pending
+**Priority**: low
+**Value**: T-147 exempted `.claude/memory/bypass-log.md` and `.claude/memory/iteration-learnings.md` from the write-fence, which stops the false `OUT OF LANE` — but it does not make them conflict-free. They are genuine **class-2** shared append-only files (`docs-eng-process/parallel-lanes.md`): every lane appends to the *same* file, so two parallel lanes still collide at EOF on merge. `docs/agent-logs/runs/*.jsonl` already carries the `merge=union` treatment for the identical shape, and T-046 chose *sharding* over union for the run log precisely because union does not solve the PR case.
+**Description**: Decide how the two involuntarily-shared `.claude/memory/` files should behave under parallel lanes, knowing `merge=union` only fixes **local** merges/rebases (GitHub does not run merge drivers server-side, per the existing `.gitattributes` comment) and so is a partial mitigation at best.
+- Choose: ship a `merge=union` `.gitattributes` entry to consumer repos via the bootstrap, shard the files the way T-046 sharded the run log, or accept the collision and record that decision
+- Only exercisable in a repo that **tracks** `.claude/` — this framework repo gitignores `/.claude/*`, so the evidence has to come from a consumer
+- Ships through `bootstrap-project.sh` / `process-manifest.txt` if the answer is an attribute
+
+**Dependencies**: T-147
+
+**See**: `docs/changes/archive/T-147/design.md` DD2/DD3; `.gitattributes` (run-log precedent + the server-side caveat); `docs-eng-process/parallel-lanes.md` class 2
 
 ---
 

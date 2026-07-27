@@ -17,7 +17,10 @@ Allowed for task T-NNN:
     ``docs/changes/archive/T-NNN/``;
   * lane-owned / append-only audit surfaces that never conflict:
     ``docs/agent-logs/`` (dated files + the merge=union JSONL),
-    ``docs/status-notes/`` (sharded status entries), ``docs/explorations/``;
+    ``docs/status-notes/`` (sharded status entries), ``docs/explorations/``,
+    and the two ``.claude/memory/`` files framework mechanisms append to on
+    behalf of every lane — ``bypass-log.md`` and ``iteration-learnings.md``
+    (T-147; see the constant below for why these are files, not a prefix);
   * the shared derived views ``docs/roadmap.md`` / ``docs/project-status.md``
     (written by ``sync-status.py``) and ``docs/INDEX.md`` (the trace-web index,
     written by ``docs-index.py``) ONLY if the base ref is an ancestor of HEAD
@@ -75,10 +78,29 @@ VIEW_PATHS = ["docs/roadmap.md", "docs/project-status.md", "docs/INDEX.md"]
 
 # Lane-owned / append-only surfaces every lane may write without conflicting:
 # dated one-file-per-entry trees and the merge=union run log.
+#
+# The two `.claude/memory/` entries (T-147) are there for a different reason than
+# the three `docs/` prefixes: not because each lane owns its own file, but because
+# NO lane opts into writing them. `bypass-log.md` is appended by three hooks
+# (gate-edits.py, check-iteration.py, validate-commit.py) and
+# `iteration-learnings.md` by `openup-scribe.py learnings`, which
+# /openup-complete-task step 6 runs as a mandatory step on every track. Requiring a
+# lane to *claim* a surface it cannot avoid writing is what made every lane in a
+# project that tracks `.claude/` hand-declare both paths in its plan frontmatter
+# `touches` just to get past the fence (measured downstream: 8 of 37 archived
+# lanes). This repo gitignores `/.claude/*` entirely, so the defect is invisible
+# here — see the tests, which reproduce it in a throwaway repo.
+#
+# FILES, NOT the `.claude/memory/` prefix — deliberate, and asserted by a test.
+# A prefix would also exempt whatever else a consumer project keeps under
+# `.claude/memory/` (project notes, scratch context), which is a lane-surface
+# question the fence should still ask. Widen this only with an explicit decision.
 ALWAYS_ALLOWED = [
     "docs/agent-logs/",
     "docs/status-notes/",
     "docs/explorations/",
+    ".claude/memory/bypass-log.md",
+    ".claude/memory/iteration-learnings.md",
 ]
 
 

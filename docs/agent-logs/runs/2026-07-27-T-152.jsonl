@@ -1,3 +1,5 @@
 {"run_id": "t152-448cb18", "event": "session_begin", "task_id": "T-152", "goal": "T-152 \u2014 a success measure must name its read-back environment and prove the instrument exists there", "branch": "fix/T-152-measure-readback-environment", "phase": "construction", "ts": "2026-07-27T11:18:40Z"}
 {"event": "iteration_complete", "task_id": "T-152", "branch": "fix/T-152-measure-readback-environment", "phase": "construction", "ts": "2026-07-27T11:33:51Z"}
 {"event": "session_end", "task_id": "T-152", "ts": "2026-07-27T11:33:52Z"}
+{"run_id": "8772836f1d394d1ca3268ef75445a713", "event": "commit", "task_id": "T-152", "branch": "fix/T-152-measure-readback-environment", "sha": "448cb18eca665d7dd17b0397850e3838c3279fd3", "model": null, "session_id": "fix/T-152-measure-readback-environment", "ts": "2026-07-27T11:18:40Z"}
+{"run_id": "c95114229eef4804b8e3f5facf3c1c12", "event": "commit", "task_id": "T-152", "branch": "fix/T-152-measure-readback-environment", "sha": "18e21330453515183c8c5ff6064abf91f61ea1bc", "model": null, "session_id": "fix/T-152-measure-readback-environment", "ts": "2026-07-27T11:33:17Z"}
