@@ -2,3 +2,6 @@
 {"run_id": "T-147-2026-07-27", "event": "plan_gate_autoresolved", "task_id": "T-147", "branch": "fix/T-147-fence-claude-memory-allowlist", "track": "standard", "ts": "2026-07-27T13:11:44Z"}
 {"event": "iteration_complete", "task_id": "T-147", "branch": "fix/T-147-fence-claude-memory-allowlist", "phase": "construction", "ts": "2026-07-27T13:21:05Z"}
 {"event": "session_end", "task_id": "T-147", "ts": "2026-07-27T13:21:21Z"}
+{"run_id": "9603464048034887be6ef91d64142845", "event": "commit", "task_id": "T-147", "branch": "fix/T-147-fence-claude-memory-allowlist", "sha": "243a20a0fadf2d8d71d4a5d763cab8f811a5dbcd", "model": null, "session_id": "fix/T-147-fence-claude-memory-allowlist", "ts": "2026-07-27T13:11:53Z"}
+{"run_id": "2a0761f7a585457da44c1691d95a3d97", "event": "commit", "task_id": "T-147", "branch": "fix/T-147-fence-claude-memory-allowlist", "sha": "8260adec51af97f4bef257d3e7df84de205584b4", "model": null, "session_id": "fix/T-147-fence-claude-memory-allowlist", "ts": "2026-07-27T13:18:44Z"}
+{"run_id": "1c12d6d4b34a43fd9bab63ab205250ed", "event": "commit", "task_id": "T-147", "branch": "fix/T-147-fence-claude-memory-allowlist", "sha": "7e4901204c44c2af30df850997886410193093c5", "model": null, "session_id": "fix/T-147-fence-claude-memory-allowlist", "ts": "2026-07-27T13:19:28Z"}
