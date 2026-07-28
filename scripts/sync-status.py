@@ -135,6 +135,36 @@ def _id_cell_matches(cell: str, task_id: str) -> bool:
     return False
 
 
+def roadmap_has_entry(text: str, task_id: str) -> bool:
+    """True when the roadmap carries an entry for ``task_id`` in either shape.
+
+    Exists so ``main()`` can tell "I changed nothing because it was already
+    correct" from "I changed nothing because this task is not in the roadmap"
+    (T-159). Before this, a lane whose roadmap row was missing got a cheerful
+    ``Synced roadmap + project-status for T-158 (status=completed).`` and a
+    roadmap that never mentioned the task — observed live in T-158.
+
+    Deliberately **not** a third element on ``update_roadmap()``'s return: five
+    pre-existing tests unpack that as a 2-tuple, and widening it would break them
+    for no gain. Both matchers used here are the same ones ``update_roadmap``
+    uses, so there is no second implementation to drift.
+
+    Note that ``changed`` cannot answer this question — it is false both when the
+    entry is absent *and* when it is present but already correct (an idempotent
+    re-run), which are opposite situations.
+    """
+    row_re = re.compile(r"^\s*\|")
+    for line in text.splitlines():
+        if not row_re.match(line):
+            continue
+        cells = line.split("|")
+        if len(cells) < 4:
+            continue
+        if _id_cell_matches(cells[1], task_id):
+            return True
+    return find_section_status(text, task_id) is not None
+
+
 def update_roadmap(text: str, task_id: str, status: str,
                    today: str) -> tuple[str, str | None]:
     """Flip the Status cell for ``task_id`` in the first matching table row.
@@ -601,6 +631,8 @@ def main(argv=None) -> int:
         return EXIT_NO_DOC
 
     rm_text = rm_path.read_text(encoding="utf-8")
+    # Ask BEFORE writing: after the write the two are indistinguishable (T-159).
+    matched = roadmap_has_entry(rm_text, task_id)
     new_rm, title = update_roadmap(rm_text, task_id, status, today)
     if new_rm != rm_text:
         rm_path.write_text(new_rm, encoding="utf-8")
@@ -620,7 +652,21 @@ def main(argv=None) -> int:
     if not args.no_gate:
         set_gate_roadmap_synced(args)
 
-    print(f"Synced roadmap + project-status for {task_id} (status={status}).")
+    if matched:
+        print(f"Synced roadmap + project-status for {task_id} (status={status}).")
+    else:
+        # The project-status view WAS regenerated, so this is not a failure — but
+        # saying "synced ... for <task>" would be a lie about the roadmap (T-159).
+        # Exit stays 0 on purpose: /openup-complete-task, /openup-quick-task and
+        # openup_agent/cycle.py all treat a non-zero sync as fatal, so a stricter
+        # code would turn a reporting bug into a completion outage. The lane's
+        # own fix is to add the missing roadmap entry.
+        print(f"Synced project-status (status={status}); roadmap unchanged.")
+        sys.stderr.write(
+            f"WARNING: no roadmap entry for {task_id} — neither a table row nor a "
+            f"'## {task_id}:' section matched in {rm_path}. Its Status was NOT "
+            f"recorded. Add the entry, then re-run.\n"
+        )
     return EXIT_OK
 
 

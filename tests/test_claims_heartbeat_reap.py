@@ -207,3 +207,72 @@ class TestReap:
         _run_claims(["reap", "--claims-dir", str(cdir)])
 
         assert not fp.exists()
+
+
+# ---------------------------------------------------------------------------
+# claim-stamps-heartbeat tests (T-159 / iteration-109 C1)
+# ---------------------------------------------------------------------------
+class TestClaimStampsHeartbeat:
+    """A claim must be born reapable.
+
+    `reap` skips heartbeat-less claims by design (a backward-compat invariant
+    for legacy files already on disk), so a claim created WITHOUT a heartbeat is
+    permanently un-reapable. Before T-159 bare `claim` wrote no
+    `last_heartbeat` — and the documented mid-lane re-claim recovery
+    (release + claim) goes through exactly that path, which is how the
+    2026-07-27 stale cohort became permanent.
+
+    These drive the real CLI, not the synthetic `_make_claim` helper — the
+    defect was in what `cmd_claim` writes, so a synthetic payload cannot see it.
+    """
+
+    def _claim(self, cdir: Path, task_id: str = "T-901"):
+        rc = _run_claims([
+            "claim", "--task-id", task_id, "--session-id", "s",
+            "--branch", f"feat/{task_id}", "--worktree", "/tmp/wt",
+            "--claims-dir", str(cdir), "--touches", f"docs/changes/{task_id}/",
+            "--no-push",
+        ])
+        return rc, json.loads((cdir / f"{task_id}.json").read_text())
+
+    def test_claim_writes_last_heartbeat(self, tmp_path):
+        rc, data = self._claim(tmp_path / "claims")
+        assert rc == 0
+        assert "last_heartbeat" in data, (
+            "a claim without last_heartbeat can never be reaped (see cmd_reap)"
+        )
+        # valid ISO-8601 Z, same format the heartbeat subcommand writes
+        datetime.strptime(data["last_heartbeat"], "%Y-%m-%dT%H:%M:%SZ")
+
+    def test_heartbeat_equals_claimed_at(self, tmp_path):
+        """One clock read, used twice — a claim is alive at creation, and two
+        near-identical timestamps would invite a reader to find meaning in the
+        difference."""
+        _, data = self._claim(tmp_path / "claims")
+        assert data["last_heartbeat"] == data["claimed_at"]
+
+    def test_claim_created_claim_is_reapable_when_stale(self, tmp_path):
+        """The whole point: back-date the heartbeat and reap must delete it,
+        not skip it as heartbeat-less."""
+        cdir = tmp_path / "claims"
+        _, data = self._claim(cdir)
+        fp = cdir / "T-901.json"
+        # Back-date the EXISTING field rather than introducing it — otherwise this
+        # test passes against the unfixed code by adding the very key whose absence
+        # is the defect (a vacuous pass, not evidence).
+        assert "last_heartbeat" in data, "claim must have written the field"
+        data["last_heartbeat"] = _stale_iso(seconds_ago=7200)
+        fp.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+
+        _run_claims(["reap", "--claims-dir", str(cdir)])
+
+        assert not fp.exists(), "a claim-created claim must be reapable once stale"
+
+    def test_legacy_heartbeatless_claim_still_skipped(self, tmp_path):
+        """Requirement 4 — the fix is at the source, NOT a change to reap.
+        A genuinely legacy file (no heartbeat) must still be skipped, so this
+        asserts the invariant in the direction the fix must not touch."""
+        cdir = tmp_path / "claims"
+        fp = _make_claim(cdir, "T-902")  # no heartbeat
+        _run_claims(["reap", "--claims-dir", str(cdir)])
+        assert fp.exists(), "reap's backward-compat invariant must be unchanged"

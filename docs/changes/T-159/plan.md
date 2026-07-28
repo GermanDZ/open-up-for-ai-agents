@@ -60,8 +60,9 @@ INVEST check:
 4. `reap`'s existing skip-when-no-heartbeat invariant is unchanged for claims that genuinely lack the field.
    - **Given** a synthetic claim file on disk with **no** `last_heartbeat` (a legacy claim), **When** `reap` runs, **Then** it is still skipped, and `tests/test_claims_heartbeat_reap.py::test_skips_claim_with_no_heartbeat` still passes unmodified.
 
-5. `update_roadmap()` reports whether it matched a roadmap entry, distinguishing "not found" from "found and already correct".
-   - **Given** a roadmap containing a `## T-063:` section already reading `**Status**: completed (2026-01-01)`, **When** `update_roadmap(text, "T-063", "completed", today)` runs, **Then** it reports **matched** (idempotent, not missing); **and Given** the same roadmap and task id `T-900`, **Then** it reports **not matched**.
+5. A predicate reports whether the roadmap contains an entry for a task id, distinguishing "not found" from "found and already correct".
+   - **Given** a roadmap containing a `## T-063:` section already reading `**Status**: completed (2026-01-01)`, **When** the predicate is called for `T-063`, **Then** it returns **true** (idempotent, not missing); **and Given** the same roadmap and task id `T-900`, **Then** it returns **false**.
+   - *Design corrected mid-lane: this was first specified as a third element on `update_roadmap()`'s return. Five existing tests unpack that function's result as a 2-tuple, so widening it would have broken them and contradicted requirement 8. A separate predicate reusing the same matching helpers (`_id_cell_matches`, `find_section_status`) leaves the existing contract intact and expresses the question directly.*
 
 6. `sync-status.py` warns on stderr, instead of printing unqualified success, when it matched no roadmap entry.
    - **Given** a roadmap with no entry for the state's task id, **When** `sync-status.py` runs, **Then** stderr names the unmatched task id, stdout does **not** claim the roadmap was synced for it, and the exit code is still `0`.
@@ -89,7 +90,8 @@ INVEST check:
 
 - **`cmd_claim`** (modified) — `scripts/openup-claims.py:944`; payload gains one field.
 - **`cmd_reap`** (read-only) — `scripts/openup-claims.py:1142`; deliberately unchanged, and requirement 4 guards it.
-- **`update_roadmap`** (modified) — `scripts/sync-status.py:138`; return gains a match flag.
+- **`roadmap_has_entry`** (new) — `scripts/sync-status.py`; the predicate, reusing `_id_cell_matches` and `find_section_status`.
+- **`update_roadmap`** (read-only) — `scripts/sync-status.py:138`; **signature deliberately unchanged**, so its five existing 2-tuple callers keep working.
 - **`stamp_section_status`** (read-only) — `scripts/sync-status.py:225`; already returns the signal being propagated.
 - **`main`** (modified) — `scripts/sync-status.py:623`; the unconditional success print.
 - **Claim/reap tests** (modified) — `tests/test_claims_heartbeat_reap.py`.
@@ -97,15 +99,16 @@ INVEST check:
 
 ## Approach
 
-Both fixes move the check to where the information already is, rather than adding machinery downstream. For C1 the retrospective's first instinct — an age-based reap fallback — was rejected once the premise was measured: the defect is that claims are *born* without a heartbeat, so stamping one at creation closes it at the source and leaves `reap`'s backward-compat invariant (correct for genuinely legacy files) alone. For C3 the match signal is already computed and discarded, so the change is to propagate it and let `main()` phrase its output honestly; the run still exits 0 because it really did regenerate the project-status view, and three callers treat non-zero as fatal. Deliberately deferred: any change to how `reap` treats heartbeat-less claims, and any exit-code change.
+Both fixes move the check to where the information already is, rather than adding machinery downstream. For C1 the retrospective's first instinct — an age-based reap fallback — was rejected once the premise was measured: the defect is that claims are *born* without a heartbeat, so stamping one at creation closes it at the source and leaves `reap`'s backward-compat invariant (correct for genuinely legacy files) alone. For C3 the matching logic already exists in two helpers, so the change is a small predicate composing them plus an honest `main()` message — chosen over widening `update_roadmap()`'s return, which five existing tests unpack as a 2-tuple; the run still exits 0 because it really did regenerate the project-status view, and three callers treat non-zero as fatal. Deliberately deferred: any change to how `reap` treats heartbeat-less claims, and any exit-code change.
 
 ## Structure
 
-**Add:** nothing — both changes are edits to existing functions plus test cases.
+**Add:**
+- `roadmap_has_entry(text, task_id) -> bool` in `scripts/sync-status.py` — reuses the existing row and section matchers; no duplicated matching logic.
 
 **Modify:**
 - `scripts/openup-claims.py` — add `last_heartbeat` to `cmd_claim`'s payload, reusing the `claimed_at` timestamp.
-- `scripts/sync-status.py` — `update_roadmap()` returns a match flag; `main()` warns on stderr and adjusts stdout when unmatched.
+- `scripts/sync-status.py` — add `roadmap_has_entry()`; `main()` calls it and warns on stderr / adjusts stdout when unmatched. `update_roadmap()` itself is untouched.
 - `tests/test_claims_heartbeat_reap.py` — cases for requirements 1–3 (real CLI, not the synthetic helper).
 - `scripts/tests/test_sync_status_sections.py` — cases for requirements 5–7.
 
@@ -117,12 +120,12 @@ Both fixes move the check to where the information already is, rather than addin
 
 ## Operations
 
-- [ ] Reproduce both defects against the current code first: claim a throwaway id into an isolated `--claims-dir` and confirm the payload has no `last_heartbeat`; run `sync-status.py` against a roadmap with no matching entry and confirm it prints unqualified success.
-- [ ] Write the failing cases — reqs 1–3 in `tests/test_claims_heartbeat_reap.py` (driving the real CLI), reqs 5–7 in `scripts/tests/test_sync_status_sections.py`; confirm each fails for the stated reason, not an import error.
-- [ ] Implement C1: add `last_heartbeat` to `cmd_claim`'s payload reusing the `claimed_at` value; confirm reqs 1–3 pass and req 4's legacy test still passes untouched.
-- [ ] Implement C3: propagate a match flag out of `update_roadmap()` and make `main()` warn on stderr / adjust stdout when unmatched, keeping exit 0; confirm reqs 5–7 pass.
-- [ ] Verify additivity across **both** suites — `pytest tests/` and `pytest scripts/tests/` — and confirm the pre-existing counts (114 and 884) still pass with no assertion edited (req. 8).
-- [ ] (tester) Verify the fixes bite where they were observed: re-run the C1 empirical check and confirm a heartbeat is now present; run `sync-status.py` against a no-entry roadmap and confirm the warning names the task id while the exit code stays 0.
+- [x] Reproduce both defects against the current code first: claim a throwaway id into an isolated `--claims-dir` and confirm the payload has no `last_heartbeat`; run `sync-status.py` against a roadmap with no matching entry and confirm it prints unqualified success.
+- [x] Write the failing cases — reqs 1–3 in `tests/test_claims_heartbeat_reap.py` (driving the real CLI), reqs 5–7 in `scripts/tests/test_sync_status_sections.py`; confirm each fails for the stated reason, not an import error.
+- [x] Implement C1: add `last_heartbeat` to `cmd_claim`'s payload reusing the `claimed_at` value; confirm reqs 1–3 pass and req 4's legacy test still passes untouched.
+- [x] Implement C3: propagate a match flag out of `update_roadmap()` and make `main()` warn on stderr / adjust stdout when unmatched, keeping exit 0; confirm reqs 5–7 pass.
+- [x] Verify additivity across **both** suites — `pytest tests/` and `pytest scripts/tests/` — and confirm the pre-existing counts (114 and 884) still pass with no assertion edited (req. 8).
+- [x] (tester) Verify the fixes bite where they were observed: re-run the C1 empirical check and confirm a heartbeat is now present; run `sync-status.py` against a no-entry roadmap and confirm the warning names the task id while the exit code stays 0.
 
 ## Norms
 

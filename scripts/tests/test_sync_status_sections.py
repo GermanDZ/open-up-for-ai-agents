@@ -176,5 +176,100 @@ class DoctorDriftCheckTests(unittest.TestCase):
         self.assertEqual(drift, [])
 
 
+class UnmatchedTaskReportingTests(unittest.TestCase):
+    """T-159 / iteration-109 C3: sync-status must not claim success for a task it
+    cannot find.
+
+    Observed live in T-158: with no roadmap entry for the task, the run printed
+    `Synced roadmap + project-status for T-158 (status=completed).` and wrote
+    nothing to the roadmap. `update_roadmap()` returns the text unchanged when
+    neither a table row nor a `## T-NNN:` section matches, but `main()` printed
+    its success line unconditionally.
+    """
+
+    def setUp(self):
+        self.dir = Path(tempfile.mkdtemp())
+        self.root = self.dir / "repo"
+        (self.root / "docs").mkdir(parents=True)
+        self.state_dir = self.root / ".openup"
+        self.roadmap = self.root / "docs" / "roadmap.md"
+        self.ps = self.root / "docs" / "project-status.md"
+        self.roadmap.write_text(ROADMAP, encoding="utf-8")
+        self.ps.write_text(
+            "# Project Status\n\n**Phase**: construction\n**Iteration**: 7\n"
+            "**Status**: planned\n**Current Task**: T-000\n"
+            "**Last Updated**: 2026-01-01\n**Updated By**: hand\n\n"
+            "## Notes\n\n- a note\n",
+            encoding="utf-8",
+        )
+
+    def tearDown(self):
+        shutil.rmtree(self.dir, ignore_errors=True)
+
+    def _init_state(self, task_id):
+        subprocess.run(
+            [sys.executable, str(SCRIPTS_DIR / "openup-state.py"), "init",
+             "--task-id", task_id, "--iteration", "7", "--phase", "construction",
+             "--track", "standard", "--branch", "b", "--worktree", str(self.root),
+             "--state-dir", str(self.state_dir), "--force"],
+            capture_output=True, text=True,
+        )
+
+    def _sync(self):
+        return subprocess.run(
+            [sys.executable, str(SYNC_STATUS),
+             "--state-dir", str(self.state_dir),
+             "--roadmap", str(self.roadmap),
+             "--project-status", str(self.ps),
+             "--notes-dir", str(self.root / "docs" / "status-notes")],
+            capture_output=True, text=True,
+        )
+
+    # --- req 5: update_roadmap reports whether it matched -----------------
+    def test_has_entry_true_for_idempotent_section(self):
+        """`changed` cannot serve as the signal: a section already carrying the
+        right status is unchanged but definitely FOUND."""
+        text = ROADMAP.replace("**Status**: pending",
+                               "**Status**: completed (2026-01-01)")
+        self.assertTrue(ss.roadmap_has_entry(text, "T-063"),
+                        "an idempotent section match must still count as found")
+
+    def test_has_entry_false_for_absent_id(self):
+        self.assertFalse(ss.roadmap_has_entry(ROADMAP, "T-900"))
+
+    def test_has_entry_true_for_table_row(self):
+        self.assertTrue(ss.roadmap_has_entry(ROADMAP, "T-062"))
+
+    def test_has_entry_matches_linked_id_cell(self):
+        """Row ids may be markdown links — reuse of `_id_cell_matches` means this
+        works without a second implementation."""
+        text = ROADMAP.replace("| T-062 |", "| [T-062](changes/archive/T-062/plan.md) |")
+        self.assertTrue(ss.roadmap_has_entry(text, "T-062"))
+
+    def test_update_roadmap_signature_unchanged(self):
+        """Requirement 8 guard: five pre-existing tests unpack this as a 2-tuple.
+        Widening it is what the mid-lane design correction avoided."""
+        result = ss.update_roadmap(ROADMAP, "T-062", "completed", TODAY)
+        self.assertEqual(len(result), 2)
+
+    # --- req 6: main() warns instead of claiming success ------------------
+    def test_unmatched_task_warns_on_stderr_and_exits_zero(self):
+        self._init_state("T-777")
+        proc = self._sync()
+        self.assertEqual(proc.returncode, 0,
+                         "must stay 0 — three callers treat non-zero as fatal")
+        self.assertIn("T-777", proc.stderr)
+        self.assertNotIn("Synced roadmap + project-status for T-777", proc.stdout)
+
+    # --- req 7: a matching run is unchanged -------------------------------
+    def test_matched_task_output_unchanged(self):
+        self._init_state("T-062")
+        proc = self._sync()
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertIn("Synced roadmap + project-status for T-062", proc.stdout)
+        self.assertEqual(proc.stderr.strip(), "",
+                         "a matching run must emit no warning")
+
+
 if __name__ == "__main__":
     unittest.main()
