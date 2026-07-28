@@ -94,3 +94,28 @@ absence from a lane's completion output is the evidence there was nothing to war
 **Read-back: the second retrospective after landing**, backstop **2026-11-30**. The measure
 requires reporting the lane count alongside the number, so a `0` from an empty window is not
 mistaken for success.
+
+## DD6 — The C3 fix caught this task's own missing roadmap entry
+
+On its first real use, immediately after implementation, `sync-status.py` warned:
+
+```
+WARNING: no roadmap entry for T-159 — neither a table row nor a '## T-159:' section
+matched in .../docs/roadmap.md. Its Status was NOT recorded. Add the entry, then re-run.
+```
+
+The entry was genuinely missing — `docs/roadmap.md` was absent from this spec's
+`touches`/Structure, exactly as it had been for T-158 (whose `design.md` DD8 filed the
+defect this task fixes). So the fix demonstrated itself on the very lane that built it,
+turning a silent omission into a named, actionable one.
+
+**Second lane in a row to make the same omission**, which points at a template gap rather
+than carelessness: the task-spec template's Structure section prompts for the files a change
+*touches*, and nothing prompts for the task's **own roadmap entry** — a file every lane must
+edit. Worth a small template/skill amendment; not filed here because this lane's safeguards
+forbid widening scope again, and C2's sibling lane (T-160) is already the place where
+completion-checking wording is being revised.
+
+**C1 also self-demonstrated**: adding `docs/roadmap.md` to scope required the release+claim
+re-claim recovery, and the new claim came back carrying `last_heartbeat` — the exact scenario
+that produced two permanently un-reapable claims on 2026-07-27.

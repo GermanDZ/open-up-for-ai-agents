@@ -1,0 +1,23 @@
+{
+  "schema": 2,
+  "task_id": "T-159",
+  "iteration": 110,
+  "iteration_id": null,
+  "cycle": 1,
+  "phase": "construction",
+  "track": "standard",
+  "branch": "fix/T-159-silent-failures",
+  "worktree": "/Users/germandz/personal-code/ai-dev-framework/open-up-for-ai-agents-T-159",
+  "base_sha": "f8249b960ef4da6fcf2be4eac0a512b47ec2b208",
+  "session_id": "fix/T-159-silent-failures",
+  "started_at": "2026-07-28T06:53:09Z",
+  "gates": {
+    "team_deployed": false,
+    "plan_persisted": "docs/changes/T-159/plan.md",
+    "log_written": true,
+    "roadmap_synced": true,
+    "retro_due": false,
+    "implementation_verified": true
+  },
+  "iterations_since_retro": 1
+}

@@ -1,7 +1,7 @@
 ---
 id: T-159
 title: "Two silent failures: `claim` creates un-reapable claims; `sync-status` reports success for a task it cannot find"
-status: ready
+status: done
 priority: high
 estimate: 1 session
 plan: ""
@@ -13,6 +13,7 @@ touches:
   - scripts/sync-status.py
   - tests/test_claims_heartbeat_reap.py
   - scripts/tests/test_sync_status_sections.py
+  - docs/roadmap.md
 ---
 
 # T-159 — Two silent failures: `claim` creates un-reapable claims; `sync-status` reports success for a task it cannot find
@@ -111,6 +112,7 @@ Both fixes move the check to where the information already is, rather than addin
 - `scripts/sync-status.py` — add `roadmap_has_entry()`; `main()` calls it and warns on stderr / adjusts stdout when unmatched. `update_roadmap()` itself is untouched.
 - `tests/test_claims_heartbeat_reap.py` — cases for requirements 1–3 (real CLI, not the synthetic helper).
 - `scripts/tests/test_sync_status_sections.py` — cases for requirements 5–7.
+- `docs/roadmap.md` — this task's own entry. *(Added at completion, and **found by this task's own C3 fix**: the first real `sync-status.py` run after the change warned that no entry existed for T-159. Second lane in a row to hit this — see design.md DD6.)*
 
 **Do not touch:**
 - `cmd_reap`'s skip-when-no-heartbeat branch — tempting, since it is the proximate reason the stale cohort survived, but changing it would alter documented behaviour for legacy files on disk while C1 removes the *cause*. Requirement 4 asserts it still holds.

@@ -399,6 +399,22 @@ T-002 (`/openup-sync-spec`) completed 2026-06-11 once T-008's readiness DAG un-b
 
 ---
 
+## T-159: Two silent failures — `claim` creates un-reapable claims; `sync-status` reports success for a task it cannot find
+**Status**: completed (2026-07-28)
+**Priority**: high
+**Value**: Both defects let a tool leave the repo worse off while printing success. `claim` wrote no `last_heartbeat`, and `reap` skips heartbeat-less claims **by design**, so every claim created by bare `claim` — including via the documented mid-lane re-claim recovery — was permanently un-reapable; that is how 12 stale claims accumulated and blocked two lanes on 2026-07-27. `sync-status.py` separately reported `Synced roadmap + project-status for <task>` when the roadmap contained no entry for that task at all, so a lane could complete believing its status was recorded when it was not. Closes iteration-109's **C1** (high) and **C3**.
+**Description**: Stamp `last_heartbeat` at claim creation (sharing `claimed_at`'s clock read), and add `roadmap_has_entry()` so `sync-status.py` can distinguish "already correct" from "not in the roadmap" and warn instead of claiming success.
+- `reap`'s skip-when-no-heartbeat invariant is deliberately **unchanged** — the fix is at the source; a test pins the invariant in the direction the fix must not move
+- Exit code stays **0** on an unmatched task: three callers treat a non-zero sync as fatal, so a stricter code would turn a reporting bug into a completion outage
+- `update_roadmap()`'s 2-tuple signature deliberately preserved — a predicate instead, since five pre-existing tests unpack it
+- Both suites reported separately: `tests/` 114 → 118, `scripts/tests/` 884 → 891
+
+**Dependencies**: —
+
+**See**: `docs/changes/T-159/plan.md`; iteration-109 retrospective items **C1** + **C3**; `docs/risk-list.md` R5 (whose age-based-reap proposal this supersedes)
+
+---
+
 ## T-158: Retrospective action items must carry a verified premise — and close 20.2 / 77.5
 **Status**: completed (2026-07-27)
 **Priority**: high
