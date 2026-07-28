@@ -2,3 +2,5 @@
 {"run_id": "T-159-2026-07-28", "event": "plan_gate_autoresolved", "task_id": "T-159", "branch": "fix/T-159-silent-failures", "track": "standard", "ts": "2026-07-28T06:53:10Z"}
 {"event": "iteration_complete", "task_id": "T-159", "branch": "fix/T-159-silent-failures", "phase": "construction", "ts": "2026-07-28T07:04:22Z"}
 {"event": "session_end", "task_id": "T-159", "ts": "2026-07-28T07:04:23Z"}
+{"run_id": "5e52fa52ac2347bd8bd00f060019f0e2", "event": "commit", "task_id": "T-159", "branch": "main", "sha": "37af2f8bbc31ee0a2f5d724232fe44780c3b7b41", "model": null, "session_id": "fix/T-159-silent-failures", "ts": "2026-07-28T06:54:35Z"}
+{"run_id": "9ea64269147c48c5aa57edcd18751c18", "event": "commit", "task_id": "T-159", "branch": "fix/T-159-silent-failures", "sha": "b6016e010552c65734a13c1452ba1da09728f8d4", "model": null, "session_id": "fix/T-159-silent-failures", "ts": "2026-07-28T07:02:19Z"}
