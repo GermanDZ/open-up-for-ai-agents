@@ -1,0 +1,4 @@
+{"run_id": "T-161-2026-07-28", "event": "session_begin", "task_id": "T-161", "goal": "T-161 \u2014 phase falls back to project-status, not inception", "branch": "fix/T-161-phase-fallback", "phase": "construction", "ts": "2026-07-28T08:29:20Z"}
+{"run_id": "T-161-2026-07-28", "event": "plan_gate_autoresolved", "task_id": "T-161", "branch": "fix/T-161-phase-fallback", "track": "standard", "ts": "2026-07-28T08:29:20Z"}
+{"event": "iteration_complete", "task_id": "T-161", "branch": "fix/T-161-phase-fallback", "phase": "construction", "ts": "2026-07-28T08:36:48Z"}
+{"event": "session_end", "task_id": "T-161", "ts": "2026-07-28T08:36:48Z"}

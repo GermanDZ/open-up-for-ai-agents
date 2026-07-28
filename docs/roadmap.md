@@ -399,6 +399,22 @@ T-002 (`/openup-sync-spec`) completed 2026-06-11 once T-008's readiness DAG un-b
 
 ---
 
+## T-161: Phase resolves to `inception` whenever no lane is active, routing mature projects into a fresh-Inception plan
+**Status**: completed (2026-07-28)
+**Priority**: high
+**Value**: `.openup/state.json` exists only while a lane is in flight, and phase derivation fell back to it and then straight to `inception` — never consulting `docs/project-status.md`, the durable record `sync-status.py` maintains. So **any** project with a drained roadmap and no active lane derived `inception`, which bypassed `openup-board.py`'s deliberate exclusion of construction/transition from the plan-fresh path and routed a mature repo into **authoring a fresh Vision, use cases and risk list**. Under an unattended `/loop` that is real damage before anyone looks. Reproduced live in this repo on 2026-07-28.
+**Description**: Add a `project-status-fallback` tier to phase derivation, between live state and the hard-coded `inception` default, reusing `resolve_phase`'s existing validation.
+- **`openup-board.py` deliberately untouched** — its gating was always correct; it was simply handed the wrong phase. An earlier diagnosis blamed the resolve precedence and would have produced a larger, wrong change
+- Precedence: milestone records → live state → project-status → `inception`; live state still wins, because an active lane is more current than the last synced view
+- A hint that fails validation reports `state-fallback`, not the tier it came from — the value was discarded
+- Verified live: `resolve` goes from `plan-iteration`/`inception` to `noop`/`construction` with the board unedited
+
+**Dependencies**: —
+
+**See**: `docs/changes/T-161/plan.md`; `scripts/openup-board.py:892-899` (the correctly-gated plan-fresh branch); `/openup-next` SKILL.md § sentinel (`roadmap exhausted, phase mid-flight` is the prescribed DONE reason)
+
+---
+
 ## T-160: Make "full suite" mean the whole suite, and make a downstream measure name its reader
 **Status**: completed (2026-07-28)
 **Priority**: medium

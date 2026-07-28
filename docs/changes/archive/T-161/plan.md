@@ -1,7 +1,7 @@
 ---
 id: T-161
 title: "Phase resolves to `inception` whenever no lane is active, routing mature projects into a fresh-Inception plan"
-status: ready
+status: done
 priority: high
 estimate: 1 session
 plan: ""
@@ -109,12 +109,12 @@ Fix the fallback chain, not the consumer. `openup-board.py`'s plan-fresh gating 
 
 ## Operations
 
-- [ ] Reproduce first: in a fixture with no state, no milestone records, and `**Phase**: construction`, confirm `status --json` reports `inception` — and confirm `openup-board.py resolve` returns `plan-iteration` with the fresh-Inception reason.
-- [ ] Write the failing cases for requirements 1–6 in `tests/test_lifecycle.py`; confirm each fails for the stated reason, not an import error.
-- [ ] Add `read_project_status_phase()` and wire it into `compute_status`, reusing `resolve_phase`'s validation; report `project-status-fallback`. Confirm reqs 1–6 pass.
-- [ ] Verify requirement 7 end-to-end in **this** repo: `openup-board.py resolve` returns `noop` with an exhausted-roadmap reason, with no edit to `openup-board.py`.
-- [ ] Update the documented `source` values in `script-cli-reference.md` (req. 8).
-- [ ] (tester) Run `scripts/run-tests.sh` and confirm both directories green with the pre-existing counts unchanged (req. 9).
+- [x] Reproduce first: in a fixture with no state, no milestone records, and `**Phase**: construction`, confirm `status --json` reports `inception` — and confirm `openup-board.py resolve` returns `plan-iteration` with the fresh-Inception reason.
+- [x] Write the failing cases for requirements 1–6 in `tests/test_lifecycle.py`; confirm each fails for the stated reason, not an import error.
+- [x] Add `read_project_status_phase()` and wire it into `compute_status`, reusing `resolve_phase`'s validation; report `project-status-fallback`. Confirm reqs 1–6 pass.
+- [x] Verify requirement 7 end-to-end in **this** repo: `openup-board.py resolve` returns `noop` with an exhausted-roadmap reason, with no edit to `openup-board.py`.
+- [x] Update the documented `source` values in `script-cli-reference.md` (req. 8).
+- [x] (tester) Run `scripts/run-tests.sh` and confirm both directories green with the pre-existing counts unchanged (req. 9).
 
 ## Norms
 

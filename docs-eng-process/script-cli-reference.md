@@ -328,8 +328,16 @@ openup-lifecycle.py [--repo-root DIR] [--state-dir DIR] stamp-phase
   Sibling to `openup-board.py`: same never-hand-edit rule. Phase authority is the
   **milestone decision records** in `docs/product/milestones/<phase>-<cycle>.md`
   (human go/no-go, authored only by `/openup-phase-review`); with **no records**
-  it falls back to `.openup/state.json`'s `phase` and flags `source:
-  state-fallback` (no fabricated history). Criteria are marked `met`/`unmet` only
+  it falls back, in order, to (1) `.openup/state.json`'s `phase` → `source:
+  state-fallback`, then (2) `docs/project-status.md`'s `**Phase**:` → `source:
+  project-status-fallback`, then (3) `inception` → `source: state-fallback`
+  (no fabricated history). Tier 2 exists because `.openup/state.json` lives only
+  while a lane is in flight, so **with no active lane the phase used to default to
+  `inception` however mature the project was** — bypassing `openup-board.py`'s
+  deliberate exclusion of construction/transition from the plan-fresh path, and
+  routing a drained-roadmap repo into authoring a fresh Vision (T-161). A hint that
+  fails validation reports `state-fallback`, not the tier it came from, since the
+  value was discarded. Criteria are marked `met`/`unmet` only
   when mechanically verifiable (a typed work-product instance exists, per T-038);
   judgment criteria (architecture *validated* = tested skeleton, stakeholder
   concurrence) are reported `human-judgment`, never auto-`met`. A malformed
