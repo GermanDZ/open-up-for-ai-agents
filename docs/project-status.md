@@ -18,11 +18,11 @@ retrospective that authored them; the full trail is in
 [iteration-109-retrospective.md](iteration-retrospectives/iteration-109-retrospective.md),
 which retired 5 this cycle (B1, B2, B3, `20.2`, `77.5`).
 
-**New this cycle (4)** — each verified under the new step 5c before being filed
-- **C1 — high**: make `openup-claims.py claim` stamp `last_heartbeat`, as `begin` already does. *Evidence*: a claim written into an isolated `--claims-dir` has no `last_heartbeat` (`scripts/openup-claims.py:944-952`), and `reap` skips heartbeat-less claims by design (`:1146-1147`) — so such claims are never auto-reaped. Today's T-157 and T-158 re-claims each created one.
-- **C2 — medium**: make "full suite" mean the whole suite. *Evidence*: `scripts/tests/` → 884 passed, `tests/` → 114 passed, 999 collected repo-wide; T-155/T-157/T-158 all reported the 884-family number as "full suite", leaving `tests/test_claims_heartbeat_reap.py` unrun.
-- **C3 — medium**: `sync-status.py` must not report success for a task it cannot find. *Evidence*: observed live in T-158 — printed `status=completed` while writing nothing, because `update_roadmap()` matched neither a table row nor a section and `main()` prints unconditionally.
-- **C4 — medium**: decide how downstream-environment measures get read. *Evidence*: `kaze-webapp`, `cqecho-app`, `tallyfox-app` are not present on this machine; T-147 and T-155 both came back `can't tell` this cycle.
+**Closed 2026-07-28 (4)** — all four of iteration-109's items, shipped the day after they were filed
+- ~~**C1 — high**: make `openup-claims.py claim` stamp `last_heartbeat`.~~ **done** — T-159 (PR #110). Stamped at creation sharing `claimed_at`'s clock read; `reap`'s skip-when-no-heartbeat invariant deliberately untouched, with a test pinning it in the direction the fix must not move.
+- ~~**C2 — medium**: make "full suite" mean the whole suite.~~ **done** — T-160 (PR #111). `scripts/run-tests.sh` runs every project test directory and prints a per-directory summary; a guard test fails if a new one is uncovered (bite-checked live). Convention recorded in `conventions.md`.
+- ~~**C3 — medium**: `sync-status.py` must not report success for a task it cannot find.~~ **done** — T-159 (PR #110). New `roadmap_has_entry()`; exit stays 0 by design, since three callers treat a non-zero sync as fatal. It caught T-159's own missing roadmap entry on its first real run.
+- ~~**C4 — medium**: decide how downstream-environment measures get read.~~ **done** — T-160 (PR #111). Owner decision: require a named reader. Criterion 12 extended (never relaxed) so a **non-local** read-back environment must also name a reader, a cadence, and what an unreadable number means. Discrimination checked: 0 of 3 non-local archived specs name a reader; the 7 local ones are unaffected.
 
 **Open — blocked outside this repo (2)**
 - `86.3` — T-120/T-123 read-back, blocked on owner endpoint stability.
@@ -31,15 +31,26 @@ which retired 5 this cycle (B1, B2, B3, `20.2`, `77.5`).
 **Open — opportunistic rider (1)**
 - `9.2` — first real `/openup-sync-spec` use; needs a genuine refactor diff, so it rides with the next lane that produces one.
 
-**Retired to date**: 14 of the original 17 (`20.2` and `77.5` closed 2026-07-27), plus A2/A3
-retracted as misdiagnoses. All three of iteration-103's own items (B1–B3) are closed in the
-same cycle they were authored — the first time that has happened, and the thing step 5c
-exists to keep true.
+**Retired to date**: 18 of the original 17 + 4 new (`20.2`, `77.5`, `10.1` closed 2026-07-27;
+C1–C4 closed 2026-07-28), plus A2/A3 retracted as misdiagnoses. Iteration-103's own three
+items (B1–B3) closed in the cycle that authored them, and iteration-109's four closed the
+next day — the two fastest turnarounds recorded, and what step 5c exists to keep true.
 
-**Still open: 7** — 4 new this cycle (C1–C4, all actionable here), 2 blocked outside this repo
-(`86.3`, `86.4`), and 1 opportunistic rider (`9.2`). `10.1` was retired **obsolete**
-2026-07-27 by owner decision (target repos too old to migrate); evidence in
+> **This list went stale for a day, and nothing detects that (2026-07-28).** C1–C4 were
+> shipped by T-159 and T-160 but stayed listed as open here, because closing an action item
+> needs a hand-edit to *this* section that **no completion step performs** — `/openup-complete-task`
+> updates the roadmap and `## Notes`, never this list. That is the same monotonic degradation
+> retrospective step 5b was built to fix, recurring one level up: 5b prunes at *retrospective*
+> time, so anything shipped between retrospectives reads as open until the next one.
+> Not fixed here (this lane is the correction, not the mechanism) — candidate fix is a
+> completion step that strikes any action item the task closes.
+
+**Still open: 3, none actionable in this repo** — 2 blocked outside it (`86.3` endpoint
+stability, `86.4` another repo's schedule) and 1 opportunistic rider (`9.2`, waiting on a
+pure-refactor diff). `10.1` was retired **obsolete** 2026-07-27 by owner decision (target
+repos too old to migrate); evidence in
 [iteration-10-retrospective.md](iteration-retrospectives/iteration-10-retrospective.md).
+**This is the lowest the backlog has been, and the first time nothing on it is actionable here.**
 Carried backlog went 6 → 3 across this cycle — the lowest it has been.
 
 ## Notes
