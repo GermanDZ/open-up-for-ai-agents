@@ -1,0 +1,23 @@
+{
+  "schema": 2,
+  "task_id": "T-160",
+  "iteration": 111,
+  "iteration_id": null,
+  "cycle": 1,
+  "phase": "construction",
+  "track": "standard",
+  "branch": "feat/T-160-verification-honesty",
+  "worktree": "/Users/germandz/personal-code/ai-dev-framework/open-up-for-ai-agents-T-160",
+  "base_sha": "4b7ddce6dbfaf921119eb21a899f2a8f3880b7ea",
+  "session_id": "feat/T-160-verification-honesty",
+  "started_at": "2026-07-28T07:08:42Z",
+  "gates": {
+    "team_deployed": false,
+    "plan_persisted": "docs/changes/T-160/plan.md",
+    "log_written": true,
+    "roadmap_synced": true,
+    "retro_due": false,
+    "implementation_verified": true
+  },
+  "iterations_since_retro": 2
+}

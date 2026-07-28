@@ -1,7 +1,7 @@
 ---
 id: T-160
 title: "Make \"full suite\" mean the whole suite, and make a downstream measure name its reader"
-status: ready
+status: done
 priority: medium
 estimate: 1 session
 plan: ""
@@ -120,14 +120,14 @@ C2 replaces prose with a command: one thin wrapper that enumerates the project's
 
 ## Operations
 
-- [ ] Write `scripts/run-tests.sh` — enumerate the two project test dirs, run each, aggregate exit codes, print per-directory counts; confirm it reports 884 + 114 and exits 0 today.
-- [ ] Write `scripts/tests/test_full_suite_runner.py` for reqs 1–3; bite-check req 3 by pointing the guard at a synthetic third test directory and confirming it fails and names it.
-- [ ] Update `openup-complete-task.md` §Verify (req 4) and `conventions.md` so "full suite" means the runner, citing the T-155/T-157/T-158 drift as the reason.
-- [ ] Extend criterion 12 in **both** rubric copies with the reader + blocked-read-back elements and their gap lines (reqs 5, 6); `diff` the copies to confirm byte-identical (req 8).
-- [ ] Add the `Reader:` element to the measure template in `openup-create-task-spec.md` and grade it in `openup-complete-task.md` §1b (reqs 6, 7).
-- [ ] Re-render the skill mirrors and sync; confirm `check-claude-sync` exits 0 and both new texts are present in `.claude/skills/` (req 8).
-- [ ] (analyst) Run the discrimination check (req 9): across archived specs, count how many name a non-local read-back environment and how many of those name a reader; report both numbers.
-- [ ] (tester) Run `scripts/run-tests.sh` and confirm it reports both directories, then confirm the pre-existing counts are unchanged by this lane.
+- [x] Write `scripts/run-tests.sh` — enumerate the two project test dirs, run each, aggregate exit codes, print per-directory counts; confirm it reports 884 + 114 and exits 0 today.
+- [x] Write `scripts/tests/test_full_suite_runner.py` for reqs 1–3; bite-check req 3 by pointing the guard at a synthetic third test directory and confirming it fails and names it.
+- [x] Update `openup-complete-task.md` §Verify (req 4) and `conventions.md` so "full suite" means the runner, citing the T-155/T-157/T-158 drift as the reason.
+- [x] Extend criterion 12 in **both** rubric copies with the reader + blocked-read-back elements and their gap lines (reqs 5, 6); `diff` the copies to confirm byte-identical (req 8).
+- [x] Add the `Reader:` element to the measure template in `openup-create-task-spec.md` and grade it in `openup-complete-task.md` §1b (reqs 6, 7).
+- [x] Re-render the skill mirrors and sync; confirm `check-claude-sync` exits 0 and both new texts are present in `.claude/skills/` (req 8).
+- [x] (analyst) Run the discrimination check (req 9): across archived specs, count how many name a non-local read-back environment and how many of those name a reader; report both numbers.
+- [x] (tester) Run `scripts/run-tests.sh` and confirm it reports both directories, then confirm the pre-existing counts are unchanged by this lane.
 
 ## Norms
 

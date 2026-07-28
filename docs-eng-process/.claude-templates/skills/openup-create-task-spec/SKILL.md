@@ -150,6 +150,10 @@ containing **one falsifiable expectation** for the feature:
 > **\<window Z\>** of release. Instrumentation: **\<the event / metric / query
 > that will be read\>**. Read-back environment: **\<where that number will actually
 > be read\>**. Read-back: **\<date or "Z after release"\>**.
+>
+> *Only when the read-back environment is not this repo, add:*
+> Reader: **\<who produces the number, and on what cadence\>**. If unreadable at
+> read-back: **\<what that means — and it is not "the change failed"\>**.
 
 **Name the read-back environment (T-152).** An instrument that exists here but not
 where the number must come from produces a measure nobody can answer — T-052 named
@@ -159,6 +163,17 @@ happens in this repo, one clause is enough: *"Read-back environment: this repo."
 The rule is **state it**, not justify it — but if the expectation is about a
 downstream or consumer environment, the instrument has to be demonstrable **there**,
 and `/openup-complete-task` step 1b will block on it.
+
+**Name a reader when the environment is not this repo (T-160).** Naming the
+environment is not the same as being able to reach it. T-147 and T-155 both named
+`kaze-webapp` correctly and both still came back `can't tell`, because that repo is
+not present where the retrospective runs — three of nine measures went unread in
+iteration-109, the second consecutive cycle it happened. So a non-local measure also
+names **who** will produce the number and **how often**, which turns an unreadable
+measure into an assignable follow-up instead of a verdict that quietly expires. Say
+too what an unreadable number means: a missing figure is **not** evidence of failure
+(T-155's own note said a `0` there would mean "not delivered", not "not fixed").
+A measure read back in this repo needs neither clause.
 
 Use *impact*, *engagement*, and *returned value* as **prompts** to find the right
 measure — they are not three required slots; one honest, checkable expectation

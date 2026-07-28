@@ -53,8 +53,23 @@ After this skill completes, ALL of these must be true:
 
 Before marking a task as complete, verify:
 - All implementation work is done
-- All tests pass
+- **All tests pass — run `scripts/run-tests.sh`** (see the note below)
 - Documentation is updated
+
+> **"Full suite" means `scripts/run-tests.sh`, and nothing narrower (T-160).**
+> This repo has more than one project test directory. Running `pytest` against
+> one of them and reporting the result as "full suite" is a real defect, not a
+> wording nit: T-155, T-157 and T-158 each quoted the `scripts/tests/` figure
+> that way, silently omitting `tests/` — including
+> `tests/test_claims_heartbeat_reap.py`, the coverage most relevant to the very
+> defect T-159 then had to fix. No regression resulted, but for three lanes the
+> verification claim was broader than the command behind it.
+>
+> So when a completion note or retrospective quotes a test count, it must be
+> the runner's aggregate **or** it must name the directory it covers. The runner
+> prints a per-directory summary so either is easy, and
+> `scripts/tests/test_full_suite_runner.py` fails if a new project test
+> directory is ever added without being covered.
 
 ### 1a. Verify Implementation Against Spec — BLOCKING
 
@@ -118,6 +133,13 @@ promise nobody can check.
    first. Grade it like step 1a:
    - `✅ instrumentation — <where it exists, in the read-back environment>`
    - `❌ instrumentation — <what is missing, or which environment lacks it>`
+3b. **If the read-back environment is not this repo**, also check the measure
+   names a **reader** (who produces the number, on what cadence) and says what an
+   **unreadable** number means (T-160). Missing either is a criterion-12 gap: fix
+   the spec first. This is the difference between a measure that can go unread and
+   one that can go unread *and unowned* — iteration-109 lost three of nine
+   verdicts to exactly that. Grade it alongside the instrumentation:
+   - `✅ reader — <who, how often>` / `❌ reader — <non-local environment with no owner>`
 4. **A ❌ blocks completion** — the feature code being done is not enough.
    Add the instrumentation, or fix the spec first (re-run
    `/openup-create-task-spec`) if the measure itself was wrong.

@@ -116,6 +116,15 @@ other than the read-back environment**; no read-back date. A `quick`-track spec
 unargued `n/a`, or `n/a` on user-facing `standard`/`full` work without a
 credible reason, is a gap.
 
+**When the read-back environment is NOT this repo**, two further elements are
+required (T-160): a named **reader** — the person or role who will produce the
+number, and on what cadence — and a statement of **what a blocked read-back
+means**. Additional gaps in that case: a non-local environment with no named
+reader; no cadence for the reader ("someone will check eventually"); and no
+statement of what an unreadable number means. A measure read back **in this
+repo** needs neither element — the reader is implicitly whoever runs the next
+retrospective — so this adds nothing to the common case.
+
 **Why the environment is a required element (T-152).** T-052's measure named a
 concrete instrument — `.claude/memory/bypass-log.md` — in two downstream repos.
 At read-back, neither repo had that file at all, so `grep -c` → 0 could not be
@@ -124,6 +133,21 @@ named an instrument that did not exist where the number had to come from, and th
 gap was invisible from the framework repo where the spec was graded. When the
 read-back happens here, one clause suffices — "read-back environment: this repo"
 — the rule is *state it*, not justify it.
+
+**Why a reader is required for non-local environments (T-160).** T-152 fixed
+*naming* the environment, and it worked — every measure authored after it names
+one. Iteration-109 found the next gap one step out: **naming is not access.**
+T-147 and T-155 both correctly named `kaze-webapp`, and both came back
+`can't tell`, because that repo is not present on the machine where the
+retrospective runs. Three of nine measures went unread in a single cycle, the
+second consecutive cycle a downstream measure was unreadable.
+
+A named reader converts that from a silent gap into an assignable follow-up: the
+retrospective can record "unread — owed by <reader>, due <cadence>" instead of a
+`can't tell` that quietly expires. And the blocked-read-back clause matters
+because a missing number is **not** evidence of failure — T-155's own note said
+plainly that a `0` there would mean "not delivered", not "not fixed". A measure
+that does not say so invites the opposite reading.
 
 ## 13. Rollout Strategy
 
