@@ -1,0 +1,23 @@
+{
+  "schema": 2,
+  "task_id": "T-161",
+  "iteration": 112,
+  "iteration_id": null,
+  "cycle": 1,
+  "phase": "construction",
+  "track": "standard",
+  "branch": "fix/T-161-phase-fallback",
+  "worktree": "/Users/germandz/personal-code/ai-dev-framework/open-up-for-ai-agents-T-161",
+  "base_sha": "b74bc0aa459d18a952a1daf9c7edc0f14634b932",
+  "session_id": "fix/T-161-phase-fallback",
+  "started_at": "2026-07-28T08:29:20Z",
+  "gates": {
+    "team_deployed": false,
+    "plan_persisted": "docs/changes/T-161/plan.md",
+    "log_written": true,
+    "roadmap_synced": true,
+    "retro_due": false,
+    "implementation_verified": true
+  },
+  "iterations_since_retro": 7
+}

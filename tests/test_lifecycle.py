@@ -208,3 +208,86 @@ def test_stamp_phase_no_state(tmp_path, capsys):
                   "stamp-phase"])
     assert rc == lc.EXIT_NO_STATE
     assert "no state file" in capsys.readouterr().err
+
+
+# ---------------------------------------------------------------------------
+# project-status phase fallback (T-161)
+# ---------------------------------------------------------------------------
+def _write_project_status(root: Path, phase: str | None = "construction") -> None:
+    """A project-status.md like the one sync-status.py maintains."""
+    (root / "docs").mkdir(parents=True, exist_ok=True)
+    body = "# Project Status\n\n"
+    if phase is not None:
+        body += f"**Phase**: {phase}\n"
+    body += "**Iteration**: 112\n**Current Task**: T-000\n\n## Notes\n\n- a note\n"
+    (root / "docs" / "project-status.md").write_text(body, encoding="utf-8")
+
+
+class TestProjectStatusPhaseFallback:
+    """T-161: with NO live state and no milestone records, phase must come from
+    `docs/project-status.md` — not default to `inception`.
+
+    Why this matters beyond tidiness: `openup-board.py`'s plan-fresh branch fires
+    only for authoring phases (`inception`/`elaboration`), deliberately excluding
+    Construction so a drained roadmap there falls through to `noop`. A phase
+    mis-derived as `inception` bypasses that exclusion and routes a mature project
+    into authoring a fresh Vision and use-case set.
+    """
+
+    def test_falls_back_to_project_status_phase(self, tmp_path):
+        """Req 1 — the defect. No state file at all."""
+        _write_project_status(tmp_path, "construction")
+        result = lc.compute_status(tmp_path, tmp_path / ".openup")
+        assert result["phase"] == "construction", (
+            "with no live state, phase must come from project-status.md, "
+            "not default to inception"
+        )
+
+    def test_fallback_reports_its_own_source(self, tmp_path):
+        """Req 2 — provenance is the whole point of the `source` field, so this
+        tier must be distinguishable from `state-fallback`."""
+        _write_project_status(tmp_path, "construction")
+        result = lc.compute_status(tmp_path, tmp_path / ".openup")
+        assert result["source"] == "project-status-fallback"
+
+    def test_live_state_still_wins(self, tmp_path):
+        """Req 3 — an active lane is more current than the last synced view.
+        Guards the direction the fix must NOT move."""
+        _write_state(tmp_path, phase="elaboration")
+        _write_project_status(tmp_path, "construction")
+        result = lc.compute_status(tmp_path, tmp_path / ".openup")
+        assert result["phase"] == "elaboration"
+        assert result["source"] == "state-fallback"
+
+    def test_fresh_project_still_defaults_to_inception(self, tmp_path):
+        """Req 4 — no state, no records, no project-status: bootstrap must be
+        unaffected, or this fix breaks fresh projects."""
+        result = lc.compute_status(tmp_path, tmp_path / ".openup")
+        assert result["phase"] == "inception"
+
+    def test_project_status_without_phase_line_defaults(self, tmp_path):
+        """Req 4, second half — the file exists but carries no `**Phase**:`."""
+        _write_project_status(tmp_path, None)
+        result = lc.compute_status(tmp_path, tmp_path / ".openup")
+        assert result["phase"] == "inception"
+
+    def test_invalid_phase_value_is_discarded(self, tmp_path):
+        """Req 5 — validate, never propagate. Reuses resolve_phase's existing
+        validation rather than a second copy of it."""
+        _write_project_status(tmp_path, "banana")
+        result = lc.compute_status(tmp_path, tmp_path / ".openup")
+        assert result["phase"] == "inception", "an invalid phase must not propagate"
+
+    def test_milestone_records_still_win(self, tmp_path):
+        """Req 6 — records remain authoritative over every fallback."""
+        _write_project_status(tmp_path, "inception")
+        _write_milestone(tmp_path, "inception-1", "inception", 1, "GO")
+        result = lc.compute_status(tmp_path, tmp_path / ".openup")
+        assert result["phase"] == "elaboration"
+        assert result["source"] == "milestone"
+
+    def test_phase_is_case_and_space_tolerant(self, tmp_path):
+        """sync-status.py writes the field, but a human may have touched it."""
+        _write_project_status(tmp_path, "  Construction  ")
+        result = lc.compute_status(tmp_path, tmp_path / ".openup")
+        assert result["phase"] == "construction"

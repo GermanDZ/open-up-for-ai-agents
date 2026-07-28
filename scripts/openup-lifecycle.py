@@ -183,17 +183,24 @@ def read_milestone_records(root: Path) -> list[dict]:
     return records
 
 
-def resolve_phase(records: list[dict], state_phase: str | None) -> tuple[str, int, str]:
+def resolve_phase(records: list[dict], state_phase: str | None,
+                  fallback_source: str = "state-fallback") -> tuple[str, int, str]:
     """Return (phase, cycle, source).
 
     Authoritative source is the milestone records. With none, fall back to the
-    phase recorded in state (``source: state-fallback``) — no fabricated history.
+    phase hint supplied by the caller — no fabricated history.
+
+    ``fallback_source`` names where that hint came from, so provenance stays
+    honest when the hint is not live state (T-161: ``project-status-fallback``).
+    It is reported **only when the hint is actually used** — a hint that fails
+    validation lands on the hard-coded default, and labelling that with the
+    hint's origin would credit a value that was discarded.
     """
     if not records:
-        phase = (state_phase or "inception").strip().lower()
-        if phase not in PHASE_ORDER and phase != "released":
-            phase = "inception"
-        return phase, 1, "state-fallback"
+        raw = (state_phase or "").strip().lower()
+        if raw and (raw in PHASE_ORDER or raw == "released"):
+            return raw, 1, fallback_source
+        return "inception", 1, "state-fallback"
 
     def key(r: dict) -> tuple[int, int]:
         return (PHASE_ORDER[r["phase"]], r["cycle"])
@@ -322,11 +329,48 @@ def write_state(sdir: Path, state: dict) -> None:
 # Commands
 # ---------------------------------------------------------------------------
 
+def read_project_status_phase(root: Path) -> str | None:
+    """The ``**Phase**:`` field from ``docs/project-status.md``, or None.
+
+    This is the **durable** record of the project's phase: ``sync-status.py``
+    writes it from state at every completion, so it survives the lane that
+    produced it. Live ``.openup/state.json`` does not — it exists only while a
+    lane is in flight (T-161).
+
+    Returned unvalidated; ``resolve_phase`` owns validation so there is exactly
+    one place that decides what a legal phase is.
+    """
+    p = root / "docs" / "project-status.md"
+    try:
+        text = p.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError):
+        return None
+    for line in text.splitlines():
+        if line.startswith("**Phase**:"):
+            return line.split(":", 1)[1].strip() or None
+    return None
+
+
 def compute_status(root: Path, sdir: Path) -> dict:
     state = read_state(sdir)
     state_phase = state.get("phase") if state else None
+    # With no lane in flight there is no state file, and before T-161 the phase
+    # then defaulted to `inception` however mature the project was. That is not
+    # cosmetic: openup-board.py's plan-fresh branch fires only for authoring
+    # phases, deliberately excluding construction/transition so a drained roadmap
+    # there falls through to `noop`. A phase mis-derived as `inception` bypassed
+    # that exclusion and routed a mature project into authoring a fresh Vision and
+    # use-case set — real damage under an unattended loop.
+    #
+    # Live state still wins: an active lane is more current than the last synced
+    # view. This tier only fills the gap where there was previously nothing.
+    fallback_source = "state-fallback"
+    if not state_phase:
+        ps_phase = read_project_status_phase(root)
+        if ps_phase:
+            state_phase, fallback_source = ps_phase, "project-status-fallback"
     records = read_milestone_records(root)
-    phase, cycle, source = resolve_phase(records, state_phase)
+    phase, cycle, source = resolve_phase(records, state_phase, fallback_source)
     instances = scan_instances(root)
     criteria = evaluate_criteria(phase, root, instances) if phase != "released" else []
     milestone = MILESTONES.get(phase, {}).get("name") if phase != "released" else None
