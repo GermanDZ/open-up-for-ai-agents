@@ -1249,7 +1249,7 @@ demand-blocked)*
 
 ## T-156: Compile a project-local task library from a project's own process docs
 
-**Status**: pending
+**Status**: deferred (2026-07-28) — awaiting T-139's read-back; see **Unblock condition** below
 **Priority**: low
 **Value**: The unbuilt half of T-107's P2 promise — but **the premise comes first, not the code**. T-139 delivered the override *seam* (`docs/process/task-library.yaml` resolves ahead of the vendored copy, documented and tested), so a project can already customize by authoring the library by hand. What does not exist is a compiler that *generates* one from a project's own process docs, and two things must be settled before it is worth building: (a) `build-task-library.py` writes **no YAML for anyone** today — the framework's own library is hand-assembled from `--offline` distillation prompts and human-reviewed — so this is a brand-new output path with no existing consumer; and (b) Stage-1 extraction (`extract_skeleton`) parses only **UMA/KB-shaped** documents — YAML frontmatter with `related.roles`, an `Inputs|` section of workproduct links — and whether any real project's process docs are in that shape is **unverified**. Settle (b) against an actual project's docs before writing a line of compiler.
 **Description**: Gated investigation, then (only if the gate clears) a `--source-root DIR` emit mode for `build-task-library.py` that reads a project's process-source directory and writes `docs/process/task-library.yaml`.
@@ -1257,7 +1257,30 @@ demand-blocked)*
 - Only past the gate: emit mode + `--out` path, human-review step preserved (distillation stays advisory, never CI-automatic)
 - Tests: emit produces a library that `openup-process-map.py tasks --validate` accepts
 
-**Dependencies**: T-139 (delivered the override seam this would target)
+**Unblock condition (2026-07-28).** Deferred by owner decision, same treatment as T-073.
+`deferred` is outside `PROMOTABLE_STATUSES` (`scripts/openup-roadmap.py:63`), so
+`/openup-next`, the board and `openup-roadmap.py next` skip it and no loop will promote it.
+
+**Unlike T-073 this one has a dated, self-executing trigger** — T-139's success-measure
+read-back on **2026-10-25**, already recorded in the *See* line below:
+
+- **If that read-back finds ≥1 consumer repo carrying a `docs/process/` override** → the P2
+  demand is real. Work the **gate** first (item 1 of the Description): find one real project
+  whose process docs could feed Stage-1 extraction. Only if *that* clears does any compiler
+  get built. Set this `**Status**:` back to `pending` at that point.
+- **If it finds 0** → **retire this task as declined**, per its own *See* line and the T-137
+  disposition. That is direct evidence the demand is absent, and it is the more likely
+  outcome on today's evidence: no consumer repo is currently reachable from this machine
+  (which is why T-139's own measure came back `can't tell` in iteration-109).
+
+So no human needs to remember this: the read-back is already owed, and step 4b of
+`/openup-retrospective` walks exactly those measures. **The deferral is what stops the loop
+promoting a task whose own Value field says "the premise comes first, not the code" and whose
+Stage-1 input shape is explicitly *unverified*.** Two gates were already written into this
+entry; neither was enforceable while the status read `pending`.
+
+**Dependencies**: T-139 (delivered the override seam this would target) *(satisfied — this
+task is premise-blocked, not dependency-blocked)*
 
 **See**: `docs/changes/T-139/design.md` § "Scope decision"; `docs-eng-process/project-config.md` § "Customized process sources" (states plainly that no such compiler exists); T-139's Success Measure — **if its read-back on 2026-10-25 finds 0 consumer repos carrying a `docs/process/` override, retire this task instead of scheduling it**, since that is direct evidence the P2 demand is not there
 
