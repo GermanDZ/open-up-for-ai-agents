@@ -941,13 +941,24 @@ def cmd_claim(args):
             sys.stderr.write(msg + "\n")
             return code
 
+    # One clock read, used for both fields (T-159). `last_heartbeat` is written at
+    # creation because `cmd_reap` skips heartbeat-less claims *by design* — a
+    # backward-compat invariant for legacy files already on disk — so a claim born
+    # without the field can never be auto-reaped. `openup-session.py begin` stamps a
+    # heartbeat as a separate step, but bare `claim` is also the documented mid-lane
+    # re-claim recovery (release + claim), and that path is what produced the
+    # permanently un-reapable claims cleared on 2026-07-27. Same value as
+    # `claimed_at` rather than a second now(): a claim is alive at creation, and two
+    # timestamps microseconds apart invite a reader to find meaning in the gap.
+    now_iso = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     payload = {
         "task_id": args.task_id,
         "session_id": args.session_id,
         "branch": args.branch,
         "worktree": args.worktree,
         "base_sha": getattr(args, "base_sha", None),
-        "claimed_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "claimed_at": now_iso,
+        "last_heartbeat": now_iso,
         "touches": touches,
     }
     fp = claim_file(args.task_id, cdir)
