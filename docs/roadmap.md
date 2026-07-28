@@ -399,6 +399,22 @@ T-002 (`/openup-sync-spec`) completed 2026-06-11 once T-008's readiness DAG un-b
 
 ---
 
+## T-160: Make "full suite" mean the whole suite, and make a downstream measure name its reader
+**Status**: completed (2026-07-28)
+**Priority**: medium
+**Value**: Two verification-honesty gaps. *C2*: this repo has two project test directories and **no pack named a test command at all**, so "full suite" was free prose — T-155, T-157 and T-158 each quoted the `scripts/tests/` figure that way, omitting 114 tests in `tests/`, among them the reap coverage most relevant to the defect T-159 then had to fix. *C4*: T-152 made every measure name its read-back environment, and that worked — but naming is not access. T-147 and T-155 both correctly named `kaze-webapp` and both still returned `can't tell`, three of nine verdicts lost in one cycle. Closes iteration-109's **C2** and **C4**.
+**Description**: Add `scripts/run-tests.sh` (enumerated dirs, per-directory summary, aggregate exit code) plus a guard test that fails when a new project test directory is uncovered; extend rubric criterion 12 so a **non-local** read-back environment must also name a reader, a cadence, and what an unreadable number means.
+- Enumerated, not discovered — `venv/` and `.claude/worktrees/` contain vendored `test_*.py`, and a denylist would rot silently
+- Criterion 12 is **extended, never relaxed**; the new elements fire only for non-local environments, so the common case gains no ceremony
+- No validator: "is this reader real?" is not mechanically parseable (T-152's reasoning)
+- Discrimination checked: of 122 archived specs, 7 name "this repo" (unaffected) and **0 of 3** non-local ones name a reader
+
+**Dependencies**: —
+
+**See**: `docs/changes/T-160/plan.md`; iteration-109 retrospective items **C2** + **C4**; `docs/changes/archive/T-152/plan.md` (the criterion this extends)
+
+---
+
 ## T-159: Two silent failures — `claim` creates un-reapable claims; `sync-status` reports success for a task it cannot find
 **Status**: completed (2026-07-28)
 **Priority**: high

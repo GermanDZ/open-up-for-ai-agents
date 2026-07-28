@@ -83,6 +83,25 @@ docs/{description}
 
 **For project-specific conventions** (naming conventions for domain, architecture patterns, API conventions, etc.), see `docs/conventions.md` (created during project development).
 
+## "Full Suite" Means `scripts/run-tests.sh`
+
+A project may have **more than one** test directory. This one has two —
+`scripts/tests/` and `tests/` — so a bare `pytest <one-dir>` is a *subset*, and
+reporting its count as "the full suite" overstates what was verified.
+
+- **Run `scripts/run-tests.sh`** before completing a lane. It runs every project
+  test directory, prints a per-directory summary, and exits non-zero if any fail.
+- **When you quote a test count**, quote the runner's aggregate, or **name the
+  directory** the number covers ("`scripts/tests/`: 891 passed").
+- The runner's directory list is deliberately **enumerated, not discovered** —
+  discovery would sweep `venv/` and `.claude/worktrees/`, which contain vendored
+  `test_*.py`. `scripts/tests/test_full_suite_runner.py` fails if a new project
+  test directory is added without being covered, so the list cannot rot silently.
+
+Recorded because it actually happened: T-155, T-157 and T-158 each reported the
+`scripts/tests/` figure as "full suite", omitting 114 tests in `tests/` — among
+them the reap coverage most relevant to the defect T-159 went on to fix (T-160).
+
 ## Hook Commands Must Be Guarded
 
 Every `hooks[].command` in `.claude/settings.json` (and its template
