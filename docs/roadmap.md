@@ -845,7 +845,7 @@ driver-level gate that emits the request-input. Same flag governs plan-gate appr
 ---
 
 ## T-073: FastAPI service wrapper over the reference driver
-**Status**: pending
+**Status**: deferred (2026-07-28) — awaiting a human decision; see **Unblock condition** below
 **Priority**: medium
 **Value**: Lets a named consumer (CI job, web UI, or a second machine) run an
 OpenUP cycle against a directory over HTTP without a local harness — but only
@@ -864,7 +864,27 @@ authored when promoted.
 - Sandboxing decision (local-bind default + exec allowlist) at promote
 - **Precondition**: a named consumer exists before this task is promoted
 
-**Dependencies**: T-072, T-074
+**Unblock condition (owner decision required, 2026-07-28).** Deferred **indefinitely** by
+owner decision — not cancelled, and not blocked on any task. `/openup-next`, the board and
+`openup-roadmap.py next` skip it because `deferred` is outside `PROMOTABLE_STATUSES`
+(`scripts/openup-roadmap.py:63`), so no loop will re-promote it and no agent should treat it
+as available work.
+
+**To unblock, a human must do both:**
+1. **Name the consumer** — the specific CI job, web UI, or second machine that will call the
+   service. The entry's own precondition has always said this; it is now enforced rather
+   than merely stated.
+2. **Change this `**Status**:` line back to `pending`.** Nothing else re-promotes it; there
+   is deliberately no expiry, no date, and no automatic reconsideration.
+
+*Why the status changed and the prose did not:* the gate was already written here
+("**Gated**: does not start until a named consumer is identified") but `pending` **is**
+promotable, so the board kept selecting T-073 as the next lane every cycle. The status now
+agrees with the intent that was always documented — a gate expressed only in prose is not a
+gate.
+
+**Dependencies**: T-072, T-074 *(both completed — this task is not dependency-blocked; it is
+demand-blocked)*
 
 **See**: `Planned: Harness-optional OpenUP core` block above + `docs/explorations/2026-07-12-harness-agnostic-openup.md` — full iteration plan authored on promote
 
