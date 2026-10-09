@@ -3,9 +3,9 @@ name: openup-create-handoff
 description: Produce a handoff brief (acceptance criteria, test cases, troubleshooting, open questions) for a change, so the next owner can pick it up cold
 model: haiku
 fit:
-  great: [pausing mid-task for another owner, end-of-iteration handoff, "someone else finishes this" moments]
-  ok: [recording how to exercise a finished feature before completion, capturing open questions surfaced during work]
-  poor: [the durable run log (use openup-log-run), the spec itself (that is the change-folder plan.md)]
+  great: ["pausing mid-task for another owner", "end-of-iteration handoff", '"someone else finishes this" moments']
+  ok: ["recording how to exercise a finished feature before completion", "capturing open questions surfaced during work"]
+  poor: ["the durable run log (use openup-log-run)", "the spec itself (that is the change-folder plan.md)"]
 arguments:
   - name: task_id
     description: The task ID whose change folder to summarize (e.g., T-011). Required.

@@ -4,9 +4,9 @@ description: Sanctioned pre-iteration mode — think through ideas, investigate 
 tier: reasoning
 capabilities: {required: [read_write_files, exec], optional: []}
 fit:
-  great: [is this problem real?, comparing approaches before scoping, ruling out designs, evaluating external frameworks]
-  ok: [reproducing an ambiguous bug before filing it, drafting RFC-style notes that may or may not lead to work]
-  poor: [known small change (use /openup-quick-task), scoped delivery work (use /openup-start-iteration), running experiments that produce code intended to ship]
+  great: ["is this problem real?", "comparing approaches before scoping", "ruling out designs", "evaluating external frameworks"]
+  ok: ["reproducing an ambiguous bug before filing it", "drafting RFC-style notes that may or may not lead to work"]
+  poor: ["known small change (use /openup-quick-task)", "scoped delivery work (use /openup-start-iteration)", "running experiments that produce code intended to ship"]
 arguments:
   - name: slug
     description: Short kebab-case slug for the exploration topic (e.g. "openspec-borrow-analysis"). Used in the filename.

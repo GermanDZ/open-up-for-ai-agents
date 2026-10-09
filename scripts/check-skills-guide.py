@@ -121,11 +121,49 @@ def parse_fit(fm_lines):
             if m:
                 raw = m.group(1).strip()
                 if raw.startswith("[") and raw.endswith("]"):
-                    raw = raw[1:-1].strip()
+                    raw = ", ".join(split_flow_items(raw[1:-1]))
                 if raw:
                     out.append((bucket, raw))
                 break
     return out
+
+
+def unquote_scalar(item):
+    """Strip one level of YAML quoting from a flow item ('' / \\" escapes)."""
+    if len(item) >= 2 and item[0] == item[-1] == "'":
+        return item[1:-1].replace("''", "'")
+    if len(item) >= 2 and item[0] == item[-1] == '"':
+        return item[1:-1].replace('\\"', '"').replace("\\\\", "\\")
+    return item
+
+
+def split_flow_items(body):
+    """Split a YAML flow-sequence body on commas outside quotes, unquoting each item."""
+    items, buf, quote, i = [], [], None, 0
+    while i < len(body):
+        ch = body[i]
+        if quote == '"' and ch == "\\" and i + 1 < len(body):
+            buf.append(body[i:i + 2])
+            i += 2
+            continue
+        if quote:
+            if ch == quote:
+                if quote == "'" and body[i + 1:i + 2] == "'":
+                    buf.append("''")
+                    i += 2
+                    continue
+                quote = None
+        elif ch in "'\"" and not "".join(buf).strip():
+            quote = ch
+        elif ch == ",":
+            items.append("".join(buf).strip())
+            buf = []
+            i += 1
+            continue
+        buf.append(ch)
+        i += 1
+    items.append("".join(buf).strip())
+    return [unquote_scalar(it) for it in items if it]
 
 
 def parse_arguments(fm_lines):

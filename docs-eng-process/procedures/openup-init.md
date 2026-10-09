@@ -8,10 +8,10 @@ arguments:
     description: The project name (optional, will prompt if not provided)
     required: false
   - name: project_type
-    description: Type of project: web, api, library, mobile (optional, will prompt if not provided)
+    description: "Type of project: web, api, library, mobile (optional, will prompt if not provided)"
     required: false
   - name: skip_teams
-    description: Skip agent team setup (default: false)
+    description: "Skip agent team setup (default: false)"
     required: false
 ---
 

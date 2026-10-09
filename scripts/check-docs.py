@@ -636,8 +636,65 @@ def check(docs_dir: Path, schema: dict, model: dict, coverage: bool = False):
     return findings, len(instances)
 
 
+# --------------------------------------------------------------------------
+# Skill frontmatter parse check. Claude Code parses SKILL.md frontmatter with a
+# real YAML parser and silently drops EVERY field (name, description, model,
+# arguments) when it fails — e.g. an unquoted ": " in a scalar or a `?`/`,`/
+# `(...)` inside a flow list. This tree is stdlib-only, so PyYAML is optional:
+# when present a parse failure is hard; when absent one advisory finding says
+# the check was skipped.
+# --------------------------------------------------------------------------
+SKILLS_DIR_DEFAULT = Path(".claude") / "skills"
+
+
+def _skill_frontmatter(text: str):
+    """Return the text between the leading `---` delimiters, or None."""
+    lines = text.splitlines()
+    if not lines or lines[0].strip() != "---":
+        return None
+    for i in range(1, len(lines)):
+        if lines[i].strip() == "---":
+            return "\n".join(lines[1:i])
+    return None
+
+
+def check_skill_frontmatter(skills_dir: Path):
+    """Findings for every `<skills_dir>/*/SKILL.md` whose frontmatter fails to parse."""
+    skill_files = sorted(skills_dir.glob("*/SKILL.md")) if skills_dir.is_dir() else []
+    if not skill_files:
+        return []
+    try:
+        import yaml  # type: ignore[import-not-found]
+    except ImportError:
+        return [Finding(str(skills_dir), "skill-frontmatter",
+                        "[advisory] PyYAML not installed — SKILL.md frontmatter "
+                        "parse check skipped (pip install pyyaml to enable)")]
+    findings = []
+    for path in skill_files:
+        fm = _skill_frontmatter(path.read_text(encoding="utf-8"))
+        if fm is None:
+            findings.append(Finding(str(path), "skill-frontmatter",
+                                    "no leading --- frontmatter block"))
+            continue
+        try:
+            data = yaml.safe_load(fm)
+        except yaml.YAMLError as exc:
+            msg = " ".join(str(exc).split())
+            findings.append(Finding(str(path), "skill-frontmatter",
+                                    f"invalid YAML (Claude Code drops every "
+                                    f"field): {msg}"))
+            continue
+        if not isinstance(data, dict):
+            findings.append(Finding(str(path), "skill-frontmatter",
+                                    "frontmatter is not a YAML mapping"))
+    return findings
+
+
 def is_hard(finding) -> bool:
-    """A finding fails the run iff it is NOT an advisory coverage gap."""
+    """A finding fails the run iff it is NOT an advisory coverage gap or an
+    advisory skill-frontmatter skip (PyYAML unavailable)."""
+    if finding.code == "skill-frontmatter":
+        return not finding.message.startswith("[advisory]")
     if finding.code != "coverage-gap":
         return True
     # Tagged severity is the first bracketed token of the message.
@@ -735,6 +792,9 @@ def main(argv=None) -> int:
                              "last successful --changed-only pass (a stat "
                              "signature cached in .openup/; T-123). Any delta "
                              "runs the full check. Serves defensive re-runs.")
+    parser.add_argument("--skills", help="skills directory whose */SKILL.md "
+                        "frontmatter must parse as YAML (default: "
+                        "./.claude/skills; a missing directory is skipped)")
     args = parser.parse_args(argv)
 
     if args.show_archetype_defaults:
@@ -764,6 +824,12 @@ def main(argv=None) -> int:
     except (OSError, json.JSONDecodeError):
         model = {}  # degrade: schema + existence still run, no type-direction
 
+    # Skill frontmatter runs BEFORE the --changed-only short-circuit: that
+    # signature covers docs/ only, so an edited SKILL.md would otherwise skip.
+    skills_dir = Path(args.skills) if args.skills else SKILLS_DIR_DEFAULT
+    skill_findings = check_skill_frontmatter(skills_dir)
+    skill_hard = any(is_hard(f) for f in skill_findings)
+
     # --changed-only: short-circuit an unchanged rescan (T-123). Compute the
     # signature after schema/model load so a broken schema/model still errors
     # normally; skip only when a PRIOR run passed on the identical inputs.
@@ -771,7 +837,8 @@ def main(argv=None) -> int:
     if args.changed_only:
         sig = docs_signature(docs_dir, schema_path, model_path)
         cached = read_changed_only_cache(docs_dir, args.coverage)
-        if cached and cached.get("sig") == sig and cached.get("ok"):
+        if (cached and cached.get("sig") == sig and cached.get("ok")
+                and not skill_hard):
             if args.json:
                 print(json.dumps({"ok": True, "skipped": True,
                                   "reason": "no docs delta since last pass"},
@@ -781,10 +848,14 @@ def main(argv=None) -> int:
             return EXIT_OK
 
     findings, count = check(docs_dir, schema, model, coverage=args.coverage)
-    hard = [f for f in findings if is_hard(f)]
-
     if args.changed_only:
-        write_changed_only_cache(docs_dir, args.coverage, sig, not hard)
+        # The cache records the docs/ verdict only; skill findings are
+        # re-evaluated on every run above.
+        write_changed_only_cache(docs_dir, args.coverage, sig,
+                                 not any(is_hard(f) for f in findings))
+    findings = sorted(findings + skill_findings,
+                      key=lambda f: (f.file, f.code, f.message))
+    hard = [f for f in findings if is_hard(f)]
 
     if args.json:
         print(json.dumps({
