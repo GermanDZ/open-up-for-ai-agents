@@ -19,11 +19,12 @@ from pathlib import Path
 
 # Commands `exec` will run. Anything else is refused without spawning a process.
 # T-134 — `ruby <path>.rb` is a narrow addition for the code-artifact probe task
-# (see docs-eng-process/task-library.yaml's probe-code-artifact). NOTE: as with
-# the python3 case below, `argv[1]` is checked by prefix/suffix only, never
-# through `_resolve()`'s root-escape guard — a pre-existing gap this entry
-# inherits, not one it introduces. Blast radius is bounded by running the
-# probe only inside disposable bench fixtures (never a persistent repo).
+# (see docs-eng-process/task-library.yaml's probe-code-artifact). Script targets
+# (python3 and ruby) are resolved through `_resolve()` in `exec` and must be real
+# files inside the root (python3: under `scripts/`); flags before the target are
+# refused. `git` refuses global options (`-c`, `-C`, `--exec-path`, …) — they
+# turn into arbitrary command execution via aliases/pager/sshCommand — and the
+# file tools refuse writes under `.git/` (hooks/config would run on next git).
 _ALLOWED_EXEC = "git <subcmd>  |  python3 scripts/<script>.py [args]  |  ruby <path>.rb"
 _MAX_READ_BYTES = 400_000
 
@@ -50,6 +51,12 @@ def _resolve(root, path):
     if root != target and root not in target.parents:
         raise ToolError("path '%s' escapes the working root" % path)
     return target
+
+
+def _check_writable(root, target):
+    """Refuse writes into `.git/` — hooks and config there execute on the next `git`."""
+    if ".git" in target.relative_to(root).parts:
+        raise ToolError("writes under .git/ are refused")
 
 
 def _cap(text, limit):
@@ -92,6 +99,7 @@ class Tools:
     def write_file(self, path, content):
         try:
             target = _resolve(self.root, path)
+            _check_writable(self.root, target)
         except ToolError as e:
             return "ERROR: %s" % e
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -101,6 +109,7 @@ class Tools:
     def edit_file(self, path, old_str, new_str):
         try:
             target = _resolve(self.root, path)
+            _check_writable(self.root, target)
         except ToolError as e:
             return "ERROR: %s" % e
         if not target.exists():
@@ -188,6 +197,15 @@ class Tools:
             run_cwd = self.root if not cwd else _resolve(self.root, cwd)
         except ToolError as e:
             return "ERROR: %s" % e
+        if argv[0] != "git":
+            try:
+                script = _resolve(self.root, run_cwd / argv[1])
+            except ToolError as e:
+                return "REFUSED: %s" % e
+            in_scripts = (self.root / "scripts") in script.parents
+            if not script.is_file() or (argv[0] != "ruby" and not in_scripts):
+                return "REFUSED: '%s' is not a script file inside the allowed root" % argv[1]
+            argv = [argv[0], "--", str(script)] + argv[2:]
         try:
             proc = subprocess.run(
                 argv, cwd=str(run_cwd), capture_output=True, text=True, timeout=300
@@ -204,11 +222,11 @@ class Tools:
     @staticmethod
     def _allowed(argv):
         if argv[0] == "git":
-            return True
+            return argv[1:] == ["--version"] or (len(argv) >= 2 and not argv[1].startswith("-"))
         if argv[0] in ("python3", "python"):
             return len(argv) >= 2 and argv[1].startswith("scripts/") and argv[1].endswith(".py")
         if argv[0] == "ruby":
-            return len(argv) >= 2 and argv[1].endswith(".rb")
+            return len(argv) == 2 and not argv[1].startswith("-") and argv[1].endswith(".rb")
         return False
 
     # -- dispatch ---------------------------------------------------------

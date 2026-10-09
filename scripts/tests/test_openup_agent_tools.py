@@ -196,6 +196,40 @@ class ToolsTest(unittest.TestCase):
         out = self.t.exec("ruby probe/hello.txt")
         self.assertTrue(out.startswith("REFUSED"))
 
+    # -- exec allowlist bypasses (flag injection / root escape / git -c) -----
+    def test_exec_refuses_ruby_flag_injection(self):
+        self._write("x.rb", "puts 1\n")
+        self.assertTrue(self.t.exec("ruby -r./x.rb x.rb").startswith("REFUSED"))
+        self.assertTrue(self.t.exec("ruby -rx.rb").startswith("REFUSED"))
+
+    def test_exec_refuses_ruby_root_escape(self):
+        outside = Path(tempfile.mkdtemp())
+        self.addCleanup(lambda: __import__("shutil").rmtree(outside))
+        (outside / "evil.rb").write_text("puts 'ESCAPED'\n", encoding="utf-8")
+        out = self.t.exec("ruby %s" % (outside / "evil.rb"))
+        self.assertTrue(out.startswith("REFUSED"))
+        self.assertNotIn("ESCAPED", out)
+
+    def test_exec_refuses_ruby_missing_file(self):
+        self.assertTrue(self.t.exec("ruby probe/nope.rb").startswith("REFUSED"))
+
+    def test_exec_refuses_python_dotdot_out_of_scripts(self):
+        self._write("x.py", "print('OUTSIDE-SCRIPTS')\n")
+        out = self.t.exec("python3 scripts/../x.py")
+        self.assertTrue(out.startswith("REFUSED"))
+        self.assertNotIn("OUTSIDE-SCRIPTS", out)
+
+    def test_exec_refuses_git_global_options(self):
+        for cmd in ("git -c alias.x=!echo x", "git -C .. status",
+                    "git --exec-path=/tmp status", "git --config-env=a=b status"):
+            self.assertTrue(self.t.exec(cmd).startswith("REFUSED"), cmd)
+
+    def test_write_and_edit_refuse_dot_git(self):
+        self.assertIn("ERROR", self.t.write_file(".git/hooks/pre-commit", "x"))
+        self._write(".git/config", "a")
+        self.assertIn("ERROR", self.t.edit_file(".git/config", "a", "b"))
+        self.assertEqual((self.root / ".git/config").read_text(), "a")
+
     # -- B2: exec cwd escaping the root returns an error, never crashes ------
     def test_exec_cwd_escape_returns_error_not_crash(self):
         out = self.t.exec("git status", cwd="..")
