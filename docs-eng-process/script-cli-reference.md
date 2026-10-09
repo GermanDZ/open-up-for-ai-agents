@@ -223,7 +223,7 @@ sync-status.py --views-only [--dry-run] [--roadmap] [--project-status] [--notes-
 ## check-docs.py — work-product validator
 
 ```
-check-docs.py [--docs DIR] [--schema PATH] [--model PATH] [--json] [--coverage] [--changed-only]
+check-docs.py [--docs DIR] [--schema PATH] [--model PATH] [--json] [--coverage] [--changed-only] [--skills DIR]
 check-docs.py --show-archetype-defaults
 ```
 - Flat args, **no subcommand** (a frequent friction point — do not write
@@ -235,6 +235,13 @@ check-docs.py --show-archetype-defaults
   runs the full check. The signature is cached in `.openup/check-docs-cache.json`
   (Ring-3, gitignored), keyed by docs dir + `--coverage`. Cuts the harness flow's
   repeated defensive re-runs; the default (no-flag) path is untouched.
+- Skill frontmatter: every `<skills>/*/SKILL.md` (default `./.claude/skills`;
+  override with `--skills DIR`, missing dir is skipped) must parse as YAML —
+  Claude Code silently drops every field (name, description, model, arguments)
+  of a skill whose frontmatter fails to parse. A parse failure is a hard
+  `skill-frontmatter` finding; without PyYAML installed it degrades to one
+  advisory finding. Runs before the `--changed-only` short-circuit (that
+  signature covers `docs/` only).
 - `--show-archetype-defaults` (T-115): prints the Development Case archetype
   defaults (`quick`/`mvp`/`product`) plus what applies when
   `docs/project-config.yaml`'s `process:` block is absent (today: no

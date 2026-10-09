@@ -767,9 +767,9 @@ Read-only project health check — framework/manifest drift, .openup/state.json 
 **Model**: `haiku`
 
 **Fit**:
-- Great fit: "downstream maintainer asking is my OpenUP install current and unmodified", "pre-flight health check on a fresh clone or in CI without the git hooks", "diagnosing a corrupt/misnamed .openup/state.json footgun"
-- OK fit: "a quick is-this-project-well-formed sweep before starting work"
-- Poor fit: "fixing anything (doctor is strictly diagnostic — fixes live in sync-from-framework.sh / the owning generators)", "what can I work on next (that is /openup-readiness)"
+- Great fit: downstream maintainer asking is my OpenUP install current and unmodified, pre-flight health check on a fresh clone or in CI without the git hooks, diagnosing a corrupt/misnamed .openup/state.json footgun
+- OK fit: a quick is-this-project-well-formed sweep before starting work
+- Poor fit: fixing anything (doctor is strictly diagnostic — fixes live in sync-from-framework.sh / the owning generators), what can I work on next (that is /openup-readiness)
 
 **Arguments**:
 - `framework_path` (optional) — Optional. Path to a framework baseline clone. Enables byte-level CLI drift detection; without it doctor degrades to version-only (offline).
@@ -930,7 +930,7 @@ After this skill completes, ALL of these must be true:
 - [ ] No information required to resume lives only in the conversation.
 
 **Fit**:
-- Great fit: driving delivery one session at a time, an outer /loop or cron repeatedly advancing the roadmap, "just do the next thing", resuming a mid-cycle task, promoting the next roadmap line into a workable lane
+- Great fit: driving delivery one session at a time, an outer /loop or cron repeatedly advancing the roadmap, just do the next thing, resuming a mid-cycle task, promoting the next roadmap line into a workable lane
 - OK fit: starting the very next iteration from a roadmap that has no change folders yet
 - Poor fit: picking a SPECIFIC task out of PM order (use /openup-start-iteration directly), open-ended exploration with no roadmap line (use /openup-explore)
 
@@ -1195,7 +1195,7 @@ After this skill runs, ALL of these must be true:
       baseline.
 
 **Fit**:
-- Great fit: reconciling artifacts after a rename/extract/move refactor, "did my cleanup leave the spec stale", detecting + routing behaviour-changes back to spec-first
+- Great fit: reconciling artifacts after a rename/extract/move refactor, did my cleanup leave the spec stale, detecting + routing behaviour-changes back to spec-first
 - OK fit: setting a fresh last-synced baseline on a never-synced artifact, single-artifact sync after a targeted diff
 - Poor fit: authoring new behaviour spec-first (use the originating /openup-create-* skill), wholesale doc regeneration, applying writes without user approval
 
